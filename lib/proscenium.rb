@@ -4,5 +4,4 @@ require_relative 'proscenium/version'
 
 module Proscenium
   class Error < StandardError; end
-  # Your code goes here...
 end
