@@ -3,7 +3,8 @@
 $LOAD_PATH.unshift File.expand_path('../lib', __dir__)
 
 require 'proscenium'
-require 'minitest/autorun'
+require 'maxitest/autorun'
+require 'minitest/heat'
 require 'combustion'
 
 Combustion.path = 'test/internal'

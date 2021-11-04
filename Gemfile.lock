@@ -39,8 +39,12 @@ GEM
     loofah (2.12.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
+    maxitest (4.1.0)
+      minitest (>= 5.0.0, < 5.15.0)
     method_source (1.0.0)
     minitest (5.14.4)
+    minitest-heat (0.0.10)
+      minitest
     nokogiri (1.12.5-arm64-darwin)
       racc (~> 1.4)
     parallel (1.21.0)
@@ -97,7 +101,8 @@ PLATFORMS
 
 DEPENDENCIES
   combustion
-  minitest (~> 5.0)
+  maxitest
+  minitest-heat
   proscenium!
   rake (~> 13.0)
   rubocop (~> 1.21)
