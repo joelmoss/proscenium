@@ -1,8 +1,11 @@
 # Proscenium
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/proscenium`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+- Serve assets from anywhere within the Rails root. (eg. `/app/views/layouts/application.css`, `/lib/utils/time.js`)
+- Side loaded JS/CSS for your layouts and views.
+- JS imports
+- Dynamic imports
+- Real-time bundling of JS, JSX and CSS.
+- Import CSS and other static assets (images, fonts, etc.)
 
 ## Installation
 
@@ -12,17 +15,40 @@ Add this line to your application's Gemfile:
 gem 'proscenium'
 ```
 
-And then execute:
-
-    $ bundle install
-
-Or install it yourself as:
-
-    $ gem install proscenium
-
 ## Usage
 
-TODO: Write usage instructions here
+### Side Loading
+
+Proscenium has built in support for automatically side loading JS and CSS with your views and layouts.
+
+Just create a JS and/or CSS file with the same name as any view or layout, and make sure your layouts include `<%= yield :side_loaded_js %>` and `<%= yield :side_loaded_css %>`. Something like this:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello World</title>
+    <%= yield :side_loaded_css %>
+  </head>
+  <body>
+    <%= yield %> <%= yield :side_loaded_js %>
+  </body>
+</html>
+```
+
+On each page request, Proscenium will check if your layout and view has a JS/CSS file of the same name, and include them into your layout HTML.
+
+### Importing in JS with `import`
+
+Imports that do not begin with a `./` or `/` are bare imports, and will import a package using your local Node resolution algorithm.
+
+`import 'react'`
+`import React as * from 'react'`
+`import { useState } from 'react'`
+
+Absolute and relative import paths are supported (`/*`, `./*`), and will behave as you would expect.
+
+Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases. But you can if you like. All other file types must be specified using their fill file name and extension.
 
 ## Development
 
