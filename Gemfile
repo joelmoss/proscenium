@@ -8,6 +8,8 @@ gemspec
 gem 'combustion'
 gem 'maxitest'
 gem 'minitest-heat'
+gem 'minitest-snapshots'
+gem 'puma'
 gem 'rake', '~> 13.0'
 gem 'rubocop', '~> 1.21'
 gem 'rubocop-minitest'

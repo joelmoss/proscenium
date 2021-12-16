@@ -5,5 +5,6 @@ require 'bundler'
 
 Bundler.require :default, :development
 
-Combustion.initialize! :all
+Combustion.path = 'test/internal'
+Combustion.initialize! :action_controller, :action_view
 run Combustion::Application

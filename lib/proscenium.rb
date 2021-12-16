@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
-require_relative 'proscenium/version'
+# require_relative 'proscenium/version'
+require 'active_support/dependencies/autoload'
 
 module Proscenium
-  class Error < StandardError; end
+  extend ActiveSupport::Autoload
+
+  autoload :Middleware
+  autoload :Builder
 end
+
+require 'proscenium/railtie'

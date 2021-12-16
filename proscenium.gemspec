@@ -16,6 +16,7 @@ Gem::Specification.new do |spec|
   spec.metadata['homepage_uri'] = spec.homepage
   spec.metadata['source_code_uri'] = 'https://github.com/joelmoss/proscenium'
   spec.metadata['changelog_uri'] = 'https://github.com/joelmoss/proscenium/releases'
+  spec.metadata['rubygems_mfa_required'] = 'true'
 
   spec.files          = Dir['CODE_OF_CONDUCT.md', 'README.md', 'LICENSE', 'lib/**/*']
   spec.bindir         = 'exe'
