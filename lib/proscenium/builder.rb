@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'active_support/benchmarkable'
 
 module Proscenium
   # This endpoint serves JS and CSS files from anywhere within the rails root, via ESBuild. If no

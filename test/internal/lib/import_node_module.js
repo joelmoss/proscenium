@@ -1,0 +1,1 @@
+import bogus from 'bogus'

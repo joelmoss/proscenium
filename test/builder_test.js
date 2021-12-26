@@ -1,4 +1,8 @@
-import { assert, assertRejects } from 'https://deno.land/std/testing/asserts.ts'
+import {
+  assert,
+  assertRejects,
+  assertStringIncludes
+} from 'https://deno.land/std/testing/asserts.ts'
 import { join } from 'https://deno.land/std/path/mod.ts'
 import builder from '../lib/proscenium/builder.js'
 
@@ -18,12 +22,47 @@ Deno.test('Throws on unresolvable entrypoint', async () => {
   })
 })
 
-Deno.test('Returns esbuild results', async () => {
+Deno.test('Successful build', async () => {
   assert(await builder(cwd, 'app/views/layouts/application.js'))
 })
 
-Deno.test('build errors are thrown', async () => {
+Deno.test('Failed build', async () => {
   await assertRejects(async () => {
     await builder(cwd, 'lib/includes_error.js')
   })
+})
+
+Deno.test('Import bare module', async () => {
+  const result = await builder(cwd, 'lib/import_node_module.js')
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'import bogus from "/node_modules/bogus/index.js";'
+  )
+})
+
+Deno.test('Import relative module', async () => {
+  const result = await builder(cwd, 'lib/import_relative_module.js')
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'import bogus from "/node_modules/bogus/index.js";'
+  )
+})
+
+Deno.test('Import absolute module', async () => {
+  const result = await builder(cwd, 'lib/import_absolute_module.js')
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'import bogus from "/node_modules/bogus/index.js";'
+  )
+})
+
+Deno.test('Import remote module', async () => {
+  const result = await builder(cwd, 'lib/import_remote_module.js')
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";'
+  )
 })

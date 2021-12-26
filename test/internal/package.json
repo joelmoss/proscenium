@@ -1,0 +1,7 @@
+{
+  "name": "internal",
+  "private": true,
+  "dependencies": {
+    "bogus": "1.0.0"
+  }
+}

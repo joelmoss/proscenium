@@ -2,9 +2,9 @@
 <html>
   <head>
     <title>Proscenium Test App</title>
-    <%= javascript_include_tag '/app/views/layouts/application', type: :module %>
+    <script src="/app/views/layouts/application.js"></script>
   </head>
   <body>
-    <%= yield %>
+    <h1>Home#index</h1>
   </body>
 </html>

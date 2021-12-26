@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'proscenium/builder'
+
 module Proscenium
   class Middleware
     def initialize(app)
