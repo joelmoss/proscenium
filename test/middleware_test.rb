@@ -21,4 +21,11 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
       get '/notfound.js'
     end
   end
+
+  test 'javascript with CSS module import' do
+    get '/app/views/layouts/application.css'
+
+    assert_equal 'text/css', response.headers['Content-Type']
+    assert_matches_snapshot response.body
+  end
 end

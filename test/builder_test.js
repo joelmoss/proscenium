@@ -22,8 +22,12 @@ Deno.test('Throws on unresolvable entrypoint', async () => {
   })
 })
 
-Deno.test('Successful build', async () => {
+Deno.test('Successful JS build', async () => {
   assert(await builder(cwd, 'app/views/layouts/application.js'))
+})
+
+Deno.test('Successful CSS build', async () => {
+  assert(await builder(cwd, 'app/views/layouts/application.css'))
 })
 
 Deno.test('Failed build', async () => {
@@ -64,5 +68,14 @@ Deno.test('Import remote module', async () => {
   assertStringIncludes(
     result.outputFiles.at(0).text,
     'import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";'
+  )
+})
+
+Deno.test('Import css from JS', async () => {
+  const result = await builder(cwd, 'lib/import_css.js')
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'appendStylesheet_default("/app/views/layouts/application.css")'
   )
 })

@@ -1,0 +1,4 @@
+/* app/views/layouts/application.css */
+body {
+  color: red;
+}
