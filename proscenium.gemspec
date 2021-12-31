@@ -18,11 +18,12 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/joelmoss/proscenium/releases'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  spec.files          = Dir['CODE_OF_CONDUCT.md', 'README.md', 'LICENSE', 'lib/**/*']
-  spec.bindir         = 'bin'
-  spec.executables   = spec.files.grep(%r{\Abin/}) { |f| File.basename(f) }
-  spec.require_paths = ['lib']
+  spec.files          = Dir['CODE_OF_CONDUCT.md', 'README.md', 'LICENSE', 'lib/**/*', 'exe/**/*']
+  spec.bindir         = 'exe'
+  spec.executables    = spec.files.grep(%r{^exe/}) { |f| File.basename(f) }
+  spec.require_paths  = ['lib']
+  spec.post_install_message = 'Thanks for installing!'
 
-  spec.add_dependency 'activesupport', '~> 6.1.0'
-  spec.add_dependency 'railties', '~> 6.1.0'
+  spec.add_dependency 'activesupport', '>= 6.1.0'
+  spec.add_dependency 'railties', '>= 6.1.0'
 end
