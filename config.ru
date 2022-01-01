@@ -3,9 +3,9 @@
 require 'rubygems'
 require 'bundler'
 
-ENV['PROSCENIUM_ENV'] = 'development'
+ENV['RAILS_ENV'] = 'development'
 
-Bundler.require :default, ENV['PROSCENIUM_ENV'].to_sym
+Bundler.require :default, ENV['RAILS_ENV'].to_sym
 
 Combustion.path = 'test/internal'
 Combustion.initialize! :action_controller, :action_view

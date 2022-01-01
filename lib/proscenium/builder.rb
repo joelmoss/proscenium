@@ -49,10 +49,10 @@ module Proscenium
     end
 
     def run
-      cmd = if %w[development test].include?(ENV['PROSCENIUM_ENV']&.to_s)
-              'deno run -A lib/proscenium/cli.js'
-            else
+      cmd = if Rails.env.production?
               Rails.root.join('bin/proscenium')
+            else
+              'deno run -A lib/proscenium/cli.js'
             end
 
       Open3.capture3 "#{cmd} #{root} #{@request.fullpath[1..]}" # , chdir: root

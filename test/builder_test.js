@@ -6,6 +6,7 @@ import {
 import { join } from 'https://deno.land/std/path/mod.ts'
 import builder from '../lib/proscenium/builder.js'
 
+Deno.env.set('RAILS_ENV', 'test')
 const cwd = join(Deno.cwd(), 'test', 'internal')
 
 Deno.test('throws without any arguments', () => {
