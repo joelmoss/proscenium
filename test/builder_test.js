@@ -36,6 +36,16 @@ Deno.test('Failed build', async () => {
   })
 })
 
+Deno.test('Import relative module without extension', async () => {
+  const result = await builder(cwd, 'lib/import_relative_module_without_extension.js')
+  assertStringIncludes(result.outputFiles.at(0).text, 'import foo from "/lib/foo.js";')
+})
+
+Deno.test('Import absolute module without extension', async () => {
+  const result = await builder(cwd, 'lib/import_absolute_module_without_extension.js')
+  assertStringIncludes(result.outputFiles.at(0).text, 'import foo from "/lib/foo.js";')
+})
+
 Deno.test('Import bare module', async () => {
   const result = await builder(cwd, 'lib/import_node_module.js')
   assertStringIncludes(
