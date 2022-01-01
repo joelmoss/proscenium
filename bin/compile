@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+IFS=$'\n\t'
+set -vx
+
+deno compile -o exe/proscenium -A lib/proscenium/cli.js
