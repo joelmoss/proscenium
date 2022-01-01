@@ -4,6 +4,7 @@ require 'rubygems'
 require 'bundler'
 
 ENV['RAILS_ENV'] = 'development'
+ENV['PROSCENIUM_TEST'] = 'test'
 
 Bundler.require :default, ENV['RAILS_ENV'].to_sym
 

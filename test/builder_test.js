@@ -7,6 +7,7 @@ import { join } from 'https://deno.land/std/path/mod.ts'
 import builder from '../lib/proscenium/builder.js'
 
 Deno.env.set('RAILS_ENV', 'test')
+Deno.env.set('PROSCENIUM_TEST', 'test')
 const cwd = join(Deno.cwd(), 'test', 'internal')
 
 Deno.test('throws without any arguments', () => {
@@ -84,6 +85,15 @@ Deno.test('Import remote module', async () => {
 
 Deno.test('Import css from JS', async () => {
   const result = await builder(cwd, 'lib/import_css.js')
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'appendStylesheet_default("/app/views/layouts/application.css")'
+  )
+})
+
+Deno.test('Import css from jsx', async () => {
+  const result = await builder(cwd, 'lib/import_css.jsx')
 
   assertStringIncludes(
     result.outputFiles.at(0).text,
