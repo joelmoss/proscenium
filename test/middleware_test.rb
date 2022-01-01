@@ -10,6 +10,13 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'build files ending with .jsx' do
+    get '/lib/component.jsx'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_matches_snapshot response.body
+  end
+
   test 'stylesheet not found' do
     assert_raises ActionController::RoutingError do
       get '/notfound.css'

@@ -59,7 +59,7 @@ module Proscenium
     end
 
     def content_type
-      ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) || 'text/plain'
+      ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) || 'application/javascript'
     end
 
     def benchmark
