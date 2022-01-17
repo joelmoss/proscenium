@@ -19,43 +19,77 @@ module Proscenium
     def attempt(env)
       @request = Rack::Request.new(env)
 
-      buildable? && build
+      return if !@request.get? && !@request.head?
+
+      jsbuild || cssbuild || render
     end
 
     private
 
-    def build
+    def render
+      return unless renderable?
+
       benchmark do
-        stdout, stderr, status = run
-
-        if status.success?
-          raise "Proscenium build failed: #{stderr}" unless stderr.empty?
-        else
-          raise Error, stderr
-        end
-
-        response = Rack::Response.new(stdout)
-        response.content_type = content_type
-        response.finish
+        Rack::File.new(root, {}).call(@request.env)
       end
     end
 
-    def buildable?
-      return if !@request.get? && !@request.head?
-      return unless /\.(js(x)?|css)$/i.match?(@request.path_info)
-      return unless file_readable?
+    # Build the requested file with esbuild.
+    def jsbuild
+      return unless js_buildable?
 
-      true
-    end
-
-    def run
       cmd = if ENV['PROSCENIUM_TEST']
               'deno run -A lib/proscenium/cli.js'
             else
               Rails.root.join('bin/proscenium')
             end
 
-      Open3.capture3 "#{cmd} #{root} #{@request.fullpath[1..]}" # , chdir: root
+      build do
+        "#{cmd} #{root} #{@request.fullpath[1..]}"
+      end
+    end
+
+    # Build the requested file with parcel-css.
+    def cssbuild
+      return unless css_buildable?
+
+      build do
+        "parcel_css minify #{root}#{@request.fullpath}"
+      end
+    end
+
+    def build
+      cmd = yield
+
+      benchmark do
+        stdout, stderr, status = Open3.capture3(cmd)
+
+        if status.success?
+          raise "Proscenium build ('#{cmd}') failed: #{stderr}" unless stderr.empty?
+        else
+          raise Error, stderr
+        end
+
+        response = Rack::Response.new
+        response.write stdout
+        response.content_type = content_type
+        response.finish
+      end
+    end
+
+    # Is the request for plain JS?
+    def renderable?
+      # /\.js$/i.match?(@request.path_info) && file_readable?
+      false
+    end
+
+    # Is the request for JSX/CSS/CSSM?
+    def js_buildable?
+      /\.jsx?$/i.match?(@request.path_info) && file_readable?
+    end
+
+    def css_buildable?
+      /\.css$/i.match?(@request.path_info) && file_readable?
     end
 
     def content_type
@@ -68,7 +102,7 @@ module Proscenium
 
     # rubocop:disable Style/FormatStringToken
     def logging_message
-      format '%s Proscenium %s for %s', Time.now.to_default_s, @request.fullpath, @request.ip
+      format 'Proscenium %s for %s at %s', @request.fullpath, @request.ip, Time.now.to_default_s
     end
     # rubocop:enable Style/FormatStringToken
 

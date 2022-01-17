@@ -7,6 +7,11 @@
 - Real-time bundling of JS, JSX and CSS.
 - Import CSS and other static assets (images, fonts, etc.)
 
+## WANT
+
+- Nested CSS
+- Import CSS Modules
+
 ## Installation
 
 Add this line to your application's Gemfile:
@@ -49,6 +54,12 @@ Imports that do not begin with a `./` or `/` are bare imports, and will import a
 Absolute and relative import paths are supported (`/*`, `./*`), and will behave as you would expect.
 
 Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases. But you can if you like. All other file types must be specified using their fill file name and extension.
+
+### CSS
+
+Direct access to CSS files are parsed through @parcel/css.
+
+Importing a CSS file from JS will append the CSS file to the document's head. The results of the import will be an object of CSS modules.
 
 ## How It Works
 

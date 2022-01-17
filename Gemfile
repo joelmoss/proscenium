@@ -7,6 +7,7 @@ gemspec
 
 gem 'combustion'
 gem 'maxitest'
+gem 'minitest-focus'
 gem 'minitest-heat'
 gem 'minitest-snapshots'
 gem 'puma'

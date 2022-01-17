@@ -4,19 +4,11 @@ import {
   assertStringIncludes
 } from 'https://deno.land/std/testing/asserts.ts'
 import { join } from 'https://deno.land/std/path/mod.ts'
-import builder from '../lib/proscenium/builder.js'
+import builder from '../../lib/proscenium/cli/js_builder.js'
 
 Deno.env.set('RAILS_ENV', 'test')
 Deno.env.set('PROSCENIUM_TEST', 'test')
 const cwd = join(Deno.cwd(), 'test', 'internal')
-
-Deno.test('throws without any arguments', () => {
-  assertRejects(() => builder(), TypeError)
-})
-
-Deno.test('throws without `entrypoint` argument', () => {
-  assertRejects(() => builder('/foo/bar'), TypeError)
-})
 
 Deno.test('Throws on unresolvable entrypoint', async () => {
   await assertRejects(async () => {
@@ -28,8 +20,8 @@ Deno.test('Successful JS build', async () => {
   assert(await builder(cwd, 'app/views/layouts/application.js'))
 })
 
-Deno.test('Successful CSS build', async () => {
-  assert(await builder(cwd, 'app/views/layouts/application.css'))
+Deno.test('Successful CSS build', { only: true }, async () => {
+  assert(await builder(cwd, 'app/views/layouts/application.css', { debug: true }))
 })
 
 Deno.test('Failed build', async () => {
@@ -83,7 +75,16 @@ Deno.test('Import remote module', async () => {
   )
 })
 
-Deno.test('Import css from JS', async () => {
+Deno.test('Import css from JS', { ignore: true }, async () => {
+  const result = await builder(cwd, 'lib/import_assert_css.js', { debug: true })
+  console.log(result.outputFiles.at(0).text)
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'appendStylesheet_default("/app/views/layouts/application.css")'
+  )
+})
+
+Deno.test('Import css from JS', { ignore: true }, async () => {
   const result = await builder(cwd, 'lib/import_css.js')
 
   assertStringIncludes(
@@ -92,8 +93,8 @@ Deno.test('Import css from JS', async () => {
   )
 })
 
-Deno.test('Import css from jsx', async () => {
-  const result = await builder(cwd, 'lib/import_css.jsx')
+Deno.test('Import css from jsx', { ignore: true }, async () => {
+  const result = await builder(cwd, 'lib/import_css.jsx', { debug: true })
 
   assertStringIncludes(
     result.outputFiles.at(0).text,
