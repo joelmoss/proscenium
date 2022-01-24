@@ -12,10 +12,11 @@ module Proscenium
       Dir[File.join(File.dirname(__FILE__), '../tasks/*.rake')].each { |f| load f }
     end
 
-    # config.after_initialize do
-    #   ActiveSupport.on_load(:action_view) do
-    #     include Proscenium::Helper
-    #   end
-    # end
+    config.after_initialize do
+      ActiveSupport.on_load(:action_view) do
+        include Proscenium::Helper
+        ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
+      end
+    end
   end
 end
