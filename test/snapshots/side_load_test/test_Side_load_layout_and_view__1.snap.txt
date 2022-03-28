@@ -4,10 +4,11 @@
     <title>Proscenium Test App</title>
     <link rel="stylesheet" href="/app/views/layouts/application.css" media="screen" />
 <link rel="stylesheet" href="/app/views/home/index.css" media="screen" />
-    <script src="/app/views/layouts/application.js" defer="defer"></script>
-<script src="/app/views/home/index.js" defer="defer"></script>
+    <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
+<script src="/app/views/home/index.js" defer="defer" type="module"></script>
   </head>
   <body>
     <h1>Home#index</h1>
+
   </body>
 </html>

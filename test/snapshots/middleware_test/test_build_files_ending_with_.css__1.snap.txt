@@ -1,1 +1,7 @@
-body{color:pink}
+body {
+  color: pink;
+}
+
+.name {
+  color: black;
+}

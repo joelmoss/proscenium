@@ -7,7 +7,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get(path = '/app/views/layouts/application.js')
 
     assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal Rails.root.join(path[1..]).read, response.body
+    assert_matches_snapshot response.body
   end
 
   test 'build files ending with .jsx' do
@@ -33,6 +33,13 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/app/views/layouts/application.css'
 
     assert_equal 'text/css', response.headers['Content-Type']
+    assert_matches_snapshot response.body
+  end
+
+  test 'build /proscenium-runtime/*' do
+    get '/proscenium-runtime/adopt_css_module.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
     assert_matches_snapshot response.body
   end
 end

@@ -67,6 +67,12 @@ Proscenium provides a Rails middleware that proxies requests for your frontend c
 
 This allows your frontend code to become first class citizens of you Rails application.
 
+## Middleware/Plugins ?
+
+```ruby
+Proscenium.config.middleware << :jsx
+```
+
 ## Development
 
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.

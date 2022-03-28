@@ -54,8 +54,9 @@ Deno.test('Import css from jsx', async () => {
   )
 })
 
-Deno.test('Import css module', async () => {
-  const result = await init([cwd, 'lib/import_css_module.js'])
+Deno.test('Import css module', { only: true }, async () => {
+  // const result = await init([cwd, 'lib/import_css_module.js'], { debug: true })
+  const result = await init([cwd, 'lib/import_assert_css.js'], { debug: true })
 
   assertStringIncludes(
     new TextDecoder().decode(result),

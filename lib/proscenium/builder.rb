@@ -21,15 +21,26 @@ module Proscenium
 
       return if !@request.get? && !@request.head?
 
-      jsbuild || cssbuild || render
+      runtimebuild || jsxbuild || cssbuild || render
     end
 
     private
 
+    def runtimebuild
+      return unless runtime_buildable?
+
+      runtime_root = Pathname.new(__dir__).join('runtime')
+      filename = @request.fullpath.sub(%r{^/proscenium-runtime/}, '')
+
+      benchmark :runtime do
+        render_response build("#{proscenium_cli} #{runtime_root} #{filename}")
+      end
+    end
+
     def render
       return unless renderable?
 
-      benchmark do
+      benchmark :static do
         Rack::File.new(root, {}).call(@request.env)
       end
     end
@@ -38,54 +49,69 @@ module Proscenium
     def jsbuild
       return unless js_buildable?
 
-      cmd = if ENV['PROSCENIUM_TEST']
-              'deno run -A lib/proscenium/cli.js'
-            else
-              Rails.root.join('bin/proscenium')
-            end
+      benchmark :cli do
+        render_response build("#{proscenium_cli} #{root} #{@request.fullpath[1..]}")
+      end
+    end
 
-      build do
-        "#{cmd} #{root} #{@request.fullpath[1..]}"
+    def jsxbuild
+      return unless jsx_buildable?
+
+      benchmark :cli do
+        render_response build("#{proscenium_cli} #{root} #{@request.fullpath[1..]}")
       end
     end
 
     # Build the requested file with parcel-css.
     def cssbuild
+      return
       return unless css_buildable?
 
-      build do
-        "parcel_css minify #{root}#{@request.fullpath}"
+      cli = '/Users/joelmoss/dev/parcel-css/target/debug/parcel_css'
+      options = '--css-modules --nesting'
+      output_file = Rails.root.join('tmp', SecureRandom.uuid)
+
+      benchmark do
+        # out = build("#{cli} #{options} --output-file #{output_file}.css #{root}#{@request.fullpath}")
+        out = build("#{cli} #{root}#{@request.fullpath}")
+
+        render_response out
       end
     end
 
-    def build
-      cmd = yield
+    def build(cmd)
+      stdout, stderr, status = Open3.capture3(cmd)
 
-      benchmark do
-        stdout, stderr, status = Open3.capture3(cmd)
+      raise Error, stderr unless status.success?
+      raise "Proscenium build of '#{@request.fullpath}' failed: #{stderr}" unless stderr.empty?
 
-        if status.success?
-          raise "Proscenium build ('#{cmd}') failed: #{stderr}" unless stderr.empty?
-        else
-          raise Error, stderr
-        end
+      stdout
+    end
 
-        response = Rack::Response.new
-        response.write stdout
-        response.content_type = content_type
-        response.finish
-      end
+    def render_response(content)
+      response = Rack::Response.new
+      response.write content
+      response.content_type = content_type
+      response.finish
     end
 
     # Is the request for plain JS?
     def renderable?
       # /\.js$/i.match?(@request.path_info) && file_readable?
-      false
+      /\.(js|css)$/i.match?(@request.path_info) && file_readable?
     end
 
     # Is the request for JSX/CSS/CSSM?
     def js_buildable?
       /\.jsx?$/i.match?(@request.path_info) && file_readable?
+    end
+
+    def jsx_buildable?
+      /\.jsx$/i.match?(@request.path_info) && file_readable?
+    end
+
+    def runtime_buildable?
+      @request.path_info.start_with?('/proscenium-runtime/')
     end
 
     def css_buildable?
@@ -96,13 +122,14 @@ module Proscenium
       ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) || 'application/javascript'
     end
 
-    def benchmark
-      super logging_message
+    def benchmark(type)
+      super logging_message(type)
     end
 
     # rubocop:disable Style/FormatStringToken
-    def logging_message
-      format 'Proscenium %s for %s at %s', @request.fullpath, @request.ip, Time.now.to_default_s
+    def logging_message(type)
+      format '[Proscenium] Request (%s) %s for %s at %s',
+             type, @request.fullpath, @request.ip, Time.now.to_default_s
     end
     # rubocop:enable Style/FormatStringToken
 
@@ -110,19 +137,27 @@ module Proscenium
       Rails.logger
     end
 
-    def clean_path
-      path = Rack::Utils.unescape_path @request.path_info.chomp('/').delete_prefix('/')
-      Rack::Utils.clean_path_info path if Rack::Utils.valid_path? path
+    def proscenium_cli
+      @proscenium_cli ||= if ENV['PROSCENIUM_TEST']
+                            'deno run -A lib/proscenium/cli.js'
+                          else
+                            Rails.root.join('bin/proscenium')
+                          end
     end
 
-    def file_readable?
-      return unless (path = clean_path)
+    def file_readable?(file = @request.path_info)
+      return unless (path = clean_path(file))
 
       file_stat = File.stat(Rails.root.join(path.delete_prefix('/').b).to_s)
     rescue SystemCallError
       false
     else
       file_stat.file? && file_stat.readable?
+    end
+
+    def clean_path(file)
+      path = Rack::Utils.unescape_path file.chomp('/').delete_prefix('/')
+      Rack::Utils.clean_path_info path if Rack::Utils.valid_path? path
     end
 
     def root

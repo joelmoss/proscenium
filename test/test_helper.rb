@@ -11,7 +11,9 @@ require 'minitest/heat'
 require 'combustion'
 
 Combustion.path = 'test/internal'
-Combustion.initialize! :action_controller, :action_view
+Combustion.initialize! :action_controller, :action_view do
+  config.consider_all_requests_local = false
+end
 
 class ActiveSupport::TestCase
   def before_setup

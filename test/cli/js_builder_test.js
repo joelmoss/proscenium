@@ -3,7 +3,8 @@ import {
   assertRejects,
   assertStringIncludes
 } from 'https://deno.land/std/testing/asserts.ts'
-import { join } from 'https://deno.land/std/path/mod.ts'
+import { join } from 'https://deno.land/std@0.130.0/path/mod.ts'
+
 import builder from '../../lib/proscenium/cli/js_builder.js'
 
 Deno.env.set('RAILS_ENV', 'test')
@@ -20,7 +21,7 @@ Deno.test('Successful JS build', async () => {
   assert(await builder(cwd, 'app/views/layouts/application.js'))
 })
 
-Deno.test('Successful CSS build', { only: true }, async () => {
+Deno.test('Successful CSS build', async () => {
   assert(await builder(cwd, 'app/views/layouts/application.css', { debug: true }))
 })
 
@@ -75,13 +76,31 @@ Deno.test('Import remote module', async () => {
   )
 })
 
-Deno.test('Import css from JS', { ignore: true }, async () => {
-  const result = await builder(cwd, 'lib/import_assert_css.js', { debug: true })
-  console.log(result.outputFiles.at(0).text)
+Deno.test('Import css from JS', async () => {
+  const result = await builder([cwd, 'lib/import_assert_css.js'], { debug: true })
+  console.log(new TextDecoder().decode(result))
+
   assertStringIncludes(
     result.outputFiles.at(0).text,
     'appendStylesheet_default("/app/views/layouts/application.css")'
   )
+})
+
+Deno.test('Dynamic import css from JS', async () => {
+  const result = await builder([cwd, 'lib/dynamic_import_assert_css.js'], { debug: true })
+  console.log(new TextDecoder().decode(result))
+
+  assertStringIncludes(
+    result.outputFiles.at(0).text,
+    'appendStylesheet_default("/app/views/layouts/application.css")'
+  )
+})
+
+Deno.test('Import of dynamic import css from JS', { only: true }, async () => {
+  const result = await builder([cwd, 'lib/import_dynamic_import_assert_css.js'], { debug: true })
+  console.log(new TextDecoder().decode(result))
+
+  assertStringIncludes(new TextDecoder().decode(result), 'await adoptCssModules(')
 })
 
 Deno.test('Import css from JS', { ignore: true }, async () => {
