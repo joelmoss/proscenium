@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'open3'
-require 'active_support/benchmarkable'
 
 module Proscenium
   # This endpoint serves JS and CSS files from anywhere within the rails root, via ESBuild. If no
@@ -21,7 +20,14 @@ module Proscenium
 
       return if !@request.get? && !@request.head?
 
-      runtimebuild || jsxbuild || cssbuild || render
+      Rails.application.config.proscenium.middleware.find do |m|
+        pp m
+        if m.is_a(Symbol)
+          Proscenium::Middleware::Static.new
+        end
+      end
+
+      # runtimebuild || jsxbuild || cssbuild || render
     end
 
     private

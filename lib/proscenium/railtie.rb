@@ -4,8 +4,16 @@ require 'rails'
 
 module Proscenium
   class Railtie < ::Rails::Railtie
+    config.proscenium = ActiveSupport::OrderedOptions.new
+
+    initializer 'proscenium.configuration' do |app|
+      options = app.config.proscenium
+
+      options.middleware = [:static] if options.middleware.nil?
+    end
+
     initializer 'proscenium.middleware' do |app|
-      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
+      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware::Manager
     end
 
     rake_tasks do

@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'active_support'
+require 'active_support/dependencies/autoload'
 
 module Proscenium
-  class Current < ActiveSupport::CurrentAttributes
-    attribute :loaded
-  end
+  extend ActiveSupport::Autoload
+
+  autoload :Current
+  autoload :Middleware
+  autoload :SideLoad
+  autoload :Helper
 end
 
-require 'proscenium/middleware'
-require 'proscenium/side_load'
-require 'proscenium/helper'
 require 'proscenium/railtie'
