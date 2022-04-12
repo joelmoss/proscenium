@@ -7,6 +7,10 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     Rails.application.config.proscenium.middleware = [:static]
   end
 
+  teardown do
+    Rails.application.config.proscenium.middleware = [:static]
+  end
+
   test 'static middleware' do
     Rails.application.config.proscenium.middleware = [:static]
 
@@ -25,16 +29,15 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  # focus
-  # test 'swc middleware' do
-  #   Rails.application.config.proscenium.middleware.prepend :swc
+  test 'jsx middleware' do
+    Rails.application.config.proscenium.middleware.prepend :jsx
 
-  #   get '/lib/component.jsx'
+    get '/lib/component.jsx'
 
-  #   assert_equal 'application/javascript', response.headers['Content-Type']
-  #   assert_equal 'swc', response.headers['X-Proscenium-Middleware']
-  #   assert_matches_snapshot response.body
-  # end
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'jsx', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
 
   test 'stylesheet not found' do
     assert_raises ActionController::RoutingError do

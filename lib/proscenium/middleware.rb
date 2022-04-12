@@ -7,5 +7,6 @@ module Proscenium
     autoload :Manager
     autoload :Base
     autoload :Static
+    autoload :Jsx
   end
 end

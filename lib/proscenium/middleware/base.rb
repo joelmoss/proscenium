@@ -5,6 +5,8 @@ module Proscenium
     class Base
       include ActiveSupport::Benchmarkable
 
+      class Error < StandardError; end
+
       def self.attempt(request)
         new(request).attempt
       end
@@ -34,6 +36,37 @@ module Proscenium
         @root ||= Rails.root.to_s
       end
 
+      def content_type
+        ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) || 'application/javascript'
+      end
+
+      def render_response(content)
+        response = Rack::Response.new
+        response.write content
+        response.content_type = content_type
+        response['X-Proscenium-Middleware'] = name
+        response.finish
+      end
+
+      def build(cmd)
+        stdout, stderr, status = Open3.capture3(cmd)
+
+        raise Error, stderr unless status.success?
+        unless stderr.empty?
+          raise "Proscenium build of #{name}:'#{@request.fullpath}' failed: #{stderr}"
+        end
+
+        stdout
+      end
+
+      def proscenium_cli
+        @proscenium_cli ||= if ENV['PROSCENIUM_TEST']
+                              'deno run --import-map import_map.json -A lib/proscenium/cli.js'
+                            else
+                              Rails.root.join('bin/proscenium')
+                            end
+      end
+
       def benchmark(type)
         super logging_message(type)
       end
@@ -47,6 +80,10 @@ module Proscenium
 
       def logger
         Rails.logger
+      end
+
+      def name
+        @name ||= self.class.name.split('::').last.downcase
       end
     end
   end
