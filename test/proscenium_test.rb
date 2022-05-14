@@ -8,6 +8,6 @@ class ProsceniumTest < Minitest::Test
   end
 
   def test_default_middleware_config
-    assert_equal [:static], Rails.application.config.proscenium.middleware
+    assert_equal %i[runtime static], Rails.application.config.proscenium.middleware
   end
 end

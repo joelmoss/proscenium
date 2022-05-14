@@ -3,13 +3,15 @@
 require 'rails'
 
 module Proscenium
+  DEFAULT_MIDDLEWARE = %i[runtime static]
+
   class Railtie < ::Rails::Railtie
     config.proscenium = ActiveSupport::OrderedOptions.new
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
 
-      options.middleware = [:static] if options.middleware.nil?
+      options.middleware = DEFAULT_MIDDLEWARE if options.middleware.nil?
     end
 
     initializer 'proscenium.middleware' do |app|

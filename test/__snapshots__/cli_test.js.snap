@@ -1,0 +1,13 @@
+export const snapshot = {};
+
+snapshot[`cli > js sourcemap 1`] = `
+\`{
+  "version": 3,
+  "sources": ["../../lib/foo.js"],
+  "sourcesContent": ["console.log('/lib/foo.js')\\
+"],
+  "mappings": ";AAAA,QAAQ,IAAI,aAAa;",
+  "names": []
+}
+\`
+`;

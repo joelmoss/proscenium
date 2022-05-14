@@ -1,1 +1,5 @@
-import bogus from 'bogus'
+import { useIbiza } from 'ibiza'
+
+export default () => {
+  useIbiza()
+}

@@ -1,9 +1,7 @@
 {
   "imports": {
-    "streams": "https://deno.land/std@0.134.0/streams/mod.ts",
-    "flags": "https://deno.land/std@0.134.0/flags/mod.ts",
-    "path": "https://deno.land/std@0.134.0/path/mod.ts",
-    "testing/": "https://deno.land/std@0.134.0/testing/",
-    "esbuild": "https://deno.land/x/esbuild@v0.14.36/mod.js"
+    "std/": "https://deno.land/std@0.139.0/",
+    "testing/": "https://deno.land/std@0.139.0/testing/",
+    "esbuild": "https://deno.land/x/esbuild@v0.14.39/mod.js"
   }
 }

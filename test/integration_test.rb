@@ -8,7 +8,7 @@ class IntegrationTest < ActionDispatch::IntegrationTest
   end
 
   teardown do
-    Rails.application.config.proscenium.middleware = [:static]
+    Rails.application.config.proscenium.middleware = Proscenium::DEFAULT_MIDDLEWARE
   end
 
   test 'static middleware' do
@@ -29,13 +29,13 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'jsx middleware' do
-    Rails.application.config.proscenium.middleware.prepend :jsx
+  test 'esbuild middleware' do
+    Rails.application.config.proscenium.middleware = [:esbuild]
 
     get '/lib/component.jsx'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'jsx', response.headers['X-Proscenium-Middleware']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
@@ -58,11 +58,53 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  # test 'build /proscenium-runtime/*' do
-  #   get '/proscenium-runtime/adopt_css_module.js'
+  test 'middleware determined by params' do
+    Rails.application.config.proscenium.middleware.prepend :jsx
 
-  #   assert_equal 'application/javascript', response.headers['Content-Type']
-  #   assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
-  #   assert_matches_snapshot response.body
-  # end
+    get '/lib/node_env.js?middleware=esbuild'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'build js sourcemap' do
+    Rails.application.config.proscenium.middleware = [:esbuild]
+
+    get '/lib/foo.js.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'build jsx sourcemap' do
+    Rails.application.config.proscenium.middleware = [:esbuild]
+
+    get '/lib/component.js.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'build runtime js source map' do
+    Rails.application.config.proscenium.middleware = [:runtime]
+
+    get '/proscenium-runtime/adopt_css_module.js.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'build /proscenium-runtime/adopt_css_module.js' do
+    Rails.application.config.proscenium.middleware = [:runtime]
+
+    get '/proscenium-runtime/adopt_css_module.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
 end

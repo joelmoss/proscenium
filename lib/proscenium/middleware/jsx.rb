@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'open3'
-
 module Proscenium
   module Middleware
     # Transform JSX with esbuild.
@@ -10,7 +8,7 @@ module Proscenium
         return unless renderable?
 
         benchmark :jsx do
-          render_response build("#{proscenium_cli} #{root} #{@request.fullpath[1..]} jsx")
+          render_response build("#{proscenium_cli} #{root} #{@request.path[1..]} jsx")
         end
       end
 

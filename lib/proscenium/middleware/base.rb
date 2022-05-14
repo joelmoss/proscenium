@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'open3'
+
 module Proscenium
   module Middleware
     class Base
@@ -20,7 +22,7 @@ module Proscenium
       def file_readable?(file = @request.path_info)
         return unless (path = clean_path(file))
 
-        file_stat = File.stat(Rails.root.join(path.delete_prefix('/').b).to_s)
+        file_stat = File.stat(Pathname(root).join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError
         false
       else
@@ -37,7 +39,9 @@ module Proscenium
       end
 
       def content_type
-        ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) || 'application/javascript'
+        @content_type ||
+          ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) ||
+          'application/javascript'
       end
 
       def render_response(content)
@@ -53,7 +57,7 @@ module Proscenium
 
         raise Error, stderr unless status.success?
         unless stderr.empty?
-          raise "Proscenium build of #{name}:'#{@request.fullpath}' failed: #{stderr}"
+          raise "Proscenium build of #{name}:'#{@request.fullpath}' failed -- #{stderr}"
         end
 
         stdout
@@ -61,7 +65,7 @@ module Proscenium
 
       def proscenium_cli
         @proscenium_cli ||= if ENV['PROSCENIUM_TEST']
-                              'deno run --import-map import_map.json -A lib/proscenium/cli.js'
+                              'deno run -q --import-map import_map.json -A lib/proscenium/cli.js'
                             else
                               Rails.root.join('bin/proscenium')
                             end

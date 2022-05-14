@@ -2,6 +2,6 @@
   "name": "internal",
   "private": true,
   "dependencies": {
-    "bogus": "1.0.0"
+    "ibiza": "^1.3.1"
   }
 }

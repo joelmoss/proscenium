@@ -1,6 +1,6 @@
-// lib/component.jsx
-var Component = () => {
-  return /* @__PURE__ */ React.createElement("div", null, "Hello");
+import { createElement, Fragment } from "react";
+const Component = () => {
+  return /* @__PURE__ */ createElement("div", null, "Hello");
 };
 var component_default = Component;
 export {

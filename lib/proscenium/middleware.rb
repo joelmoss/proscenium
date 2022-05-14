@@ -6,7 +6,9 @@ module Proscenium
 
     autoload :Manager
     autoload :Base
+    autoload :Runtime
     autoload :Static
+    autoload :Esbuild
     autoload :Jsx
   end
 end

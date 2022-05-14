@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../lib/component.jsx"],
+  "sourcesContent": ["const Component = () => {\n  return <div>Hello</div>\n}\n\nexport default Component\n"],
+  "mappings": ";;AAAA,IAAM,YAAY,MAAM;AACtB,SAAO,8BAAC,aAAI,OAAK;AACnB;AAEA,IAAO,oBAAQ;",
+  "names": []
+}
