@@ -107,4 +107,14 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
+
+  test 'build css' do
+    Rails.application.config.proscenium.middleware = [:stylesheet]
+
+    get '/app/views/layouts/application.css'
+
+    assert_equal 'text/css', response.headers['Content-Type']
+    assert_equal 'stylesheet', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
 end

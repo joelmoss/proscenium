@@ -7,7 +7,7 @@ module Proscenium
       def attempt
         return unless renderable?
 
-        benchmark :static do
+        benchmark :runtime do
           render_response build("#{proscenium_cli} #{root} #{@request.path} esbuild")
         end
       end

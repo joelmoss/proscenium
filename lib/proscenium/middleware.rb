@@ -10,5 +10,6 @@ module Proscenium
     autoload :Static
     autoload :Esbuild
     autoload :Jsx
+    autoload :Stylesheet
   end
 end

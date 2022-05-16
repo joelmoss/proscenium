@@ -128,6 +128,18 @@ describe('cli', () => {
     assertStringIncludes(new TextDecoder().decode(result), 'import foo from "/lib/foo.js";')
   })
 
+  it('css', async t => {
+    const result = await cli([cwd, 'app/views/layouts/application.css', 'parcelcss'])
+
+    assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
+  it('css map', async t => {
+    const result = await cli([cwd, 'app/views/layouts/application.css.map', 'parcelcss'])
+
+    assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   // it('Import css from JS', async () => {
   //   const result = await cli([cwd, 'lib/import_css.js', 'esbuild'])
 

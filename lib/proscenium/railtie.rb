@@ -3,7 +3,7 @@
 require 'rails'
 
 module Proscenium
-  DEFAULT_MIDDLEWARE = %i[runtime static]
+  DEFAULT_MIDDLEWARE = %i[runtime static].freeze
 
   class Railtie < ::Rails::Railtie
     config.proscenium = ActiveSupport::OrderedOptions.new

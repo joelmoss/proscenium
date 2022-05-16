@@ -11,3 +11,25 @@ snapshot[`cli > js sourcemap 1`] = `
 }
 \`
 `;
+
+snapshot[`cli > css 1`] = `
+"body {
+  color: pink;
+}
+
+.name {
+  color: #000;
+}
+"
+`;
+
+snapshot[`cli > css map 1`] = `
+'{"version":3,"mappings":"AAAA;;;;AAIA","sources":["app/views/layouts/application.css"],"sourcesContent":["body {\\
+  color: pink;\\
+}\\
+\\
+.name {\\
+  color: black;\\
+}\\
+"],"names":[]}'
+`;
