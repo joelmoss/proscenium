@@ -6,10 +6,11 @@ async function adopt_css_module_default(path) {
   for (let index = 0; index < stylesheet.cssRules.length; index++) {
     const rule = stylesheet.cssRules[index];
     if (rule.selectorText.startsWith(".")) {
-      const className = rule.selectorText.slice(1);
+      const [_className, ...rest] = rule.selectorText.split(" ");
+      const className = _className.slice(1);
       const ident = await hash(`${path}|${className}`);
       modules[className] = `${className}${ident}`;
-      rule.selectorText = `.${className}${ident}`;
+      rule.selectorText = [`.${className}${ident}`, rest].join(" ");
       stylesheet.deleteRule(index);
       stylesheet.insertRule(rule.cssText, index);
     }

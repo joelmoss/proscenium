@@ -8,6 +8,8 @@ module Proscenium
   autoload :Current
   autoload :Middleware
   autoload :SideLoad
+  autoload :CssModule
+  autoload :ViewComponent
   autoload :Helper
 end
 
