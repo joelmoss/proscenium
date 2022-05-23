@@ -8,7 +8,9 @@ module Proscenium
     autoload :Base
     autoload :Runtime
     autoload :Static
-    autoload :Esbuild
+    autoload :Javascript
+    autoload :React
+    autoload :Solid
     autoload :Jsx
     autoload :Stylesheet
   end

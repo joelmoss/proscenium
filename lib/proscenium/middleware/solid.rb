@@ -2,13 +2,12 @@
 
 module Proscenium
   module Middleware
-    # Transform JS with esbuild.
-    class Esbuild < Base
+    class Solid < Base
       def attempt
         return unless renderable?
 
-        benchmark :esbuild do
-          render_response build("#{proscenium_cli} #{root} #{@request.path[1..]} esbuild")
+        benchmark :solid do
+          render_response build("#{proscenium_cli} #{root} #{@request.path[1..]} solid")
         end
       end
 

@@ -8,7 +8,7 @@ module Proscenium
         return unless renderable?
 
         benchmark :runtime do
-          render_response build("#{proscenium_cli} #{root} #{@request.path} esbuild")
+          render_response build("#{proscenium_cli} #{root} #{@request.path} javascript")
         end
       end
 

@@ -85,6 +85,6 @@ module Proscenium
       def mounted_path
         Proscenium::Railtie.routes.find_script_name({})
       end
-end
+    end
   end
 end

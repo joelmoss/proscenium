@@ -29,13 +29,13 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'esbuild middleware' do
-    Rails.application.config.proscenium.middleware = [:esbuild]
+  test 'react middleware' do
+    Rails.application.config.proscenium.middleware = [:react]
 
     get '/lib/component.jsx'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_equal 'react', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
@@ -61,30 +61,30 @@ class IntegrationTest < ActionDispatch::IntegrationTest
   test 'middleware determined by params' do
     Rails.application.config.proscenium.middleware.prepend :jsx
 
-    get '/lib/node_env.js?middleware=esbuild'
+    get '/lib/node_env.js?middleware=javascript'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_equal 'javascript', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
   test 'build js sourcemap' do
-    Rails.application.config.proscenium.middleware = [:esbuild]
+    Rails.application.config.proscenium.middleware = [:javascript]
 
     get '/lib/foo.js.map'
 
     assert_equal 'application/json', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_equal 'javascript', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
   test 'build jsx sourcemap' do
-    Rails.application.config.proscenium.middleware = [:esbuild]
+    Rails.application.config.proscenium.middleware = [:react]
 
     get '/lib/component.js.map'
 
     assert_equal 'application/json', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_equal 'react', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 

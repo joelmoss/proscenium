@@ -56,13 +56,13 @@ describe('cli', () => {
   })
 
   it('Successful JSX build', async t => {
-    const result = await cli([cwd, 'lib/component.jsx', 'esbuild'])
+    const result = await cli([cwd, 'lib/component.jsx', 'react'])
 
     assertStringIncludes(new TextDecoder().decode(result), 'createElement("div", null, "Hello")')
   })
 
   it('jsx should inject react', async () => {
-    const result = await cli([cwd, 'lib/component.jsx', 'esbuild'])
+    const result = await cli([cwd, 'lib/component.jsx', 'react'])
 
     assertStringIncludes(
       new TextDecoder().decode(result),
@@ -71,13 +71,13 @@ describe('cli', () => {
   })
 
   it('defines process.env.NODE_ENV', async () => {
-    const result = await cli([cwd, 'lib/node_env.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/node_env.js', 'javascript'])
 
     assertStringIncludes(new TextDecoder().decode(result), '"process.env.NODE_ENV=", "test"')
   })
 
   it('Import bare module', async () => {
-    const result = await cli([cwd, 'lib/import_node_module.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_node_module.js', 'javascript'])
 
     assertStringIncludes(
       new TextDecoder().decode(result),
@@ -86,25 +86,25 @@ describe('cli', () => {
   })
 
   it('Import unknown bare module', async () => {
-    const result = await cli([cwd, 'lib/import_unknown_node_module.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_unknown_node_module.js', 'javascript'])
 
     assertStringIncludes(new TextDecoder().decode(result), 'import unknown from "unknown";')
   })
 
   it('Import relative module', async () => {
-    const result = await cli([cwd, 'lib/import_relative_module.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_relative_module.js', 'javascript'])
 
     assertStringIncludes(new TextDecoder().decode(result), 'import "/lib/foo.js";')
   })
 
   it('Import absolute module', async () => {
-    const result = await cli([cwd, 'lib/import_absolute_module.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_absolute_module.js', 'javascript'])
 
     assertStringIncludes(new TextDecoder().decode(result), 'import "/lib/foo.js";')
   })
 
   it('Import remote module', async () => {
-    const result = await cli([cwd, 'lib/import_remote_module.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_remote_module.js', 'javascript'])
 
     assertStringIncludes(
       new TextDecoder().decode(result),
@@ -113,18 +113,18 @@ describe('cli', () => {
   })
 
   it('js sourcemap', async t => {
-    const result = await cli([cwd, 'lib/foo.js.map', 'esbuild'])
+    const result = await cli([cwd, 'lib/foo.js.map', 'javascript'])
 
     assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import relative module without extension', async () => {
-    const result = await cli([cwd, 'lib/import_relative_module_without_extension.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_relative_module_without_extension.js', 'javascript'])
     assertStringIncludes(new TextDecoder().decode(result), 'import foo from "/lib/foo.js";')
   })
 
   it('Import absolute module without extension', async () => {
-    const result = await cli([cwd, 'lib/import_absolute_module_without_extension.js', 'esbuild'])
+    const result = await cli([cwd, 'lib/import_absolute_module_without_extension.js', 'javascript'])
     assertStringIncludes(new TextDecoder().decode(result), 'import foo from "/lib/foo.js";')
   })
 
