@@ -43,7 +43,8 @@ module Proscenium
         private
 
         def render_template(view, template, layout_name, locals)
-          if template.respond_to?(:type) && template.type == :html
+          if template.respond_to?(:virtual_path) &&
+             template.respond_to?(:type) && template.type == :html
             if (layout = layout_name && find_layout(layout_name, locals.keys, [formats.first]))
               Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" # layout
             end
