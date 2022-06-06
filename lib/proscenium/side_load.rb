@@ -3,8 +3,18 @@
 module Proscenium
   module SideLoad
     DEFAULT_EXTENSIONS = %i[js css].freeze
-    SUPPORTED_EXTENSIONS = %i[js css cssm].freeze
-    MAPPED_EXTENSIONS = { cssm: :css }.freeze
+    EXTENSIONS = %i[js css].freeze
+
+    class NotFound < StandardError
+      def initialize(pathname)
+        @pathname = pathname
+        super
+      end
+
+      def message
+        "#{@pathname} does not exist"
+      end
+    end
 
     module_function
 
@@ -12,22 +22,20 @@ module Proscenium
     # Set of 'js' and 'css' asset paths. This is safe to call multiple times, as it uses Set's.
     # Meaning that side loading will never include duplicates.
     def append(path, *extensions)
-      Proscenium::Current.loaded ||= SUPPORTED_EXTENSIONS.to_h { |e| [e, Set[]] }
+      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set[]] }
 
-      unless (unknown_extensions = extensions.difference(SUPPORTED_EXTENSIONS)).empty?
+      unless (unknown_extensions = extensions.difference(EXTENSIONS)).empty?
         raise ArgumentError, "unsupported extension(s): #{unknown_extensions.join(',')}"
       end
 
       loaded_types = []
-      pathname = Rails.root.join(path)
 
       (extensions.empty? ? DEFAULT_EXTENSIONS : extensions).each do |ext|
+        path_with_ext = "#{path}.#{ext}"
         ext = ext.to_sym
-        file_ext = MAPPED_EXTENSIONS.fetch(ext, ext)
-        path_with_ext = "#{path}.#{file_ext}"
 
         next if Proscenium::Current.loaded[ext].include?(path_with_ext)
-        next unless pathname.sub_ext(".#{file_ext}").exist?
+        next unless Rails.root.join(path_with_ext).exist?
 
         Proscenium::Current.loaded[ext] << path_with_ext
         loaded_types << ext
@@ -36,6 +44,29 @@ module Proscenium
       !loaded_types.empty? && Rails.logger.debug do
         "[Proscenium] Side loaded /#{path}.(#{loaded_types.join(',')})"
       end
+    end
+
+    # Like #append, but only accepts a single `path` argument, which must be a Pathname. Raises
+    # `NotFound` if path does not exist,
+    def append!(pathname)
+      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set[]] }
+
+      unless pathname.is_a?(Pathname)
+        raise ArgumentError, "Argument `pathname` (#{pathname}) must be a Pathname"
+      end
+
+      ext = pathname.extname.sub('.', '').to_sym
+      path = pathname.relative_path_from(Rails.root)
+
+      raise ArgumentError, "unsupported extension: #{ext}" unless EXTENSIONS.include?(ext)
+
+      return if Proscenium::Current.loaded[ext].include?(path)
+
+      raise NotFound, path unless pathname.exist?
+
+      Proscenium::Current.loaded[ext] << path
+
+      Rails.logger.debug "[Proscenium] Side loaded /#{path}"
     end
 
     module Monkey

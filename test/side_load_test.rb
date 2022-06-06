@@ -8,8 +8,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_equal({
                    js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css'],
-                   cssm: Set[]
+                   css: Set['app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -19,8 +18,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_equal({
                    js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css'],
-                   cssm: Set[]
+                   css: Set['app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -30,8 +28,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_equal({
                    js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css'],
-                   cssm: Set[]
+                   css: Set['app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -40,18 +37,16 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_equal({
                    js: Set['app/views/layouts/application.js'],
-                   css: Set[],
-                   cssm: Set[]
+                   css: Set[]
                  }, Proscenium::Current.loaded)
   end
 
   test '.append css module' do
-    Proscenium::SideLoad.append 'app/views/layouts/application', :cssm
+    Proscenium::SideLoad.append 'lib/styles.module', :css
 
     assert_equal({
                    js: Set[],
-                   cssm: Set['app/views/layouts/application.css'],
-                   css: Set[]
+                   css: Set['lib/styles.module.css']
                  }, Proscenium::Current.loaded)
   end
 

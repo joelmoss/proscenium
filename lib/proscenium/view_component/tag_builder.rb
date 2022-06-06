@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Proscenium::ViewComponent::TagBuilder < ActionView::Helpers::TagHelper::TagBuilder
   def tag_options(options, escape = true) # rubocop:disable Style/OptionalBooleanParameter
     super(css_module_option(options), escape)

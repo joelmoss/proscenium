@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Proscenium::ViewComponent
   extend ActiveSupport::Autoload
 

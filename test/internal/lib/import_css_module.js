@@ -1,2 +1,2 @@
-import styles from '/lib/css_module.css'
+import styles from '/lib/styles.module.css'
 console.log(styles)

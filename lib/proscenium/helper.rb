@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Proscenium
   module Helper
     def compute_asset_path(path, options = {})

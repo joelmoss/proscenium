@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'oj'
+
 module Proscenium
   module Middleware
     # Serves CSS with parcel-css.
@@ -7,20 +9,18 @@ module Proscenium
       def attempt
         return unless renderable?
 
-        options = ['--nesting', '--custom-media', '--targets', "'>= 0.25%'"]
-        options << '-m' if Rails.env.production?
-
         benchmark :stylesheet do
-          render_response build("#{parcel_cli} #{options.join ' '} #{root}#{@request.path}")
+          results = build("#{parcel_cli} #{cli_options.join ' '} #{root}#{@request.path}")
+          render_response css_module? ? Oj.load(results, mode: :strict)['code'] : results
         end
       end
 
       private
 
       def renderable?
-        return unless /\.css(\.map)?$/i.match?(@request.path_info)
+        return unless /(\.module)?\.css(\.map)?$/i.match?(@request.path_info)
 
-        if @request.path_info.end_with?('.css.map')
+        if /(\.module)?\.css\.map$/i.match?(@request.path_info)
           @content_type = 'application/json'
 
           return true if file_readable?(@request.path_info.sub(/\.map$/, ''))
@@ -36,10 +36,25 @@ module Proscenium
 
       def parcel_cli
         @parcel_cli ||= if ENV['PROSCENIUM_TEST']
-                          '/Users/joelmoss/dev/parcel-css/target/aarch64-apple-darwin/release/parcel_css'
+                          Pathname.pwd.join('exe', 'parcel_css').to_s
                         else
                           Rails.root.join('bin/parcel_css')
                         end
+      end
+
+      def cli_options
+        options = ['--nesting', '--custom-media', '--targets', "'>= 0.25%'"]
+
+        if css_module?
+          hash = Digest::MD5.file("#{root}#{@request.path}").hexdigest[..7]
+          options += ['--css-modules', '--css-modules-pattern', "'[local]#{hash}'"]
+        end
+
+        Rails.env.production? ? options << '-m' : options
+      end
+
+      def css_module?
+        @css_module ||= /\.module\.css(\.map)?$/i.match?(@request.path_info)
       end
     end
   end
