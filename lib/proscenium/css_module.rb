@@ -2,9 +2,9 @@
 
 class Proscenium::CssModule
   def initialize(path)
-    @path = Rails.root.join("#{path}.module.css")
+    @path = "#{path}.module.css"
 
-    Proscenium::SideLoad.append! @path
+    Proscenium::SideLoad.append! Rails.root.join(@path)
   end
 
   # Returns an Array of class names generated from the given CSS module `names`.
@@ -15,6 +15,6 @@ class Proscenium::CssModule
   private
 
   def hash
-    @hash ||= Digest::SHA1.hexdigest(@path)[..7]
+    @hash ||= Digest::SHA1.hexdigest("/#{@path}")[..7]
   end
 end
