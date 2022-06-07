@@ -1,35 +1,25 @@
 export const snapshot = {};
 
-snapshot[`cli > js sourcemap 1`] = `
-\`{
-  "version": 3,
-  "sources": ["../../lib/foo.js"],
-  "sourcesContent": ["console.log('/lib/foo.js')\\
-"],
-  "mappings": ";AAAA,QAAQ,IAAI,aAAa;",
-  "names": []
-}
-\`
+snapshot[`cli > Import css module from JS 1`] = `
+'// importStylesheet:/lib/styles.module.css
+import { importCssModule } from "/proscenium-runtime/import_css.js";
+var styles_module_default = await importCssModule("/lib/styles.module.css");
+
+// lib/import_css_module.js
+console.log(styles_module_default);
+'
 `;
 
-snapshot[`cli > css 1`] = `
-"body {
-  color: pink;
-}
-
-.name {
-  color: #000;
-}
-"
+snapshot[`cli > Import css from JS 1`] = `
+'// importStylesheet:/app/views/layouts/application.css
+import { appendStylesheet } from "/proscenium-runtime/import_css.js";
+appendStylesheet("/app/views/layouts/application.css");
+'
 `;
 
-snapshot[`cli > css map 1`] = `
-'{"version":3,"mappings":"AAAA;;;;AAIA","sources":["app/views/layouts/application.css"],"sourcesContent":["body {\\
-  color: pink;\\
-}\\
-\\
-.name {\\
-  color: black;\\
-}\\
-"],"names":[]}'
+snapshot[`cli > Import css from jsx 1`] = `
+'// importStylesheet:/app/views/layouts/application.css
+import { appendStylesheet } from "/proscenium-runtime/import_css.js";
+appendStylesheet("/app/views/layouts/application.css");
+'
 `;

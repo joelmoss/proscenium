@@ -46,7 +46,7 @@ module Proscenium
         options = ['--nesting', '--custom-media', '--targets', "'>= 0.25%'"]
 
         if css_module?
-          hash = Digest::MD5.file("#{root}#{@request.path}").hexdigest[..7]
+          hash = Digest::SHA1.hexdigest(@request.path)[..7]
           options += ['--css-modules', '--css-modules-pattern', "'[local]#{hash}'"]
         end
 

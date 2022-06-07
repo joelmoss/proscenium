@@ -1,9 +1,5 @@
-import {
-  assert,
-  assertRejects,
-  assertStringIncludes
-} from 'https://deno.land/std/testing/asserts.ts'
-import { join } from 'https://deno.land/std@0.130.0/path/mod.ts'
+import { assert, assertRejects, assertStringIncludes } from 'std/testing/asserts.ts'
+import { join } from 'std/path/mod.ts'
 
 import builder from '../../lib/proscenium/cli/js_builder.js'
 

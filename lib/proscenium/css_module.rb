@@ -15,6 +15,6 @@ class Proscenium::CssModule
   private
 
   def hash
-    @hash ||= Digest::MD5.file(@path).hexdigest[..7]
+    @hash ||= Digest::SHA1.hexdigest(@path)[..7]
   end
 end

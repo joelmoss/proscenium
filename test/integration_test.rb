@@ -91,17 +91,17 @@ class IntegrationTest < ActionDispatch::IntegrationTest
   test 'build runtime js source map' do
     Rails.application.config.proscenium.middleware = [:runtime]
 
-    get '/proscenium-runtime/adopt_css_module.js.map'
+    get '/proscenium-runtime/import_css.js.map'
 
     assert_equal 'application/json', response.headers['Content-Type']
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
-  test 'build /proscenium-runtime/adopt_css_module.js' do
+  test 'build /proscenium-runtime/import_css.js' do
     Rails.application.config.proscenium.middleware = [:runtime]
 
-    get '/proscenium-runtime/adopt_css_module.js'
+    get '/proscenium-runtime/import_css.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
@@ -125,6 +125,16 @@ class IntegrationTest < ActionDispatch::IntegrationTest
 
     assert_equal 'text/css', response.headers['Content-Type']
     assert_equal 'stylesheet', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'import css module from js' do
+    Rails.application.config.proscenium.middleware = %i[javascript stylesheet]
+
+    get '/lib/import_css_module.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'javascript', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 end

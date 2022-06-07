@@ -112,10 +112,13 @@ describe('cli', () => {
     )
   })
 
-  it('js sourcemap', async t => {
+  it('js sourcemap', async () => {
     const result = await cli([cwd, 'lib/foo.js.map', 'javascript'])
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    assertStringIncludes(
+      new TextDecoder().decode(result),
+      `"sourcesContent": ["console.log('/lib/foo.js')\\n"],`
+    )
   })
 
   it('Import relative module without extension', async () => {
@@ -128,44 +131,21 @@ describe('cli', () => {
     assertStringIncludes(new TextDecoder().decode(result), 'import foo from "/lib/foo.js";')
   })
 
-  it('css', async t => {
-    const result = await cli([cwd, 'app/views/layouts/application.css', 'parcelcss'])
+  it('Import css module from JS', async t => {
+    const result = await cli([cwd, 'lib/import_css_module.js', 'javascript'])
 
     assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('css map', async t => {
-    const result = await cli([cwd, 'app/views/layouts/application.css.map', 'parcelcss'])
+  it('Import css from JS', async t => {
+    const result = await cli([cwd, 'lib/import_css.js', 'javascript'])
 
     assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  // it('Import css from JS', async () => {
-  //   const result = await cli([cwd, 'lib/import_css.js', 'esbuild'])
+  it('Import css from jsx', async t => {
+    const result = await cli([cwd, 'lib/import_css.jsx', 'javascript'])
 
-  //   assertStringIncludes(
-  //     new TextDecoder().decode(result),
-  //     'ele.setAttribute("href", "/app/views/layouts/application.css");'
-  //   )
-  // })
-
-  // it('Import css from jsx', async () => {
-  //   const result = await init([cwd, 'lib/import_css.jsx'], { debug: true })
-
-  //   assertStringIncludes(
-  //     new TextDecoder().decode(result),
-  //     'ele.setAttribute("href", "/app/views/layouts/application.css");'
-  //   )
-  // })
-
-  // it('Import css module', async () => {
-  //   // const result = await init([cwd, 'lib/import_css_module.js'], { debug: true })
-  //   const result = await init([cwd, 'lib/import_assert_css.js'], { debug: true })
-
-  //   assertStringIncludes(
-  //     new TextDecoder().decode(result),
-  //     'ele.setAttribute("href", "/lib/css_module.css");'
-  //   )
-  //   assertStringIncludes(new TextDecoder().decode(result), '{ myClass: "123_myClass" }')
-  // })
+    assertSnapshot(t, new TextDecoder().decode(result))
+  })
 })
