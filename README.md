@@ -70,7 +70,7 @@ This allows your frontend code to become first class citizens of you Rails appli
 ## Middleware/Plugins ?
 
 ```ruby
-Proscenium.config.middleware << :jsx
+Proscenium.config.middleware << :react
 ```
 
 ## Development

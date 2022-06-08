@@ -70,12 +70,6 @@ describe('cli', () => {
     )
   })
 
-  it('defines process.env.NODE_ENV', async () => {
-    const result = await cli([cwd, 'lib/node_env.js', 'javascript'])
-
-    assertStringIncludes(new TextDecoder().decode(result), '"process.env.NODE_ENV=", "test"')
-  })
-
   it('Import bare module', async () => {
     const result = await cli([cwd, 'lib/import_node_module.js', 'javascript'])
 

@@ -58,16 +58,6 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'middleware determined by params' do
-    Rails.application.config.proscenium.middleware.prepend :jsx
-
-    get '/lib/node_env.js?middleware=javascript'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'javascript', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
   test 'build js sourcemap' do
     Rails.application.config.proscenium.middleware = [:javascript]
 

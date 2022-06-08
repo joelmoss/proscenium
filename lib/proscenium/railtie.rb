@@ -4,6 +4,8 @@ require 'rails'
 require 'action_cable/engine'
 require 'listen'
 
+ENV['RAILS_ENV'] = Rails.env
+
 module Proscenium
   DEFAULT_MIDDLEWARE = %i[runtime static].freeze
 

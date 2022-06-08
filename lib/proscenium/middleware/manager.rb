@@ -12,16 +12,10 @@ module Proscenium
 
         return @app.call(env) if !request.get? && !request.head?
 
-        middleware_from_params(request) || middleware(request) || @app.call(env)
+        middleware(request) || @app.call(env)
       end
 
       private
-
-      def middleware_from_params(request)
-        return unless request.params.key?('middleware')
-
-        middleware_class(request.params['middleware'])&.attempt(request)
-      end
 
       def middleware(request)
         matched = nil

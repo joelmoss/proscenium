@@ -11,7 +11,6 @@ module Proscenium
     autoload :Javascript
     autoload :React
     autoload :Solid
-    autoload :Jsx
     autoload :Stylesheet
   end
 end
