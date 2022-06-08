@@ -1,6 +1,5 @@
 // runtime/import_css.js
 async function digest(value) {
-  console.log("value", value);
   value = new TextEncoder().encode(value);
   const view = new DataView(await crypto.subtle.digest("SHA-1", value));
   let hexCodes = "";
@@ -10,14 +9,8 @@ async function digest(value) {
   return hexCodes.slice(0, 8);
 }
 var proxyCache = {};
-async function append(path) {
-  if (!document.head.querySelector(`link[rel=stylesheet][href='${path}']`)) {
-    const ele = document.createElement("link");
-    ele.setAttribute("rel", "stylesheet");
-    ele.setAttribute("media", "all");
-    ele.setAttribute("href", path);
-    document.head.appendChild(ele);
-  }
+async function importCssModule(path) {
+  appendStylesheet(path);
   if (Object.keys(proxyCache).includes(path)) {
     return proxyCache[path];
   }
@@ -32,6 +25,16 @@ async function append(path) {
     }
   });
 }
+function appendStylesheet(path) {
+  if (document.head.querySelector(`link[rel=stylesheet][href='${path}']`))
+    return;
+  const ele = document.createElement("link");
+  ele.setAttribute("rel", "stylesheet");
+  ele.setAttribute("media", "all");
+  ele.setAttribute("href", path);
+  document.head.appendChild(ele);
+}
 export {
-  append
+  appendStylesheet,
+  importCssModule
 };
