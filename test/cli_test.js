@@ -55,7 +55,7 @@ describe('cli', () => {
     )
   })
 
-  it('Successful JSX build', async t => {
+  it('Successful JSX build', async () => {
     const result = await cli([cwd, 'lib/component.jsx', 'react'])
 
     assertStringIncludes(new TextDecoder().decode(result), 'createElement("div", null, "Hello")')
