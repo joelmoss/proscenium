@@ -64,10 +64,7 @@ describe('cli', () => {
   it('jsx should inject react', async () => {
     const result = await cli([cwd, 'lib/component.jsx', 'react'])
 
-    assertStringIncludes(
-      new TextDecoder().decode(result),
-      'import { createElement, Fragment } from "react";'
-    )
+    assertStringIncludes(new TextDecoder().decode(result), 'import * as React from "react";')
   })
 
   it('Import bare module', async () => {

@@ -1,7 +1,9 @@
-import { createElement, Fragment } from "react";
+// lib/react_shim.js
+import * as React from "react";
+
 // lib/component.jsx
 var Component = () => {
-  return /* @__PURE__ */ createElement("div", null, "Hello");
+  return /* @__PURE__ */ React.createElement("div", null, "Hello");
 };
 var component_default = Component;
 export {
