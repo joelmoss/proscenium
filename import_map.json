@@ -1,7 +1,7 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.139.0/",
-    "testing/": "https://deno.land/std@0.139.0/testing/",
-    "esbuild": "https://deno.land/x/esbuild@v0.14.39/mod.js"
+    "std/": "https://deno.land/std@0.143.0/",
+    "testing/": "https://deno.land/std@0.143.0/testing/",
+    "esbuild": "https://deno.land/x/esbuild@v0.14.43/mod.js"
   }
 }
