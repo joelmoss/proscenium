@@ -64,7 +64,10 @@ describe('cli', () => {
   it('jsx should inject react', async () => {
     const result = await cli([cwd, 'lib/component.jsx', 'react'])
 
-    assertStringIncludes(new TextDecoder().decode(result), 'import * as React from "react";')
+    assertStringIncludes(
+      new TextDecoder().decode(result),
+      'import * as React from "https://esm.sh/react@18.1.0";'
+    )
   })
 
   it('Import bare module', async () => {
@@ -101,6 +104,12 @@ describe('cli', () => {
       new TextDecoder().decode(result),
       'import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";'
     )
+  })
+
+  it('import map', async t => {
+    const result = await cli([cwd, 'lib/import_map.js', 'javascript'])
+
+    assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('js sourcemap', async () => {
