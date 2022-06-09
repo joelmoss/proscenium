@@ -2,6 +2,8 @@
   "imports": {
     "std/": "https://deno.land/std@0.143.0/",
     "testing/": "https://deno.land/std@0.143.0/testing/",
-    "esbuild": "https://deno.land/x/esbuild@v0.14.43/mod.js"
+    "esbuild": "https://deno.land/x/esbuild@v0.14.43/mod.js",
+    "@babel/core": "https://esm.sh/@babel/core@7.18.0",
+    "babel-preset-solid": "https://esm.sh/babel-preset-solid@1.4.2"
   }
 }
