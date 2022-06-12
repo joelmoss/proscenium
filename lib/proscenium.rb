@@ -10,7 +10,8 @@ module Proscenium
   autoload :SideLoad
   autoload :CssModule
   autoload :ViewComponent
-  autoload :Helper
+  autoload :AssetHelper
+  autoload :LinkToHelper
 end
 
 require 'proscenium/railtie'

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
-  module Helper
+  module AssetHelper
     def compute_asset_path(path, options = {})
       return "/#{path}" if %i[javascript stylesheet].include?(options[:type])
 

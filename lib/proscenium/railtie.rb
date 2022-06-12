@@ -45,8 +45,9 @@ module Proscenium
 
     config.after_initialize do
       ActiveSupport.on_load(:action_view) do
-        include Proscenium::Helper
+        include Proscenium::AssetHelper
         ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
+        ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
       end
 
       if config.proscenium.listen

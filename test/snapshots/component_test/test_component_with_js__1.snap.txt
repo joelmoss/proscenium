@@ -3,12 +3,11 @@
   <head>
     <title>Proscenium Test App</title>
     <link rel="stylesheet" href="/app/views/layouts/application.css" media="screen" />
-<link rel="stylesheet" href="/app/views/pages/home.css" media="screen" />
     <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
-<script src="/app/views/pages/home.js" defer="defer" type="module"></script>
+<script src="/app/components/first_component.js" defer="defer" type="module"></script>
   </head>
   <body>
-    <h1>Home#index</h1>
+    Hello First Component
 
   </body>
 </html>

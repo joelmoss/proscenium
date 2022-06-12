@@ -1,0 +1,2 @@
+class FirstReactComponent < ReactComponent
+end

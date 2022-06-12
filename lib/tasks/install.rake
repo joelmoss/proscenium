@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 namespace :proscenium do
   desc 'Install the Proscenium CLI'
   task install: :environment do

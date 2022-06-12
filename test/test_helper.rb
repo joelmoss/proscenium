@@ -9,6 +9,8 @@ require 'proscenium'
 require 'maxitest/autorun'
 require 'minitest/heat'
 require 'combustion'
+require 'view_component/test_helpers'
+require 'view_component/test_case'
 
 Combustion.path = 'test/internal'
 Combustion.initialize! :action_controller, :action_view do

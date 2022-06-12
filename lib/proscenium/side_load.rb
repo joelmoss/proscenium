@@ -56,7 +56,7 @@ module Proscenium
       end
 
       ext = pathname.extname.sub('.', '').to_sym
-      path = pathname.relative_path_from(Rails.root)
+      path = pathname.relative_path_from(Rails.root).to_s
 
       raise ArgumentError, "unsupported extension: #{ext}" unless EXTENSIONS.include?(ext)
 
