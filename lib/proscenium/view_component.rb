@@ -18,7 +18,7 @@ module Proscenium::ViewComponent
   # Side load any CSS/JS assets for the component. This will side load any `index.{css|js}` in
   # the component directory.
   def side_load_assets
-    Proscenium::SideLoad.append asset_path
+    Proscenium::SideLoad.append asset_path if Rails.application.config.proscenium.side_load
   end
 
   def asset_path

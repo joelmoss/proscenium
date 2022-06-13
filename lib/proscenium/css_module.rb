@@ -4,6 +4,8 @@ class Proscenium::CssModule
   def initialize(path)
     @path = "#{path}.module.css"
 
+    return unless Rails.application.config.proscenium.side_load
+
     Proscenium::SideLoad.append! Rails.root.join(@path)
   end
 

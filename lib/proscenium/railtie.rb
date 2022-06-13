@@ -19,6 +19,7 @@ module Proscenium
     isolate_namespace Proscenium
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.listen_paths ||= %w[lib app/views app/components]
+    config.proscenium.side_load = true
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
@@ -33,6 +34,8 @@ module Proscenium
 
       options.cable_mount_path ||= '/proscenium-cable'
       options.cable_logger ||= Rails.logger
+
+      Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set[]] }
     end
 
     initializer 'proscenium.middleware' do |app|
@@ -48,7 +51,12 @@ module Proscenium
     config.after_initialize do
       ActiveSupport.on_load(:action_view) do
         include Proscenium::AssetHelper
-        ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
+
+        if Rails.application.config.proscenium.side_load
+          ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
+          ActionView::Helpers::UrlHelper.prepend Proscenium::SideLoadHelper
+        end
+
         ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
       end
 
