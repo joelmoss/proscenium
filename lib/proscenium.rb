@@ -10,8 +10,7 @@ module Proscenium
   autoload :SideLoad
   autoload :CssModule
   autoload :ViewComponent
-  autoload :AssetHelper
-  autoload :SideLoadHelper
+  autoload :Helper
   autoload :LinkToHelper
 end
 

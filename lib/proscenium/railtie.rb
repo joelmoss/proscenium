@@ -50,11 +50,10 @@ module Proscenium
 
     config.after_initialize do
       ActiveSupport.on_load(:action_view) do
-        include Proscenium::AssetHelper
+        include Proscenium::Helper
 
         if Rails.application.config.proscenium.side_load
           ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
-          ActionView::Helpers::UrlHelper.prepend Proscenium::SideLoadHelper
         end
 
         ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
