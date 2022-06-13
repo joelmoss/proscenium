@@ -37,6 +37,8 @@ module Proscenium
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware::Manager
+      app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
+      app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     rake_tasks do
