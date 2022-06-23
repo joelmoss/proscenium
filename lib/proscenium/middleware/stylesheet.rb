@@ -7,8 +7,6 @@ module Proscenium
     # Serves CSS with parcel-css.
     class Stylesheet < Base
       def attempt
-        return unless renderable?
-
         benchmark :stylesheet do
           results = build("#{parcel_cli} #{cli_options.join ' '} #{root}#{@request.path}")
           render_response css_module? ? Oj.load(results, mode: :strict)['code'] : results

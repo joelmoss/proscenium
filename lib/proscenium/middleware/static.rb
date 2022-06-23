@@ -5,8 +5,6 @@ module Proscenium
     # Serves static files from disk that end with .js or .css. It's the default middleware.
     class Static < Base
       def attempt
-        return unless renderable?
-
         benchmark :static do
           Rack::File.new(root, { 'X-Proscenium-Middleware' => 'static' }).call(@request.env)
         end

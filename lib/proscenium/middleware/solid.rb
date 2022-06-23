@@ -4,8 +4,6 @@ module Proscenium
   module Middleware
     class Solid < Base
       def attempt
-        return unless renderable?
-
         benchmark :solid do
           render_response build("#{solid_cli} #{root} #{@request.path[1..]} solid")
         end

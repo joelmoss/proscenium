@@ -18,7 +18,7 @@ module Proscenium
   class Railtie < ::Rails::Engine
     isolate_namespace Proscenium
     config.proscenium = ActiveSupport::OrderedOptions.new
-    config.proscenium.listen_paths ||= %w[lib app/views app/components]
+    config.proscenium.paths ||= %w[lib app/views app/components]
     config.proscenium.side_load = true
 
     initializer 'proscenium.configuration' do |app|
@@ -29,7 +29,7 @@ module Proscenium
       options.auto_refresh = true if options.auto_refresh.nil?
 
       options.listen = Rails.env.development? if options.listen.nil?
-      options.listen_paths = options.listen_paths.map(&:to_s)
+      options.listen_paths = options.paths.map(&:to_s)
       options.listen_paths.filter! { |path| Dir.exist? path }
 
       options.cable_mount_path ||= '/proscenium-cable'

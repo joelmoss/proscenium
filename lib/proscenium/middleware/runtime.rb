@@ -5,8 +5,6 @@ module Proscenium
     # Serves proscenium runtime code.
     class Runtime < Base
       def attempt
-        return unless renderable?
-
         benchmark :runtime do
           render_response build("#{proscenium_cli} #{root} #{@request.path} javascript")
         end

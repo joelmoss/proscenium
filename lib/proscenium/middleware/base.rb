@@ -10,14 +10,26 @@ module Proscenium
       class Error < StandardError; end
 
       def self.attempt(request)
-        new(request).attempt
+        new(request).renderable!&.attempt
       end
 
       def initialize(request)
         @request = request
       end
 
+      def renderable!
+        allowed_path? && renderable? ? self : nil
+      end
+
       private
+
+      def allowed_path?
+        allowed_paths.any? { |path| @request.path[1..].starts_with? path }
+      end
+
+      def allowed_paths
+        Rails.application.config.proscenium.paths + ['proscenium-runtime/']
+      end
 
       def file_readable?(file = @request.path_info)
         return unless (path = clean_path(file))

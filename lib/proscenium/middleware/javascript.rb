@@ -5,8 +5,6 @@ module Proscenium
     # Transform JS with esbuild.
     class Javascript < Base
       def attempt
-        return unless renderable?
-
         benchmark :javascript do
           render_response build("#{proscenium_cli} #{root} #{@request.path[1..]} javascript")
         end

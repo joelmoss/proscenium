@@ -11,6 +11,14 @@ class IntegrationTest < ActionDispatch::IntegrationTest
     Rails.application.config.proscenium.middleware = Proscenium::DEFAULT_MIDDLEWARE
   end
 
+  test 'unsupported path' do
+    Rails.application.config.proscenium.middleware = [:static]
+
+    assert_raises ActionController::RoutingError do
+      get '/app/controllers/some.js'
+    end
+  end
+
   test 'static middleware' do
     Rails.application.config.proscenium.middleware = [:static]
 

@@ -4,8 +4,6 @@ module Proscenium
   module Middleware
     class React < Base
       def attempt
-        return unless renderable?
-
         benchmark :react do
           render_response build("#{proscenium_cli} #{root} #{@request.path[1..]} react")
         end
