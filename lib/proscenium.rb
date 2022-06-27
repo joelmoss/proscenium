@@ -12,6 +12,7 @@ module Proscenium
   autoload :ViewComponent
   autoload :Helper
   autoload :LinkToHelper
+  autoload :Compiler
 end
 
 require 'proscenium/railtie'
