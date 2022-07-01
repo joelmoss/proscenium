@@ -1,5 +1,5 @@
-import { useIbiza } from 'ibiza'
+import myPackage from 'mypackage'
 
 export default () => {
-  useIbiza()
+  myPackage()
 }

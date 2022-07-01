@@ -1,0 +1,116 @@
+export const snapshot = {};
+
+snapshot[`compilers/esbuild > Successful JSX build 1`] = `
+'// ../../lib/proscenium/runtime/react_shim/index.js
+import { createElement, Fragment } from "react";
+
+// lib/component.jsx
+var Component = () => {
+  return /* @__PURE__ */ createElement("div", null, "Hello");
+};
+var component_default = Component;
+export {
+  component_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vLi4vLi4vbGliL3Byb3NjZW5pdW0vcnVudGltZS9yZWFjdF9zaGltL2luZGV4LmpzIiwgIi4uLy4uLy4uL2xpYi9jb21wb25lbnQuanN4Il0sCiAgInNvdXJjZXNDb250ZW50IjogWyJleHBvcnQgeyBjcmVhdGVFbGVtZW50IGFzIHJlYWN0Q3JlYXRlRWxlbWVudCwgRnJhZ21lbnQgYXMgUmVhY3RGcmFnbWVudCB9IGZyb20gJ3JlYWN0J1xuIiwgImNvbnN0IENvbXBvbmVudCA9ICgpID0+IHtcbiAgcmV0dXJuIDxkaXY+SGVsbG88L2Rpdj5cbn1cblxuZXhwb3J0IGRlZmF1bHQgQ29tcG9uZW50XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7OztBQ0FBLElBQU0sWUFBWSxNQUFNO0FBQ3RCLFNBQU8sOEJBQUMsYUFBSSxPQUFLO0FBQ25CO0FBRUEsSUFBTyxvQkFBUTsiLAogICJuYW1lcyI6IFtdCn0K
+'
+`;
+
+snapshot[`compilers/esbuild > Import bare module 1`] = `
+'// lib/import_node_module.js
+import myPackage from "/node_modules/mypackage/index.js";
+var import_node_module_default = () => {
+  myPackage();
+};
+export {
+  import_node_module_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9ub2RlX21vZHVsZS5qcyJdLAogICJzb3VyY2VzQ29udGVudCI6IFsiaW1wb3J0IG15UGFja2FnZSBmcm9tICdteXBhY2thZ2UnXG5cbmV4cG9ydCBkZWZhdWx0ICgpID0+IHtcbiAgbXlQYWNrYWdlKClcbn1cbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBQTtBQUVBLElBQU8sNkJBQVEsTUFBTTtBQUNuQixZQUFVO0FBQ1o7IiwKICAibmFtZXMiOiBbXQp9Cg==
+'
+`;
+
+snapshot[`compilers/esbuild > allows unknown bare module 1`] = `
+'// lib/import_unknown_node_module.js
+import unknown from "unknown";
+var import_unknown_node_module_default = () => {
+  unknown();
+};
+export {
+  import_unknown_node_module_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF91bmtub3duX25vZGVfbW9kdWxlLmpzIl0sCiAgInNvdXJjZXNDb250ZW50IjogWyJpbXBvcnQgdW5rbm93biBmcm9tICd1bmtub3duJ1xuXG5leHBvcnQgZGVmYXVsdCAoKSA9PiB7XG4gIHVua25vd24oKVxufVxuIl0sCiAgIm1hcHBpbmdzIjogIjtBQUFBO0FBRUEsSUFBTyxxQ0FBUSxNQUFNO0FBQ25CLFVBQVE7QUFDVjsiLAogICJuYW1lcyI6IFtdCn0K
+'
+`;
+
+snapshot[`compilers/esbuild > Import relative module 1`] = `
+'// lib/import_relative_module.js
+import "/lib/foo.js";
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9yZWxhdGl2ZV9tb2R1bGUuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImltcG9ydCAnLi9mb28uanMnXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7IiwKICAibmFtZXMiOiBbXQp9Cg==
+'
+`;
+
+snapshot[`compilers/esbuild > Import absolute module 1`] = `
+'// lib/import_absolute_module.js
+import "/lib/foo.js";
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9hYnNvbHV0ZV9tb2R1bGUuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImltcG9ydCAnL2xpYi9mb28uanMnXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7IiwKICAibmFtZXMiOiBbXQp9Cg==
+'
+`;
+
+snapshot[`compilers/esbuild > Import remote module 1`] = `
+'// lib/import_remote_module.js
+import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9yZW1vdGVfbW9kdWxlLmpzIl0sCiAgInNvdXJjZXNDb250ZW50IjogWyJpbXBvcnQgYXhpb3MgZnJvbSAnaHR0cHM6Ly9jZG5qcy5jbG91ZGZsYXJlLmNvbS9hamF4L2xpYnMvYXhpb3MvMC4yNC4wL2F4aW9zLm1pbi5qcydcbiJdLAogICJtYXBwaW5ncyI6ICI7QUFBQTsiLAogICJuYW1lcyI6IFtdCn0K
+'
+`;
+
+snapshot[`compilers/esbuild > import map 1`] = `
+'// lib/import_map.js
+import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";
+import foo from "/lib/foo.js";
+axios();
+foo();
+import("https://esm.sh/solid@0.2.1");
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9tYXAuanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImltcG9ydCBheGlvcyBmcm9tICdheGlvcydcbmltcG9ydCBmb28gZnJvbSAnZm9vJ1xuXG5heGlvcygpXG5mb28oKVxuaW1wb3J0KCdzb2xpZCcpXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7QUFDQTtBQUVBLE1BQU07QUFDTixJQUFJO0FBQ0osT0FBTzsiLAogICJuYW1lcyI6IFtdCn0K
+'
+`;
+
+snapshot[`compilers/esbuild > Import relative module without extension 1`] = `
+'// lib/import_relative_module_without_extension.js
+import foo from "/lib/foo.js";
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9yZWxhdGl2ZV9tb2R1bGVfd2l0aG91dF9leHRlbnNpb24uanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImltcG9ydCBmb28gZnJvbSAnLi9mb28nXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7IiwKICAibmFtZXMiOiBbXQp9Cg==
+'
+`;
+
+snapshot[`compilers/esbuild > Import absolute module without extension 1`] = `
+'// lib/import_absolute_module_without_extension.js
+import foo from "/lib/foo.js";
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2ltcG9ydF9hYnNvbHV0ZV9tb2R1bGVfd2l0aG91dF9leHRlbnNpb24uanMiXSwKICAic291cmNlc0NvbnRlbnQiOiBbImltcG9ydCBmb28gZnJvbSAnL2xpYi9mb28nXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7IiwKICAibmFtZXMiOiBbXQp9Cg==
+'
+`;
+
+snapshot[`compilers/esbuild > Import css module from JS 1`] = `
+'// importStylesheet:/lib/styles.module.css
+import { importCssModule } from "/proscenium-runtime/import_css.js";
+var styles_module_default = await importCssModule("/lib/styles.module.css");
+
+// lib/import_css_module.js
+console.log(styles_module_default);
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiaW1wb3J0U3R5bGVzaGVldDovbGliL3N0eWxlcy5tb2R1bGUuY3NzIiwgIi4uLy4uLy4uL2xpYi9pbXBvcnRfY3NzX21vZHVsZS5qcyJdLAogICJzb3VyY2VzQ29udGVudCI6IFsiXG4gICAgICAgICAgICAgIGltcG9ydCB7IGltcG9ydENzc01vZHVsZSB9IGZyb20gJy9wcm9zY2VuaXVtLXJ1bnRpbWUvaW1wb3J0X2Nzcy5qcydcbiAgICAgICAgICAgICAgZXhwb3J0IGRlZmF1bHQgYXdhaXQgaW1wb3J0Q3NzTW9kdWxlKCcvbGliL3N0eWxlcy5tb2R1bGUuY3NzJylcbiAgICAgICAgICAgICIsICJpbXBvcnQgc3R5bGVzIGZyb20gJy9saWIvc3R5bGVzLm1vZHVsZS5jc3MnXG5jb25zb2xlLmxvZyhzdHlsZXMpXG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQ2M7QUFDQSxJQUFPLHdCQUFRLE1BQU0sZ0JBQWdCLHdCQUF3Qjs7O0FDRDNFLFFBQVEsSUFBSSxxQkFBTTsiLAogICJuYW1lcyI6IFtdCn0K
+'
+`;
+
+snapshot[`compilers/esbuild > Import css from JS 1`] = `
+'// importStylesheet:/app/views/layouts/application.css
+import { appendStylesheet } from "/proscenium-runtime/import_css.js";
+appendStylesheet("/app/views/layouts/application.css");
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiaW1wb3J0U3R5bGVzaGVldDovYXBwL3ZpZXdzL2xheW91dHMvYXBwbGljYXRpb24uY3NzIl0sCiAgInNvdXJjZXNDb250ZW50IjogWyJcbiAgICAgICAgICAgIGltcG9ydCB7IGFwcGVuZFN0eWxlc2hlZXQgfSBmcm9tICcvcHJvc2Nlbml1bS1ydW50aW1lL2ltcG9ydF9jc3MuanMnXG4gICAgICAgICAgICBhcHBlbmRTdHlsZXNoZWV0KCcvYXBwL3ZpZXdzL2xheW91dHMvYXBwbGljYXRpb24uY3NzJylcbiAgICAgICAgICAiXSwKICAibWFwcGluZ3MiOiAiO0FBQ1k7QUFDQSxpQkFBaUIsb0NBQW9DOyIsCiAgIm5hbWVzIjogW10KfQo=
+'
+`;
+
+snapshot[`compilers/esbuild > Import css from jsx 1`] = `
+'// importStylesheet:/app/views/layouts/application.css
+import { appendStylesheet } from "/proscenium-runtime/import_css.js";
+appendStylesheet("/app/views/layouts/application.css");
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiaW1wb3J0U3R5bGVzaGVldDovYXBwL3ZpZXdzL2xheW91dHMvYXBwbGljYXRpb24uY3NzIl0sCiAgInNvdXJjZXNDb250ZW50IjogWyJcbiAgICAgICAgICAgIGltcG9ydCB7IGFwcGVuZFN0eWxlc2hlZXQgfSBmcm9tICcvcHJvc2Nlbml1bS1ydW50aW1lL2ltcG9ydF9jc3MuanMnXG4gICAgICAgICAgICBhcHBlbmRTdHlsZXNoZWV0KCcvYXBwL3ZpZXdzL2xheW91dHMvYXBwbGljYXRpb24uY3NzJylcbiAgICAgICAgICAiXSwKICAibWFwcGluZ3MiOiAiO0FBQ1k7QUFDQSxpQkFBaUIsb0NBQW9DOyIsCiAgIm5hbWVzIjogW10KfQo=
+'
+`;

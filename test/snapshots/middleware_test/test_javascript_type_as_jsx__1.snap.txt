@@ -1,0 +1,9 @@
+// lib/component.jsx
+var Component = () => {
+  return /* @__PURE__ */ React.createElement("div", null, "Hello");
+};
+var component_default = Component;
+export {
+  component_default as default
+};
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2NvbXBvbmVudC5qc3giXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IENvbXBvbmVudCA9ICgpID0+IHtcbiAgcmV0dXJuIDxkaXY+SGVsbG88L2Rpdj5cbn1cblxuZXhwb3J0IGRlZmF1bHQgQ29tcG9uZW50XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUEsSUFBTSxZQUFZLE1BQU07QUFDdEIsU0FBTyxvQ0FBQyxhQUFJLE9BQUs7QUFDbkI7QUFFQSxJQUFPLG9CQUFROyIsCiAgIm5hbWVzIjogW10KfQo=

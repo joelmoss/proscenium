@@ -1,7 +1,0 @@
-#!/usr/bin/env bash
-set -euo pipefail
-IFS=$'\n\t'
-set -vx
-
-deno compile --no-config -o exe/proscenium --import-map import_map.json -A lib/proscenium/cli.js
-deno compile --no-config -o exe/solidjs --import-map import_map.json -A lib/proscenium/cli/solid.js

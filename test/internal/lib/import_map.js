@@ -3,4 +3,4 @@ import foo from 'foo'
 
 axios()
 foo()
-import('react')
+import('solid')

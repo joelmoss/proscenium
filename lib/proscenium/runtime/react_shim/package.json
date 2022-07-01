@@ -1,0 +1,5 @@
+{
+  "name": "react_shim",
+  "private": true,
+  "sideEffects": false
+}

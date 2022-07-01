@@ -7,4 +7,5 @@
 /spec/reports/
 /tmp/
 .DS_Store
-/exe/*
+/test/internal/public/tmp/
+/test/internal/public/assets

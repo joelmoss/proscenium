@@ -3,7 +3,7 @@
 require 'open3'
 
 module Proscenium
-  module Middleware
+  class Middleware
     class Base
       include ActiveSupport::Benchmarkable
 
@@ -18,17 +18,13 @@ module Proscenium
       end
 
       def renderable!
-        allowed_path? && renderable? ? self : nil
+        renderable? ? self : nil
       end
 
       private
 
-      def allowed_path?
-        allowed_paths.any? { |path| @request.path[1..].starts_with? path }
-      end
-
-      def allowed_paths
-        Rails.application.config.proscenium.paths + ['proscenium-runtime/']
+      def renderable?
+        file_readable?
       end
 
       def file_readable?(file = @request.path_info)
@@ -73,14 +69,6 @@ module Proscenium
         end
 
         stdout
-      end
-
-      def proscenium_cli
-        @proscenium_cli ||= if ENV['PROSCENIUM_TEST']
-                              'deno run -q --import-map import_map.json -A lib/proscenium/cli.js'
-                            else
-                              Rails.root.join('bin/proscenium')
-                            end
       end
 
       def benchmark(type)
