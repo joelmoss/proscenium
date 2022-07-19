@@ -8,12 +8,14 @@ module Proscenium
     #
     # Example:
     #   link_to 'Go to', MyComponent
+    #
+    # TODO: ummm, todo it! ;)
     def link_to(*args, &block)
-      name_argument_index = block ? 0 : 1
-      if (args[name_argument_index]).respond_to?(:render_in)
-        return super(*LinkToComponentArguments.new(args, name_argument_index,
-                                                   self).helper_options, &block)
-      end
+      # name_argument_index = block ? 0 : 1
+      # if (args[name_argument_index]).respond_to?(:render_in)
+      #   return super(*LinkToComponentArguments.new(args, name_argument_index,
+      #                                              self).helper_options, &block)
+      # end
 
       super
     end
@@ -36,7 +38,10 @@ module Proscenium
       @options[@name_argument_index += 1] ||= {}
       @options[@name_argument_index][:rel] = 'nofollow'
       @options[@name_argument_index][:data] ||= {}
-      @options[@name_argument_index][:data][:component] = { props: @component.props }
+      @options[@name_argument_index][:data][:component] = {
+        path: @component.virtual_path,
+        props: @component.props
+      }
 
       @options
     end

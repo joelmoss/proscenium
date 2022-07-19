@@ -1,10 +1,10 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.145.0/",
-    "testing/": "https://deno.land/std@0.145.0/testing/",
-    "esbuild": "https://deno.land/x/esbuild@v0.14.47/mod.js",
+    "std/": "https://deno.land/std@0.148.0/",
+    "testing/": "https://deno.land/std@0.148.0/testing/",
+    "esbuild": "https://deno.land/x/esbuild@v0.14.49/mod.js",
     "import-maps/resolve": "https://esm.sh/v86/@import-maps/resolve@1.0.1/deno/resolve.js",
-    "@babel/core": "https://esm.sh/v86/@babel/core@7.18.0/deno/core.js",
-    "babel-preset-solid": "https://esm.sh/v86/babel-preset-solid@1.4.2/deno/babel-preset-solid.js"
+    "@babel/core": "https://esm.sh/v86/@babel/core@7.18.9/deno/core.js",
+    "babel-preset-solid": "https://esm.sh/v86/babel-preset-solid@1.4.6/deno/babel-preset-solid.js"
   }
 }

@@ -60,9 +60,9 @@ module Proscenium
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    config.after_initialize do
+    initializer 'proscenium.helpers' do |_app|
       ActiveSupport.on_load(:action_view) do
-        include Proscenium::Helper
+        ActionView::Base.include Proscenium::Helper
 
         if Rails.application.config.proscenium.side_load
           ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
@@ -70,19 +70,21 @@ module Proscenium
 
         ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
       end
+    end
 
-      if config.proscenium.listen
-        @listener = Listen.to(*config.proscenium.listen_paths,
-                              only: config.proscenium.listen_extensions) do |mod, add, rem|
-          Proscenium::Railtie.websocket&.broadcast('reload', {
-                                                     modified: mod,
-                                                     removed: rem,
-                                                     added: add
-                                                   })
-        end
+    config.after_initialize do
+      next unless config.proscenium.listen
 
-        @listener.start
+      @listener = Listen.to(*config.proscenium.listen_paths,
+                            only: config.proscenium.listen_extensions) do |mod, add, rem|
+        Proscenium::Railtie.websocket&.broadcast('reload', {
+                                                   modified: mod,
+                                                   removed: rem,
+                                                   added: add
+                                                 })
       end
+
+      @listener.start
     end
 
     at_exit do

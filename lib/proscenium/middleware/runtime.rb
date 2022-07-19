@@ -5,17 +5,17 @@ module Proscenium
     class Runtime < Esbuild
       private
 
-      def path
-        @request.path
-      end
-
       def renderable?
-        @request.path_info = @request.path_info.sub(%r{^/proscenium-runtime/}, 'runtime/')
-        super
-      end
+        old_root = root
+        old_path_info = @request.path_info
 
-      def root
-        @root ||= Pathname.new(__dir__).join('../')
+        @root = Pathname.new(__dir__).join('../')
+        @request.path_info = @request.path_info.sub(%r{^/proscenium-runtime/}, 'runtime/')
+
+        super
+      ensure
+        @request.path_info = old_path_info
+        @root = old_root
       end
     end
   end

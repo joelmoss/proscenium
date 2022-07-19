@@ -60,4 +60,20 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
+
+  test 'import proscenium/component_manager' do
+    get '/lib/import_proscenium_component_manager.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'import map in runtime file' do
+    get '/proscenium-runtime/component_manager/render_component.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
 end

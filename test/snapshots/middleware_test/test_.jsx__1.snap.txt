@@ -1,5 +1,5 @@
 // ../../lib/proscenium/runtime/react_shim/index.js
-import { createElement, Fragment } from "react";
+import { createElement, Fragment } from "https://esm.sh/react";
 
 // lib/component.jsx
 var Component = () => {
