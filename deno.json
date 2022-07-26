@@ -3,6 +3,9 @@
   "tasks": {
     "test": "deno test --allow-env --allow-read --allow-run test",
     "test-esbuild-compiler": "deno run -q --import-map import_map.json -A lib/proscenium/compilers/esbuild.js",
-    "compile-esbuild": "deno compile --no-config -o bin/esbuild --import-map import_map.json -A lib/proscenium/compilers/esbuild.js"
+    "compile:esbuild:macm": "deno compile --no-config -o bin/esbuild-macm --import-map import_map.json -A --target aarch64-apple-darwin lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:macintel": "deno compile --no-config -o bin/esbuild-macintel --import-map import_map.json -A --target x86_64-apple-darwin lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:linux": "deno compile --no-config -o bin/esbuild-linux --import-map import_map.json -A --target x86_64-unknown-linux-gnu lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:all": "deno task compile:esbuild:macm && deno task compile:esbuild:macintel && deno task compile:esbuild:linux"
   }
 }

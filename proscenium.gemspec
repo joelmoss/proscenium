@@ -18,17 +18,16 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/joelmoss/proscenium/releases'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  spec.files          = Dir['CODE_OF_CONDUCT.md', 'README.md', 'LICENSE', 'lib/**/*', 'bin/**/*']
-  spec.bindir         = 'bin'
+  spec.files = Dir['{app,config,lib,bin}/**/*', 'CODE_OF_CONDUCT.md', 'README.md', 'LICENSE.txt']
+  spec.bindir = 'bin'
   spec.executables << 'esbuild'
   spec.executables << 'parcel_css'
   spec.require_paths = ['lib']
-  spec.post_install_message = 'Thanks for installing!'
 
-  spec.add_dependency 'actioncable', '>= 6.1.0'
-  spec.add_dependency 'activesupport', '>= 6.1.0'
+  spec.add_dependency 'actioncable', ['>= 6.1.0', '< 8.0']
+  spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
   spec.add_dependency 'listen', '~> 3.0'
   spec.add_dependency 'oj', '~> 3.13'
-  spec.add_dependency 'railties', '>= 6.1.0'
+  spec.add_dependency 'railties', ['>= 6.1.0', '< 8.0']
   spec.add_dependency 'view_component', '~> 2.0'
 end

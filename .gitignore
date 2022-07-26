@@ -9,5 +9,4 @@
 .DS_Store
 /test/internal/public/tmp/
 /test/internal/public/assets
-/bin/esbuild
-/bin/parcel_css
+/bin/*

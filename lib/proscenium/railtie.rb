@@ -93,6 +93,7 @@ module Proscenium
 
     class << self
       def websocket
+        return @websocket unless @websocket.nil?
         return unless config.proscenium.auto_refresh
 
         cable = ActionCable::Server::Configuration.new

@@ -8,21 +8,33 @@ on:
   pull_request:
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        ruby:
-          - 3.0.3
-          - 3.1.0
-
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
+
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
-      - name: Run the default task
-        run: bundle exec rake
+          ruby-version: 3.1
+
+      - uses: denoland/setup-deno@v1.0.0
+        with:
+          deno-version: v1.x
+
+      - name: Compile esbuild
+        run: deno task compile:esbuild:macm
+
+      - name: Install gem dependencies
+        run: bundle install
+
+      - name: Build native gem
+        env:
+          PROFILE: release
+        run: bundle exec rake build
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: artifacts
+          path: bin/esbuild-*
