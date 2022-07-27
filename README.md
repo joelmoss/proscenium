@@ -1,61 +1,112 @@
 # Proscenium
 
-- Serve assets from anywhere within the Rails root. (eg. `/app/views/layouts/application.css`, `/lib/utils/time.js`)
-- Side loaded JS/CSS for your layouts and views.
-- JS imports
-- Dynamic imports
+- Serve assets from anywhere within your Rails root.
+- Automatically side load JS/CSS for your layouts and views.
+- Import JS and CSS from node_modules, URL, local (relative, absolute)
 - Real-time bundling of JS, JSX and CSS.
-- Import CSS and other static assets (images, fonts, etc.)
-
-## WANT
-
-- Nested CSS
-- Import CSS Modules
+- Import Map
+- CSS Modules
+- Minification
 
 ## Installation
 
-Add this line to your application's Gemfile:
+Add this line to your application's Gemfile, and you're good to go:
 
 ```ruby
 gem 'proscenium'
 ```
 
-## Usage
+## Frontend Code Anywhere!
 
-### Side Loading
+Proscenium believes that your frontend code is just as important as your backend code, and is not an
+afterthought - they should be first class citizens of your Rails app. So instead of throwing all
+your JS and CSS into a "app/assets" directory, put them wherever you want!
 
-Proscenium has built in support for automatically side loading JS and CSS with your views and layouts.
+For example, if you have JS that is used by your `UsersController#index`, then put it in
+`app/views/users/index.js`. Or if you have some CSS that is used by your entire application, put it
+in `app/views/layouts/application.css`. Maybe you have a few JS utility functions, so put them in
+`lib/utils.js`.
 
-Just create a JS and/or CSS file with the same name as any view or layout, and make sure your layouts include `<%= yield :side_loaded_js %>` and `<%= yield :side_loaded_css %>`. Something like this:
+Simply create your JS(X) and CSS anywhere you want, and they will be served by your Rails app.
+
+Using the examples above...
+
+- `app/views/users/index.js` => `https://yourapp.com/app/views/users/index.js`
+- `app/views/layouts/application.css` => `https://yourapp.com/app/views/layouts/application.css`
+- `lib/utils.js` => `https://yourapp.com/lib/utils.js`
+
+## Importing
+
+Proscenium supports importing JS and CSS from `node_modules`, URL, and local (relative, absolute).
+
+Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases.
+But you can if you like. All other file types must be specified using their full file name and
+extension.
+
+### URL Imports
+
+Any import beginning with `http://` or `https://` will be fetched from the URL provided:
+
+```js
+import React from 'https://esm.sh/react`
+```
+
+```css
+@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css';
+```
+
+### Import from NPM (`node_modules`)
+
+Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and
+will use your package manager of choice (eg, NPM, Yarn, pnpm):
+
+```js
+import React from 'react`
+```
+
+### Local Imports
+
+And of course you can import your own code, using relative or absolute paths (file extension is
+optional):
+
+```js /app/views/layouts/application.js
+import utils from '/lib/utils'
+```
+
+```js /lib/utils.js
+import constants from './constants'
+```
+
+## Side Loading
+
+Proscenium has built in support for automatically side loading JS and CSS with your views and
+layouts.
+
+Just create a JS and/or CSS file with the same name as any view or layout, and make sure your
+layouts include `<%= side_load_stylesheets %>` and `<%= side_load_javascripts %>`. Something like
+this:
 
 ```html
 <!DOCTYPE html>
 <html>
   <head>
     <title>Hello World</title>
-    <%= yield :side_loaded_css %>
+    <%= side_load_stylesheets %>
   </head>
   <body>
-    <%= yield %> <%= yield :side_loaded_js %>
+    <%= yield %>
+    <%= side_load_javascripts defer: true, type: 'module' %>
   </body>
 </html>
 ```
 
-On each page request, Proscenium will check if your layout and view has a JS/CSS file of the same name, and include them into your layout HTML.
+On each page request, Proscenium will check if your layout and view has a JS/CSS file of the same
+name, and include them into your layout HTML. Partials are not side loaded.
 
-### Importing in JS with `import`
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
+to `false`.
 
-Imports that do not begin with a `./` or `/` are bare imports, and will import a package using your local Node resolution algorithm.
-
-`import 'react'`
-`import React as * from 'react'`
-`import { useState } from 'react'`
-
-Absolute and relative import paths are supported (`/*`, `./*`), and will behave as you would expect.
-
-Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases. But you can if you like. All other file types must be specified using their fill file name and extension.
-
-### CSS
+## CSS Modules
 
 Direct access to CSS files are parsed through @parcel/css.
 
@@ -76,7 +127,6 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 ### Compile the compilers
 
 `deno compile --no-config -o bin/compilers/esbuild --import-map import_map.json -A lib/proscenium/compilers/esbuild.js`
-
 
 ## Contributing
 
