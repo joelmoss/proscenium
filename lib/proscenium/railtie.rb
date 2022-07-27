@@ -34,18 +34,16 @@ module Proscenium
     isolate_namespace Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
-    config.proscenium.listen_paths ||= %w[lib app]
-    config.proscenium.listen_extensions ||= /\.(css|jsx?)$/
     config.proscenium.side_load = true
+    config.proscenium.auto_reload = Rails.env.development?
+    config.proscenium.auto_reload_paths ||= %w[lib app]
+    config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
 
       options.glob_types = DEFAULT_GLOB_TYPES if options.glob_types.blank?
-
-      options.auto_refresh = true if options.auto_refresh.nil?
-      options.listen = Rails.env.development? if options.listen.nil?
-      options.listen_paths.filter! { |path| Dir.exist? path }
+      options.auto_reload_paths.filter! { |path| Dir.exist? path }
       options.cable_mount_path ||= '/proscenium-cable'
       options.cable_logger ||= Rails.logger
     end
@@ -73,10 +71,10 @@ module Proscenium
     end
 
     config.after_initialize do
-      next unless config.proscenium.listen
+      next unless config.proscenium.auto_reload
 
-      @listener = Listen.to(*config.proscenium.listen_paths,
-                            only: config.proscenium.listen_extensions) do |mod, add, rem|
+      @listener = Listen.to(*config.proscenium.auto_reload_paths,
+                            only: config.proscenium.auto_reload_extensions) do |mod, add, rem|
         Proscenium::Railtie.websocket&.broadcast('reload', {
                                                    modified: mod,
                                                    removed: rem,
@@ -94,7 +92,7 @@ module Proscenium
     class << self
       def websocket
         return @websocket unless @websocket.nil?
-        return unless config.proscenium.auto_refresh
+        return unless config.proscenium.auto_reload
 
         cable = ActionCable::Server::Configuration.new
         cable.cable = { adapter: 'async' }.with_indifferent_access

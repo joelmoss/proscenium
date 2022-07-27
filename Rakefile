@@ -61,6 +61,7 @@ end
 
 task 'clobber:bin' do
   FileUtils.rm 'bin/esbuild', force: true
+  # FileUtils.rm 'bin/parcel_css', force: true
 end
 
 Rake::Task['clobber'].tap do |task|

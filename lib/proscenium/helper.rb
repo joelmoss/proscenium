@@ -21,12 +21,12 @@ module Proscenium
     end
 
     def proscenium_dev
-      return if !Rails.env.development? || !Proscenium::Railtie.websocket
+      return unless Proscenium.config.auto_reload
 
       javascript_tag %(
         import autoReload from '/proscenium-runtime/auto_reload.js';
         autoReload('#{Proscenium::Railtie.websocket_mount_path}');
-      ), type: 'module'
+      ), type: 'module', defer: true
     end
   end
 end
