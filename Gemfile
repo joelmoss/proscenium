@@ -6,6 +6,7 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'combustion'
+gem 'down'
 gem 'maxitest'
 gem 'minitest-focus'
 gem 'minitest-heat'
