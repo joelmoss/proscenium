@@ -7,19 +7,44 @@ module Proscenium
     class ParcelCss < Base
       def attempt
         benchmark :parcelcss do
-          results = build("#{cli} #{cli_options.join ' '} #{root}#{@request.path}")
-          render_response css_module? ? Oj.load(results, mode: :strict)['code'] : results
+          with_custom_media { |path| build path }
         end
       end
 
       private
+
+      def with_custom_media
+        yield "#{root}#{@request.path}" unless custom_media?
+
+        Tempfile.create do |f|
+          contents = Pathname.new("#{root}#{@request.path}").read
+          f.write contents, "\n", custom_media_path.read
+          f.rewind
+
+          yield f.path
+        end
+      end
+
+      def build(path)
+        results = super("#{cli} #{cli_options.join ' '} #{path}")
+        render_response css_module? ? Oj.load(results, mode: :strict)['code'] : results
+      end
+
+      def custom_media?
+        @custom_media ||= custom_media_path.exist?
+      end
+
+      def custom_media_path
+        @custom_media_path ||= Rails.root.join('lib', 'custom_media_queries.css')
+      end
 
       def cli
         Gem.bin_path 'proscenium', 'parcel_css'
       end
 
       def cli_options
-        options = ['--nesting', '--custom-media', '--targets', "'>= 0.25%'"]
+        options = ['--nesting', '--targets', "'>= 0.25%'"]
+        options << '--custom-media' if custom_media?
 
         if css_module?
           hash = Digest::SHA1.hexdigest(@request.path)[..7]

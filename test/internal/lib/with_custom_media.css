@@ -1,0 +1,9 @@
+@import 'fooo';
+
+header {
+  color: pink;
+
+  @media (--gte-tablet) {
+    color: blue;
+  }
+}

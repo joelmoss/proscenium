@@ -37,6 +37,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'injects /lib/custom_media_queries.css if present' do
+    get '/lib/with_custom_media.css'
+
+    assert_equal 'text/css', response.headers['Content-Type']
+    assert_equal 'parcelcss', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test '.module.css' do
     get '/lib/styles.module.css'
 

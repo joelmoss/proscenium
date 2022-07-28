@@ -129,6 +129,10 @@ NOTE: that this is hot module reloading (HMR) - a full page reload is triggered.
 
 You can disable auto reload by setting the `config.proscenium.auto_reload` config option to false.
 
+## CSS Custom Media Queries
+
+Proscenium supports [custom media queries](https://css-tricks.com/can-we-have-custom-media-queries-please/) as per the [spec](https://www.w3.org/TR/mediaqueries-5/#custom-mq). However, because of the way they are parsed, they cannot be imported using `@import`. So if you define your custom media queries in `/lib/custom_media_queries.css`, Proscenium will automatically inject them into your CSS, so you can use them anywhere.
+
 ## How It Works
 
 Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.

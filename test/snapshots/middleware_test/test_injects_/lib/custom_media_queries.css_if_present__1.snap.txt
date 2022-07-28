@@ -1,0 +1,12 @@
+@import "fooo";
+
+header {
+  color: pink;
+}
+
+@media (min-width: 321px) {
+  header {
+    color: #00f;
+  }
+}
+
