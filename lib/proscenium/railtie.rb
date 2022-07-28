@@ -14,13 +14,11 @@ module Proscenium
   DEFAULT_GLOB_TYPES = {
     esbuild: [
       'lib/**/*.{js,jsx}',
-      'app/components/**/*.{js,jsx}',
-      'app/views/**/*.{js,jsx}'
+      'app/**/*.{js,jsx}'
     ],
     parcelcss: [
       'lib/**/*.css',
-      'app/components/**/*.css',
-      'app/views/**/*.css'
+      'app/**/*.css'
     ]
   }.freeze
 

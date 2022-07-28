@@ -16,7 +16,7 @@ CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
 
-PARCEL_VERSION = '1.3.0'
+PARCEL_VERSION = '1.12.0'
 PLATFORMS = {
   'x86_64-linux' => {
     deno: 'x86_64-unknown-linux-gnu',
