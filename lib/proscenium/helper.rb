@@ -23,15 +23,8 @@ module Proscenium
     def proscenium_dev
       return unless Proscenium.config.auto_reload
 
-      href = '/proscenium-runtime/auto_reload.js'
-
-      if preload_links_header
-        preload_link = "<#{href}>; rel=modulepreload; as=script"
-        send_preload_links_header [preload_link]
-      end
-
       javascript_tag %(
-        import autoReload from '#{href}';
+        import autoReload from '/proscenium-runtime/auto_reload.js';
         autoReload('#{Proscenium::Railtie.websocket_mount_path}');
       ), type: 'module', defer: true
     end
