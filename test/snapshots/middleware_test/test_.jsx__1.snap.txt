@@ -1,12 +1,12 @@
-// ../../lib/proscenium/runtime/react_shim/index.js
-import { createElement, Fragment } from "https://esm.sh/react";
-
 // lib/component.jsx
+import { jsx } from "react/jsx-runtime";
 var Component = () => {
-  return /* @__PURE__ */ createElement("div", null, "Hello");
+  return /* @__PURE__ */ jsx("div", {
+    children: "Hello"
+  });
 };
 var component_default = Component;
 export {
   component_default as default
 };
-//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vLi4vLi4vbGliL3Byb3NjZW5pdW0vcnVudGltZS9yZWFjdF9zaGltL2luZGV4LmpzIiwgIi4uLy4uLy4uL2xpYi9jb21wb25lbnQuanN4Il0sCiAgInNvdXJjZXNDb250ZW50IjogWyJleHBvcnQgeyBjcmVhdGVFbGVtZW50IGFzIHJlYWN0Q3JlYXRlRWxlbWVudCwgRnJhZ21lbnQgYXMgUmVhY3RGcmFnbWVudCB9IGZyb20gJ3JlYWN0J1xuIiwgImNvbnN0IENvbXBvbmVudCA9ICgpID0+IHtcbiAgcmV0dXJuIDxkaXY+SGVsbG88L2Rpdj5cbn1cblxuZXhwb3J0IGRlZmF1bHQgQ29tcG9uZW50XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7OztBQ0FBLElBQU0sWUFBWSxNQUFNO0FBQ3RCLFNBQU8sOEJBQUMsYUFBSSxPQUFLO0FBQ25CO0FBRUEsSUFBTyxvQkFBUTsiLAogICJuYW1lcyI6IFtdCn0K
+//# sourceMappingURL=data:application/json;base64,ewogICJ2ZXJzaW9uIjogMywKICAic291cmNlcyI6IFsiLi4vLi4vLi4vbGliL2NvbXBvbmVudC5qc3giXSwKICAic291cmNlc0NvbnRlbnQiOiBbImNvbnN0IENvbXBvbmVudCA9ICgpID0+IHtcbiAgcmV0dXJuIDxkaXY+SGVsbG88L2Rpdj5cbn1cblxuZXhwb3J0IGRlZmF1bHQgQ29tcG9uZW50XG4iXSwKICAibWFwcGluZ3MiOiAiO0FBQUE7QUFBQSxJQUFNLFlBQVksTUFBTTtBQUN0QixTQUFPLG9CQUFDO0FBQUEsSUFBSTtBQUFBLEdBQUs7QUFDbkI7QUFFQSxJQUFPLG9CQUFROyIsCiAgIm5hbWVzIjogW10KfQo=

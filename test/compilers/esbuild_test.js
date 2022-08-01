@@ -45,72 +45,72 @@ describe('compilers/esbuild', () => {
   it('Successful JSX build', async t => {
     const result = await main(['lib/component.jsx'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import bare module', async t => {
     const result = await main(['lib/import_node_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('allows unknown bare module', async t => {
     const result = await main(['lib/import_unknown_node_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import relative module', async t => {
     const result = await main(['lib/import_relative_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import absolute module', async t => {
     const result = await main(['lib/import_absolute_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import remote module', async t => {
     const result = await main(['lib/import_remote_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('import map', async t => {
     const result = await main(['lib/import_map.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import relative module without extension', async t => {
     const result = await main(['lib/import_relative_module_without_extension.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import absolute module without extension', async t => {
     const result = await main(['lib/import_absolute_module_without_extension.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css module from JS', async t => {
     const result = await main(['lib/import_css_module.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css from JS', async t => {
     const result = await main(['lib/import_css.js'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css from jsx', async t => {
     const result = await main(['lib/import_css.jsx'], { root })
 
-    assertSnapshot(t, new TextDecoder().decode(result))
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 })

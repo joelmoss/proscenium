@@ -14,14 +14,16 @@ module Proscenium
       private
 
       def with_custom_media
-        yield "#{root}#{@request.path}" unless custom_media?
+        if custom_media?
+          Tempfile.create do |f|
+            contents = Pathname.new("#{root}#{@request.path}").read
+            f.write contents, "\n", custom_media_path.read
+            f.rewind
 
-        Tempfile.create do |f|
-          contents = Pathname.new("#{root}#{@request.path}").read
-          f.write contents, "\n", custom_media_path.read
-          f.rewind
-
-          yield f.path
+            yield f.path
+          end
+        else
+          yield "#{root}#{@request.path}"
         end
       end
 
