@@ -18,22 +18,18 @@ export default async function (ele, data) {
 
     if (!contentLoader) return null
 
-    return /* @__PURE__ */ createElement('div', {
-      style: { height: '100%' },
-      dangerouslySetInnerHTML: { __html: contentLoader.outerHTML }
-    })
+    return (
+      <div
+        style={{ height: '100%' }}
+        dangerouslySetInnerHTML={{ __html: contentLoader.outerHTML }}
+      ></div>
+    )
   }
 
   createRoot(ele).render(
-    /* @__PURE__ */ createElement(
-      Suspense,
-      {
-        fallback: /* @__PURE__ */ createElement(Fallback, {
-          contentLoader
-        })
-      },
-      createElement(component, data.props)
-    )
+    <Suspense fallback={<Fallback contentLoader={contentLoader} />}>
+      {createElement(component, data.props)}
+    </Suspense>
   )
 
   RAILS_ENV === 'development' && console.debug(`[REACT]`, `Rendered ${data.path.slice(1)}`)
