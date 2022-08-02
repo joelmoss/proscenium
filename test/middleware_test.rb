@@ -78,7 +78,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'import map in runtime file' do
-    get '/proscenium-runtime/component_manager/render_component.js'
+    get '/proscenium-runtime/component_manager/render_component.jsx'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
