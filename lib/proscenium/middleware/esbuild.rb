@@ -3,9 +3,23 @@
 module Proscenium
   class Middleware
     class Esbuild < Base
+      class CompileError < StandardError
+        attr_reader :detail
+
+        def initialize(detail)
+          @detail = ActiveSupport::HashWithIndifferentAccess.new(Oj.load(detail, mode: :strict))
+
+          super "#{@detail[:text]} in #{@detail[:location][:file]}:#{@detail[:location][:line]}"
+        end
+      end
+
       def attempt
         benchmark :esbuild do
           render_response build("#{cli} --root #{root} #{path}")
+        end
+      rescue CompileError => e
+        render_response "export default #{e.detail.to_json}" do |response|
+          response['X-Proscenium-Middleware'] = 'Esbuild::CompileError'
         end
       end
 

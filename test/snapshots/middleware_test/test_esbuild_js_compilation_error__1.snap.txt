@@ -1,0 +1,5 @@
+(function (detail) {
+      const location = `/${detail.location.file}:${detail.location.line}:${detail.location.column}`
+      console.error('%s at %O', detail.text, location)
+      throw `${detail.text} at ${location}`
+    })({"id":"","location":{"column":18,"file":"lib/includes_error.js","length":0,"line":1,"lineText":"console.log('blah)","namespace":"","suggestion":""},"notes":[],"pluginName":"","text":"Unterminated string literal"})

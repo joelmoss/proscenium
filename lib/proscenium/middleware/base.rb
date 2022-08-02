@@ -7,7 +7,9 @@ module Proscenium
     class Base
       include ActiveSupport::Benchmarkable
 
-      class Error < StandardError; end
+      # Error when the result of the build returns an error. For example, when esbuild returns
+      # errors.
+      class CompileError < StandardError; end
 
       def self.attempt(request)
         new(request).renderable!&.attempt
@@ -57,15 +59,23 @@ module Proscenium
         response.write content
         response.content_type = content_type
         response['X-Proscenium-Middleware'] = name
+
+        yield response if block_given?
+
         response.finish
       end
 
       def build(cmd)
         stdout, stderr, status = Open3.capture3(cmd)
 
-        raise Error, stderr unless status.success?
+        unless status.success?
+          raise self.class::CompileError, stderr if status.exitstatus == 2
+
+          raise BuildError, stderr
+        end
+
         unless stderr.empty?
-          raise "Proscenium build of #{name}:'#{@request.fullpath}' failed -- #{stderr}"
+          raise BuildError, "Proscenium build of #{name}:'#{@request.fullpath}' failed -- #{stderr}"
         end
 
         stdout
