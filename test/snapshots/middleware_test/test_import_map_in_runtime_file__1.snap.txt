@@ -3,8 +3,8 @@ var RAILS_ENV = "test";
 
 // ../../lib/proscenium/runtime/component_manager/render_component.js
 async function render_component_default(ele, data) {
-  const { createElement, useEffect, lazy, Suspense } = await import("https://esm.sh/react");
-  const { createRoot } = await import("react-dom/client");
+  const { createElement, useEffect, lazy, Suspense } = await import("https://esm.sh/react@18.2.0");
+  const { createRoot } = await import("https://esm.sh/react-dom@18.2.0/client");
   const component = lazy(() => import(`/app/components${data.path}.jsx`));
   const contentLoader = data.contentLoader && ele.firstElementChild;
   const Fallback = ({ contentLoader: contentLoader2 }) => {

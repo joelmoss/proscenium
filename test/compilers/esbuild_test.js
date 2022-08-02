@@ -113,4 +113,10 @@ describe('compilers/esbuild', () => {
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
+
+  it('bundled import', async t => {
+    const result = await main(['lib/bundle_import.js'], { root })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
 })
