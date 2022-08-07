@@ -34,7 +34,7 @@ module Proscenium
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.side_load = true
     config.proscenium.auto_reload = Rails.env.development?
-    config.proscenium.auto_reload_paths ||= %w[lib app]
+    config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
 
     initializer 'proscenium.configuration' do |app|
