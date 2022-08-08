@@ -1,0 +1,6 @@
+@import 'https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle';
+@import '/lib/foo.css?bundle';
+
+header {
+  color: pink;
+}
