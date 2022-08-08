@@ -1,12 +1,11 @@
 @import "fooo";
 
+/* lib/with_custom_media.css */
 header {
   color: pink;
 }
-
 @media (min-width: 321px) {
   header {
     color: #00f;
   }
 }
-

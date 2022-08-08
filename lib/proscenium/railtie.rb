@@ -13,15 +13,15 @@ module Proscenium
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   DEFAULT_GLOB_TYPES = {
     esbuild: [
-      'config/**/*.{js,jsx}',
-      'lib/**/*.{js,jsx}',
-      'app/**/*.{js,jsx}'
-    ],
-    parcelcss: [
-      'config/**/*.css',
-      'lib/**/*.css',
-      'app/**/*.css'
+      'config/**/*.{js,jsx,css}',
+      'lib/**/*.{js,jsx,css}',
+      'app/**/*.{js,jsx,css}'
     ]
+    # parcelcss: [
+    #   'config/**/*.css',
+    #   'lib/**/*.css',
+    #   'app/**/*.css'
+    # ]
   }.freeze
 
   class << self

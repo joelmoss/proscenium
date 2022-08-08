@@ -1,8 +1,7 @@
+/* app/views/layouts/application.css */
 body {
   color: pink;
 }
-
 .name {
   color: #000;
 }
-

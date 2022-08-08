@@ -33,7 +33,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/app/views/layouts/application.css'
 
     assert_equal 'text/css', response.headers['Content-Type']
-    assert_equal 'parcelcss', response.headers['X-Proscenium-Middleware']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
@@ -41,7 +41,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/lib/with_custom_media.css'
 
     assert_equal 'text/css', response.headers['Content-Type']
-    assert_equal 'parcelcss', response.headers['X-Proscenium-Middleware']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
@@ -49,7 +49,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/lib/styles.module.css'
 
     assert_equal 'text/css', response.headers['Content-Type']
-    assert_equal 'parcelcss', response.headers['X-Proscenium-Middleware']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 
