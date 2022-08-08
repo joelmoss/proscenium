@@ -9,7 +9,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
 
   test 'unsupported path' do
     assert_raises ActionController::RoutingError do
-      get '/config/some.js'
+      get '/db/some.js'
     end
   end
 
