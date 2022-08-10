@@ -16,7 +16,7 @@ CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
 
-PARCEL_VERSION = '1.12.0'
+PARCEL_VERSION = '1.12.2'
 PLATFORMS = {
   'x86_64-linux' => {
     deno: 'x86_64-unknown-linux-gnu',
@@ -44,7 +44,7 @@ PLATFORMS.each do |platform, values|
   pkg_dir = File.join(base, 'pkg')
   gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
-  task "build:#{platform}" => "compile:#{platform}" do
+  task "build:#{platform}" => ["compile:esbuild:#{platform}", "parcel_css:download:#{platform}"] do
     sh 'gem', 'build', '-V', '--platform', platform do
       gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{platform}.gem", base).max_by do |f|
         File.mtime(f)
@@ -58,9 +58,7 @@ PLATFORMS.each do |platform, values|
     end
   end
 
-  task "compile:#{platform}" => "compile:esbuild:#{platform}"
-
-  task "compile:esbuild:#{platform}" => 'clobber:bin' do
+  task "compile:esbuild:#{platform}" => 'clobber:bin:esbuild' do
     puts ''
     sh 'deno', 'compile', '--no-config', '-o', 'bin/esbuild', '--import-map', 'import_map.json',
        '-A', '--target', values[:deno], 'lib/proscenium/compilers/esbuild.js'
@@ -70,7 +68,7 @@ PLATFORMS.each do |platform, values|
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{platform}.gem"
   end
 
-  task "parcel_css:download:#{platform}" do
+  task "parcel_css:download:#{platform}" => 'clobber:bin:parcel_css' do
     puts "Downloading parcel_css from NPM for #{platform}..."
 
     url = "@parcel/css-cli-#{values[:npm]}/-/css-cli-#{values[:npm]}-#{PARCEL_VERSION}.tgz"
@@ -89,9 +87,12 @@ PLATFORMS.each do |platform, values|
 end
 # rubocop:enable Metrics/BlockLength
 
-task 'clobber:bin' do
+task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:parcel_css']
+task 'clobber:bin:esbuild' do
   FileUtils.rm 'bin/esbuild', force: true
-  # FileUtils.rm 'bin/parcel_css', force: true
+end
+task 'clobber:bin:parcel_css' do
+  FileUtils.rm 'bin/parcel_css', force: true
 end
 
 Rake::Task['clobber'].tap do |task|
