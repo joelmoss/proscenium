@@ -19,4 +19,3 @@ gem 'rubocop-minitest'
 gem 'rubocop-packaging'
 gem 'rubocop-performance'
 gem 'rubocop-rake'
-gem 'ruby-lsp', require: false

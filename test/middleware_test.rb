@@ -3,10 +3,6 @@
 require_relative 'test_helper'
 
 class MiddlewareTest < ActionDispatch::IntegrationTest
-  teardown do
-    Rails.application.config.proscenium.glob_types = Proscenium::DEFAULT_GLOB_TYPES
-  end
-
   test 'unsupported path' do
     assert_raises ActionController::RoutingError do
       get '/db/some.js'
