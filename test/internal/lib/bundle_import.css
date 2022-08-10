@@ -1,5 +1,8 @@
-@import 'https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle';
-@import '/lib/foo.css?bundle';
+@import '/lib/foo.css?bundle'; /* absolute */
+@import 'mypackage/styles.css?bundle'; /* bare module */
+@import 'styles?bundle'; /* import map */
+@import 'https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle'; /* URL - unsupported */
+@import '@radix-ui/colors/gray.css?bundle'; /* import map to URL - unsupported*/
 
 header {
   color: pink;

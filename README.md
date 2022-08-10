@@ -77,6 +77,64 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
+## Bundling
+
+Proscenium does not do any bundling, as we believe that **the web is now fast by default**. So we
+let you decide if and when to bundle your code using query parameters in your JS and CSS imports.
+
+```js
+import doStuff from 'stuff?bundle'
+doStuff()
+```
+
+Bundling a URL import is not supported, as the URL itself may also support query parameters,
+resulting in conflicts. For example, esm.sh also supports a `?bundle` param, bundling a module's
+dependencies into a single file. Instead, you should install the module locally using your favourite
+package manager.
+
+## Import Map
+
+Import map for both JS and CSS is supported out of the box, and works with no regard to the browser
+version being used. Just create `config/import_map.json`:
+
+```json
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.2.0",
+    "start": "/lib/start.js",
+    "common": "/lib/common.css",
+    "@radix-ui/colors/": "https://esm.sh/@radix-ui/colors@0.1.8/",
+  }
+}
+```
+
+Using the above import map, we can do...
+
+```js
+import { useCallback } from 'react'
+import startHere from 'start'
+import styles from 'common'
+```
+
+and for CSS...
+
+```css
+@import 'common';
+@import '@radix-ui/colors/blue.css';
+```
+
+You can instead write your import map in Javascript instead of JSON. So instead of
+`config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This
+function accepts a single `environment` argument.
+
+```js
+env => ({
+  imports: {
+    react: env === 'development' ? 'https://esm.sh/react@18.2.0?dev' : 'https://esm.sh/react@18.2.0'
+  }
+})
+```
+
 ## Side Loading
 
 Proscenium has built in support for automatically side loading JS and CSS with your views and
@@ -131,7 +189,7 @@ You can disable auto reload by setting the `config.proscenium.auto_reload` confi
 
 ## CSS Custom Media Queries
 
-Proscenium supports [custom media queries](https://css-tricks.com/can-we-have-custom-media-queries-please/) as per the [spec](https://www.w3.org/TR/mediaqueries-5/#custom-mq). However, because of the way they are parsed, they cannot be imported using `@import`. So if you define your custom media queries in `/lib/custom_media_queries.css`, Proscenium will automatically inject them into your CSS, so you can use them anywhere.
+Proscenium supports [custom media queries](https://css-tricks.com/can-we-have-custom-media-queries-please/) as per the [spec](https://www.w3.org/TR/mediaqueries-5/#custom-mq). However, because of the way they are parsed, they cannot be imported using `@import`. So if you define your custom media queries in `/config/custom_media_queries.css`, Proscenium will automatically inject them into your CSS, so you can use them anywhere.
 
 ## How It Works
 

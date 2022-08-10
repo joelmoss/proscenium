@@ -3,7 +3,10 @@ import '/lib/foo2?bundle' // absolute path
 import './foo3?bundle' // relative path
 import 'mypackage?bundle' // bare module
 import './import_proscenium_component_manager?bundle' // nested import
-// import 'https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js?bundle'
 import Component from './component.jsx?bundle' // jsx
+import emailRegex from 'email-regex?bundle' // import map to URL - unsupported!
+import emailRegex2 from 'https://esm.sh/email-regex?bundle' // URL - unsupported
 
 Component()
+emailRegex()
+emailRegex2()

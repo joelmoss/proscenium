@@ -69,6 +69,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test '/proscenium-runtime/auto_reload.js' do
+    get '/proscenium-runtime/auto_reload.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test 'import proscenium/component_manager' do
     get '/lib/import_proscenium_component_manager_without_bundle.js'
 
