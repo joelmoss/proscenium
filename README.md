@@ -1,12 +1,27 @@
-# Proscenium
+# Proscenium - Modern Client-Side Tooling for Rails
 
-- Serve assets from anywhere within your Rails root.
+Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a
+"fast by default" internet. It compiles your JS, JSX and CSS in real time, and on demand, with no
+configuration at all!
+
+- Zero configuration.
+- Real-time compilation.
+- No additional process or server - Just run Rails!
+- Serve assets from anywhere within your Rails root (/app, /config, /lib).
 - Automatically side load JS/CSS for your layouts and views.
-- Import JS and CSS from node_modules, URL, local (relative, absolute)
-- Real-time bundling of JS, JSX and CSS.
-- Import Map
-- CSS Modules
-- Minification
+- Import JS(X) and CSS from node_modules, URL, local (relative, absolute).
+- Optional bundling of JS(X) and CSS.
+- Import Map support for JS and CSS.
+- CSS Modules.
+- CSS Custom Media Queries.
+- Minification.
+- Auto reload after changes (development only).
+
+## !! EXPERIMENTAL SOFTWARE !!
+
+While my goal is to use Proscenium in production, I strongly recommended that you **DO NOT** use
+this in production apps! Right now, this is a play thing, and should only be used for
+development/testing.
 
 ## Installation
 
@@ -34,6 +49,7 @@ Using the examples above...
 - `app/views/users/index.js` => `https://yourapp.com/app/views/users/index.js`
 - `app/views/layouts/application.css` => `https://yourapp.com/app/views/layouts/application.css`
 - `lib/utils.js` => `https://yourapp.com/lib/utils.js`
+- `config/properties.css` => `https://yourapp.com/config/properties.css`
 
 ## Importing
 
@@ -166,10 +182,28 @@ to `false`.
 
 ## CSS Modules
 
-Direct access to CSS files are parsed through @parcel/css.
+Give any CSS file a `.module.css` extension, and Proscenium will load it as a CSS Module...
 
-Importing a CSS file from JS will append the CSS file to the document's head. The results of the
-import will be an object of CSS modules.
+```css
+.header {
+  background-color: #00f;
+}
+```
+
+The above produces:
+
+```css
+.header5564cdbb {
+  background-color: #00f;
+}
+```
+
+Importing a CSS file from JS will automatically append the stylesheet to the document's head. The
+results of the import will be an object of CSS modules.
+
+```js
+import styles from './styles.module.css'
+```
 
 ## Auto Reload
 
