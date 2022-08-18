@@ -9,6 +9,7 @@ class ReactComponent < ApplicationComponent
   end
 
   def call
-    tag.div data: { component: { path: virtual_path, props: @props } }
+    tag.div class: css_module(:component),
+            data: { component: { path: virtual_path, props: @props } }
   end
 end
