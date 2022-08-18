@@ -5,6 +5,7 @@ PATH
       actioncable (>= 6.1.0, < 8.0)
       activesupport (>= 6.1.0, < 8.0)
       listen (~> 3.0)
+      nokogiri (~> 1.13)
       oj (~> 3.13)
       railties (>= 6.1.0, < 8.0)
       view_component (~> 2.0)
