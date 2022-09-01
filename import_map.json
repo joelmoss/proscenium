@@ -2,7 +2,7 @@
   "imports": {
     "std/": "https://deno.land/std@0.151.0/",
     "testing/": "https://deno.land/std@0.151.0/testing/",
-    "esbuild": "https://deno.land/x/esbuild@v0.15.0/mod.js",
+    "esbuild": "https://deno.land/x/esbuild@v0.15.6/mod.js",
     "import-maps/resolve": "https://esm.sh/v90/@import-maps/resolve@1.0.1/es2022/resolve.js"
   }
 }
