@@ -12,16 +12,8 @@ module Proscenium
   #
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   DEFAULT_GLOB_TYPES = {
-    esbuild: [
-      'config/**/*.{js,jsx,css}',
-      'lib/**/*.{js,jsx,css}',
-      'app/**/*.{js,jsx,css}'
-    ]
-    # parcelcss: [
-    #   'config/**/*.css',
-    #   'lib/**/*.css',
-    #   'app/**/*.css'
-    # ]
+    esbuild: '/{config,app,lib,node_modules}/**.{js,jsx,css}',
+    runtime: '/proscenium-runtime/**.{js,jsx}'
   }.freeze
 
   class << self

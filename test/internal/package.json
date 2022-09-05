@@ -1,4 +1,7 @@
 {
   "name": "internal",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "is-ip": "^5.0.0"
+  }
 }

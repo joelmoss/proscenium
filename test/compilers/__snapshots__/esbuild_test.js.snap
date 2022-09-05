@@ -18,8 +18,10 @@ export {
 snapshot[`compilers/esbuild > Import bare module 1`] = `
 '// lib/import_node_module.js
 import myPackage from "/node_modules/mypackage/index.js";
+import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
 var import_node_module_default = () => {
   myPackage();
+  isIp("?");
 };
 export {
   import_node_module_default as default

@@ -1,0 +1,26 @@
+// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
+import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
+var maxIPv4Length = 15;
+var maxIPv6Length = 45;
+var options = {
+  timeout: 400
+};
+function isIP(string) {
+  return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
+}
+function isIPv6(string) {
+  return isMatch(ipRegex.v6({ exact: true }), string.slice(0, maxIPv6Length), options);
+}
+function isIPv4(string) {
+  return isMatch(ipRegex.v4({ exact: true }), string.slice(0, maxIPv4Length), options);
+}
+function ipVersion(string) {
+  return isIP(string) ? isIPv6(string) ? 6 : 4 : void 0;
+}
+export {
+  ipVersion,
+  isIP,
+  isIPv4,
+  isIPv6
+};

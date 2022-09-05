@@ -9,14 +9,7 @@ module Proscenium
 
     autoload :Base
     autoload :Esbuild
-    autoload :ParcelCss
     autoload :Runtime
-
-    MIDDLEWARE_CLASSES = {
-      esbuild: Esbuild,
-      parcelcss: ParcelCss,
-      runtime: Runtime
-    }.freeze
 
     def initialize(app)
       @app = app
@@ -38,23 +31,15 @@ module Proscenium
     def attempt(request)
       return unless (type = find_type(request))
 
-      file_handler.attempt(request.env) || MIDDLEWARE_CLASSES[type].attempt(request)
+      file_handler.attempt(request.env) || type.attempt(request)
     end
 
     # Returns the type of file being requested using Rails.application.config.proscenium.glob_types.
     def find_type(request)
-      return :runtime if request.path_info.start_with?('/proscenium-runtime/')
+      path = Pathname.new(request.path)
 
-      path = Rails.root.join(request.path[1..])
-
-      type, = glob_types.find do |_, globs|
-        # TODO: Look for the precompiled file in public/assets first
-        #   globs.any? { |glob| Rails.public_path.join('assets').glob(glob).any?(path) }
-
-        globs.any? { |glob| Rails.root.glob(glob).any?(path) }
-      end
-
-      type
+      return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
+      return Esbuild if path.fnmatch?(glob_types[:esbuild], File::FNM_EXTGLOB)
     end
 
     def file_handler
