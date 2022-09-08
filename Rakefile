@@ -16,7 +16,7 @@ CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
 
-PARCEL_VERSION = '1.12.2'
+LIGHTNINGCSS_VERSION = '1.14.0'
 PLATFORMS = {
   'x86_64-linux' => {
     deno: 'x86_64-unknown-linux-gnu',
@@ -44,7 +44,8 @@ PLATFORMS.each do |platform, values|
   pkg_dir = File.join(base, 'pkg')
   gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
-  task "build:#{platform}" => ["compile:esbuild:#{platform}", "parcel_css:download:#{platform}"] do
+  task "build:#{platform}" => ["compile:esbuild:#{platform}",
+                               "lightningcss:download:#{platform}"] do
     sh 'gem', 'build', '-V', '--platform', platform do
       gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{platform}.gem", base).max_by do |f|
         File.mtime(f)
@@ -68,31 +69,31 @@ PLATFORMS.each do |platform, values|
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{platform}.gem"
   end
 
-  task "parcel_css:download:#{platform}" => 'clobber:bin:parcel_css' do
-    puts "Downloading parcel_css from NPM for #{platform}..."
+  task "lightningcss:download:#{platform}" => 'clobber:bin:lightningcss' do
+    puts "Downloading lightningcss from NPM for #{platform}..."
 
-    url = "@parcel/css-cli-#{values[:npm]}/-/css-cli-#{values[:npm]}-#{PARCEL_VERSION}.tgz"
+    url = "lightningcss-cli-#{values[:npm]}/-/lightningcss-cli-#{values[:npm]}-#{LIGHTNINGCSS_VERSION}.tgz"
     file = Down.download("https://registry.npmjs.org/#{url}")
 
-    filename = "parcel-css-cli-#{values[:npm]}-#{PARCEL_VERSION}.tgz"
+    filename = "lightningcss-cli-#{values[:npm]}-#{LIGHTNINGCSS_VERSION}.tgz"
     FileUtils.mv file, "tmp/#{filename}"
 
     FileUtils.cd 'tmp' do
-      sh 'tar', '-xzf', filename, 'package/parcel_css'
+      sh 'tar', '-xzf', filename, 'package/lightningcss'
     end
 
-    FileUtils.mv 'tmp/package/parcel_css', 'bin/parcel_css'
-    FileUtils.chmod '+x', 'bin/parcel_css'
+    FileUtils.mv 'tmp/package/lightningcss', 'bin/lightningcss'
+    FileUtils.chmod '+x', 'bin/lightningcss'
   end
 end
 # rubocop:enable Metrics/BlockLength
 
-task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:parcel_css']
+task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:lightningcss']
 task 'clobber:bin:esbuild' do
   FileUtils.rm 'bin/esbuild', force: true
 end
-task 'clobber:bin:parcel_css' do
-  FileUtils.rm 'bin/parcel_css', force: true
+task 'clobber:bin:lightningcss' do
+  FileUtils.rm 'bin/lightningcss', force: true
 end
 
 Rake::Task['clobber'].tap do |task|

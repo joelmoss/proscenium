@@ -4,9 +4,9 @@ require 'oj'
 
 module Proscenium
   class Middleware
-    class ParcelCss < Base
+    class Lightningcss < Base
       def attempt
-        benchmark :parcelcss do
+        benchmark :lightningcss do
           with_custom_media { |path| build path }
         end
       end
@@ -41,7 +41,7 @@ module Proscenium
       end
 
       def cli
-        Gem.bin_path 'proscenium', 'parcel_css'
+        Gem.bin_path 'proscenium', 'lightningcss'
       end
 
       def cli_options

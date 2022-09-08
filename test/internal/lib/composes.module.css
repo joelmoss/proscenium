@@ -1,0 +1,4 @@
+.firstClass {
+  composes: secondClass from './composes_dep.module.css';
+  font-size: 2px;
+}

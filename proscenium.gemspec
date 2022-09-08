@@ -21,7 +21,7 @@ Gem::Specification.new do |spec|
   spec.files = Dir['{app,config,lib,bin}/**/*', 'CODE_OF_CONDUCT.md', 'README.md', 'LICENSE.txt']
   spec.bindir = 'bin'
   spec.executables << 'esbuild'
-  spec.executables << 'parcel_css'
+  spec.executables << 'lightningcss'
   spec.require_paths = ['lib']
 
   spec.add_dependency 'actioncable', ['>= 6.1.0', '< 8.0']
