@@ -31,7 +31,9 @@ module Proscenium
 
       def cli
         if ENV['PROSCENIUM_TEST']
-          'deno run -q --import-map import_map.json -A lib/proscenium/compilers/esbuild.js'
+          [
+            'deno run -q --import-map import_map.json -A', 'lib/proscenium/compilers/esbuild.js'
+          ].join(' ')
         else
           Gem.bin_path 'proscenium', 'esbuild'
         end

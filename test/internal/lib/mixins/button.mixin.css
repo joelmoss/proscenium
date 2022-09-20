@@ -1,0 +1,17 @@
+@define-mixin button {
+  @mixin button_pink;
+  @mixin button_small;
+  font-size: 14px;
+}
+
+@define-mixin button_pink {
+  color: pink;
+}
+
+@define-mixin button_small {
+  font-size: 12px;
+
+  & span {
+    margin: 10px;
+  }
+}

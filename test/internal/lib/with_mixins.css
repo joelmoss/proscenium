@@ -1,0 +1,8 @@
+a {
+  @mixin link;
+  font-size: 20px;
+}
+
+button {
+  @mixin button;
+}
