@@ -84,9 +84,15 @@ import foo from "/lib/foo.js";
 `;
 
 snapshot[`compilers/esbuild > Import css module from JS 1`] = `
-'// importStylesheet:/lib/styles.module.css
-import { importCssModule } from "/proscenium-runtime/import_css.js";
-var styles_module_default = await importCssModule("/lib/styles.module.css");
+'// lib/styles.module.css
+var e = document.querySelector("#_330940eb");
+if (!e) {
+  e = document.createElement("style");
+  e.id = "_330940eb";
+  document.head.appendChild(e);
+  e.appendChild(document.createTextNode(\`.myClass330940eb{color:pink}\`));
+}
+var styles_module_default = { "myClass": "myClass330940eb" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);
@@ -94,16 +100,28 @@ console.log(styles_module_default);
 `;
 
 snapshot[`compilers/esbuild > Import css from JS 1`] = `
-'// importStylesheet:/app/views/layouts/application.css
-import { appendStylesheet } from "/proscenium-runtime/import_css.js";
-appendStylesheet("/app/views/layouts/application.css");
+'// app/views/layouts/application.css
+var e = document.querySelector("#_6d24c769");
+if (!e) {
+  e = document.createElement("style");
+  e.id = "_6d24c769";
+  document.head.appendChild(e);
+  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
+\`));
+}
 '
 `;
 
 snapshot[`compilers/esbuild > Import css from jsx 1`] = `
-'// importStylesheet:/app/views/layouts/application.css
-import { appendStylesheet } from "/proscenium-runtime/import_css.js";
-appendStylesheet("/app/views/layouts/application.css");
+'// app/views/layouts/application.css
+var e = document.querySelector("#_6d24c769");
+if (!e) {
+  e = document.createElement("style");
+  e.id = "_6d24c769";
+  document.head.appendChild(e);
+  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
+\`));
+}
 '
 `;
 

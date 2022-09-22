@@ -1,6 +1,12 @@
-// importStylesheet:/lib/styles.module.css
-import { importCssModule } from "/proscenium-runtime/import_css.js";
-var styles_module_default = await importCssModule("/lib/styles.module.css");
+// lib/styles.module.css
+var e = document.querySelector("#_330940eb");
+if (!e) {
+  e = document.createElement("style");
+  e.id = "_330940eb";
+  document.head.appendChild(e);
+  e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
+}
+var styles_module_default = { "myClass": "myClass330940eb" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);
