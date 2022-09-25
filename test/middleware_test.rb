@@ -73,14 +73,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'import map in runtime file' do
-    get '/proscenium-runtime/component_manager/render_component.jsx'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
   test 'esbuild js compilation error' do
     get '/lib/includes_error.js'
 
@@ -90,7 +82,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'node module (pnpm)' do
-    get '/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js'
+    get '/node_modules/is-ip/index.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']

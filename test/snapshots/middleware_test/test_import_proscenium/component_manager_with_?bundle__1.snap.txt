@@ -1,0 +1,24 @@
+// ../../lib/proscenium/runtime/component_manager/index.js?bundle
+async function init() {
+  const elements = document.querySelectorAll("[data-component]");
+  if (elements.length < 1)
+    return;
+  const { default: renderComponent } = await import("/proscenium-runtime/component_manager/render_component.jsx");
+  Array.from(elements, (ele) => {
+    const data = JSON.parse(ele.getAttribute("data-component"));
+    let isVisible = false;
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!isVisible && entry.isIntersecting) {
+          isVisible = true;
+          observer.unobserve(ele);
+          renderComponent(ele, data);
+        }
+      });
+    });
+    observer.observe(ele);
+  });
+}
+
+// lib/import_proscenium_component_manager.js
+init();

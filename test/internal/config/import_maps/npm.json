@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "ip-regex": "https://esm.sh/ip-regex"
+  }
+}

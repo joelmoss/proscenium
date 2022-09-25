@@ -1,4 +1,4 @@
-import { assertRejects } from 'std/testing/asserts.ts'
+import { assertRejects, assertStringIncludes } from 'std/testing/asserts.ts'
 import { assertSnapshot } from 'std/testing/snapshot.ts'
 import { join } from 'std/path/mod.ts'
 import { beforeEach, describe, it } from 'std/testing/bdd.ts'
@@ -78,10 +78,67 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('import map', async t => {
-    const result = await main(['lib/import_map.js'], { root })
+  describe('import map', () => {
+    it('from json', async t => {
+      const result = await main(['lib/import_map.js'], {
+        root,
+        importMap: 'config/import_maps/as.json'
+      })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+
+    it('from js', async t => {
+      const result = await main(['lib/import_map_as_js.js'], {
+        root,
+        importMap: 'config/import_maps/as.js'
+      })
+
+      assertStringIncludes(new TextDecoder().decode(result), 'import pkg from "/lib/foo2.js";')
+    })
+
+    it('maps imports via trailing slash', async t => {
+      const result = await main(['lib/component.jsx'], {
+        root,
+        importMap: 'config/import_maps/trailing_slash_import.json'
+      })
+
+      assertStringIncludes(
+        new TextDecoder().decode(result),
+        'import { jsx } from "https://esm.sh/react@18.2.0/jsx-runtime"'
+      )
+    })
+
+    it('maps imports via trailing slash', async t => {
+      const result = await main(['proscenium-runtime/component_manager/render_component.jsx'], {
+        root,
+        importMap: 'config/import_maps/react.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+
+    it('resolves imports from a node_module', async t => {
+      const result = await main(['node_modules/is-ip/index.js'], {
+        root,
+        importMap: 'config/import_maps/npm.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+  })
+
+  describe('component manager', () => {
+    it('can import from node_modules', async t => {
+      const result = await main(['proscenium-runtime/component_manager/render_component.jsx'], {
+        root
+      })
+
+      assertStringIncludes(
+        new TextDecoder().decode(result),
+        'import("/node_modules/.pnpm/react-dom@18.2.0/node_modules/react-dom/client.js");'
+      )
+    })
   })
 
   it('Import relative module without extension', async t => {
@@ -115,13 +172,19 @@ describe('compilers/esbuild', () => {
   })
 
   it('bundled js import', async t => {
-    const result = await main(['lib/bundle_import.js'], { root })
+    const result = await main(['lib/bundle_import.js'], {
+      root,
+      importMap: 'config/import_maps/bundled.json'
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('bundled css import', async t => {
-    const result = await main(['lib/bundle_import.css'], { root })
+    const result = await main(['lib/bundle_import.css'], {
+      root,
+      importMap: 'config/import_maps/bundled.json'
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })

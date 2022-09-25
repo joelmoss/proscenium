@@ -1,5 +1,5 @@
 // lib/component.jsx
-import { jsx } from "https://esm.sh/react@18.2.0/jsx-runtime";
+import { jsx } from "react/jsx-runtime";
 var Component = () => {
   return /* @__PURE__ */ jsx("div", {
     children: "Hello"
