@@ -2,6 +2,7 @@
   "name": "internal",
   "private": true,
   "dependencies": {
+    "@react-aria/button": "^3.6.1",
     "is-ip": "^5.0.0",
     "react-dom": "^18.2.0"
   }

@@ -1,6 +1,6 @@
 // node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
-import ipRegex from "ip-regex";
-import { isMatch } from "super-regex";
+import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
+import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv4Length = 15;
 var maxIPv6Length = 45;
 var options = {

@@ -60,6 +60,12 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('resolves nested node modules', async t => {
+    const result = await main(['node_modules/@react-aria/button'], { root })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   it('Import relative module', async t => {
     const result = await main(['lib/import_relative_module.js'], { root })
 

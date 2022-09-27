@@ -1,20 +1,131 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@react-aria/button': ^3.6.1
   is-ip: ^5.0.0
   react-dom: ^18.2.0
 
 dependencies:
+  '@react-aria/button': 3.6.1
   is-ip: 5.0.0
   react-dom: 18.2.0
 
 packages:
+
+  /@babel/runtime/7.19.0:
+    resolution: {integrity: sha512-eR8Lo9hnDS7tqkO7NsV+mKvCmv5boaXFSZ70DnfhcgiEne8hv9oCEd36Klw74EtizEqLsy4YnW8UWwpBVolHZA==}
+    engines: {node: '>=6.9.0'}
+    dependencies:
+      regenerator-runtime: 0.13.9
+    dev: false
+
+  /@react-aria/button/3.6.1:
+    resolution: {integrity: sha512-g10dk0eIQ71F1QefUymbff0yceQFHEKzOwK7J5QAFB5w/FUSmCTsMkBrrra4AogRxYHIAr5adPic5F2g7VzQFw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@react-aria/focus': 3.8.0
+      '@react-aria/interactions': 3.11.0
+      '@react-aria/utils': 3.13.3
+      '@react-stately/toggle': 3.4.1
+      '@react-types/button': 3.6.1
+      '@react-types/shared': 3.14.1
+    dev: false
+
+  /@react-aria/focus/3.8.0:
+    resolution: {integrity: sha512-XuaLFdqf/6OyILifkVJo++5k2O+wlpNvXgsJkRWn/wSmB77pZKURm2MMGiSg2u911NqY+829UrSlpmhCZrc8RA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@react-aria/interactions': 3.11.0
+      '@react-aria/utils': 3.13.3
+      '@react-types/shared': 3.14.1
+      clsx: 1.2.1
+    dev: false
+
+  /@react-aria/interactions/3.11.0:
+    resolution: {integrity: sha512-ZjK4m8u6FlV7Q9/1h9P2Ii6j/NwKR3BmTeGeBQssS2i4dV2pJeOPePnGzVQQGG8FzGQ+TcNRvZPXKaU4AlnBjw==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@react-aria/utils': 3.13.3
+      '@react-types/shared': 3.14.1
+    dev: false
+
+  /@react-aria/ssr/3.3.0:
+    resolution: {integrity: sha512-yNqUDuOVZIUGP81R87BJVi/ZUZp/nYOBXbPsRe7oltJOfErQZD+UezMpw4vM2KRz18cURffvmC8tJ6JTeyDtaQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+    dev: false
+
+  /@react-aria/utils/3.13.3:
+    resolution: {integrity: sha512-wqjGNFX4TrXriUU1gvCaoqRhuckdoYogUWN0iyQRkTmzvb7H/NNzQzHou5ggWAdts/NzJUInwKarBWM9hCZZbg==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@react-aria/ssr': 3.3.0
+      '@react-stately/utils': 3.5.1
+      '@react-types/shared': 3.14.1
+      clsx: 1.2.1
+    dev: false
+
+  /@react-stately/toggle/3.4.1:
+    resolution: {integrity: sha512-Dlg7M9W52n0K+Op/H5ywdSCORW70ry6syPSahh+RXQKKdky9bckqmrpO24A92dL7Rci2H4fTsBgZGVla9b/wNQ==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+      '@react-stately/utils': 3.5.1
+      '@react-types/checkbox': 3.3.3
+      '@react-types/shared': 3.14.1
+    dev: false
+
+  /@react-stately/utils/3.5.1:
+    resolution: {integrity: sha512-INeQ5Er2Jm+db8Py4upKBtgfzp3UYgwXYmbU/XJn49Xw27ktuimH9e37qP3bgHaReb5L3g8IrGs38tJUpnGPHA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@babel/runtime': 7.19.0
+    dev: false
+
+  /@react-types/button/3.6.1:
+    resolution: {integrity: sha512-F7m3/MVmzChkBqD5gO7rIglPRHY6KZg/RaU8f8VqZuEOAHuQ1CtTEfpc6r9artBSs2Gdw7yNWxfCI2dP95lYow==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@react-types/shared': 3.14.1
+    dev: false
+
+  /@react-types/checkbox/3.3.3:
+    resolution: {integrity: sha512-GkhC+y4g7Dga9Ck5MNvvX11hnn9S4b9Rx1+cdFMzBczJPJZhDxO69+CPQnoFAkVQSIYEC5bh/2u34sWyF6uq6g==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      '@react-types/shared': 3.14.1
+    dev: false
+
+  /@react-types/shared/3.14.1:
+    resolution: {integrity: sha512-yPPgVRWWanXqbdxFTgJmVwx0JlcnEK3dqkKDIbVk6mxAHvEESI9+oDnHvO8IMHqF+GbrTCzVtAs0zwhYI/uHJA==}
+    peerDependencies:
+      react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dev: false
 
   /clone-regexp/3.0.0:
     resolution: {integrity: sha512-ujdnoq2Kxb8s3ItNBtnYeXdm07FcU0u8ARAT1lQ2YdMwQC+cdiXX8KoqMVuglztILivceTtp4ivqGSmEmhBUJw==}
     engines: {node: '>=12'}
     dependencies:
       is-regexp: 3.1.0
+    dev: false
+
+  /clsx/1.2.1:
+    resolution: {integrity: sha512-EcR6r5a8bj6pu3ycsa/E/cKVGuTgZJZdsyUYHOksG/UHIiKfjxzRxYJpyVBwYaQeOvghal9fcc4PidlgzugAQg==}
+    engines: {node: '>=6'}
     dev: false
 
   /convert-hrtime/5.0.0:
@@ -63,6 +174,10 @@ packages:
     dependencies:
       loose-envify: 1.4.0
       scheduler: 0.23.0
+    dev: false
+
+  /regenerator-runtime/0.13.9:
+    resolution: {integrity: sha512-p3VT+cOEgxFsRRA9X4lkI1E+k2/CtnKtU4gcxyaCUreilL/vqI6CdZ3wxVUx3UOUg+gnUOQQcRI7BmSI656MYA==}
     dev: false
 
   /scheduler/0.23.0:

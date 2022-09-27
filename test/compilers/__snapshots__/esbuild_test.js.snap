@@ -41,6 +41,95 @@ export {
 '
 `;
 
+snapshot[`compilers/esbuild > resolves nested node modules 1`] = `
+'// node_modules/.pnpm/@react-aria+button@3.6.1/node_modules/@react-aria/button/dist/module.js
+import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+utils@3.13.3/node_modules/@react-aria/utils/dist/module.js";
+import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+focus@3.8.0/node_modules/@react-aria/focus/dist/module.js";
+import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+interactions@3.11.0/node_modules/@react-aria/interactions/dist/module.js";
+function \$701a24aa0da5b062\$export\$ea18c227d4417cc3(props, ref) {
+  let {
+    elementType = "button",
+    isDisabled,
+    onPress,
+    onPressStart,
+    onPressEnd,
+    onPressChange,
+    preventFocusOnPress,
+    allowFocusWhenDisabled,
+    onClick: deprecatedOnClick,
+    href,
+    target,
+    rel,
+    type = "button"
+  } = props;
+  let additionalProps;
+  if (elementType === "button")
+    additionalProps = {
+      type,
+      disabled: isDisabled
+    };
+  else
+    additionalProps = {
+      role: "button",
+      tabIndex: isDisabled ? void 0 : 0,
+      href: elementType === "a" && isDisabled ? void 0 : href,
+      target: elementType === "a" ? target : void 0,
+      type: elementType === "input" ? type : void 0,
+      disabled: elementType === "input" ? isDisabled : void 0,
+      "aria-disabled": !isDisabled || elementType === "input" ? void 0 : isDisabled,
+      rel: elementType === "a" ? rel : void 0
+    };
+  let { pressProps, isPressed } = \$cE0pI\$usePress({
+    onPressStart,
+    onPressEnd,
+    onPressChange,
+    onPress,
+    isDisabled,
+    preventFocusOnPress,
+    ref
+  });
+  let { focusableProps } = \$cE0pI\$useFocusable(props, ref);
+  if (allowFocusWhenDisabled)
+    focusableProps.tabIndex = isDisabled ? -1 : focusableProps.tabIndex;
+  let buttonProps = \$cE0pI\$mergeProps(focusableProps, pressProps, \$cE0pI\$filterDOMProps(props, {
+    labelable: true
+  }));
+  return {
+    isPressed,
+    buttonProps: \$cE0pI\$mergeProps(additionalProps, buttonProps, {
+      "aria-haspopup": props["aria-haspopup"],
+      "aria-expanded": props["aria-expanded"],
+      "aria-controls": props["aria-controls"],
+      "aria-pressed": props["aria-pressed"],
+      onClick: (e) => {
+        if (deprecatedOnClick) {
+          deprecatedOnClick(e);
+          console.warn("onClick is deprecated, please use onPress");
+        }
+      }
+    })
+  };
+}
+function \$55f54f7887471b58\$export\$51e84d46ca0bc451(props, state, ref) {
+  const { isSelected } = state;
+  const { isPressed, buttonProps } = \$701a24aa0da5b062\$export\$ea18c227d4417cc3({
+    ...props,
+    onPress: \$cE0pI\$chain(state.toggle, props.onPress)
+  }, ref);
+  return {
+    isPressed,
+    buttonProps: \$cE0pI\$mergeProps(buttonProps, {
+      "aria-pressed": isSelected
+    })
+  };
+}
+export {
+  \$701a24aa0da5b062\$export\$ea18c227d4417cc3 as useButton,
+  \$55f54f7887471b58\$export\$51e84d46ca0bc451 as useToggleButton
+};
+'
+`;
+
 snapshot[`compilers/esbuild > Import relative module 1`] = `
 '// lib/import_relative_module.js
 import "/lib/foo.js";
@@ -112,7 +201,7 @@ export {
 snapshot[`compilers/esbuild > import map > resolves imports from a node_module 1`] = `
 '// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
 import ipRegex from "https://esm.sh/ip-regex";
-import { isMatch } from "super-regex";
+import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv4Length = 15;
 var maxIPv6Length = 45;
 var options = {
