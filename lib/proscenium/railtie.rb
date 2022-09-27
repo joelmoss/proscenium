@@ -12,7 +12,7 @@ module Proscenium
   #
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   DEFAULT_GLOB_TYPES = {
-    esbuild: '/{config,app,lib,node_modules}/**.{js,jsx,css}',
+    esbuild: '/{config,app,lib,node_modules}/**.{js,mjs,jsx,css}',
     runtime: '/proscenium-runtime/**.{js,jsx}'
   }.freeze
 
