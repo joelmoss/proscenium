@@ -256,6 +256,54 @@ console.log(styles_module_default);
 '
 `;
 
+snapshot[`compilers/esbuild > de-dupes side loaded ViewComponent default stylesheet - regular 1`] = `
+'// app/components/basic_react_component.module.css
+var basic_react_component_module_default = new Proxy({}, { get(target, prop, receiver) {
+  if (prop in target || typeof prop === "symbol") {
+    return Reflect.get(target, prop, receiver);
+  } else {
+    return prop + "2566f445";
+  }
+} });
+
+// app/components/basic_react_component.jsx
+import { jsx } from "react/jsx-runtime";
+var basic_react_component_default = () => {
+  return /* @__PURE__ */ jsx("div", {
+    className: basic_react_component_module_default.base,
+    children: "Basic React Component"
+  });
+};
+export {
+  basic_react_component_default as default
+};
+'
+`;
+
+snapshot[`compilers/esbuild > de-dupes side loaded ViewComponent default stylesheet - sidecar 1`] = `
+'// app/components/basic_react/component.module.css
+var component_module_default = new Proxy({}, { get(target, prop, receiver) {
+  if (prop in target || typeof prop === "symbol") {
+    return Reflect.get(target, prop, receiver);
+  } else {
+    return prop + "c46dc2fd";
+  }
+} });
+
+// app/components/basic_react/component.jsx
+import { jsx } from "react/jsx-runtime";
+var component_default = () => {
+  return /* @__PURE__ */ jsx("div", {
+    className: component_module_default.base,
+    children: "Basic React Component"
+  });
+};
+export {
+  component_default as default
+};
+'
+`;
+
 snapshot[`compilers/esbuild > Import css from JS 1`] = `
 '// app/views/layouts/application.css
 var e = document.querySelector("#_6d24c769");

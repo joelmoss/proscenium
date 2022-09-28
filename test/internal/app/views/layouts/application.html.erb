@@ -2,8 +2,8 @@
 <html>
   <head>
     <title>Proscenium Test App</title>
-    <%= stylesheet_link_tag(*Proscenium::Current.loaded[:css]) %>
-    <%= javascript_include_tag(*Proscenium::Current.loaded[:js], defer: true, type: :module) %>
+    <%= side_load_stylesheets %>
+    <%= side_load_javascripts defer: true, type: 'module' %>
   </head>
   <body>
     <%= yield %>

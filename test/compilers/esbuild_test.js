@@ -165,6 +165,18 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('de-dupes side loaded ViewComponent default stylesheet - regular', async t => {
+    const result = await main(['app/components/basic_react_component.jsx'], { root })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
+  it('de-dupes side loaded ViewComponent default stylesheet - sidecar', async t => {
+    const result = await main(['app/components/basic_react/component.jsx'], { root })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   it('Import css from JS', async t => {
     const result = await main(['lib/import_css.js'], { root })
 

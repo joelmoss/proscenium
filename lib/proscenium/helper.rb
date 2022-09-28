@@ -11,7 +11,9 @@ module Proscenium
     def side_load_stylesheets
       return unless Proscenium::Current.loaded
 
-      stylesheet_link_tag(*Proscenium::Current.loaded[:css])
+      Proscenium::Current.loaded[:css].map do |sheet|
+        stylesheet_link_tag(sheet, id: "_#{Digest::SHA1.hexdigest("/#{sheet}")[..7]}")
+      end.join("\n").html_safe
     end
 
     def side_load_javascripts(**options)
