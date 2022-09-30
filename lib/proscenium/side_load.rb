@@ -74,12 +74,20 @@ module Proscenium
         private
 
         def render_template(view, template, layout_name, locals)
-          if template.respond_to?(:virtual_path) &&
-             template.respond_to?(:type) && template.type == :html
-            if (layout = layout_name && find_layout(layout_name, locals.keys, [formats.first]))
-              Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" # layout
-            end
+          layout = find_layout(layout_name, locals.keys, [formats.first])
+          renderable = template.instance_variable_get(:@renderable)
 
+          if template.is_a?(ActionView::Template::Renderable) &&
+             renderable.class < ::ViewComponent::Base && renderable.class.format == :html
+            # Side load controller rendered ViewComponent
+            Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
+            Proscenium::SideLoad.append "app/views/#{renderable.virtual_path}"
+          elsif template.respond_to?(:virtual_path) &&
+                template.respond_to?(:type) && template.type == :html
+            # Side load regular view template.
+            Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
+
+            # Try side loading the variant template
             if template.respond_to?(:variant) && template.variant
               Proscenium::SideLoad.append "app/views/#{template.virtual_path}+#{template.variant}"
             end

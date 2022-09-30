@@ -5,4 +5,5 @@ Rails.application.routes.draw do
   get 'first_component', to: 'pages#first_component'
   get 'first_react_component', to: 'pages#first_react_component'
   get 'second_react_component', to: 'pages#second_react_component'
+  get 'action_rendered_component', to: 'pages#action_rendered_component'
 end

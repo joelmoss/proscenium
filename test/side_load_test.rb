@@ -61,4 +61,10 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_matches_snapshot response.body
   end
+
+  test 'Side load action rendered component' do
+    get '/action_rendered_component'
+
+    assert_matches_snapshot response.body
+  end
 end
