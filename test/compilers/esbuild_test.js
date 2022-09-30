@@ -132,6 +132,15 @@ describe('compilers/esbuild', () => {
 
       await assertSnapshot(t, new TextDecoder().decode(result))
     })
+
+    it('supports scopes', async t => {
+      const result = await main(['/lib/import_map/scopes.js'], {
+        root,
+        importMap: 'config/import_maps/scopes.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
   })
 
   describe('component manager', () => {

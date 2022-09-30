@@ -228,6 +228,12 @@ export {
 '
 `;
 
+snapshot[`compilers/esbuild > import map > supports scopes 1`] = `
+'// lib/import_map/scopes.js
+import "/lib/foo2.js";
+'
+`;
+
 snapshot[`compilers/esbuild > Import relative module without extension 1`] = `
 '// lib/import_relative_module_without_extension.js
 import foo from "/lib/foo.js";
