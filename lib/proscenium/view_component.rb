@@ -6,7 +6,7 @@ module Proscenium::ViewComponent
   autoload :TagBuilder
 
   def render_in(view_context, &block)
-    parse_content super
+    Rails.env.test? ? super : parse_content(super)
   end
 
   def before_render
