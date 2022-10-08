@@ -1,15 +1,22 @@
 /* eslint-disable no-console */
 
-import { RAILS_ENV } from 'env'
+import { PROSCENIUM_APPLICATION_COMPONENT, RAILS_ENV } from 'env'
+
+const shouldUseAppComponent = PROSCENIUM_APPLICATION_COMPONENT === 'true'
 
 // We don't use JSX, as doing so would auto-inject React. We don't want to do this, as React is lazy
 // loaded only when needed.
 export default async function (ele, data) {
-  const { createElement, useEffect, lazy, Suspense } = await import('react')
+  const { useEffect, lazy, Suspense } = await import('react')
   const { createRoot } = await import('react-dom/client')
 
-  const component = lazy(() => import(`/app/components${data.path}.jsx`))
+  const AppComponent = lazy(() => import(`/app/components/application.jsx`))
+  const Component = lazy(() => import(`/app/components${data.path}.jsx`))
   const contentLoader = data.contentLoader && ele.firstElementChild
+
+  const WrapWithAppComponent = ({ children }) => {
+    return shouldUseAppComponent ? <AppComponent>{children}</AppComponent> : children
+  }
 
   const Fallback = ({ contentLoader }) => {
     useEffect(() => {
@@ -28,9 +35,12 @@ export default async function (ele, data) {
 
   createRoot(ele).render(
     <Suspense fallback={<Fallback contentLoader={contentLoader} />}>
-      {createElement(component, data.props)}
+      <WrapWithAppComponent>
+        <Component {...data.props} />
+      </WrapWithAppComponent>
     </Suspense>
   )
 
-  RAILS_ENV === 'development' && console.debug(`[REACT]`, `Rendered ${data.path.slice(1)}`)
+  RAILS_ENV === 'development' &&
+    console.debug(`[Proscenium]`, `Rendered react:${data.path.slice(1)}`)
 }
