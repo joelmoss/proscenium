@@ -5,6 +5,7 @@ Proscenium treats your client-side code as first class citizens of your Rails ap
 configuration at all!
 
 - Zero configuration.
+- NO JavaScript rumtime needed - just the browser!
 - Real-time compilation.
 - No additional process or server - Just run Rails!
 - Serve assets from anywhere within your Rails root (/app, /config, /lib).
@@ -14,6 +15,7 @@ configuration at all!
 - Import Map support for JS and CSS.
 - CSS Modules.
 - CSS Custom Media Queries.
+- CSS mixins.
 - Minification.
 - Auto reload after changes (development only).
 
