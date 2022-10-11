@@ -1,0 +1,20 @@
+{
+  "name": "@proscenium/component-manager",
+  "version": "0.1.0",
+  "description": "Dynamic React component islands",
+  "module": "index.js",
+  "author": "Joel Moss",
+  "homepage": "https://github.com/joelmoss/proscenium",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/joelmoss/proscenium.git"
+  },
+  "bugs": {
+    "url": "https://github.com/joelmoss/proscenium/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "components",
+    "react"
+  ]
+}
