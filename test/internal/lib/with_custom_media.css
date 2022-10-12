@@ -1,4 +1,4 @@
-@import 'fooo';
+@import './foo.css';
 
 header {
   color: pink;

@@ -1,4 +1,4 @@
-@import "fooo";
+@import "/lib/foo.css";
 
 /* lib/with_custom_media.css */
 header {

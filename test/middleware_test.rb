@@ -65,14 +65,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'import proscenium/component_manager' do
-    get '/lib/import_proscenium_component_manager_without_bundle.js'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
   test 'esbuild js compilation error' do
     get '/lib/includes_error.js'
 

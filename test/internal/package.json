@@ -2,8 +2,10 @@
   "name": "internal",
   "private": true,
   "dependencies": {
+    "@proscenium/component-manager": "^0.1.0",
     "@react-aria/button": "^3.6.1",
     "is-ip": "^5.0.0",
+    "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
 }

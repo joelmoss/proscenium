@@ -1,14 +1,18 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@proscenium/component-manager': link:/Users/joelmoss/dev/proscenium/lib/component_manager
   '@react-aria/button': ^3.6.1
   is-ip: ^5.0.0
+  react: ^18.2.0
   react-dom: ^18.2.0
 
 dependencies:
-  '@react-aria/button': 3.6.1
+  '@proscenium/component-manager': link:../../lib/component_manager
+  '@react-aria/button': 3.6.1_react@18.2.0
   is-ip: 5.0.0
-  react-dom: 18.2.0
+  react: 18.2.0
+  react-dom: 18.2.0_react@18.2.0
 
 packages:
 
@@ -19,101 +23,112 @@ packages:
       regenerator-runtime: 0.13.9
     dev: false
 
-  /@react-aria/button/3.6.1:
+  /@react-aria/button/3.6.1_react@18.2.0:
     resolution: {integrity: sha512-g10dk0eIQ71F1QefUymbff0yceQFHEKzOwK7J5QAFB5w/FUSmCTsMkBrrra4AogRxYHIAr5adPic5F2g7VzQFw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
-      '@react-aria/focus': 3.8.0
-      '@react-aria/interactions': 3.11.0
-      '@react-aria/utils': 3.13.3
-      '@react-stately/toggle': 3.4.1
-      '@react-types/button': 3.6.1
-      '@react-types/shared': 3.14.1
+      '@react-aria/focus': 3.8.0_react@18.2.0
+      '@react-aria/interactions': 3.11.0_react@18.2.0
+      '@react-aria/utils': 3.13.3_react@18.2.0
+      '@react-stately/toggle': 3.4.1_react@18.2.0
+      '@react-types/button': 3.6.1_react@18.2.0
+      '@react-types/shared': 3.14.1_react@18.2.0
+      react: 18.2.0
     dev: false
 
-  /@react-aria/focus/3.8.0:
+  /@react-aria/focus/3.8.0_react@18.2.0:
     resolution: {integrity: sha512-XuaLFdqf/6OyILifkVJo++5k2O+wlpNvXgsJkRWn/wSmB77pZKURm2MMGiSg2u911NqY+829UrSlpmhCZrc8RA==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
-      '@react-aria/interactions': 3.11.0
-      '@react-aria/utils': 3.13.3
-      '@react-types/shared': 3.14.1
+      '@react-aria/interactions': 3.11.0_react@18.2.0
+      '@react-aria/utils': 3.13.3_react@18.2.0
+      '@react-types/shared': 3.14.1_react@18.2.0
       clsx: 1.2.1
+      react: 18.2.0
     dev: false
 
-  /@react-aria/interactions/3.11.0:
+  /@react-aria/interactions/3.11.0_react@18.2.0:
     resolution: {integrity: sha512-ZjK4m8u6FlV7Q9/1h9P2Ii6j/NwKR3BmTeGeBQssS2i4dV2pJeOPePnGzVQQGG8FzGQ+TcNRvZPXKaU4AlnBjw==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
-      '@react-aria/utils': 3.13.3
-      '@react-types/shared': 3.14.1
+      '@react-aria/utils': 3.13.3_react@18.2.0
+      '@react-types/shared': 3.14.1_react@18.2.0
+      react: 18.2.0
     dev: false
 
-  /@react-aria/ssr/3.3.0:
+  /@react-aria/ssr/3.3.0_react@18.2.0:
     resolution: {integrity: sha512-yNqUDuOVZIUGP81R87BJVi/ZUZp/nYOBXbPsRe7oltJOfErQZD+UezMpw4vM2KRz18cURffvmC8tJ6JTeyDtaQ==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
+      react: 18.2.0
     dev: false
 
-  /@react-aria/utils/3.13.3:
+  /@react-aria/utils/3.13.3_react@18.2.0:
     resolution: {integrity: sha512-wqjGNFX4TrXriUU1gvCaoqRhuckdoYogUWN0iyQRkTmzvb7H/NNzQzHou5ggWAdts/NzJUInwKarBWM9hCZZbg==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
-      '@react-aria/ssr': 3.3.0
-      '@react-stately/utils': 3.5.1
-      '@react-types/shared': 3.14.1
+      '@react-aria/ssr': 3.3.0_react@18.2.0
+      '@react-stately/utils': 3.5.1_react@18.2.0
+      '@react-types/shared': 3.14.1_react@18.2.0
       clsx: 1.2.1
+      react: 18.2.0
     dev: false
 
-  /@react-stately/toggle/3.4.1:
+  /@react-stately/toggle/3.4.1_react@18.2.0:
     resolution: {integrity: sha512-Dlg7M9W52n0K+Op/H5ywdSCORW70ry6syPSahh+RXQKKdky9bckqmrpO24A92dL7Rci2H4fTsBgZGVla9b/wNQ==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
-      '@react-stately/utils': 3.5.1
-      '@react-types/checkbox': 3.3.3
-      '@react-types/shared': 3.14.1
+      '@react-stately/utils': 3.5.1_react@18.2.0
+      '@react-types/checkbox': 3.3.3_react@18.2.0
+      '@react-types/shared': 3.14.1_react@18.2.0
+      react: 18.2.0
     dev: false
 
-  /@react-stately/utils/3.5.1:
+  /@react-stately/utils/3.5.1_react@18.2.0:
     resolution: {integrity: sha512-INeQ5Er2Jm+db8Py4upKBtgfzp3UYgwXYmbU/XJn49Xw27ktuimH9e37qP3bgHaReb5L3g8IrGs38tJUpnGPHA==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
       '@babel/runtime': 7.19.0
+      react: 18.2.0
     dev: false
 
-  /@react-types/button/3.6.1:
+  /@react-types/button/3.6.1_react@18.2.0:
     resolution: {integrity: sha512-F7m3/MVmzChkBqD5gO7rIglPRHY6KZg/RaU8f8VqZuEOAHuQ1CtTEfpc6r9artBSs2Gdw7yNWxfCI2dP95lYow==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
-      '@react-types/shared': 3.14.1
+      '@react-types/shared': 3.14.1_react@18.2.0
+      react: 18.2.0
     dev: false
 
-  /@react-types/checkbox/3.3.3:
+  /@react-types/checkbox/3.3.3_react@18.2.0:
     resolution: {integrity: sha512-GkhC+y4g7Dga9Ck5MNvvX11hnn9S4b9Rx1+cdFMzBczJPJZhDxO69+CPQnoFAkVQSIYEC5bh/2u34sWyF6uq6g==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
     dependencies:
-      '@react-types/shared': 3.14.1
+      '@react-types/shared': 3.14.1_react@18.2.0
+      react: 18.2.0
     dev: false
 
-  /@react-types/shared/3.14.1:
+  /@react-types/shared/3.14.1_react@18.2.0:
     resolution: {integrity: sha512-yPPgVRWWanXqbdxFTgJmVwx0JlcnEK3dqkKDIbVk6mxAHvEESI9+oDnHvO8IMHqF+GbrTCzVtAs0zwhYI/uHJA==}
     peerDependencies:
       react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0
+    dependencies:
+      react: 18.2.0
     dev: false
 
   /clone-regexp/3.0.0:
@@ -167,13 +182,21 @@ packages:
       js-tokens: 4.0.0
     dev: false
 
-  /react-dom/18.2.0:
+  /react-dom/18.2.0_react@18.2.0:
     resolution: {integrity: sha512-6IMTriUmvsjHUjNtEDudZfuDQUoWXVxKHhlEGSk81n4YFS+r/Kl99wXiwlVXtPBtJenozv2P+hxDsw9eA7Xo6g==}
     peerDependencies:
       react: ^18.2.0
     dependencies:
       loose-envify: 1.4.0
+      react: 18.2.0
       scheduler: 0.23.0
+    dev: false
+
+  /react/18.2.0:
+    resolution: {integrity: sha512-/3IjMdb2L9QbBdWiW5e3P2/npwMBaU9mHCSCUzNln0ZCYbcfTsGbTJrU/kGemdH2IWmB2ioZ+zkxtmq6g09fGQ==}
+    engines: {node: '>=0.10.0'}
+    dependencies:
+      loose-envify: 1.4.0
     dev: false
 
   /regenerator-runtime/0.13.9:
