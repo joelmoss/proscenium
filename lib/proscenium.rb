@@ -10,6 +10,7 @@ module Proscenium
   autoload :SideLoad
   autoload :CssModule
   autoload :ViewComponent
+  autoload :Phlex
   autoload :Helper
   autoload :LinkToHelper
   autoload :Precompile

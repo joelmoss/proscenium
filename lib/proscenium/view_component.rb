@@ -6,7 +6,7 @@ module Proscenium::ViewComponent
   autoload :TagBuilder
 
   def render_in(view_context, &block)
-    Rails.env.test? ? super : parse_content(super)
+    Rails.env.test? ? super : cssm.compile_class_names(super)
   end
 
   def before_render
@@ -14,7 +14,7 @@ module Proscenium::ViewComponent
   end
 
   def css_module(name)
-    cssm.class_names(name.to_s.camelize(:lower)).join ' '
+    cssm.class_names(name).join ' '
   end
 
   private
@@ -38,23 +38,5 @@ module Proscenium::ViewComponent
   # prepend it to the HTML `class` attribute.
   def tag_builder
     @tag_builder ||= Proscenium::ViewComponent::TagBuilder.new(self)
-  end
-
-  # Parses the given `content` for CSS modules names ('class' attributes beginning with '@'), and
-  # returns the content with said CSS Modules replaced with the compiled class names.
-  #
-  # Example:
-  #   <div class="@my_css_module_name"></div>
-  def parse_content(content)
-    doc = Nokogiri::HTML::DocumentFragment.parse(content)
-
-    return content if (modules = doc.css('[class*="@"]')).empty?
-
-    modules.each do |ele|
-      classes = ele.classes.map { |cls| cls.starts_with?('@') ? css_module(cls[1..]) : cls }
-      ele['class'] = classes.join(' ')
-    end
-
-    doc.to_html.html_safe
   end
 end
