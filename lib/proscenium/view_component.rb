@@ -14,7 +14,7 @@ module Proscenium::ViewComponent
   end
 
   def css_module(name)
-    cssm.class_names(name).join ' '
+    cssm.class_names!(name).join ' '
   end
 
   private

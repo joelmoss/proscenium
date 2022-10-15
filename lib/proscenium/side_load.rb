@@ -5,17 +5,6 @@ module Proscenium
     DEFAULT_EXTENSIONS = %i[js css].freeze
     EXTENSIONS = %i[js css].freeze
 
-    class NotFound < StandardError
-      def initialize(pathname)
-        @pathname = pathname
-        super
-      end
-
-      def message
-        "#{@pathname} does not exist"
-      end
-    end
-
     module_function
 
     # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is a
@@ -44,29 +33,6 @@ module Proscenium
       !loaded_types.empty? && Rails.logger.debug do
         "[Proscenium] Side loaded /#{path}.(#{loaded_types.join(',')})"
       end
-    end
-
-    # Like #append, but only accepts a single `path` argument, which must be a Pathname. Raises
-    # `NotFound` if path does not exist,
-    def append!(pathname)
-      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set[]] }
-
-      unless pathname.is_a?(Pathname)
-        raise ArgumentError, "Argument `pathname` (#{pathname}) must be a Pathname"
-      end
-
-      ext = pathname.extname.sub('.', '').to_sym
-      path = pathname.relative_path_from(Rails.root).to_s
-
-      raise ArgumentError, "unsupported extension: #{ext}" unless EXTENSIONS.include?(ext)
-
-      return if Proscenium::Current.loaded[ext].include?(path)
-
-      raise NotFound, path unless pathname.exist?
-
-      Proscenium::Current.loaded[ext] << path
-
-      Rails.logger.debug "[Proscenium] Side loaded /#{path}"
     end
 
     module Monkey

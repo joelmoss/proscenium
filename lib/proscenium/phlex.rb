@@ -1,10 +1,13 @@
 # frozen_string_literal: true
 
 module Proscenium
-  module Phlex
+  class Phlex < ::Phlex::View
     module Sideload
       def template(...)
-        Proscenium::SideLoad.append asset_path if Rails.application.config.proscenium.side_load
+        if Rails.application.config.proscenium.side_load
+          Proscenium::SideLoad.append self.class.virtual_path
+        end
+
         super
       end
     end
@@ -15,23 +18,27 @@ module Proscenium
       end
     end
 
-    def self.included(mod)
-      mod.prepend Sideload, CompileCssModules
+    class << self
+      attr_accessor :virtual_path
+
+      def inherited(child)
+        path = caller_locations(1, 1)[0].path
+        child.virtual_path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
+
+        child.prepend Sideload, CompileCssModules
+
+        super
+      end
     end
 
     def css_module(name)
-      cssm.class_names(name).join ' '
+      cssm.class_names!(name).join ' '
     end
 
     private
 
-    # FIXME: !!
-    def asset_path
-      @asset_path ||= __FILE__.delete_prefix(Rails.root.to_s).delete_suffix('.rb')[1..]
-    end
-
     def cssm
-      @cssm ||= Proscenium::CssModule.new(asset_path)
+      @cssm ||= Proscenium::CssModule.new(self.class.virtual_path)
     end
   end
 end

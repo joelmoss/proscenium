@@ -15,7 +15,7 @@ class ComponentTest < ViewComponent::TestCase
   end
 
   test 'css_module helper raises on stylesheet not found' do
-    assert_raises Proscenium::SideLoad::NotFound do
+    assert_raises Proscenium::CssModule::NotFound do
       render_inline CssModuleHelperOneComponent.new
     end
   end
