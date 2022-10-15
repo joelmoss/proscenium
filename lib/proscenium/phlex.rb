@@ -4,28 +4,20 @@ module Proscenium
   class Phlex < ::Phlex::View
     module Sideload
       def template(...)
-        if Rails.application.config.proscenium.side_load
-          Proscenium::SideLoad.append self.class.virtual_path
-        end
+        Proscenium::SideLoad.append self.class.path if Rails.application.config.proscenium.side_load
 
         super
       end
     end
 
-    module CompileCssModules
-      def call(...)
-        Rails.env.test? ? super : cssm.compile_class_names(super)
-      end
-    end
-
     class << self
-      attr_accessor :virtual_path
+      attr_accessor :path
 
       def inherited(child)
         path = caller_locations(1, 1)[0].path
-        child.virtual_path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
+        child.path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
 
-        child.prepend Sideload, CompileCssModules
+        child.prepend Sideload
 
         super
       end
@@ -38,7 +30,7 @@ module Proscenium
     private
 
     def cssm
-      @cssm ||= Proscenium::CssModule.new(self.class.virtual_path)
+      @cssm ||= Proscenium::CssModule.new(self.class.path)
     end
   end
 end

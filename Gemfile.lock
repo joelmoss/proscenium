@@ -125,6 +125,7 @@ GEM
     rubocop-rake (0.6.0)
       rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
+    syntax_suggest (0.0.1)
     thor (1.2.1)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
@@ -158,6 +159,7 @@ DEPENDENCIES
   rubocop-packaging
   rubocop-performance
   rubocop-rake
+  syntax_suggest
 
 BUNDLED WITH
    2.3.4
