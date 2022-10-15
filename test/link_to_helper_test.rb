@@ -6,7 +6,7 @@ class LinkToHelperTest < ActionView::TestCase
   test 'should allow a shallow component' do
     assert_dom_equal(
       %(<a rel="nofollow" data-component="{&quot;props&quot;:{}}" href="/components/first_react_component">Hello</a>),
-      link_to('Hello', FirstReactComponent.new)
+      link_to('Hello', ViewComponent::FirstReactComponent.new)
     )
   end
 
@@ -14,7 +14,7 @@ class LinkToHelperTest < ActionView::TestCase
     assert_dom_equal(
       %(<a rel="nofollow" data-component="{&quot;props&quot;:{}}"
         href="/components/second_react/component">Hello</a>),
-      link_to('Hello', SecondReact::Component.new)
+      link_to('Hello', ViewComponent::SecondReact::Component.new)
     )
   end
 
@@ -22,7 +22,7 @@ class LinkToHelperTest < ActionView::TestCase
     assert_dom_equal(
       %(<a rel="nofollow" data-component="{&quot;props&quot;:{}}"
         href="/components/first_react_component">Hello</a>),
-      link_to(FirstReactComponent.new) { 'Hello' }
+      link_to(ViewComponent::FirstReactComponent.new) { 'Hello' }
     )
   end
 
@@ -30,7 +30,7 @@ class LinkToHelperTest < ActionView::TestCase
     assert_dom_equal(
       %(<a class="myClass" rel="nofollow" data-component="{&quot;props&quot;:{}}"
         href="/components/first_react_component">Hello</a>),
-      link_to(FirstReactComponent.new, class: 'myClass') { 'Hello' }
+      link_to(ViewComponent::FirstReactComponent.new, class: 'myClass') { 'Hello' }
     )
   end
 end

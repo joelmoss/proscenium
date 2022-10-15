@@ -77,6 +77,10 @@ GEM
     parallel (1.22.1)
     parser (3.1.2.1)
       ast (~> 2.4.1)
+    phlex (0.4.0)
+      syntax_tree (~> 3.6)
+      zeitwerk (~> 2.6)
+    prettier_print (0.1.0)
     public_suffix (4.0.7)
     puma (5.6.4)
       nio4r (~> 2.0)
@@ -126,6 +130,8 @@ GEM
       rubocop (~> 1.0)
     ruby-progressbar (1.11.0)
     syntax_suggest (0.0.1)
+    syntax_tree (3.6.3)
+      prettier_print
     thor (1.2.1)
     tzinfo (2.0.5)
       concurrent-ruby (~> 1.0)
@@ -150,6 +156,7 @@ DEPENDENCIES
   minitest-focus
   minitest-heat
   minitest-snapshots
+  phlex
   proscenium!
   puma
   rails-dom-testing

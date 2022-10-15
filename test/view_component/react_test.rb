@@ -2,18 +2,18 @@
 
 require 'test_helper'
 
-class ViewComponentTest < ViewComponent::TestCase
+class ViewComponent::ReactTest < ViewComponent::TestCase
   include Rails::Dom::Testing::Assertions::DomAssertions
 
   test 'shallow react component' do
-    result = render_inline FirstReactComponent.new
+    result = render_inline ViewComponent::FirstReactComponent.new
 
     assert_dom_equal %(<div data-component='{"path":"/first_react_component","props":{}}'></div>),
                      result.to_html
   end
 
   test 'nested react component' do
-    result = render_inline SecondReact::Component.new
+    result = render_inline ViewComponent::SecondReact::Component.new
 
     assert_dom_equal %(<div data-component='{"path":"/second_react/component","props":{}}'></div>),
                      result.to_html
