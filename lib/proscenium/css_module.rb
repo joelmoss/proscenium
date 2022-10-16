@@ -13,11 +13,8 @@ class Proscenium::CssModule
   end
 
   def initialize(path)
-    @path = "#{path}.module.css"
-
-    return unless Rails.application.config.proscenium.side_load
-
-    Proscenium::SideLoad.append "#{path}.module", :css
+    @path = path
+    @css_module_path = "#{path}.module.css"
   end
 
   # Parses the given `content` for CSS modules names ('class' attributes beginning with '@'), and
@@ -31,7 +28,7 @@ class Proscenium::CssModule
     return content if (modules = doc.css('[class*="@"]')).empty?
 
     modules.each do |ele|
-      classes = ele.classes.map { |cls| cls.starts_with?('@') ? class_names(cls[1..]) : cls }
+      classes = ele.classes.map { |cls| cls.starts_with?('@') ? class_names!(cls[1..]) : cls }
       ele['class'] = classes.join(' ')
     end
 
@@ -40,6 +37,7 @@ class Proscenium::CssModule
 
   # @returns [Array] of class names generated from the given CSS module `names`.
   def class_names(*names)
+    side_load_css_module
     names.flatten.compact.map { |name| "#{name.to_s.camelize(:lower)}#{hash}" }
   end
 
@@ -47,7 +45,7 @@ class Proscenium::CssModule
   #
   # @raises Proscenium::CssModule::NotFound if stylesheet does not exists.
   def class_names!(...)
-    raise NotFound, @path unless Rails.root.join(@path).exist?
+    raise NotFound, @css_module_path unless Rails.root.join(@css_module_path).exist?
 
     class_names(...)
   end
@@ -55,6 +53,12 @@ class Proscenium::CssModule
   private
 
   def hash
-    @hash ||= Digest::SHA1.hexdigest("/#{@path}")[..7]
+    @hash ||= Digest::SHA1.hexdigest("/#{@css_module_path}")[..7]
+  end
+
+  def side_load_css_module
+    return unless Rails.application.config.proscenium.side_load
+
+    Proscenium::SideLoad.append "#{@path}.module", :css
   end
 end

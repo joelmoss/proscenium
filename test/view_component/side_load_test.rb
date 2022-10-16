@@ -14,6 +14,21 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
                  }, Proscenium::Current.loaded)
   end
 
+  test '@ prefixed class name' do
+    render_inline ViewComponent::CssModule::Component.new(class_name: '@base')
+
+    assert_equal({
+                   js: Set[],
+                   css: Set['app/components/view_component/css_module/component.module.css']
+                 }, Proscenium::Current.loaded)
+  end
+
+  test 'without @ prefixed class name' do
+    render_inline ViewComponent::CssModule::Component.new(class_name: 'base')
+
+    assert_equal({ js: Set[], css: Set[] }, Proscenium::Current.loaded)
+  end
+
   test 'css_module helper raises on stylesheet not found' do
     assert_raises Proscenium::CssModule::NotFound do
       render_inline ViewComponent::CssModuleHelperOneComponent.new
@@ -30,7 +45,7 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
     )
   end
 
-  test 'css_module html tag attribute' do
+  test 'css_module as attribute value' do
     render_inline ViewComponent::CssModuleHelperThree::Component.new
 
     assert_equal(

@@ -5,8 +5,8 @@ module Proscenium::ViewComponent
 
   autoload :TagBuilder
 
-  def render_in(view_context, &block)
-    Rails.env.test? ? super : cssm.compile_class_names(super)
+  def render_in(...)
+    cssm.compile_class_names(super)
   end
 
   def before_render
