@@ -16,7 +16,7 @@ CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
 
-LIGHTNINGCSS_VERSION = '1.14.0'
+LIGHTNINGCSS_VERSION = '1.16.0'
 PLATFORMS = {
   'x86_64-linux' => {
     deno: 'x86_64-unknown-linux-gnu',
