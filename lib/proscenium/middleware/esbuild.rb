@@ -15,7 +15,9 @@ module Proscenium
 
       def attempt
         benchmark :esbuild do
-          render_response build("#{cli} --root #{root} #{path}")
+          render_response build(
+            "#{cli} --root #{root} --lightningcss-bin #{lightningcss_cli} #{path}"
+          )
         end
       rescue CompileError => e
         render_response "export default #{e.detail.to_json}" do |response|
@@ -36,6 +38,14 @@ module Proscenium
           ].join(' ')
         else
           Gem.bin_path 'proscenium', 'esbuild'
+        end
+      end
+
+      def lightningcss_cli
+        if ENV['PROSCENIUM_TEST']
+          'bin/lightningcss'
+        else
+          Gem.bin_path 'proscenium', 'lightningcss'
         end
       end
     end
