@@ -18,7 +18,14 @@ Gem::Specification.new do |spec|
   spec.metadata['changelog_uri'] = 'https://github.com/joelmoss/proscenium/releases'
   spec.metadata['rubygems_mfa_required'] = 'true'
 
-  spec.files = Dir['{app,config,lib,bin}/**/*', 'CODE_OF_CONDUCT.md', 'README.md', 'LICENSE.txt']
+  spec.files = Dir[
+    '{app,config,bin}/**/*',
+    'lib/proscenium/**/*',
+    'lib/tasks/**/*',
+    'lib/proscenium.rb',
+    'CODE_OF_CONDUCT.md',
+    'README.md',
+    'LICENSE.txt']
   spec.bindir = 'bin'
   spec.executables << 'esbuild'
   spec.executables << 'lightningcss'
