@@ -15,6 +15,12 @@ export {
 '
 `;
 
+snapshot[`compilers/esbuild > RAILS_ENV=production 1`] = `
+'console.log("/lib/foo.js");
+//# sourceMappingURL=foo.js.map
+'
+`;
+
 snapshot[`compilers/esbuild > Import bare module 1`] = `
 '// lib/import_node_module.js
 import myPackage from "/node_modules/mypackage/index.js";

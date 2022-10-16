@@ -143,19 +143,6 @@ describe('compilers/esbuild', () => {
     })
   })
 
-  // describe('component manager', () => {
-  //   it('can import from node_modules', async t => {
-  //     const result = await main(['proscenium-runtime/component_manager/render_component.jsx'], {
-  //       root
-  //     })
-
-  //     assertStringIncludes(
-  //       new TextDecoder().decode(result),
-  //       'import("/node_modules/.pnpm/react-dom@18.2.0/node_modules/react-dom/client.js");'
-  //     )
-  //   })
-  // })
-
   it('Import relative module without extension', async t => {
     const result = await main(['lib/import_relative_module_without_extension.js'], { root })
 
