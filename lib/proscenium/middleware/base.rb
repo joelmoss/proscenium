@@ -60,6 +60,10 @@ module Proscenium
         response.content_type = content_type
         response['X-Proscenium-Middleware'] = name
 
+        if Proscenium.config.cache_query_string
+          response['Cache-Control'] = "public, max-age=#{2.days.to_i}"
+        end
+
         yield response if block_given?
 
         response.finish

@@ -28,6 +28,7 @@ module Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.side_load = true
+    config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.auto_reload = Rails.env.development?
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
