@@ -3,10 +3,7 @@
   "version": "0.1.1",
   "description": "Dynamic React component islands",
   "type": "module",
-  "source": "index.js",
-  "module": "dist/component-manager.js",
-  "main": "dist/component-manager.cjs",
-  "exports": "./dist/component-manager.modern.js",
+  "main": "index.js",
   "author": "Joel Moss",
   "homepage": "https://github.com/joelmoss/proscenium",
   "repository": {
@@ -17,7 +14,8 @@
     "url": "https://github.com/joelmoss/proscenium/issues"
   },
   "files": [
-    "dist/**"
+    "index.js",
+    "manager.js"
   ],
   "sideEffects": false,
   "license": "MIT",
@@ -25,17 +23,9 @@
     "components",
     "react"
   ],
-  "scripts": {
-    "clean": "rimraf dist",
-    "build": "rimraf dist && microbundle --jsxImportSource react -f modern,esm",
-    "dev": "rimraf dist && microbundle watch --jsxImportSource react --compress false -f modern,esm",
-    "prepublishOnly": "pnpm clean && pnpm build"
-  },
   "devDependencies": {
-    "microbundle": "^0.15.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "rimraf": "^3.0.2"
+    "react-dom": "^18.2.0"
   },
   "peerDependencies": {
     "react": ">=18",

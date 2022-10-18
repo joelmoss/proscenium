@@ -10,6 +10,7 @@ module Proscenium
     autoload :Base
     autoload :Esbuild
     autoload :Runtime
+    autoload :OutsideRoot
 
     def initialize(app)
       @app = app
@@ -37,6 +38,12 @@ module Proscenium
     # Returns the type of file being requested using Rails.application.config.proscenium.glob_types.
     def find_type(request)
       path = Pathname.new(request.path)
+
+      # Non-production only!
+      if request.query_string == 'outsideRoot'
+        return if Rails.env.production?
+        return OutsideRoot if path.fnmatch?(glob_types[:outsideRoot], File::FNM_EXTGLOB)
+      end
 
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(glob_types[:esbuild], File::FNM_EXTGLOB)

@@ -7,6 +7,7 @@ import main from '../../lib/proscenium/compilers/esbuild.js'
 import ArgumentError from '../../lib/proscenium/compilers/esbuild/argument_error.js'
 
 const root = join(Deno.cwd(), 'test', 'internal')
+const lightningcssBin = join(Deno.cwd(), 'bin', 'lightningcss')
 
 describe('compilers/esbuild', () => {
   beforeEach(() => {
@@ -26,9 +27,17 @@ describe('compilers/esbuild', () => {
     await assertRejects(async () => await main(['**/*.js']), ArgumentError, 'rootRequired')
   })
 
-  it('throws with unknown root', async () => {
+  it('throws without lightningcssBin option', async () => {
     await assertRejects(
       async () => await main(['**/*.js'], { root: 'foo/bar' }),
+      ArgumentError,
+      'lightningcssBinRequired:'
+    )
+  })
+
+  it('throws with unknown root', async () => {
+    await assertRejects(
+      async () => await main(['**/*.js'], { root: 'foo/bar', lightningcssBin }),
       ArgumentError,
       'rootUnknown'
     )
@@ -36,50 +45,50 @@ describe('compilers/esbuild', () => {
 
   it('unknown path', { ignore: true }, async t => {
     await assertRejects(
-      async () => await main(['lib/unknown.jsx'], { root }),
+      async () => await main(['lib/unknown.jsx'], { root, lightningcssBin }),
       Error,
       'Could not resolve'
     )
   })
 
   it('Successful JSX build', async t => {
-    const result = await main(['lib/component.jsx'], { root })
+    const result = await main(['lib/component.jsx'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import bare module', async t => {
-    const result = await main(['lib/import_node_module.js'], { root })
+    const result = await main(['lib/import_node_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('allows returns error on unknown bare module', async t => {
-    const result = await main(['lib/import_unknown_node_module.js'], { root })
+    const result = await main(['lib/import_unknown_node_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, result)
   })
 
   it('resolves nested node modules', async t => {
-    const result = await main(['node_modules/@react-aria/button'], { root })
+    const result = await main(['node_modules/@react-aria/button'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import relative module', async t => {
-    const result = await main(['lib/import_relative_module.js'], { root })
+    const result = await main(['lib/import_relative_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import absolute module', async t => {
-    const result = await main(['lib/import_absolute_module.js'], { root })
+    const result = await main(['lib/import_absolute_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import remote module', async t => {
-    const result = await main(['lib/import_remote_module.js'], { root })
+    const result = await main(['lib/import_remote_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
@@ -88,6 +97,7 @@ describe('compilers/esbuild', () => {
     it('from json', async t => {
       const result = await main(['lib/import_map.js'], {
         root,
+        lightningcssBin,
         importMap: 'config/import_maps/as.json'
       })
 
@@ -97,6 +107,7 @@ describe('compilers/esbuild', () => {
     it('from js', async t => {
       const result = await main(['lib/import_map_as_js.js'], {
         root,
+        lightningcssBin,
         importMap: 'config/import_maps/as.js'
       })
 
@@ -106,6 +117,7 @@ describe('compilers/esbuild', () => {
     it('maps imports via trailing slash', async t => {
       const result = await main(['lib/component.jsx'], {
         root,
+        lightningcssBin,
         importMap: 'config/import_maps/trailing_slash_import.json'
       })
 
@@ -127,6 +139,7 @@ describe('compilers/esbuild', () => {
     it('resolves imports from a node_module', async t => {
       const result = await main(['node_modules/is-ip/index.js'], {
         root,
+        lightningcssBin,
         importMap: 'config/import_maps/npm.json'
       })
 
@@ -134,8 +147,9 @@ describe('compilers/esbuild', () => {
     })
 
     it('supports scopes', async t => {
-      const result = await main(['/lib/import_map/scopes.js'], {
+      const result = await main(['lib/import_map/scopes.js'], {
         root,
+        lightningcssBin,
         importMap: 'config/import_maps/scopes.json'
       })
 
@@ -144,43 +158,55 @@ describe('compilers/esbuild', () => {
   })
 
   it('Import relative module without extension', async t => {
-    const result = await main(['lib/import_relative_module_without_extension.js'], { root })
+    const result = await main(['lib/import_relative_module_without_extension.js'], {
+      root,
+      lightningcssBin
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import absolute module without extension', async t => {
-    const result = await main(['lib/import_absolute_module_without_extension.js'], { root })
+    const result = await main(['lib/import_absolute_module_without_extension.js'], {
+      root,
+      lightningcssBin
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css module from JS', async t => {
-    const result = await main(['lib/import_css_module.js'], { root })
+    const result = await main(['lib/import_css_module.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('de-dupes side loaded ViewComponent default stylesheet - regular', async t => {
-    const result = await main(['app/components/basic_react_component.jsx'], { root })
+    const result = await main(['app/components/basic_react_component.jsx'], {
+      root,
+      lightningcssBin
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('de-dupes side loaded ViewComponent default stylesheet - sidecar', async t => {
-    const result = await main(['app/components/basic_react/component.jsx'], { root })
+    const result = await main(['app/components/basic_react/component.jsx'], {
+      root,
+      lightningcssBin
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css from JS', async t => {
-    const result = await main(['lib/import_css.js'], { root })
+    const result = await main(['lib/import_css.js'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css from jsx', async t => {
-    const result = await main(['lib/import_css.jsx'], { root })
+    const result = await main(['lib/import_css.jsx'], { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
@@ -188,6 +214,7 @@ describe('compilers/esbuild', () => {
   it('bundled js import', async t => {
     const result = await main(['lib/bundle_import/index.js'], {
       root,
+      lightningcssBin,
       importMap: 'config/import_maps/bundled.json'
     })
 
@@ -197,6 +224,7 @@ describe('compilers/esbuild', () => {
   it('bundled css import', async t => {
     const result = await main(['lib/bundle_import.css'], {
       root,
+      lightningcssBin,
       importMap: 'config/import_maps/bundled.json'
     })
 

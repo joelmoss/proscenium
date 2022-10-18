@@ -80,4 +80,15 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
+
+  test 'outside root' do # rubocop:disable Minitest/MultipleAssertions
+    path = 'lib/component_manager/test/outside_root'
+    get "#{Dir.pwd}/#{path}/index.js?outsideRoot"
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'outsideroot', response.headers['X-Proscenium-Middleware']
+    assert_match %(import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";),
+                 response.body
+    assert_match "import foo from \"#{Dir.pwd}/#{path}/foo.js?outsideRoot\";", response.body
+  end
 end

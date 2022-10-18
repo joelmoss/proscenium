@@ -39,7 +39,7 @@ By default, components are only loaded and rendered when coming into view using 
 ```
 
 ```js
-import { init } from '@proscenium/component-manager'
+import init from '@proscenium/component-manager'
 
 init({
   // Wrap all components with this component.
