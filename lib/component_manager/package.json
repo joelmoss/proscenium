@@ -15,7 +15,7 @@
   },
   "files": [
     "index.js",
-    "manager.js"
+    "manager.jsx"
   ],
   "sideEffects": false,
   "license": "MIT",
