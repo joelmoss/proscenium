@@ -1,6 +1,6 @@
 {
   "name": "@proscenium/component-manager",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Dynamic React component islands",
   "type": "module",
   "main": "index.js",
