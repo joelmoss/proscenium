@@ -91,4 +91,20 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
                  response.body
     assert_match "import foo from \"#{Dir.pwd}/#{path}/foo.js?outsideRoot\";", response.body
   end
+
+  test 'cache_query_string should set cache header' do
+    Proscenium.config.cache_query_string = 'v1'
+    get '/lib/query_cache.js?v1'
+
+    assert_includes response.headers['Cache-Control'], 'public'
+    Proscenium.config.cache_query_string = false
+  end
+
+  test 'cache_query_string should propogate' do
+    Proscenium.config.cache_query_string = 'v1'
+    get '/lib/query_cache.js?v1'
+
+    assert_matches_snapshot response.body
+    Proscenium.config.cache_query_string = false
+  end
 end

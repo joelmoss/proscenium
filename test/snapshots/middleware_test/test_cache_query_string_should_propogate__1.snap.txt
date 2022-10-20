@@ -1,0 +1,3 @@
+// lib/query_cache.js
+import foo from "/lib/foo.js?v1";
+foo();

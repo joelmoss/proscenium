@@ -15,9 +15,11 @@ module Proscenium
 
       def attempt
         benchmark :esbuild do
-          render_response build(
-            "#{cli} --root #{root} --lightningcss-bin #{lightningcss_cli} #{path}"
-          )
+          render_response build([
+            "#{cli} --root #{root}",
+            cache_query_string,
+            "--lightningcss-bin #{lightningcss_cli} #{path}"
+          ].compact.join(' '))
         end
       rescue CompileError => e
         render_response "export default #{e.detail.to_json}" do |response|
@@ -33,9 +35,7 @@ module Proscenium
 
       def cli
         if ENV['PROSCENIUM_TEST']
-          [
-            'deno run -q --import-map import_map.json -A', 'lib/proscenium/compilers/esbuild.js'
-          ].join(' ')
+          'deno run -q --import-map import_map.json -A lib/proscenium/compilers/esbuild.js'
         else
           Gem.bin_path 'proscenium', 'esbuild'
         end
@@ -47,6 +47,11 @@ module Proscenium
         else
           Gem.bin_path 'proscenium', 'lightningcss'
         end
+      end
+
+      def cache_query_string
+        q = Proscenium.config.cache_query_string
+        q ? "--cache-query-string #{q}" : nil
       end
     end
   end
