@@ -110,6 +110,10 @@ resulting in conflicts. For example, esm.sh also supports a `?bundle` param, bun
 dependencies into a single file. Instead, you should install the module locally using your favourite
 package manager.
 
+Note that `?bundle` will only bundle that exact path. It will not bundle any descendant imports. You
+can bundle all imports within a file by using the `?bundle-all` query string. Use this with caution,
+as you could end up swallowing everything, resulting in a very large file.
+
 ## Import Map
 
 Import map for both JS and CSS is supported out of the box, and works with no regard to the browser
@@ -246,6 +250,31 @@ p {
 }
 ```
 
+## Cache Busting
+
+By default, all assets are not cached by the browser. But if in production, you populate the
+`REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and
+the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
+
+For example, if you set `REVISION=v1`, URL's will be appended with `?v1`: `/my/imported/file.js?v1`.
+
+It is assumed that the `REVISION` env var will be unique between deploys. If it isn't, then assets
+will continue to be cached as the same version between deploys. I recommend you assign a version
+number or to use the Git commit hash of the deploy. Just make sure it is unique for each deploy.
+
+You can set the `cache_query_string` config option directly to define any query string you wish:
+
+```ruby
+Rails.application.config.proscenium.cache_query_string = 'my-cache-busting-version-string'
+```
+
+The cache is set with a `max-age` of 30 days. You can customise this with the `cache_max_age` config
+option:
+
+```ruby
+Rails.application.config.proscenium.cache_max_age = 12.months.to_i
+```
+
 ## How It Works
 
 Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.
@@ -257,10 +286,6 @@ This allows your frontend code to become first class citizens of you Rails appli
 After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
 
 To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
-
-### Compile the compilers
-
-`deno compile --no-config -o bin/compilers/esbuild --import-map import_map.json -A lib/proscenium/compilers/esbuild.js`
 
 ## Contributing
 

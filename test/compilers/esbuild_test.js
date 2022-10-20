@@ -211,23 +211,37 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('bundled js import', async t => {
-    const result = await main(['lib/bundle_import/index.js'], {
-      root,
-      lightningcssBin,
-      importMap: 'config/import_maps/bundled.json'
-    })
+  describe('?bundle-all query string', () => {
+    it('js import', async t => {
+      const result = await main(['lib/bundle_all_import/index.js'], {
+        root,
+        lightningcssBin,
+        importMap: 'config/import_maps/bundled.json'
+      })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
   })
 
-  it('bundled css import', async t => {
-    const result = await main(['lib/bundle_import.css'], {
-      root,
-      lightningcssBin,
-      importMap: 'config/import_maps/bundled.json'
+  describe('?bundle query string', () => {
+    it('js import', async t => {
+      const result = await main(['lib/bundle_import/index.js'], {
+        root,
+        lightningcssBin,
+        importMap: 'config/import_maps/bundled.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
     })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+    it('css import', async t => {
+      const result = await main(['lib/bundle_import.css'], {
+        root,
+        lightningcssBin,
+        importMap: 'config/import_maps/bundled.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
   })
 })

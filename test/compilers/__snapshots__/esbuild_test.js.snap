@@ -15,12 +15,6 @@ export {
 '
 `;
 
-snapshot[`compilers/esbuild > RAILS_ENV=production 1`] = `
-'console.log("/lib/foo.js");
-//# sourceMappingURL=foo.js.map
-'
-`;
-
 snapshot[`compilers/esbuild > Import bare module 1`] = `
 '// lib/import_node_module.js
 import myPackage from "/node_modules/mypackage/index.js";
@@ -316,7 +310,19 @@ if (!e) {
 '
 `;
 
-snapshot[`compilers/esbuild > bundled js import 1`] = `
+snapshot[`compilers/esbuild > ?bundle-all query string > js import 1`] = `
+"// lib/bundle_all_import/three.js?bundle-all
+console.log(3);
+
+// lib/bundle_all_import/two.js?bundle-all
+console.log(2);
+
+// lib/bundle_all_import/one.js?bundle-all
+console.log(1);
+"
+`;
+
+snapshot[`compilers/esbuild > ?bundle query string > js import 1`] = `
 '// lib/foo.js?bundle
 console.log("/lib/foo.js");
 
@@ -350,7 +356,7 @@ emailRegex2();
 '
 `;
 
-snapshot[`compilers/esbuild > bundled css import 1`] = `
+snapshot[`compilers/esbuild > ?bundle query string > css import 1`] = `
 '@import "https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle";
 @import "https://esm.sh/@radix-ui/colors@0.1.8/gray.css";
 
