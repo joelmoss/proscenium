@@ -1,12 +1,15 @@
 # frozen_string_literal: true
 
-module Proscenium::ViewComponent
+require 'view_component'
+
+class Proscenium::ViewComponent < ViewComponent::Base
   extend ActiveSupport::Autoload
 
   autoload :TagBuilder
+  autoload :ReactComponent
 
   def render_in(...)
-    cssm.compile_class_names(super)
+    cssm.compile_class_names(super(...))
   end
 
   def before_render

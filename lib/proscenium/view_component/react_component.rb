@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class ReactComponent < ApplicationComponent
+class Proscenium::ViewComponent::ReactComponent < Proscenium::ViewComponent
   attr_accessor :props, :lazy
 
   # @param props: [Hash]
@@ -15,7 +15,7 @@ class ReactComponent < ApplicationComponent
   def call
     tag.div class: ['componentManagedByProscenium', css_module(:component)],
             data: { component: { path: virtual_path, props: props, lazy: lazy } } do
-      tag.div content
+      tag.div content || 'loading...'
     end
   end
 end
