@@ -2,6 +2,22 @@
 
 module Proscenium
   class Phlex < ::Phlex::View
+    module Helpers
+      def side_load_javascripts(...)
+        if (output = @_view_context.side_load_javascripts(...))
+          @_target << output
+        end
+      end
+
+      %i[side_load_stylesheets proscenium_dev].each do |name|
+        define_method name do
+          if (output = @_view_context.send(name))
+            @_target << output
+          end
+        end
+      end
+    end
+
     module Sideload
       def template(...)
         Proscenium::SideLoad.append self.class.path if Rails.application.config.proscenium.side_load
@@ -18,6 +34,7 @@ module Proscenium
         child.path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
 
         child.prepend Sideload
+        child.include Helpers
 
         super
       end
