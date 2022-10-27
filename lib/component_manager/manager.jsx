@@ -67,7 +67,7 @@ const Observed = ({ domElement, debug, componentPath, ...comp }) => {
 
 const Fallback = ({ content }) => {
   useEffect(() => {
-    content?.remove()
+    content && content.remove()
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!content) return null
