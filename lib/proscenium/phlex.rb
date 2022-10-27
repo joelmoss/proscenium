@@ -1,7 +1,14 @@
 # frozen_string_literal: true
 
+require 'phlex'
+
 module Proscenium
   class Phlex < ::Phlex::View
+    extend ActiveSupport::Autoload
+
+    autoload :Component
+    autoload :ReactComponent
+
     module Helpers
       def side_load_javascripts(...)
         if (output = @_view_context.side_load_javascripts(...))

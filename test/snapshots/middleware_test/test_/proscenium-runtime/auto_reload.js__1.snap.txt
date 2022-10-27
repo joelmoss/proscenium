@@ -1,6 +1,5 @@
 // ../../lib/proscenium/runtime/auto_reload.js
-import { createConsumer } from "https://esm.sh/@rails/actioncable@6.0.5";
-import debounce from "https://esm.sh/debounce@1.2.1";
+import { createConsumer } from "https://esm.sh/v96/@rails/actioncable@7.0.4/es2022/actioncable.js";
 var auto_reload_default = (socketPath) => {
   const uid = (Date.now() + (Math.random() * 100 | 0)).toString();
   const consumer = createConsumer(`${socketPath}?uid=${uid}`);
@@ -8,7 +7,7 @@ var auto_reload_default = (socketPath) => {
     received: debounce(() => {
       console.log("[Proscenium] Files changed; reloading...");
       location.reload();
-    }, 200),
+    }, 200, true),
     connected() {
       console.log("[Proscenium] Auto-reload websocket connected");
     },
@@ -17,6 +16,20 @@ var auto_reload_default = (socketPath) => {
     }
   });
 };
+function debounce(func, wait, immediate) {
+  let timeout;
+  return function() {
+    const args = arguments;
+    const later = () => {
+      timeout = null;
+      !immediate && func.apply(this, args);
+    };
+    const callNow = immediate && !timeout;
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+    callNow && func.apply(this, args);
+  };
+}
 export {
   auto_reload_default as default
 };

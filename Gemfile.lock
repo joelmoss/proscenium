@@ -7,6 +7,7 @@ PATH
       listen (~> 3.0)
       nokogiri (~> 1.13)
       oj (~> 3.13)
+      phlex (~> 0.4.0)
       railties (>= 6.1.0, < 8.0)
       view_component (~> 2.0)
 
@@ -155,7 +156,6 @@ DEPENDENCIES
   minitest-focus
   minitest-heat
   minitest-snapshots
-  phlex
   proscenium!
   puma
   rails-dom-testing
