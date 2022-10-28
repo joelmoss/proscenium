@@ -82,7 +82,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'outside root' do # rubocop:disable Minitest/MultipleAssertions
-    path = 'lib/component_manager/test/outside_root'
+    path = 'test/outside_root'
     get "#{Dir.pwd}/#{path}/index.js?outsideRoot"
 
     assert_equal 'application/javascript', response.headers['Content-Type']

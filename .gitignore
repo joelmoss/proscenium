@@ -10,5 +10,3 @@
 /test/internal/public/tmp/
 /test/internal/public/assets
 /bin/*
-/lib/component_manager/node_modules
-**/dist

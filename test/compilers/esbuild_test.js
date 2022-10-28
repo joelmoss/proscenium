@@ -127,15 +127,6 @@ describe('compilers/esbuild', () => {
       )
     })
 
-    // it('maps imports via trailing slash', async t => {
-    //   const result = await main(['proscenium-runtime/component_manager/render_component.jsx'], {
-    //     root,
-    //     importMap: 'config/import_maps/react.json'
-    //   })
-
-    //   await assertSnapshot(t, new TextDecoder().decode(result))
-    // })
-
     it('resolves imports from a node_module', async t => {
       const result = await main(['node_modules/is-ip/index.js'], {
         root,

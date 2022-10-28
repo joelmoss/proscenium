@@ -1,2 +1,2 @@
-class BasicReactComponent < ReactComponent
+class BasicReactComponent < Proscenium::ViewComponent::ReactComponent
 end

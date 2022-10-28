@@ -1,2 +1,2 @@
-class ViewComponent::FirstReactComponent < ReactComponent
+class ViewComponent::FirstReactComponent < Proscenium::ViewComponent::ReactComponent
 end

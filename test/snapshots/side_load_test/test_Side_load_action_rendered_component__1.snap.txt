@@ -7,6 +7,6 @@
     <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
   </head>
   <body>
-    <div class="componentManagedByProscenium component2566f445" data-component="{&quot;path&quot;:&quot;/basic_react_component&quot;,&quot;props&quot;:{},&quot;lazy&quot;:true}"><div></div></div>
+    <div class="componentManagedByProscenium component2566f445" data-component="{&quot;path&quot;:&quot;/basic_react_component&quot;,&quot;props&quot;:{},&quot;lazy&quot;:true}"><div>loading...</div></div>
   </body>
 </html>

@@ -1,4 +1,4 @@
-class ViewComponent::CssModule::Component < ApplicationComponent
+class ViewComponent::CssModule::Component < Proscenium::ViewComponent
   def initialize(class_name:)
     @class_name = class_name
   end
