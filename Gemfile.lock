@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.4.0)
+    proscenium (0.4.1)
       actioncable (>= 6.1.0, < 8.0)
       activesupport (>= 6.1.0, < 8.0)
       listen (~> 3.0)
@@ -81,7 +81,7 @@ GEM
     phlex (0.4.0)
       syntax_tree (~> 3.6)
       zeitwerk (~> 2.6)
-    prettier_print (1.0.1)
+    prettier_print (1.0.2)
     public_suffix (5.0.0)
     puma (6.0.0)
       nio4r (~> 2.0)
