@@ -15,6 +15,7 @@ RuboCop::RakeTask.new
 CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
+task release: %i[build push]
 
 LIGHTNINGCSS_VERSION = '1.16.0'
 PLATFORMS = {
