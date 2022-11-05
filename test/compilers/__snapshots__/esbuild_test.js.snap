@@ -156,25 +156,25 @@ import "/lib/foo.js";
 
 snapshot[`compilers/esbuild > Import remote module 1`] = `
 '// lib/import_remote_module.js
-import emailRegex from "https://esm.sh/email-regex";
+import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 '
 `;
 
 snapshot[`compilers/esbuild > import map > from json 1`] = `
 '// lib/import_map.js
-import axios from "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js";
-import { createElement } from "https://esm.sh/react@18.2.0";
+import axios from "/url:https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Faxios%2F0.24.0%2Faxios.min.js";
+import { createElement } from "/url:https%3A%2F%2Fesm.sh%2Freact%4018.2.0";
 import foo from "/lib/foo.js";
 axios();
 foo();
 createElement();
-import("https://esm.sh/solid@0.2.1");
+import("/url:https%3A%2F%2Fesm.sh%2Fsolid%400.2.1");
 '
 `;
 
 snapshot[`compilers/esbuild > import map > resolves imports from a node_module 1`] = `
 '// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
-import ipRegex from "https://esm.sh/ip-regex";
+import ipRegex from "/url:https%3A%2F%2Fesm.sh%2Fip-regex";
 import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv4Length = 15;
 var maxIPv6Length = 45;
@@ -348,8 +348,8 @@ var Component = () => {
 var component_default = Component;
 
 // lib/bundle_import/index.js
-import emailRegex from "https://esm.sh/email-regex";
-import emailRegex2 from "https://esm.sh/email-regex?bundle";
+import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
+import emailRegex2 from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 component_default();
 emailRegex();
 emailRegex2();
@@ -357,7 +357,7 @@ emailRegex2();
 `;
 
 snapshot[`compilers/esbuild > ?bundle query string > css import 1`] = `
-'@import "https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle";
+'@import "https://esm.sh/@radix-ui/colors@0.1.8/blue.css";
 @import "https://esm.sh/@radix-ui/colors@0.1.8/gray.css";
 
 /* lib/foo.css?bundle */

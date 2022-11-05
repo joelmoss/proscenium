@@ -1,0 +1,29 @@
+// url:https://ga.jspm.io/npm:react-dom@18.2.0/dev.client.js
+import * as t from "/node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/index.js";
+var n = "default" in t ? t.default : t;
+var r = {};
+var e = n;
+var o = e.__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED;
+r.createRoot = function(t2, n2) {
+  o.usingClientEntryPoint = true;
+  try {
+    return e.createRoot(t2, n2);
+  } finally {
+    o.usingClientEntryPoint = false;
+  }
+};
+r.hydrateRoot = function(t2, n2, r2) {
+  o.usingClientEntryPoint = true;
+  try {
+    return e.hydrateRoot(t2, n2, r2);
+  } finally {
+    o.usingClientEntryPoint = false;
+  }
+};
+var a = r.createRoot;
+var i = r.hydrateRoot;
+export {
+  a as createRoot,
+  r as default,
+  i as hydrateRoot
+};

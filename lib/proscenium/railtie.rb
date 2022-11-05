@@ -14,6 +14,7 @@ module Proscenium
   DEFAULT_GLOB_TYPES = {
     esbuild: '/{config,app,lib,node_modules}/**.{js,mjs,jsx,css}',
     runtime: '/proscenium-runtime/**.{js,jsx}',
+    url: %r{^/url:https?%3A%2F%2F},
     outsideRoot: '/**/*.{js,jsx,mjs,css}'
   }.freeze
 

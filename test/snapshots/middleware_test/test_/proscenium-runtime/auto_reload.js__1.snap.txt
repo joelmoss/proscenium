@@ -1,5 +1,5 @@
 // ../../lib/proscenium/runtime/auto_reload.js
-import { createConsumer } from "https://esm.sh/v96/@rails/actioncable@7.0.4/es2022/actioncable.js";
+import { createConsumer } from "/url:https%3A%2F%2Fesm.sh%2Fv96%2F%40rails%2Factioncable%407.0.4%2Fes2022%2Factioncable.js";
 var auto_reload_default = (socketPath) => {
   const uid = (Date.now() + (Math.random() * 100 | 0)).toString();
   const consumer = createConsumer(`${socketPath}?uid=${uid}`);

@@ -10,6 +10,7 @@ module Proscenium
     autoload :Base
     autoload :Esbuild
     autoload :Runtime
+    autoload :Url
     autoload :OutsideRoot
 
     def initialize(app)
@@ -45,6 +46,7 @@ module Proscenium
         return OutsideRoot if path.fnmatch?(glob_types[:outsideRoot], File::FNM_EXTGLOB)
       end
 
+      return Url if request.path.match?(glob_types[:url])
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(glob_types[:esbuild], File::FNM_EXTGLOB)
     end

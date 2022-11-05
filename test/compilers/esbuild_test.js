@@ -123,7 +123,7 @@ describe('compilers/esbuild', () => {
 
       assertStringIncludes(
         new TextDecoder().decode(result),
-        'import { jsx } from "https://esm.sh/react@18.2.0/jsx-runtime"'
+        'import { jsx } from "/url:https%3A%2F%2Fesm.sh%2Freact%4018.2.0%2Fjsx-runtime"'
       )
     })
 

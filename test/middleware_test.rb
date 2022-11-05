@@ -81,6 +81,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'url: modules' do
+    get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Areact-dom%4018.2.0%2Fdev.client.js'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'url', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test 'outside root' do # rubocop:disable Minitest/MultipleAssertions
     path = 'test/outside_root'
     get "#{Dir.pwd}/#{path}/index.js?outsideRoot"
