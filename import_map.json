@@ -1,9 +1,9 @@
 {
   "imports": {
-    "std/": "https://deno.land/std@0.159.0/",
-    "testing/": "https://deno.land/std@0.159.0/testing/",
+    "std/": "https://deno.land/std@0.162.0/",
+    "testing/": "https://deno.land/std@0.1562.0/testing/",
     "cache": "https://deno.land/x/cache@0.2.13/mod.ts",
-    "esbuild": "https://deno.land/x/esbuild@v0.15.11/mod.js",
+    "esbuild": "https://deno.land/x/esbuild@v0.15.13/mod.js",
     "import-maps/resolve": "https://esm.sh/v96/@import-maps/resolve@1.0.1/deno/resolve.js",
     "postcss": "https://deno.land/x/postcss@8.4.16/mod.js"
   }

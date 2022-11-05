@@ -38,5 +38,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'oj', '~> 3.13'
   spec.add_dependency 'phlex', '~> 0.4.0'
   spec.add_dependency 'railties', ['>= 6.1.0', '< 8.0']
-  spec.add_dependency 'view_component', '~> 2.0'
+  spec.add_dependency 'view_component', '~> 2.74.1' # Locked due to https://github.com/ViewComponent/view_component/issues/1565
 end
