@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.4.2)
+    proscenium (0.5.0)
       actioncable (>= 6.1.0, < 8.0)
       activesupport (>= 6.1.0, < 8.0)
       listen (~> 3.0)

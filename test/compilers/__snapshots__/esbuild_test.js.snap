@@ -384,3 +384,19 @@ header {
 }
 '
 `;
+
+snapshot[`compilers/esbuild > postcss > supports mixins 1`] = `
+"/* lib/with_mixins.css */
+a {
+  color: red;
+  font-size: 20px;
+}
+button {
+  color: pink;
+  font-size: 12px;
+}
+button span {
+  margin: 10px;
+}
+"
+`;

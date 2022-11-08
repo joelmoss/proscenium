@@ -235,4 +235,15 @@ describe('compilers/esbuild', () => {
       await assertSnapshot(t, new TextDecoder().decode(result))
     })
   })
+
+  describe('postcss', () => {
+    it('supports mixins', async t => {
+      const result = await main(['lib/with_mixins.css'], {
+        root,
+        lightningcssBin
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+  })
 })
