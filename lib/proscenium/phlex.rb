@@ -11,9 +11,9 @@ module Proscenium
 
     module Helpers
       def side_load_javascripts(...)
-        if (output = @_view_context.side_load_javascripts(...))
-          @_target << output
-        end
+        return unless (output = @_view_context.side_load_javascripts(...))
+
+        @_target << output
       end
 
       %i[side_load_stylesheets proscenium_dev].each do |name|

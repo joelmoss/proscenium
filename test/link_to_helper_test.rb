@@ -5,7 +5,8 @@ require 'test_helper'
 class LinkToHelperTest < ActionView::TestCase
   test 'should allow a shallow component' do
     assert_dom_equal(
-      %(<a rel="nofollow" data-component="{&quot;props&quot;:{}}" href="/components/first_react_component">Hello</a>),
+      %(<a rel="nofollow" data-component="{&quot;props&quot;:{}}"
+        href="/components/first_react_component">Hello</a>),
       link_to('Hello', ViewComponent::FirstReactComponent.new)
     )
   end

@@ -2,6 +2,7 @@ require:
   - rubocop-minitest
   - rubocop-packaging
   - rubocop-performance
+  - rubocop-rake
 
 AllCops:
   TargetRubyVersion: 2.7
@@ -10,6 +11,8 @@ AllCops:
 Layout/LineLength:
   Max: 100
 Metrics/MethodLength:
+  Max: 20
+Metrics/AbcSize:
   Max: 20
 Style/Documentation:
   Enabled: false

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Proscenium
   class Connection < ActionCable::Connection::Base
     identified_by :uid

@@ -10,15 +10,6 @@ module Proscenium
     #   link_to 'Go to', MyComponent
     #
     # TODO: ummm, todo it! ;)
-    def link_to(*args, &block)
-      # name_argument_index = block ? 0 : 1
-      # if (args[name_argument_index]).respond_to?(:render_in)
-      #   return super(*LinkToComponentArguments.new(args, name_argument_index,
-      #                                              self).helper_options, &block)
-      # end
-
-      super
-    end
   end
 
   # Component handling for the `link_to` helper.

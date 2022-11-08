@@ -31,7 +31,7 @@ PLATFORMS = {
     deno: 'aarch64-apple-darwin',
     npm: 'darwin-arm64'
   }
-}
+}.freeze
 
 desc 'Build Proscenium gems into the pkg directory.'
 task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
@@ -60,23 +60,27 @@ PLATFORMS.each do |platform, values|
     end
   end
 
+  desc "Compile esbuild for #{platform}"
   task "compile:esbuild:#{platform}" => 'clobber:bin:esbuild' do
     puts ''
     sh 'deno', 'compile', '--no-config', '-o', 'bin/esbuild', '--import-map', 'import_map.json',
        '-A', '--target', values[:deno], 'lib/proscenium/compilers/esbuild.js'
   end
 
+  desc "Push built gem (#{platform})"
   task "push:#{platform}" do
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{platform}.gem"
   end
 
+  desc "Download lightningcss for #{platform}"
   task "lightningcss:download:#{platform}" => 'clobber:bin:lightningcss' do
     puts "Downloading lightningcss from NPM for #{platform}..."
 
-    url = "lightningcss-cli-#{values[:npm]}/-/lightningcss-cli-#{values[:npm]}-#{LIGHTNINGCSS_VERSION}.tgz"
+    v = LIGHTNINGCSS_VERSION
+    url = "lightningcss-cli-#{values[:npm]}/-/lightningcss-cli-#{values[:npm]}-#{v}.tgz"
     file = Down.download("https://registry.npmjs.org/#{url}")
 
-    filename = "lightningcss-cli-#{values[:npm]}-#{LIGHTNINGCSS_VERSION}.tgz"
+    filename = "lightningcss-cli-#{values[:npm]}-#{v}.tgz"
     FileUtils.mv file, "tmp/#{filename}"
 
     FileUtils.cd 'tmp' do
@@ -90,9 +94,12 @@ end
 # rubocop:enable Metrics/BlockLength
 
 task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:lightningcss']
+
+desc 'Clobber esbuild binary'
 task 'clobber:bin:esbuild' do
   FileUtils.rm 'bin/esbuild', force: true
 end
+desc 'Clobber lightningcss binary'
 task 'clobber:bin:lightningcss' do
   FileUtils.rm 'bin/lightningcss', force: true
 end
