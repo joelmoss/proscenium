@@ -146,6 +146,16 @@ describe('compilers/esbuild', () => {
 
       await assertSnapshot(t, new TextDecoder().decode(result))
     })
+
+    it('supports aliasing', async t => {
+      const result = await main(['lib/import_map/aliases.js'], {
+        root,
+        lightningcssBin,
+        importMap: 'config/import_maps/aliases.json'
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
   })
 
   it('Import relative module without extension', async t => {

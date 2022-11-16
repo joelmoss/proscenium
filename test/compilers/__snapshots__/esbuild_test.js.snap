@@ -208,6 +208,13 @@ import "/lib/foo2.js";
 '
 `;
 
+snapshot[`compilers/esbuild > import map > supports aliasing 1`] = `
+'// lib/import_map/aliases.js
+import isip from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
+isip();
+'
+`;
+
 snapshot[`compilers/esbuild > Import relative module without extension 1`] = `
 '// lib/import_relative_module_without_extension.js
 import foo from "/lib/foo.js";

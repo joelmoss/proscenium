@@ -117,7 +117,10 @@ as you could end up swallowing everything, resulting in a very large file.
 ## Import Map
 
 Import map for both JS and CSS is supported out of the box, and works with no regard to the browser
-version being used. Just create `config/import_map.json`:
+version being used. This is because the import map is parsed and resolved by Proscenium on the
+server.
+
+Just create `config/import_map.json`:
 
 ```json
 {
@@ -155,6 +158,18 @@ env => ({
     react: env === 'development' ? 'https://esm.sh/react@18.2.0?dev' : 'https://esm.sh/react@18.2.0'
   }
 })
+```
+
+### Aliasing
+
+You can also use the import map to define aliases:
+
+```json
+{
+  "imports": {
+    "react": "preact/compact",
+  }
+}
 ```
 
 ## Side Loading
