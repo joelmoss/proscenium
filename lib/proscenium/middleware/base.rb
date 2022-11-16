@@ -59,9 +59,10 @@ module Proscenium
         response.write content
         response.content_type = content_type
         response['X-Proscenium-Middleware'] = name
+        response.set_header 'SourceMap', "#{@request.path_info}.map"
 
         if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
-          response['Cache-Control'] = "public, max-age=#{Proscenium.config.cache_max_age}"
+          response.cache! Proscenium.config.cache_max_age
         end
 
         yield response if block_given?
