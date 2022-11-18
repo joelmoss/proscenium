@@ -3,7 +3,7 @@
 require 'phlex'
 
 module Proscenium
-  class Phlex < ::Phlex::View
+  class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
 
     autoload :Component
