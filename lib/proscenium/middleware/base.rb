@@ -25,8 +25,12 @@ module Proscenium
 
       private
 
+      def sourcemap?
+        @request.path.ends_with?('.map')
+      end
+
       def renderable?
-        file_readable?
+        sourcemap? ? file_readable?(@request.path[0...-4]) : file_readable?
       end
 
       def file_readable?(file = @request.path_info)

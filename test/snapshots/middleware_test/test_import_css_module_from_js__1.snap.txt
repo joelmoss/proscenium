@@ -10,3 +10,4 @@ var styles_module_default = { "myClass": "myClass330940eb" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);
+//# sourceMappingURL=import_css_module.js.map
