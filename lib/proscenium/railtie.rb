@@ -15,7 +15,7 @@ module Proscenium
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   DEFAULT_GLOB_TYPES = {
     esbuild: "/{config,app,lib,node_modules}/**.{#{FILE_EXTENSIONS.join(',')}}",
-    runtime: '/proscenium-runtime/**.{js,jsx}',
+    runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     url: %r{^/url:https?%3A%2F%2F},
     outsideRoot: "/**/*.{#{FILE_EXTENSIONS.join(',')}}"
   }.freeze
