@@ -7,15 +7,17 @@ require 'listen'
 ENV['RAILS_ENV'] = Rails.env
 
 module Proscenium
+  FILE_EXTENSIONS = ['js', 'mjs', 'jsx', 'css', 'js.map', 'mjs.map', 'jsx.map', 'css.map'].freeze
+
   # These globs should actually be Deno supported globs, and not ruby globs. This is because when
   # precompiling, the glob paths are passed as is to the compiler run by Deno.
   #
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   DEFAULT_GLOB_TYPES = {
-    esbuild: '/{config,app,lib,node_modules}/**.{js,mjs,jsx,css}',
-    runtime: '/proscenium-runtime/**.{js,jsx}',
+    esbuild: "/{config,app,lib,node_modules}/**.{#{FILE_EXTENSIONS.join(',')}}",
+    runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     url: %r{^/url:https?%3A%2F%2F},
-    outsideRoot: '/**/*.{js,jsx,mjs,css}'
+    outsideRoot: "/**/*.{#{FILE_EXTENSIONS.join(',')}}"
   }.freeze
 
   class << self

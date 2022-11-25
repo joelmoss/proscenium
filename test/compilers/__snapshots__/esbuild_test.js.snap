@@ -12,6 +12,7 @@ var component_default = Component;
 export {
   component_default as default
 };
+//# sourceMappingURL=component.js.map
 '
 `;
 
@@ -26,6 +27,7 @@ var import_node_module_default = () => {
 export {
   import_node_module_default as default
 };
+//# sourceMappingURL=import_node_module.js.map
 '
 `;
 
@@ -139,24 +141,28 @@ export {
   \$701a24aa0da5b062\$export\$ea18c227d4417cc3 as useButton,
   \$55f54f7887471b58\$export\$51e84d46ca0bc451 as useToggleButton
 };
+//# sourceMappingURL=button.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import relative module 1`] = `
 '// lib/import_relative_module.js
 import "/lib/foo.js";
+//# sourceMappingURL=import_relative_module.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import absolute module 1`] = `
 '// lib/import_absolute_module.js
 import "/lib/foo.js";
+//# sourceMappingURL=import_absolute_module.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import remote module 1`] = `
 '// lib/import_remote_module.js
 import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
+//# sourceMappingURL=import_remote_module.js.map
 '
 `;
 
@@ -169,6 +175,7 @@ axios();
 foo();
 createElement();
 import("/url:https%3A%2F%2Fesm.sh%2Fsolid%400.2.1");
+//# sourceMappingURL=import_map.js.map
 '
 `;
 
@@ -199,12 +206,14 @@ export {
   isIPv4,
   isIPv6
 };
+//# sourceMappingURL=index.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > import map > supports scopes 1`] = `
 '// lib/import_map/scopes.js
 import "/lib/foo2.js";
+//# sourceMappingURL=scopes.js.map
 '
 `;
 
@@ -212,18 +221,21 @@ snapshot[`compilers/esbuild > import map > supports aliasing 1`] = `
 '// lib/import_map/aliases.js
 import isip from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
 isip();
+//# sourceMappingURL=aliases.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import relative module without extension 1`] = `
 '// lib/import_relative_module_without_extension.js
 import foo from "/lib/foo.js";
+//# sourceMappingURL=import_relative_module_without_extension.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import absolute module without extension 1`] = `
 '// lib/import_absolute_module_without_extension.js
 import foo from "/lib/foo.js";
+//# sourceMappingURL=import_absolute_module_without_extension.js.map
 '
 `;
 
@@ -240,6 +252,7 @@ var styles_module_default = { "myClass": "myClass330940eb" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);
+//# sourceMappingURL=import_css_module.js.map
 '
 `;
 
@@ -264,6 +277,7 @@ var basic_react_component_default = () => {
 export {
   basic_react_component_default as default
 };
+//# sourceMappingURL=basic_react_component.js.map
 '
 `;
 
@@ -288,6 +302,7 @@ var component_default = () => {
 export {
   component_default as default
 };
+//# sourceMappingURL=component.js.map
 '
 `;
 
@@ -301,6 +316,7 @@ if (!e) {
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
+//# sourceMappingURL=import_css.js.map
 '
 `;
 
@@ -314,6 +330,7 @@ if (!e) {
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
+//# sourceMappingURL=import_css.js.map
 '
 `;
 
@@ -326,6 +343,7 @@ console.log(2);
 
 // lib/bundle_all_import/one.js?bundle-all
 console.log(1);
+//# sourceMappingURL=index.js.map
 "
 `;
 
@@ -360,6 +378,7 @@ import emailRegex2 from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 component_default();
 emailRegex();
 emailRegex2();
+//# sourceMappingURL=index.js.map
 '
 `;
 
@@ -389,6 +408,7 @@ body h1 {
 header {
   color: pink;
 }
+/*# sourceMappingURL=bundle_import.css.map */
 '
 `;
 
@@ -405,5 +425,6 @@ button {
 button span {
   margin: 10px;
 }
+/*# sourceMappingURL=with_mixins.css.map */
 "
 `;

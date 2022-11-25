@@ -1,3 +1,4 @@
 // lib/query_cache.js
 import foo from "/lib/foo.js?v1";
 foo();
+//# sourceMappingURL=query_cache.js.map

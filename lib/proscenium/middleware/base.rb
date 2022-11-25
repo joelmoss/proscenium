@@ -25,8 +25,12 @@ module Proscenium
 
       private
 
+      def sourcemap?
+        @request.path.ends_with?('.map')
+      end
+
       def renderable?
-        file_readable?
+        sourcemap? ? file_readable?(@request.path[0...-4]) : file_readable?
       end
 
       def file_readable?(file = @request.path_info)
@@ -59,9 +63,10 @@ module Proscenium
         response.write content
         response.content_type = content_type
         response['X-Proscenium-Middleware'] = name
+        response.set_header 'SourceMap', "#{@request.path_info}.map"
 
         if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
-          response['Cache-Control'] = "public, max-age=#{Proscenium.config.cache_max_age}"
+          response.cache! Proscenium.config.cache_max_age
         end
 
         yield response if block_given?

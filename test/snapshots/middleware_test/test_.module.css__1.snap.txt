@@ -2,3 +2,4 @@
 .myClass330940eb {
   color: pink;
 }
+/*# sourceMappingURL=styles.module.css.map */

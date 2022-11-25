@@ -3,6 +3,10 @@
 require_relative 'test_helper'
 
 class MiddlewareTest < ActionDispatch::IntegrationTest
+  setup do
+    Proscenium.config.cache_query_string = false
+  end
+
   test 'unsupported path' do
     assert_raises ActionController::RoutingError do
       get '/db/some.js'
@@ -73,6 +77,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'source map' do
+    get '/lib/foo.js.map'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test 'node module (pnpm)' do
     get '/node_modules/is-ip/index.js'
 
@@ -105,7 +117,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/lib/query_cache.js?v1'
 
     assert_includes response.headers['Cache-Control'], 'public'
-    Proscenium.config.cache_query_string = false
   end
 
   test 'cache_query_string should propogate' do
@@ -113,6 +124,5 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     get '/lib/query_cache.js?v1'
 
     assert_matches_snapshot response.body
-    Proscenium.config.cache_query_string = false
   end
 end
