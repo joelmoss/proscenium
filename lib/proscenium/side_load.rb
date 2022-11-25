@@ -44,7 +44,8 @@ module Proscenium
           layout = find_layout(layout_name, locals.keys, [formats.first])
           renderable = template.instance_variable_get(:@renderable)
 
-          if template.is_a?(ActionView::Template::Renderable) &&
+          if Object.const_defined?(:ViewComponent) &&
+             template.is_a?(ActionView::Template::Renderable) &&
              renderable.class < ::ViewComponent::Base && renderable.class.format == :html
             # Side load controller rendered ViewComponent
             Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
