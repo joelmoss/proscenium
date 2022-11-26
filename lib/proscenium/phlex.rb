@@ -8,6 +8,7 @@ module Proscenium
 
     autoload :Component
     autoload :ReactComponent
+    autoload :ResolveCssModules
 
     module Helpers
       def side_load_javascripts(...)
@@ -27,7 +28,7 @@ module Proscenium
 
     module Sideload
       def template(...)
-        Proscenium::SideLoad.append self.class.path if Rails.application.config.proscenium.side_load
+        Proscenium::SideLoad.append self.class.path
 
         super
       end
@@ -40,7 +41,7 @@ module Proscenium
         path = caller_locations(1, 1)[0].path
         child.path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
 
-        child.prepend Sideload
+        child.prepend Sideload if Rails.application.config.proscenium.side_load
         child.include Helpers
 
         super
