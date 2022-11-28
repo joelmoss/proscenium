@@ -9,4 +9,4 @@ var component_default = Component;
 export {
   component_default as default
 };
-//# sourceMappingURL=component.js.map
+//# sourceMappingURL=component.jsx.map

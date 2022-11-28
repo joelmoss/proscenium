@@ -12,7 +12,7 @@ var component_default = Component;
 export {
   component_default as default
 };
-//# sourceMappingURL=component.js.map
+//# sourceMappingURL=component.jsx.map
 '
 `;
 
@@ -277,7 +277,7 @@ var basic_react_component_default = () => {
 export {
   basic_react_component_default as default
 };
-//# sourceMappingURL=basic_react_component.js.map
+//# sourceMappingURL=basic_react_component.jsx.map
 '
 `;
 
@@ -302,7 +302,7 @@ var component_default = () => {
 export {
   component_default as default
 };
-//# sourceMappingURL=component.js.map
+//# sourceMappingURL=component.jsx.map
 '
 `;
 
@@ -330,7 +330,7 @@ if (!e) {
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
-//# sourceMappingURL=import_css.js.map
+//# sourceMappingURL=import_css.jsx.map
 '
 `;
 

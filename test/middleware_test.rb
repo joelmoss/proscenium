@@ -93,6 +93,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'jsx source map' do
+    get '/lib/component.jsx.map'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test 'node module (pnpm)' do
     get '/node_modules/is-ip/index.js'
 
