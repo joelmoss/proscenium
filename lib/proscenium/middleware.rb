@@ -47,9 +47,7 @@ module Proscenium
 
       return Url if request.path.match?(glob_types[:url])
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
-
-      paths = Rails.application.config.proscenium.include_paths.join(',')
-      return Esbuild if path.fnmatch?("/{#{paths}}#{glob_types[:application]}", File::FNM_EXTGLOB)
+      return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end
 
     def file_handler
@@ -59,6 +57,11 @@ module Proscenium
 
     def glob_types
       Proscenium::MIDDLEWARE_GLOB_TYPES
+    end
+
+    def application_glob_type
+      paths = Rails.application.config.proscenium.include_paths.join(',')
+      "/{#{paths}}#{glob_types[:application]}"
     end
   end
 end
