@@ -28,15 +28,14 @@ module Proscenium
     private
 
     # Look for the precompiled file in public/assets first, then fallback to the Proscenium
-    # middleware that matches the type of file requested, ie: .js => esbuild.
-    # See Rails.application.config.proscenium.glob_types.
+    # middleware that matches the type of file requested.
     def attempt(request)
       return unless (type = find_type(request))
 
       file_handler.attempt(request.env) || type.attempt(request)
     end
 
-    # Returns the type of file being requested using Rails.application.config.proscenium.glob_types.
+    # Returns the type of file being requested using Proscenium::MIDDLEWARE_GLOB_TYPES.
     def find_type(request)
       path = Pathname.new(request.path)
 
@@ -48,7 +47,9 @@ module Proscenium
 
       return Url if request.path.match?(glob_types[:url])
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
-      return Esbuild if path.fnmatch?(glob_types[:esbuild], File::FNM_EXTGLOB)
+
+      paths = Rails.application.config.proscenium.include_paths.join(',')
+      return Esbuild if path.fnmatch?("/{#{paths}}#{glob_types[:application]}", File::FNM_EXTGLOB)
     end
 
     def file_handler
@@ -57,7 +58,7 @@ module Proscenium
     end
 
     def glob_types
-      Rails.application.config.proscenium.glob_types
+      Proscenium::MIDDLEWARE_GLOB_TYPES
     end
   end
 end

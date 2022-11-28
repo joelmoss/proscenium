@@ -4,6 +4,7 @@ require_relative 'test_helper'
 
 class MiddlewareTest < ActionDispatch::IntegrationTest
   setup do
+    Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
   end
 
@@ -11,6 +12,13 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_raises ActionController::RoutingError do
       get '/db/some.js'
     end
+  end
+
+  test 'include_paths config' do
+    Proscenium.config.include_paths << 'db'
+    get '/db/some.js'
+
+    assert_matches_snapshot response.body
   end
 
   test '.js' do

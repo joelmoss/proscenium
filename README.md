@@ -290,6 +290,16 @@ option:
 Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 ```
 
+## Include Paths
+
+By default, Proscenium will serve files ending with any of these extension: `js,mjs,css,jsx`, and only from `config`, `app/views`, `lib` and `node_modules`.
+
+You can customise these paths with the `include_path` config option...
+
+```ruby
+Rails.application.config.proscenium.include_paths << 'app/components'
+```
+
 ## How It Works
 
 Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.

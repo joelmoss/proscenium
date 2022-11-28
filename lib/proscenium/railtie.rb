@@ -13,12 +13,14 @@ module Proscenium
   # precompiling, the glob paths are passed as is to the compiler run by Deno.
   #
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
-  DEFAULT_GLOB_TYPES = {
-    esbuild: "/{config,app,lib,node_modules}/**.{#{FILE_EXTENSIONS.join(',')}}",
+  MIDDLEWARE_GLOB_TYPES = {
+    application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     url: %r{^/url:https?%3A%2F%2F},
     outsideRoot: "/**/*.{#{FILE_EXTENSIONS.join(',')}}"
   }.freeze
+
+  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
 
   class << self
     def config
@@ -36,11 +38,12 @@ module Proscenium
     config.proscenium.auto_reload = Rails.env.development?
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
+    config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
 
-      options.glob_types = DEFAULT_GLOB_TYPES if options.glob_types.blank?
+      options.include_paths = Set.new(APPLICATION_INCLUDE_PATHS) if options.include_paths.blank?
       options.auto_reload_paths.filter! { |path| Dir.exist? path }
       options.cable_mount_path ||= '/proscenium-cable'
       options.cable_logger ||= Rails.logger
