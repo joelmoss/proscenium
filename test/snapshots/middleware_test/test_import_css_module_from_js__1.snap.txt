@@ -4,6 +4,7 @@ if (!e) {
   e = document.createElement("style");
   e.id = "_330940eb";
   document.head.appendChild(e);
+  e.appendChild(document.createComment("/lib/styles.module.css"));
   e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
 }
 var styles_module_default = { "myClass": "myClass330940eb" };

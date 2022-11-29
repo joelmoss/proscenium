@@ -246,6 +246,7 @@ if (!e) {
   e = document.createElement("style");
   e.id = "_330940eb";
   document.head.appendChild(e);
+  e.appendChild(document.createComment("/lib/styles.module.css"));
   e.appendChild(document.createTextNode(\`.myClass330940eb{color:pink}\`));
 }
 var styles_module_default = { "myClass": "myClass330940eb" };
@@ -313,6 +314,7 @@ if (!e) {
   e = document.createElement("style");
   e.id = "_6d24c769";
   document.head.appendChild(e);
+  e.appendChild(document.createComment("/app/views/layouts/application.css"));
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
@@ -327,6 +329,7 @@ if (!e) {
   e = document.createElement("style");
   e.id = "_6d24c769";
   document.head.appendChild(e);
+  e.appendChild(document.createComment("/app/views/layouts/application.css"));
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
@@ -420,7 +423,7 @@ a {
 }
 button {
   color: pink;
-  font-size: 12px;
+  font-size: 14px;
 }
 button span {
   margin: 10px;
