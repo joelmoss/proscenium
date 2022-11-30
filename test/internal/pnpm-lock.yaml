@@ -2,6 +2,7 @@ lockfileVersion: 5.4
 
 specifiers:
   '@proscenium/component-manager': link:/Users/joelmoss/dev/proscenium/lib/component_manager
+  '@rails/actioncable': ^7.0.4
   '@react-aria/button': ^3.6.1
   is-ip: ^5.0.0
   react: ^18.2.0
@@ -14,6 +15,9 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
 
+devDependencies:
+  '@rails/actioncable': 7.0.4
+
 packages:
 
   /@babel/runtime/7.19.0:
@@ -22,6 +26,10 @@ packages:
     dependencies:
       regenerator-runtime: 0.13.9
     dev: false
+
+  /@rails/actioncable/7.0.4:
+    resolution: {integrity: sha512-tz4oM+Zn9CYsvtyicsa/AwzKZKL+ITHWkhiu7x+xF77clh2b4Rm+s6xnOgY/sGDWoFWZmtKsE95hxBPkgQQNnQ==}
+    dev: true
 
   /@react-aria/button/3.6.1_react@18.2.0:
     resolution: {integrity: sha512-g10dk0eIQ71F1QefUymbff0yceQFHEKzOwK7J5QAFB5w/FUSmCTsMkBrrra4AogRxYHIAr5adPic5F2g7VzQFw==}

@@ -1,13 +1,17 @@
 // ../../lib/proscenium/runtime/auto_reload.js
-import { createConsumer } from "/url:https%3A%2F%2Fesm.sh%2Fv96%2F%40rails%2Factioncable%407.0.4%2Fes2022%2Factioncable.js";
+import { createConsumer } from "/node_modules/.pnpm/@rails+actioncable@7.0.4/node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js";
 var auto_reload_default = (socketPath) => {
   const uid = (Date.now() + (Math.random() * 100 | 0)).toString();
   const consumer = createConsumer(`${socketPath}?uid=${uid}`);
   consumer.subscriptions.create("Proscenium::ReloadChannel", {
-    received: debounce(() => {
-      console.log("[Proscenium] Files changed; reloading...");
-      location.reload();
-    }, 200, true),
+    received: debounce(
+      () => {
+        console.log("[Proscenium] Files changed; reloading...");
+        location.reload();
+      },
+      200,
+      true
+    ),
     connected() {
       console.log("[Proscenium] Auto-reload websocket connected");
     },

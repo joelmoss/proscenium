@@ -236,6 +236,8 @@ mount the Proscenium Railtie into your `config/routes.rb` file:
 mount Proscenium::Railtie, at: '/proscenium' if Rails.env.development?
 ```
 
+Auto reload uses ActionCable, so make sure the Ruby Gem, and [NPM package](https://www.npmjs.com/package/@rails/actioncable) is installed.
+
 Changes to CSS/JS(X) files in your `app` and `lib` directories will cause the page to reload.
 
 NOTE: that this is hot module reloading (HMR) - a full page reload is triggered.
