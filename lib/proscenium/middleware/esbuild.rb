@@ -3,13 +3,14 @@
 module Proscenium
   class Middleware
     class Esbuild < Base
-      class CompileError < StandardError
-        attr_reader :detail
+      class CompileError < Base::CompileError
+        def initialize(args)
+          detail = args[:detail]
+          detail = ActiveSupport::HashWithIndifferentAccess.new(Oj.load(detail, mode: :strict))
+          args[:detail] = "#{detail[:text]} in #{detail[:location][:file]}:" +
+                          detail[:location][:line].to_s
 
-        def initialize(detail)
-          @detail = ActiveSupport::HashWithIndifferentAccess.new(Oj.load(detail, mode: :strict))
-
-          super "#{@detail[:text]} in #{@detail[:location][:file]}:#{@detail[:location][:line]}"
+          super args
         end
       end
 
@@ -20,10 +21,6 @@ module Proscenium
             cache_query_string,
             "--lightningcss-bin #{lightningcss_cli} #{path}"
           ].compact.join(' '))
-        end
-      rescue CompileError => e
-        render_response "export default #{e.detail.to_json}" do |response|
-          response['X-Proscenium-Middleware'] = 'Esbuild::CompileError'
         end
       end
 

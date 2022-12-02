@@ -6,6 +6,7 @@ module Proscenium
   class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
 
+    autoload :Page
     autoload :Component
     autoload :ReactComponent
     autoload :ResolveCssModules
@@ -28,7 +29,11 @@ module Proscenium
 
     module Sideload
       def template(...)
-        Proscenium::SideLoad.append self.class.path
+        klass = self.class
+        while klass.respond_to?(:path)
+          Proscenium::SideLoad.append klass.path
+          klass = klass.superclass
+        end
 
         super
       end

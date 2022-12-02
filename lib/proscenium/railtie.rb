@@ -54,9 +54,11 @@ module Proscenium
     end
 
     initializer 'proscenium.middleware' do |app|
-      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
-      app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
-      app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
+      if Rails.env.production?
+        app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
+      else
+        app.middleware.use Proscenium::Middleware
+      end
     end
 
     initializer 'proscenium.helpers' do |_app|

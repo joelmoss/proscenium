@@ -7,7 +7,6 @@ module Proscenium
     def connect
       self.uid = request.params[:uid]
       logger.add_tags(uid)
-      logger.info 'connected to Proscenium'
     end
   end
 end

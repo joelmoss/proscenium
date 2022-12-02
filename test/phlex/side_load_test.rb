@@ -12,6 +12,16 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
                  }, Proscenium::Current.loaded)
   end
 
+  test 'nested side load' do
+    Phlex::NestedSideLoadView.new.call
+
+    assert_equal({
+                   js: Set['app/components/phlex/side_load_view.js'],
+                   css: Set['app/components/phlex/side_load_view.css',
+                            'app/components/phlex/nested_side_load_view.css']
+                 }, Proscenium::Current.loaded)
+  end
+
   test 'should not side load css module when css_module not used' do
     Phlex::SideLoadCssModuleView.new(false).call
 

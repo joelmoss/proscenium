@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'open3'
+require 'oj'
 
 module Proscenium
   class Middleware
@@ -9,7 +10,15 @@ module Proscenium
 
       # Error when the result of the build returns an error. For example, when esbuild returns
       # errors.
-      class CompileError < StandardError; end
+      class CompileError < StandardError
+        attr_reader :detail, :file
+
+        def initialize(args)
+          @detail = args[:detail]
+          @file = args[:file]
+          super "Failed to build '#{args[:file]}' -- #{detail}"
+        end
+      end
 
       def self.attempt(request)
         new(request).renderable!&.attempt
@@ -77,14 +86,8 @@ module Proscenium
       def build(cmd)
         stdout, stderr, status = Open3.capture3(cmd)
 
-        unless status.success?
-          raise self.class::CompileError, stderr if status.exitstatus == 2
-
-          raise BuildError, stderr
-        end
-
-        unless stderr.empty?
-          raise BuildError, "Proscenium build of #{name}:'#{@request.fullpath}' failed -- #{stderr}"
+        if !status.success? || !stderr.empty?
+          raise self.class::CompileError, { file: @request.fullpath, detail: stderr }, caller
         end
 
         stdout
