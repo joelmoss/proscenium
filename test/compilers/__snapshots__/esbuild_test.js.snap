@@ -4,9 +4,7 @@ snapshot[`compilers/esbuild > Successful JSX build 1`] = `
 '// lib/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var Component = () => {
-  return /* @__PURE__ */ jsx("div", {
-    children: "Hello"
-  });
+  return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };
 var component_default = Component;
 export {
@@ -270,10 +268,7 @@ var basic_react_component_module_default = new Proxy({}, { get(target, prop, rec
 // app/components/basic_react_component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var basic_react_component_default = () => {
-  return /* @__PURE__ */ jsx("div", {
-    className: basic_react_component_module_default.base,
-    children: "Basic React Component"
-  });
+  return /* @__PURE__ */ jsx("div", { className: basic_react_component_module_default.base, children: "Basic React Component" });
 };
 export {
   basic_react_component_default as default
@@ -295,10 +290,7 @@ var component_module_default = new Proxy({}, { get(target, prop, receiver) {
 // app/components/basic_react/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var component_default = () => {
-  return /* @__PURE__ */ jsx("div", {
-    className: component_module_default.base,
-    children: "Basic React Component"
-  });
+  return /* @__PURE__ */ jsx("div", { className: component_module_default.base, children: "Basic React Component" });
 };
 export {
   component_default as default
@@ -369,9 +361,7 @@ console.log("bundle_import/foo.js");
 // lib/component.jsx?bundle
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var Component = () => {
-  return /* @__PURE__ */ jsx("div", {
-    children: "Hello"
-  });
+  return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };
 var component_default = Component;
 
