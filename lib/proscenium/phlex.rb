@@ -5,9 +5,9 @@ require 'phlex'
 module Proscenium
   class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
+    include Proscenium::CssModule
 
     autoload :Page
-    autoload :Component
     autoload :ReactComponent
     autoload :ResolveCssModules
 
@@ -30,7 +30,7 @@ module Proscenium
     module Sideload
       def template(...)
         klass = self.class
-        while klass.respond_to?(:path)
+        while klass.side_load != false && klass.respond_to?(:path) && klass.path
           Proscenium::SideLoad.append klass.path
           klass = klass.superclass
         end
@@ -40,27 +40,16 @@ module Proscenium
     end
 
     class << self
-      attr_accessor :path
+      attr_accessor :path, :side_load
 
       def inherited(child)
-        path = caller_locations(1, 1)[0].path
-        child.path = path.delete_prefix(::Rails.root.to_s).delete_suffix('.rb')[1..]
+        child.path = Pathname.new(caller_locations(1, 1)[0].path)
 
         child.prepend Sideload if Rails.application.config.proscenium.side_load
         child.include Helpers
 
         super
       end
-    end
-
-    def css_module(name)
-      cssm.class_names!(name).join ' '
-    end
-
-    private
-
-    def cssm
-      @cssm ||= Proscenium::CssModule.new(self.class.path)
     end
   end
 end

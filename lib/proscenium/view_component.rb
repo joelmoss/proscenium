@@ -4,9 +4,19 @@ require 'view_component'
 
 class Proscenium::ViewComponent < ViewComponent::Base
   extend ActiveSupport::Autoload
+  include Proscenium::CssModule
 
   autoload :TagBuilder
   autoload :ReactComponent
+
+  class << self
+    attr_accessor :path
+
+    def inherited(child)
+      child.path = Pathname.new(caller_locations(1, 1)[0].path)
+      super
+    end
+  end
 
   def render_in(...)
     cssm.compile_class_names(super(...))
@@ -16,24 +26,12 @@ class Proscenium::ViewComponent < ViewComponent::Base
     side_load_assets unless self.class < ReactComponent
   end
 
-  def css_module(name)
-    cssm.class_names!(name).join ' '
-  end
-
   private
 
   # Side load any CSS/JS assets for the component. This will side load any `index.{css|js}` in
   # the component directory.
   def side_load_assets
-    Proscenium::SideLoad.append asset_path if Rails.application.config.proscenium.side_load
-  end
-
-  def asset_path
-    @asset_path ||= "app/components#{virtual_path}"
-  end
-
-  def cssm
-    @cssm ||= Proscenium::CssModule.new(asset_path)
+    Proscenium::SideLoad.append path if Rails.application.config.proscenium.side_load
   end
 
   # Overrides ActionView::Helpers::TagHelper::TagBuilder, allowing us to intercept the

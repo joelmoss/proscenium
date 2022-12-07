@@ -20,7 +20,7 @@ module Proscenium
     outsideRoot: "/**/*.{#{FILE_EXTENSIONS.join(',')}}"
   }.freeze
 
-  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
+  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules', 'ruby_gems'].freeze
 
   class << self
     def config
@@ -39,6 +39,7 @@ module Proscenium
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
+    config.proscenium.include_ruby_gems = {}
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
@@ -50,7 +51,7 @@ module Proscenium
     end
 
     initializer 'proscenium.side_load' do |_app|
-      Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set[]] }
+      Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
     end
 
     initializer 'proscenium.middleware' do |app|

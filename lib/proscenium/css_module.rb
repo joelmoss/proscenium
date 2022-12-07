@@ -1,64 +1,29 @@
 # frozen_string_literal: true
 
-class Proscenium::CssModule
-  class NotFound < StandardError
-    def initialize(pathname)
-      @pathname = pathname
-      super
-    end
+module Proscenium::CssModule
+  require 'proscenium/css_module/resolver'
 
-    def message
-      "Stylesheet is required, but does not exist: #{@pathname}"
-    end
-  end
-
-  def initialize(path)
-    @path = path
-    @css_module_path = "#{path}.module.css"
-  end
-
-  # Parses the given `content` for CSS modules names ('class' attributes beginning with '@'), and
-  # returns the content with said CSS Modules replaced with the compiled class names.
+  # Like `css_modules`, but will raise if the stylesheet cannot be found.
   #
-  # Example:
-  #   <div class="@my_css_module_name"></div>
-  def compile_class_names(content)
-    doc = Nokogiri::HTML::DocumentFragment.parse(content)
-
-    return content if (modules = doc.css('[class*="@"]')).empty?
-
-    modules.each do |ele|
-      classes = ele.classes.map { |cls| cls.starts_with?('@') ? class_names!(cls[1..]) : cls }
-      ele['class'] = classes.join(' ')
-    end
-
-    doc.to_html.html_safe
+  # @param name [Array, String]
+  def css_module!(names)
+    cssm.class_names!(names).join ' '
   end
 
-  # @returns [Array] of class names generated from the given CSS module `names`.
-  def class_names(*names)
-    side_load_css_module
-    names.flatten.compact.map { |name| "#{name.to_s.camelize(:lower)}#{hash}" }
-  end
-
-  # Like #class_names, but requires that the stylesheet exists.
+  # Accepts one or more CSS class names, and transforms them into CSS module names.
   #
-  # @raises Proscenium::CssModule::NotFound if stylesheet does not exists.
-  def class_names!(...)
-    raise NotFound, @css_module_path unless Rails.root.join(@css_module_path).exist?
-
-    class_names(...)
+  # @param name [Array, String]
+  def css_module(names)
+    cssm.class_names(names).join ' '
   end
 
   private
 
-  def hash
-    @hash ||= Digest::SHA1.hexdigest("/#{@css_module_path}")[..7]
+  def path
+    self.class.path
   end
 
-  def side_load_css_module
-    return unless Rails.application.config.proscenium.side_load
-
-    Proscenium::SideLoad.append "#{@path}.module", :css
+  def cssm
+    @cssm ||= Resolver.new(path)
   end
 end

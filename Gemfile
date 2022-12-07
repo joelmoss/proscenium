@@ -21,3 +21,7 @@ gem 'rubocop-packaging'
 gem 'rubocop-performance'
 gem 'rubocop-rake'
 gem 'view_component', '~> 2.74.1' # Locked due to https://github.com/ViewComponent/view_component/issues/1565
+
+group :test do
+  gem 'gem1', path: './test/internal/vendor/gem1'
+end

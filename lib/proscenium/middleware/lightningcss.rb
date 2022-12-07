@@ -49,7 +49,7 @@ module Proscenium
         options << '--custom-media' if custom_media?
 
         if css_module?
-          hash = Digest::SHA1.hexdigest(@request.path)[..7]
+          hash = Proscenium::Utils.digest(@request.path)
           options += ['--css-modules', '--css-modules-pattern', "'[local]#{hash}'"]
         end
 

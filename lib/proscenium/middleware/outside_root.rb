@@ -18,7 +18,7 @@ module Proscenium
       end
 
       # @override [Esbuild] does not remove leading slash, ensuring it is an absolute path.
-      def path
+      def path_to_build
         @request.path
       end
     end

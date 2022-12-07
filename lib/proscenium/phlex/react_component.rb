@@ -3,7 +3,9 @@
 #
 # Renders a div for use with component-manager.
 #
-class Proscenium::Phlex::ReactComponent < Proscenium::Phlex::Component
+class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
+  self.side_load = false
+
   attr_accessor :props, :lazy
 
   # @param props: [Hash]

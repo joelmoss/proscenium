@@ -1,41 +1,53 @@
 # frozen_string_literal: true
 
-# rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 module Proscenium
-  module SideLoad
-    DEFAULT_EXTENSIONS = %i[js css].freeze
+  class SideLoad
     EXTENSIONS = %i[js css].freeze
+    EXTENSION_MAP = { '.css' => :css, '.js' => :js }.freeze
 
-    module_function
+    attr_reader :path
 
     # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is a
-    # Set of 'js' and 'css' asset paths. This is safe to call multiple times, as it uses Set's.
-    # Meaning that side loading will never include duplicates.
-    def append(path, *extensions)
-      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set[]] }
+    # Set of 'js' and 'css' asset paths. This is idempotent, so side loading will never include
+    # duplicates.
+    def self.append(path, extension_map = EXTENSION_MAP)
+      new(path, extension_map)
+    end
 
-      unless (unknown_extensions = extensions.difference(EXTENSIONS)).empty?
-        raise ArgumentError, "unsupported extension(s): #{unknown_extensions.join(',')}"
-      end
+    # @param path [Pathname, String] The path of the file to be side loaded.
+    # @param extensions [Array] File extensions to side load (default: DEFAULT_EXTENSIONS)
+    def initialize(path, extension_map)
+      @path = (path.is_a?(Pathname) ? path : Rails.root.join(path)).sub_ext('')
+      @extension_map = extension_map
 
-      loaded_types = []
+      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set.new] }
 
-      (extensions.empty? ? DEFAULT_EXTENSIONS : extensions).each do |ext|
-        path_with_ext = "#{path}.#{ext}"
-        ext = ext.to_sym
+      append_to_loaded
+    end
 
-        next if Proscenium::Current.loaded[ext].include?(path_with_ext)
-        next unless Rails.root.join(path_with_ext).exist?
+    private
 
-        Proscenium::Current.loaded[ext] << path_with_ext
-        loaded_types << ext
-      end
+    def append_to_loaded
+      root, relative_path, path_to_load = Proscenium::Utils.path_pieces(path)
 
-      !loaded_types.empty? && Rails.logger.debug do
-        "[Proscenium] Side loaded /#{path}.(#{loaded_types.join(',')})"
+      @extension_map.each do |ext, type|
+        path_with_ext = "#{relative_path}#{ext}"
+
+        # Make sure path is not already side loaded, and actually exists.
+        next if Proscenium::Current.loaded[type].include?(path_with_ext)
+        next unless (full_path = Pathname.new(root).join(path_with_ext)).exist?
+
+        digest = Proscenium::Utils.digest(full_path)
+        Proscenium::Current.loaded[type] << [digest, log("#{path_to_load}#{ext}")]
       end
     end
 
+    def log(value)
+      Rails.logger.debug "[Proscenium] Side loaded #{value}"
+      value
+    end
+
+    # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
     module Monkey
       module TemplateRenderer
         private
@@ -68,6 +80,6 @@ module Proscenium
         end
       end
     end
+    # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   end
 end
-# rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity

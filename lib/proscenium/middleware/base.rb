@@ -39,11 +39,11 @@ module Proscenium
       end
 
       def renderable?
-        sourcemap? ? file_readable?(@request.path[0...-4]) : file_readable?
+        file_readable?
       end
 
-      def file_readable?(file = @request.path_info)
-        return unless (path = clean_path(file))
+      def file_readable?
+        return unless (path = clean_path(sourcemap? ? @request.path[0...-4] : @request.path_info))
 
         file_stat = File.stat(Pathname(root).join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError

@@ -1,0 +1,1 @@
+<div class="componentManagedByProscenium component6bdfe2e4" data-component='{"path":"/view_component/second_react/component","props":{},"lazy":true}'><div>loading...</div></div>

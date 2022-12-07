@@ -149,4 +149,16 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
 
     assert_matches_snapshot response.body
   end
+
+  test 'from ruby gem' do
+    get '/ruby_gems/gem1/lib/gem1/gem1.js'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'sourcemap from ruby gem' do
+    get '/ruby_gems/gem1/lib/gem1/gem1.js.map'
+
+    assert_matches_snapshot response.body
+  end
 end

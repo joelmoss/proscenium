@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../../lib/gem1/gem1.js"],
+  "sourcesContent": ["console.log('gem1')\n"],
+  "mappings": ";AAAA,QAAQ,IAAI,MAAM;",
+  "names": []
+}

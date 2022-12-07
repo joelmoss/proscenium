@@ -1,5 +1,5 @@
 /* lib/styles.module.css */
-.myClass330940eb {
+.myClass9095c7b8 {
   color: pink;
 }
 /*# sourceMappingURL=styles.module.css.map */

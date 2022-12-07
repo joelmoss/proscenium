@@ -1,13 +1,13 @@
 // lib/styles.module.css
-var e = document.querySelector("#_330940eb");
+var e = document.querySelector("#_9095c7b8");
 if (!e) {
   e = document.createElement("style");
-  e.id = "_330940eb";
+  e.id = "_9095c7b8";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/lib/styles.module.css"));
-  e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
+  e.appendChild(document.createTextNode(`.myClass9095c7b8{color:pink}`));
 }
-var styles_module_default = { "myClass": "myClass330940eb" };
+var styles_module_default = { "myClass": "myClass9095c7b8" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);

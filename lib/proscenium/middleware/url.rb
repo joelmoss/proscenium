@@ -13,7 +13,7 @@ module Proscenium
       end
 
       # @override [Esbuild]
-      def path
+      def path_to_build
         CGI.unescape(@request.path)[1..]
       end
     end
