@@ -24,4 +24,10 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
       block ? div(&block) : div { 'loading...' }
     end
   end
+
+  private
+
+  def virtual_path
+    path.to_s.delete_prefix(Rails.root.to_s)
+  end
 end
