@@ -31,22 +31,6 @@ describe('compilers/esbuild', () => {
     )
   })
 
-  it('throws with unknown root', async () => {
-    await assertRejects(
-      async () => await main('**/*.js', { root: 'foo/bar', lightningcssBin }),
-      ArgumentError,
-      'rootUnknown'
-    )
-  })
-
-  it('unknown path', { ignore: true }, async t => {
-    await assertRejects(
-      async () => await main('lib/unknown.jsx', { root, lightningcssBin }),
-      Error,
-      'Could not resolve'
-    )
-  })
-
   it('Successful JSX build', async t => {
     const result = await main('lib/component.jsx', { root, lightningcssBin })
 
@@ -89,6 +73,12 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('npm module with relative import', async () => {
+    const result = await main('lib/npm_module_with_relative_import.js', { root, lightningcssBin })
+
+    assertStringIncludes(new TextDecoder().decode(result), '?')
+  })
+
   describe('import map', () => {
     it('from json', async t => {
       const result = await main('lib/import_map.js', {
@@ -100,7 +90,7 @@ describe('compilers/esbuild', () => {
       await assertSnapshot(t, new TextDecoder().decode(result))
     })
 
-    it('from js', async t => {
+    it('from js', async () => {
       const result = await main('lib/import_map_as_js.js', {
         root,
         lightningcssBin,
@@ -110,7 +100,7 @@ describe('compilers/esbuild', () => {
       assertStringIncludes(new TextDecoder().decode(result), 'import pkg from "/lib/foo2.js";')
     })
 
-    it('maps imports via trailing slash', async t => {
+    it('maps imports via trailing slash', async () => {
       const result = await main('lib/component.jsx', {
         root,
         lightningcssBin,

@@ -9,7 +9,7 @@
     "compile:esbuild:all": "deno task compile:esbuild:macm && deno task compile:esbuild:macintel && deno task compile:esbuild:linux"
   },
   "files": {
-    "exclude": ["lib/proscenium/runtime"]
+    "exclude": ["lib/proscenium/runtime", "test/internal"]
   },
   "test": { "files": { "include": ["test/"] } }
 }

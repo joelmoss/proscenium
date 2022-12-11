@@ -2,7 +2,7 @@ export const snapshot = {};
 
 snapshot[`compilers/esbuild > Successful JSX build 1`] = `
 '// lib/component.jsx
-import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/react/jsx-runtime.js";
 var Component = () => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };
@@ -17,7 +17,7 @@ export {
 snapshot[`compilers/esbuild > Import bare module 1`] = `
 '// lib/import_node_module.js
 import myPackage from "/node_modules/mypackage/index.js";
-import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
+import isIp from "/node_modules/is-ip/index.js";
 var import_node_module_default = () => {
   myPackage();
   isIp("?");
@@ -54,10 +54,10 @@ snapshot[`compilers/esbuild > allows returns error on unknown bare module 1`] = 
 `;
 
 snapshot[`compilers/esbuild > resolves nested node modules 1`] = `
-'// node_modules/.pnpm/@react-aria+button@3.6.1_react@18.2.0/node_modules/@react-aria/button/dist/module.js
-import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+utils@3.13.3_react@18.2.0/node_modules/@react-aria/utils/dist/module.js";
-import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+focus@3.8.0_react@18.2.0/node_modules/@react-aria/focus/dist/module.js";
-import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+interactions@3.11.0_react@18.2.0/node_modules/@react-aria/interactions/dist/module.js";
+'// node_modules/@react-aria/button/dist/module.js
+import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/utils/dist/module.js";
+import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/focus/dist/module.js";
+import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/interactions/dist/module.js";
 function \$701a24aa0da5b062\$export\$ea18c227d4417cc3(props, ref) {
   let {
     elementType = "button",
@@ -178,9 +178,9 @@ import("/url:https%3A%2F%2Fesm.sh%2Fsolid%400.2.1");
 `;
 
 snapshot[`compilers/esbuild > import map > resolves imports from a node_module 1`] = `
-'// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+'// node_modules/is-ip/index.js
 import ipRegex from "/url:https%3A%2F%2Fesm.sh%2Fip-regex";
-import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
+import { isMatch } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/super-regex/index.js";
 var maxIPv4Length = 15;
 var maxIPv6Length = 45;
 var options = {
@@ -217,7 +217,7 @@ import "/lib/foo2.js";
 
 snapshot[`compilers/esbuild > import map > supports aliasing 1`] = `
 '// lib/import_map/aliases.js
-import isip from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
+import isip from "/node_modules/is-ip/index.js";
 isip();
 //# sourceMappingURL=aliases.js.map
 '
@@ -266,7 +266,7 @@ var basic_react_component_module_default = new Proxy({}, { get(target, prop, rec
 } });
 
 // app/components/basic_react_component.jsx
-import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/react/jsx-runtime.js";
 var basic_react_component_default = () => {
   return /* @__PURE__ */ jsx("div", { className: basic_react_component_module_default.base, children: "Basic React Component" });
 };
@@ -288,7 +288,7 @@ var component_module_default = new Proxy({}, { get(target, prop, receiver) {
 } });
 
 // app/components/basic_react/component.jsx
-import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/react/jsx-runtime.js";
 var component_default = () => {
   return /* @__PURE__ */ jsx("div", { className: component_module_default.base, children: "Basic React Component" });
 };
@@ -359,7 +359,7 @@ console.log("node_modules/mypackage");
 console.log("bundle_import/foo.js");
 
 // lib/component.jsx?bundle
-import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/react/jsx-runtime.js";
 var Component = () => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };

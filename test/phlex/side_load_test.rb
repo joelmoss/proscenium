@@ -45,7 +45,7 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
     Gem1::Views::User.new.call
 
     assert_equal({
-                   js: Set[['2f8d9a1c', 'ruby_gems/gem1/app/views/user.js']],
+                   js: Set[['2f8d9a1c', 'npm:gem1/app/views/user.js']],
                    css: Set[]
                  }, Proscenium::Current.loaded)
   end

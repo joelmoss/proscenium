@@ -11,7 +11,7 @@ module Proscenium
     autoload :Esbuild
     autoload :Runtime
     autoload :Url
-    autoload :OutsideRoot
+    autoload :Npm
 
     def initialize(app)
       @app = app
@@ -39,13 +39,8 @@ module Proscenium
     def find_type(request)
       path = Pathname.new(request.path)
 
-      # Non-production only!
-      if request.query_string == 'outsideRoot'
-        return if Rails.env.production?
-        return OutsideRoot if path.fnmatch?(glob_types[:outsideRoot], File::FNM_EXTGLOB)
-      end
-
       return Url if request.path.match?(glob_types[:url])
+      return Npm if request.path.match?(glob_types[:npm])
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end

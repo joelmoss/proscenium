@@ -19,6 +19,7 @@ module Proscenium
           render_response build([
             "#{cli} --root #{root}",
             cache_query_string,
+            # (ruby_gem? && import_map? ? "--import-map #{import_map_path}" : nil),
             "--lightningcss-bin #{lightningcss_cli} #{path_to_build}"
           ].compact.join(' '))
         end
@@ -48,7 +49,23 @@ module Proscenium
       end
 
       def ruby_gem?
-        @request.path.starts_with?('/ruby_gems/')
+        if instance_variable_defined?(:@is_ruby_gem)
+          @is_ruby_gem
+        else
+          @is_ruby_gem = @request.path.starts_with?('/ruby_gems/')
+        end
+      end
+
+      def import_map?
+        !import_map_path.nil?
+      end
+
+      def import_map_path
+        if (js_map = Rails.root.join('config', 'import_map.js')).exist?
+          js_map
+        elsif (json_map = Rails.root.join('config', 'import_map.json')).exist?
+          json_map
+        end
       end
 
       def cli

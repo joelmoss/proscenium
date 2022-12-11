@@ -2,9 +2,11 @@
   "name": "internal",
   "private": true,
   "dependencies": {
-    "@proscenium/component-manager": "^0.1.0",
-    "@react-aria/button": "^3.6.1",
+    "@proscenium/component-manager": "^0.1.4",
+    "@react-aria/button": "^3.6.3",
+    "gem1": "link:vendor/gem1",
     "is-ip": "^5.0.0",
+    "mypackage": "link:packages/mypackage",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },

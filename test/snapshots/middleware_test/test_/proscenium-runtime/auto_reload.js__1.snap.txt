@@ -1,4 +1,4 @@
-// node_modules/.pnpm/@rails+actioncable@7.0.4/node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js?bundle
+// node_modules/@rails/actioncable/app/assets/javascripts/actioncable.esm.js?bundle
 var adapters = {
   logger: self.console,
   WebSocket: self.WebSocket

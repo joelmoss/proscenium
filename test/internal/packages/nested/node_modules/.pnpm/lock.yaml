@@ -1,0 +1,13 @@
+lockfileVersion: 5.4
+
+specifiers:
+  micro-memoize: ^4.0.14
+
+dependencies:
+  micro-memoize: 4.0.14
+
+packages:
+
+  /micro-memoize/4.0.14:
+    resolution: {integrity: sha512-2tzWP1w2Hh+r7kCYa4f//jpBEA6dAueiuLco38NxfjF9Py3KCCI7wVOTdCvOhmTC043t+ulclVBdl3v+s+UJIQ==}
+    dev: false

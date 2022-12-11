@@ -3,6 +3,10 @@
 require_relative 'test_helper'
 
 class SideLoadTest < ActionDispatch::IntegrationTest
+  setup do
+    Proscenium.config.cache_query_string = false
+  end
+
   test '.append' do
     Proscenium::SideLoad.append 'app/views/layouts/application'
 

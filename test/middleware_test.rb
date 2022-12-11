@@ -109,6 +109,14 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
+  test 'npm: modules' do
+    get '/npm:@proscenium/component-manager'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'npm', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test 'url: modules' do
     get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
 
@@ -123,17 +131,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'url', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
-  end
-
-  test 'outside root' do # rubocop:disable Minitest/MultipleAssertions
-    path = 'test/outside_root'
-    get "#{Dir.pwd}/#{path}/index.js?outsideRoot"
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'outsideroot', response.headers['X-Proscenium-Middleware']
-    assert_match %(import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";),
-                 response.body
-    assert_match "import foo from \"#{Dir.pwd}/#{path}/foo.js?outsideRoot\";", response.body
   end
 
   test 'cache_query_string should set cache header' do
@@ -151,13 +148,13 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'from ruby gem' do
-    get '/ruby_gems/gem1/lib/gem1/gem1.js'
+    get '/npm:gem1/lib/gem1/gem1.js'
 
     assert_matches_snapshot response.body
   end
 
   test 'sourcemap from ruby gem' do
-    get '/ruby_gems/gem1/lib/gem1/gem1.js.map'
+    get '/npm:gem1/lib/gem1/gem1.js.map'
 
     assert_matches_snapshot response.body
   end

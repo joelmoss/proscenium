@@ -16,8 +16,8 @@ module Proscenium
   MIDDLEWARE_GLOB_TYPES = {
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
-    url: %r{^/url:https?%3A%2F%2F},
-    outsideRoot: "/**/*.{#{FILE_EXTENSIONS.join(',')}}"
+    npm: %r{^/npm:.+},
+    url: %r{^/url:https?%3A%2F%2F}
   }.freeze
 
   APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules', 'ruby_gems'].freeze
