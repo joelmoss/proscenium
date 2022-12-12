@@ -7,8 +7,13 @@ module Proscenium
         def initialize(args)
           detail = args[:detail]
           detail = ActiveSupport::HashWithIndifferentAccess.new(Oj.load(detail, mode: :strict))
-          args[:detail] = "#{detail[:text]} in #{detail[:location][:file]}:" +
-                          detail[:location][:line].to_s
+
+          args[:detail] = if detail[:location]
+                            "#{detail[:text]} in #{detail[:location][:file]}:" +
+                              detail[:location][:line].to_s
+                          else
+                            detail[:text]
+                          end
 
           super args
         end
