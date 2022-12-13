@@ -6,6 +6,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   setup do
     Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
+    Proscenium.config.css_mixin_paths = Set[Rails.root.join('lib')]
   end
 
   test 'unsupported path' do
@@ -143,6 +144,19 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   test 'cache_query_string should propogate' do
     Proscenium.config.cache_query_string = 'v1'
     get '/lib/query_cache.js?v1'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'CSS mixins' do
+    get '/lib/with_mixins.css'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'config.css_mixin_paths' do
+    Proscenium.config.css_mixin_paths << Rails.root.join('config')
+    get '/lib/with_mixins_from_alternative_path.css'
 
     assert_matches_snapshot response.body
   end

@@ -41,6 +41,10 @@ module Proscenium
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
     config.proscenium.include_ruby_gems = {}
 
+    config.before_configuration do |app|
+      app.config.proscenium.css_mixin_paths = Set[app.root.join('lib')]
+    end
+
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium
 
@@ -50,7 +54,7 @@ module Proscenium
       options.cable_logger ||= Rails.logger
     end
 
-    initializer 'proscenium.side_load' do |_app|
+    initializer 'proscenium.side_load' do
       Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
     end
 

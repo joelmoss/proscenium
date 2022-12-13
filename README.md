@@ -250,7 +250,7 @@ Proscenium supports [custom media queries](https://css-tricks.com/can-we-have-cu
 
 ## CSS Mixins
 
-CSS mixins are supported using the `@mixin` at-rule. Simply define your mixins in any number of files ending in `.mixin.css`, and using the `@define-mixin` at-rule...
+CSS mixins are supported using the `@mixin` at-rule. Simply define your mixins in `<root>/lib` in one or more files ending in `.mixin.css`, and using the `@define-mixin` at-rule...
 
 ```css
 // /lib/text.mixin.css
@@ -265,6 +265,12 @@ p {
   @mixin bigText;
   color: red;
 }
+```
+
+You can configure where Proscenium will look for your mixins with the `css_mixin_paths` config option:
+
+```ruby
+Proscenium.config.css_mixin_paths << Rails.root.join('app', 'lib')
 ```
 
 ## Cache Busting

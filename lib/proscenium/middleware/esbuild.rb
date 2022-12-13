@@ -24,6 +24,7 @@ module Proscenium
           render_response build([
             "#{cli} --root #{root}",
             cache_query_string,
+            css_mixin_paths,
             # (ruby_gem? && import_map? ? "--import-map #{import_map_path}" : nil),
             "--lightningcss-bin #{lightningcss_cli} #{path_to_build}"
           ].compact.join(' '))
@@ -71,6 +72,12 @@ module Proscenium
         elsif (json_map = Rails.root.join('config', 'import_map.json')).exist?
           json_map
         end
+      end
+
+      def css_mixin_paths
+        Proscenium.config.css_mixin_paths.map do |mpath|
+          "--css-mixin-path #{mpath}"
+        end.join ' '
       end
 
       def cli

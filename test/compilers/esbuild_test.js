@@ -163,7 +163,11 @@ describe('compilers/esbuild', () => {
   })
 
   it('Import css module from JS', async t => {
-    const result = await main('lib/import_css_module.js', { root, lightningcssBin })
+    const result = await main('lib/import_css_module.js', {
+      root,
+      lightningcssBin,
+      cssMixinPaths: [join(root, 'lib')]
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
@@ -187,13 +191,21 @@ describe('compilers/esbuild', () => {
   })
 
   it('Import css from JS', async t => {
-    const result = await main('lib/import_css.js', { root, lightningcssBin })
+    const result = await main('lib/import_css.js', {
+      root,
+      lightningcssBin,
+      cssMixinPaths: [join(root, 'lib')]
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('Import css from jsx', async t => {
-    const result = await main('lib/import_css.jsx', { root, lightningcssBin })
+    const result = await main('lib/import_css.jsx', {
+      root,
+      lightningcssBin,
+      cssMixinPaths: [join(root, 'lib')]
+    })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
@@ -225,6 +237,7 @@ describe('compilers/esbuild', () => {
       const result = await main('lib/bundle_import.css', {
         root,
         lightningcssBin,
+        cssMixinPaths: [join(root, 'lib')],
         importMap: 'config/import_maps/bundled.json'
       })
 
@@ -236,7 +249,18 @@ describe('compilers/esbuild', () => {
     it('supports mixins', async t => {
       const result = await main('lib/with_mixins.css', {
         root,
-        lightningcssBin
+        lightningcssBin,
+        cssMixinPaths: [join(root, 'lib')]
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+
+    it('cssMixinPaths option', async t => {
+      const result = await main('lib/with_mixins_from_alternative_path.css', {
+        root,
+        lightningcssBin,
+        cssMixinPaths: [join(root, 'lib'), join(root, 'config')]
       })
 
       await assertSnapshot(t, new TextDecoder().decode(result))

@@ -421,3 +421,17 @@ button span {
 /*# sourceMappingURL=with_mixins.css.map */
 "
 `;
+
+snapshot[`compilers/esbuild > postcss > cssMixinPaths option 1`] = `
+"/* lib/with_mixins_from_alternative_path.css */
+a {
+  color: red;
+  font-size: 20px;
+}
+button {
+  padding: 20px;
+  font-size: 30px;
+}
+/*# sourceMappingURL=with_mixins_from_alternative_path.css.map */
+"
+`;
