@@ -245,6 +245,17 @@ describe('compilers/esbuild', () => {
     })
   })
 
+  describe('rjs', () => {
+    it('imports', async t => {
+      const result = await main('lib/rjs.js', {
+        root,
+        lightningcssBin
+      })
+
+      await assertSnapshot(t, new TextDecoder().decode(result))
+    })
+  })
+
   describe('postcss', () => {
     it('supports mixins', async t => {
       const result = await main('lib/with_mixins.css', {

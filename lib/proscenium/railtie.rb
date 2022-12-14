@@ -59,11 +59,7 @@ module Proscenium
     end
 
     initializer 'proscenium.middleware' do |app|
-      if Rails.env.production?
-        app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
-      else
-        app.middleware.use Proscenium::Middleware
-      end
+      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
     end
 
     initializer 'proscenium.helpers' do |_app|

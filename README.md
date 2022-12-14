@@ -308,6 +308,10 @@ You can customise these paths with the `include_path` config option...
 Rails.application.config.proscenium.include_paths << 'app/components'
 ```
 
+## rjs is back!
+
+Proscenium brings back rjs! Any path ending in .rjs will be served from your Rails app. This allows you to render dynamic server rendered JS.
+
 ## How It Works
 
 Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.

@@ -23,13 +23,10 @@ module Proscenium::Phlex::Page
     super do
       title { page_title }
 
-      if block_given?
-        yield
-      else
-        meta name: 'viewport', content: 'width=device-width,initial-scale=1'
-        csp_meta_tag
-        csrf_meta_tags
-      end
+      yield if block_given?
+
+      csp_meta_tag
+      csrf_meta_tags
 
       comment { '[SIDE_LOAD_STYLESHEETS]' }
     end
