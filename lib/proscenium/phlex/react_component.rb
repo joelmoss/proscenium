@@ -4,7 +4,7 @@
 # Renders a div for use with component-manager.
 #
 class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
-  self.side_load = false
+  self.abstract_class = true
 
   attr_accessor :props, :lazy
 

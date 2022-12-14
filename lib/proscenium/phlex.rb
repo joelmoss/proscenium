@@ -27,10 +27,12 @@ module Proscenium
       end
     end
 
+    # Side loads the class, and its super classes that respond to `.path`. Assign the
+    # `abstract_class` class variable to any abstract class, and it will not be side loaded.
     module Sideload
       def template(...)
         klass = self.class
-        while klass.side_load != false && klass.respond_to?(:path) && klass.path
+        while !klass.abstract_class && klass.respond_to?(:path) && klass.path
           Proscenium::SideLoad.append klass.path
           klass = klass.superclass
         end
@@ -40,10 +42,14 @@ module Proscenium
     end
 
     class << self
-      attr_accessor :path, :side_load
+      attr_accessor :path, :abstract_class
 
       def inherited(child)
-        child.path = Pathname.new(caller_locations(1, 1)[0].path)
+        child.path = if caller_locations(1, 1).first.label == 'inherited'
+                       Pathname.new caller_locations(2, 1).first.path
+                     else
+                       Pathname.new caller_locations(1, 1).first.path
+                     end
 
         child.prepend Sideload if Rails.application.config.proscenium.side_load
         child.include Helpers

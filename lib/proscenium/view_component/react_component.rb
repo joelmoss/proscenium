@@ -12,6 +12,8 @@
 # parent div as a CSS module.
 #
 class Proscenium::ViewComponent::ReactComponent < Proscenium::ViewComponent
+  self.abstract_class = true
+
   attr_accessor :props, :lazy
 
   # @param props: [Hash]

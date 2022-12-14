@@ -9,11 +9,32 @@ class Proscenium::ViewComponent < ViewComponent::Base
   autoload :TagBuilder
   autoload :ReactComponent
 
+  # Side loads the class, and its super classes that respond to `.path`. Assign the `abstract_class`
+  # class variable to any abstract class, and it will not be side loaded.
+  module Sideload
+    def before_render
+      klass = self.class
+      while !klass.abstract_class && klass.respond_to?(:path) && klass.path
+        Proscenium::SideLoad.append klass.path
+        klass = klass.superclass
+      end
+
+      super
+    end
+  end
+
   class << self
-    attr_accessor :path
+    attr_accessor :path, :abstract_class
 
     def inherited(child)
-      child.path = Pathname.new(caller_locations(1, 1)[0].path)
+      child.path = if caller_locations(1, 1).first.label == 'inherited'
+                     Pathname.new caller_locations(2, 1).first.path
+                   else
+                     Pathname.new caller_locations(1, 1).first.path
+                   end
+
+      child.prepend Sideload if Rails.application.config.proscenium.side_load
+
       super
     end
   end
@@ -22,17 +43,7 @@ class Proscenium::ViewComponent < ViewComponent::Base
     cssm.compile_class_names(super(...))
   end
 
-  def before_render
-    side_load_assets unless self.class < ReactComponent
-  end
-
   private
-
-  # Side load any CSS/JS assets for the component. This will side load any `index.{css|js}` in
-  # the component directory.
-  def side_load_assets
-    Proscenium::SideLoad.append path if Rails.application.config.proscenium.side_load
-  end
 
   # Overrides ActionView::Helpers::TagHelper::TagBuilder, allowing us to intercept the
   # `css_module` option from the HTML options argument of the `tag` and `content_tag` helpers, and
