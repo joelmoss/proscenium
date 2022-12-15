@@ -1,3 +1,3 @@
-import { isIP } from 'is-ip?bundle'
+import { isIP } from 'bundle:is-ip'
 
 isIP()

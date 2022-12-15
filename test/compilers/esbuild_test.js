@@ -73,10 +73,10 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('npm module with relative import', async () => {
+  it('npm module with relative import', async t => {
     const result = await main('lib/npm_module_with_relative_import.js', { root, lightningcssBin })
 
-    assertStringIncludes(new TextDecoder().decode(result), '?')
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   describe('import map', () => {
@@ -210,7 +210,7 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  describe('?bundle-all query string', () => {
+  describe('bundle-all:*', () => {
     it('js import', async t => {
       const result = await main('lib/bundle_all_import/index.js', {
         root,
@@ -222,7 +222,7 @@ describe('compilers/esbuild', () => {
     })
   })
 
-  describe('?bundle query string', () => {
+  describe('bundle:*', () => {
     it('js import', async t => {
       const result = await main('lib/bundle_import/index.js', {
         root,

@@ -60,6 +60,8 @@ module Proscenium
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     initializer 'proscenium.helpers' do |_app|

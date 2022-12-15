@@ -164,6 +164,24 @@ import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 '
 `;
 
+snapshot[`compilers/esbuild > npm module with relative import 1`] = `
+'// node_modules/is-ip/index.js
+import ipRegex from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/ip-regex/index.js";
+import { isMatch } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/super-regex/index.js";
+var maxIPv6Length = 45;
+var options = {
+  timeout: 400
+};
+function isIP(string) {
+  return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
+}
+
+// lib/npm_module_with_relative_import.js
+isIP();
+//# sourceMappingURL=npm_module_with_relative_import.js.map
+'
+`;
+
 snapshot[`compilers/esbuild > import map > from json 1`] = `
 '// lib/import_map.js
 import axios from "/url:https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Faxios%2F0.24.0%2Faxios.min.js";
@@ -307,7 +325,7 @@ if (!e) {
   e.id = "_16bcb75e";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
-  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
+  e.appendChild(document.createTextNode(\`@import "bundle:gem1/app/views/user.css";body{color:pink}.name{color:#000}
 \`));
 }
 //# sourceMappingURL=import_css.js.map
@@ -322,64 +340,89 @@ if (!e) {
   e.id = "_16bcb75e";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
-  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
+  e.appendChild(document.createTextNode(\`@import "bundle:gem1/app/views/user.css";body{color:pink}.name{color:#000}
 \`));
 }
 //# sourceMappingURL=import_css.jsx.map
 '
 `;
 
-snapshot[`compilers/esbuild > ?bundle-all query string > js import 1`] = `
-"// lib/bundle_all_import/three.js?bundle-all
+snapshot[`compilers/esbuild > bundle-all:* > js import 1`] = `
+'// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
 console.log(3);
 
-// lib/bundle_all_import/two.js?bundle-all
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.js
 console.log(2);
 
-// lib/bundle_all_import/one.js?bundle-all
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.js
 console.log(1);
+
+// lib/bundle_all_import/index.js
+import "/lib/foo.js";
 //# sourceMappingURL=index.js.map
-"
+'
 `;
 
-snapshot[`compilers/esbuild > ?bundle query string > js import 1`] = `
-'// lib/foo.js?bundle
+snapshot[`compilers/esbuild > bundle:* > js import 1`] = `
+'var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
+
+// lib/foo.js
 console.log("/lib/foo.js");
 
-// lib/foo2.js?bundle
+// lib/foo2.js
 console.log("/lib/foo2.js");
 
-// lib/foo3.js?bundle
+// lib/foo3.js
 console.log("/lib/foo3.js");
 
-// node_modules/mypackage/index.js?bundle
+// node_modules/mypackage/index.js
 console.log("node_modules/mypackage");
 
-// lib/bundle_import/foo.js?bundle
+// lib/bundle_import/foo.js
 console.log("bundle_import/foo.js");
 
-// lib/component.jsx?bundle
+// lib/component.jsx
 import { jsx } from "/node_modules/react/jsx-runtime.js";
 var Component = () => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };
 var component_default = Component;
 
+// url:https://esm.sh/email-regex
+var email_regex_exports = {};
+__export(email_regex_exports, {
+  default: () => default2
+});
+__reExport(email_regex_exports, email_regex_star);
+import * as email_regex_star from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
+import { default as default2 } from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
+
 // lib/bundle_import/index.js
-import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
-import emailRegex2 from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 component_default();
-emailRegex();
-emailRegex2();
+default2();
+default2();
 //# sourceMappingURL=index.js.map
 '
 `;
 
-snapshot[`compilers/esbuild > ?bundle query string > css import 1`] = `
-'@import "https://esm.sh/@radix-ui/colors@0.1.8/blue.css";
-@import "https://esm.sh/@radix-ui/colors@0.1.8/gray.css";
-
-/* lib/foo.css?bundle */
+snapshot[`compilers/esbuild > bundle:* > css import 1`] = `
+"/* lib/foo.css */
 body {
   color: red;
 }
@@ -387,14 +430,46 @@ body h1 {
   color: #00f;
 }
 
-/* node_modules/mypackage/styles.css?bundle */
+/* node_modules/mypackage/styles.css */
 .mypackage {
   color: red;
 }
 
-/* lib/styles.module.css?bundle */
+/* lib/styles.module.css */
 .myClass9095c7b8 {
   color: pink;
+}
+
+/* url:https://esm.sh/@radix-ui/colors@0.1.8/blue.css */
+:root {
+  --blue1: hsl(206, 100%, 99.2%);
+  --blue2: hsl(210, 100%, 98.0%);
+  --blue3: hsl(209, 100%, 96.5%);
+  --blue4: hsl(210, 98.8%, 94.0%);
+  --blue5: hsl(209, 95.0%, 90.1%);
+  --blue6: hsl(209, 81.2%, 84.5%);
+  --blue7: hsl(208, 77.5%, 76.9%);
+  --blue8: hsl(206, 81.9%, 65.3%);
+  --blue9: hsl(206, 100%, 50.0%);
+  --blue10: hsl(208, 100%, 47.3%);
+  --blue11: hsl(211, 100%, 43.2%);
+  --blue12: hsl(211, 100%, 15.0%);
+}
+
+/* url:https://esm.sh/@radix-ui/colors@0.1.8/gray.css */
+:root {
+  --gray1: hsl(0, 0%, 99.0%);
+  --gray2: hsl(0, 0%, 97.3%);
+  --gray3: hsl(0, 0%, 95.1%);
+  --gray4: hsl(0, 0%, 93.0%);
+  --gray5: hsl(0, 0%, 90.9%);
+  --gray6: hsl(0, 0%, 88.7%);
+  --gray7: hsl(0, 0%, 85.8%);
+  --gray8: hsl(0, 0%, 78.0%);
+  --gray9: hsl(0, 0%, 56.1%);
+  --gray10: hsl(0, 0%, 52.3%);
+  --gray11: hsl(0, 0%, 43.5%);
+  --gray12: hsl(0, 0%, 9.0%);
 }
 
 /* lib/bundle_import.css */
@@ -402,7 +477,7 @@ header {
   color: pink;
 }
 /*# sourceMappingURL=bundle_import.css.map */
-'
+"
 `;
 
 snapshot[`compilers/esbuild > rjs > imports 1`] = `

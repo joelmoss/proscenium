@@ -101,17 +101,12 @@ Proscenium does not do any bundling, as we believe that **the web is now fast by
 let you decide if and when to bundle your code using query parameters in your JS and CSS imports.
 
 ```js
-import doStuff from 'stuff?bundle'
+import doStuff from 'bundle:stuff'
 doStuff()
 ```
 
-Bundling a URL import is not supported, as the URL itself may also support query parameters,
-resulting in conflicts. For example, esm.sh also supports a `?bundle` param, bundling a module's
-dependencies into a single file. Instead, you should install the module locally using your favourite
-package manager.
-
-Note that `?bundle` will only bundle that exact path. It will not bundle any descendant imports. You
-can bundle all imports within a file by using the `?bundle-all` query string. Use this with caution,
+Note that `bundle:*` will only bundle that exact path. It will not bundle any descendant imports.
+You can bundle all imports within a file by using the `bundle-all:` prefix. Use this with caution,
 as you could end up swallowing everything, resulting in a very large file.
 
 ## Import Map

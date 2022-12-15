@@ -75,7 +75,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
+    refute_includes response.body, "from 'bundle:@rails/actioncable'"
   end
 
   test 'esbuild js compilation error' do

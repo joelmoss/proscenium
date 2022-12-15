@@ -1,8 +1,8 @@
-@import '/lib/foo.css?bundle'; /* absolute */
-@import 'mypackage/styles.css?bundle'; /* bare module */
-@import 'styles?bundle'; /* import map */
-@import 'https://esm.sh/@radix-ui/colors@0.1.8/blue.css?bundle'; /* URL - unsupported */
-@import '@radix-ui/colors/gray.css?bundle'; /* import map to URL - ?bundle is ignored and passed though */
+@import 'bundle:/lib/foo.css'; /* absolute */
+@import 'bundle:mypackage/styles.css'; /* bare module */
+@import 'bundle:styles'; /* import map */
+@import 'bundle:https://esm.sh/@radix-ui/colors@0.1.8/blue.css'; /* URL - unsupported */
+@import 'bundle:@radix-ui/colors/gray.css'; /* import map to URL */
 
 header {
   color: pink;

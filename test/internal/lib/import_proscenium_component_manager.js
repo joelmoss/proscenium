@@ -1,2 +1,2 @@
-import { init } from '@proscenium/component-manager?bundle'
+import { init } from 'bundle:@proscenium/component-manager'
 init()
