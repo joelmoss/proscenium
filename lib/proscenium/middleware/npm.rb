@@ -2,10 +2,7 @@
 
 module Proscenium
   class Middleware
-    # Handles requests prefixed with "npm:".
-    #
-    # If a path starts with any path found in `config.include_ruby_gems`, then we treat it as
-    # from a ruby gem, and use it's NPM package by prefixing the URL path with "npm:".
+    # Handles requests prefixed with "npm:", and returns the matching locally installed NPM package.
     class Npm < Esbuild
       private
 

@@ -3,7 +3,7 @@ module Gem1
     # isolate_namespace Gem1
 
     # Include the gem
-    config.proscenium.include_ruby_gems['gem1'] = { root: }
+    config.proscenium.side_load_gems['gem1'] = { root: }
 
     initializer 'gem1.autoload' do
       Rails.autoloaders.main.push_dir(root.join('app'), namespace: Gem1)

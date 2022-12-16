@@ -39,7 +39,15 @@ module Proscenium
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
-    config.proscenium.include_ruby_gems = {}
+
+    # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
+    #
+    # Example:
+    #   config.proscenium.side_load_gems['proscenium-stage'] = {
+    #     root: root,
+    #     package_name: '@proscenium/stage'
+    #   }
+    config.proscenium.side_load_gems = {}
 
     config.before_configuration do |app|
       app.config.proscenium.css_mixin_paths = Set[app.root.join('lib')]

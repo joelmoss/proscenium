@@ -29,7 +29,7 @@ module Proscenium
     #   - The file path relative to the root
     #   - The URL path relative to the application host
     #
-    # If the `path` starts with any path found in `config.include_ruby_gems`, then we treat it as
+    # If the `path` starts with any path found in `config.side_load_gems`, then we treat it as
     # from a ruby gem, and use it's NPM package by prefixing the URL path with "npm:".
     #
     # @param path [Pathname]
@@ -37,7 +37,7 @@ module Proscenium
     def path_pieces(path)
       spath = path.to_s
 
-      matched_gem = Proscenium.config.include_ruby_gems.find do |_name, options|
+      matched_gem = Proscenium.config.side_load_gems.find do |_name, options|
         spath.starts_with?("#{options[:root]}/")
       end
 
