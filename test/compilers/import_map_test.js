@@ -1,7 +1,6 @@
-import { assertStringIncludes } from 'std/testing/asserts.ts'
-import { assertSnapshot } from 'std/testing/snapshot.ts'
+import { assertStringIncludes } from 'testing/asserts.ts'
 import { join } from 'std/path/mod.ts'
-import { beforeEach, describe, it } from 'std/testing/bdd.ts'
+import { beforeEach, describe, it } from 'testing/bdd.ts'
 
 import main from '../../lib/proscenium/compilers/esbuild.js'
 
@@ -14,18 +13,33 @@ describe('import map', () => {
     Deno.env.set('PROSCENIUM_TEST', 'test')
   })
 
-  it('from json', async t => {
-    const result = await main('lib/import_map.js', {
+  it('map to a URL', async () => {
+    const result = await main('lib/import_map/to_url.js', {
       root,
       lightningcssBin,
-      importMap: 'config/import_maps/as.json'
+      importMap: 'config/import_maps/to_url.json'
     })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+    assertStringIncludes(
+      new TextDecoder().decode(result),
+      'import axios from "/url:https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Faxios%2F0.24.0%2Faxios.min.js";'
+    )
+  })
+
+  it('from json', async () => {
+    const result = await main('lib/import_map/simple.js', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/simple.json'
+    })
+
+    const code = new TextDecoder().decode(result)
+
+    assertStringIncludes(code, 'import foo from "/lib/foo.js";')
   })
 
   it('from js', async () => {
-    const result = await main('lib/import_map_as_js.js', {
+    const result = await main('lib/import_map/as_js.js', {
       root,
       lightningcssBin,
       importMap: 'config/import_maps/as.js'
@@ -47,33 +61,36 @@ describe('import map', () => {
     )
   })
 
-  it('resolves imports from a node_module', async t => {
+  it('resolves imports from a node_module', async () => {
     const result = await main('node_modules/is-ip/index.js', {
       root,
       lightningcssBin,
       importMap: 'config/import_maps/npm.json'
     })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+    assertStringIncludes(
+      new TextDecoder().decode(result),
+      'import ipRegex from "/url:https%3A%2F%2Fesm.sh%2Fip-regex";'
+    )
   })
 
-  it('supports scopes', async t => {
+  it('supports scopes', async () => {
     const result = await main('lib/import_map/scopes.js', {
       root,
       lightningcssBin,
       importMap: 'config/import_maps/scopes.json'
     })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+    assertStringIncludes(new TextDecoder().decode(result), 'import "/lib/foo2.js";')
   })
 
-  it('supports aliasing', async t => {
-    const result = await main('lib/import_map/aliases.js', {
+  it('should map bare modules', async () => {
+    const result = await main('lib/import_map/bare_modules.js', {
       root,
       lightningcssBin,
-      importMap: 'config/import_maps/aliases.json'
+      importMap: 'config/import_maps/bare_modules.json'
     })
 
-    await assertSnapshot(t, new TextDecoder().decode(result))
+    assertStringIncludes(new TextDecoder().decode(result), 'import isip from "is-ip";')
   })
 })

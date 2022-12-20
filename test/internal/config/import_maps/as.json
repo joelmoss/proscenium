@@ -1,8 +1,0 @@
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "foo": "/lib/foo.js",
-    "solid": "https://esm.sh/solid@0.2.1",
-    "axios": "https://cdnjs.cloudflare.com/ajax/libs/axios/0.24.0/axios.min.js"
-  }
-}
