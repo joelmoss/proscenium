@@ -2,7 +2,7 @@ export const snapshot = {};
 
 snapshot[`compilers/esbuild > Successful JSX build 1`] = `
 '// lib/component.jsx
-import { jsx } from "/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var Component = () => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
 };
@@ -16,8 +16,8 @@ export {
 
 snapshot[`compilers/esbuild > Import bare module 1`] = `
 '// lib/import_node_module.js
-import myPackage from "/node_modules/mypackage/index.js";
-import isIp from "/node_modules/is-ip/index.js";
+import myPackage from "/packages/mypackage/index.js";
+import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
 var import_node_module_default = () => {
   myPackage();
   isIp("?");
@@ -54,10 +54,10 @@ snapshot[`compilers/esbuild > allows returns error on unknown bare module 1`] = 
 `;
 
 snapshot[`compilers/esbuild > resolves nested node modules 1`] = `
-'// node_modules/@react-aria/button/dist/module.js
-import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/utils/dist/module.js";
-import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/focus/dist/module.js";
-import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/interactions/dist/module.js";
+'// node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/button/dist/module.js
+import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+utils@3.14.1_react@18.2.0/node_modules/@react-aria/utils/dist/module.js";
+import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+focus@3.10.0_react@18.2.0/node_modules/@react-aria/focus/dist/module.js";
+import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+interactions@3.13.0_react@18.2.0/node_modules/@react-aria/interactions/dist/module.js";
 function \$701a24aa0da5b062\$export\$ea18c227d4417cc3(props, ref) {
   let {
     elementType = "button",
@@ -165,9 +165,9 @@ import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 `;
 
 snapshot[`compilers/esbuild > npm module with relative import 1`] = `
-'// node_modules/is-ip/index.js
-import ipRegex from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/ip-regex/index.js";
-import { isMatch } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/super-regex/index.js";
+'// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
+import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv6Length = 45;
 var options = {
   timeout: 400
@@ -179,65 +179,6 @@ function isIP(string) {
 // lib/npm_module_with_relative_import.js
 isIP();
 //# sourceMappingURL=npm_module_with_relative_import.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > import map > from json 1`] = `
-'// lib/import_map.js
-import axios from "/url:https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Faxios%2F0.24.0%2Faxios.min.js";
-import { createElement } from "/url:https%3A%2F%2Fesm.sh%2Freact%4018.2.0";
-import foo from "/lib/foo.js";
-axios();
-foo();
-createElement();
-import("/url:https%3A%2F%2Fesm.sh%2Fsolid%400.2.1");
-//# sourceMappingURL=import_map.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > import map > resolves imports from a node_module 1`] = `
-'// node_modules/is-ip/index.js
-import ipRegex from "/url:https%3A%2F%2Fesm.sh%2Fip-regex";
-import { isMatch } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/super-regex/index.js";
-var maxIPv4Length = 15;
-var maxIPv6Length = 45;
-var options = {
-  timeout: 400
-};
-function isIP(string) {
-  return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
-}
-function isIPv6(string) {
-  return isMatch(ipRegex.v6({ exact: true }), string.slice(0, maxIPv6Length), options);
-}
-function isIPv4(string) {
-  return isMatch(ipRegex.v4({ exact: true }), string.slice(0, maxIPv4Length), options);
-}
-function ipVersion(string) {
-  return isIP(string) ? isIPv6(string) ? 6 : 4 : void 0;
-}
-export {
-  ipVersion,
-  isIP,
-  isIPv4,
-  isIPv6
-};
-//# sourceMappingURL=index.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > import map > supports scopes 1`] = `
-'// lib/import_map/scopes.js
-import "/lib/foo2.js";
-//# sourceMappingURL=scopes.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > import map > supports aliasing 1`] = `
-'// lib/import_map/aliases.js
-import isip from "/node_modules/is-ip/index.js";
-isip();
-//# sourceMappingURL=aliases.js.map
 '
 `;
 
@@ -284,7 +225,7 @@ var basic_react_component_module_default = new Proxy({}, { get(target, prop, rec
 } });
 
 // app/components/basic_react_component.jsx
-import { jsx } from "/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var basic_react_component_default = () => {
   return /* @__PURE__ */ jsx("div", { className: basic_react_component_module_default.base, children: "Basic React Component" });
 };
@@ -306,7 +247,7 @@ var component_module_default = new Proxy({}, { get(target, prop, receiver) {
 } });
 
 // app/components/basic_react/component.jsx
-import { jsx } from "/node_modules/react/jsx-runtime.js";
+import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
 var component_default = () => {
   return /* @__PURE__ */ jsx("div", { className: component_module_default.base, children: "Basic React Component" });
 };
@@ -344,147 +285,6 @@ if (!e) {
 \`));
 }
 //# sourceMappingURL=import_css.jsx.map
-'
-`;
-
-snapshot[`compilers/esbuild > bundle-all:* > js import 1`] = `
-'// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
-console.log(3);
-
-// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.js
-console.log(2);
-
-// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.js
-console.log(1);
-
-// lib/bundle_all_import/index.js
-import "/lib/foo.js";
-//# sourceMappingURL=index.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > bundle:* > js import 1`] = `
-'var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
-
-// lib/foo.js
-console.log("/lib/foo.js");
-
-// lib/foo2.js
-console.log("/lib/foo2.js");
-
-// lib/foo3.js
-console.log("/lib/foo3.js");
-
-// node_modules/mypackage/index.js
-console.log("node_modules/mypackage");
-
-// lib/bundle_import/foo.js
-console.log("bundle_import/foo.js");
-
-// lib/component.jsx
-import { jsx } from "/node_modules/react/jsx-runtime.js";
-var Component = () => {
-  return /* @__PURE__ */ jsx("div", { children: "Hello" });
-};
-var component_default = Component;
-
-// url:https://esm.sh/email-regex
-var email_regex_exports = {};
-__export(email_regex_exports, {
-  default: () => default2
-});
-__reExport(email_regex_exports, email_regex_star);
-import * as email_regex_star from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
-import { default as default2 } from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
-
-// lib/bundle_import/index.js
-component_default();
-default2();
-default2();
-//# sourceMappingURL=index.js.map
-'
-`;
-
-snapshot[`compilers/esbuild > bundle:* > css import 1`] = `
-"/* lib/foo.css */
-body {
-  color: red;
-}
-body h1 {
-  color: #00f;
-}
-
-/* node_modules/mypackage/styles.css */
-.mypackage {
-  color: red;
-}
-
-/* lib/styles.module.css */
-.myClass9095c7b8 {
-  color: pink;
-}
-
-/* url:https://esm.sh/@radix-ui/colors@0.1.8/blue.css */
-:root {
-  --blue1: hsl(206, 100%, 99.2%);
-  --blue2: hsl(210, 100%, 98.0%);
-  --blue3: hsl(209, 100%, 96.5%);
-  --blue4: hsl(210, 98.8%, 94.0%);
-  --blue5: hsl(209, 95.0%, 90.1%);
-  --blue6: hsl(209, 81.2%, 84.5%);
-  --blue7: hsl(208, 77.5%, 76.9%);
-  --blue8: hsl(206, 81.9%, 65.3%);
-  --blue9: hsl(206, 100%, 50.0%);
-  --blue10: hsl(208, 100%, 47.3%);
-  --blue11: hsl(211, 100%, 43.2%);
-  --blue12: hsl(211, 100%, 15.0%);
-}
-
-/* url:https://esm.sh/@radix-ui/colors@0.1.8/gray.css */
-:root {
-  --gray1: hsl(0, 0%, 99.0%);
-  --gray2: hsl(0, 0%, 97.3%);
-  --gray3: hsl(0, 0%, 95.1%);
-  --gray4: hsl(0, 0%, 93.0%);
-  --gray5: hsl(0, 0%, 90.9%);
-  --gray6: hsl(0, 0%, 88.7%);
-  --gray7: hsl(0, 0%, 85.8%);
-  --gray8: hsl(0, 0%, 78.0%);
-  --gray9: hsl(0, 0%, 56.1%);
-  --gray10: hsl(0, 0%, 52.3%);
-  --gray11: hsl(0, 0%, 43.5%);
-  --gray12: hsl(0, 0%, 9.0%);
-}
-
-/* lib/bundle_import.css */
-header {
-  color: pink;
-}
-/*# sourceMappingURL=bundle_import.css.map */
-"
-`;
-
-snapshot[`compilers/esbuild > rjs > imports 1`] = `
-'// lib/rjs.js
-import foo from "/constants.rjs";
-console.log(foo);
-//# sourceMappingURL=rjs.js.map
 '
 `;
 

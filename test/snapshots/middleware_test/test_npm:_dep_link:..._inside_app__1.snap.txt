@@ -1,0 +1,46 @@
+{
+  resOptions: {
+    resolveDir: "/Users/joelmoss/dev/proscenium/test/internal",
+    kind: "import-statement",
+    importer: "",
+    pluginData: { prefix: "npm", isResolvingPath: true }
+  },
+  result: {
+    errors: [],
+    warnings: [],
+    path: "/Users/joelmoss/dev/proscenium/test/internal/packages/one/index.js",
+    external: false,
+    sideEffects: true,
+    namespace: "file",
+    suffix: "",
+    pluginData: undefined
+  }
+}
+{
+  resOptions: {
+    resolveDir: "/Users/joelmoss/dev/proscenium/test/internal/packages/one",
+    kind: "import-statement",
+    importer: "/Users/joelmoss/dev/proscenium/test/internal/packages/one/index.js",
+    pluginData: { isResolvingPath: true }
+  },
+  result: {
+    errors: [
+      {
+        detail: undefined,
+        id: "",
+        location: null,
+        notes: [Array],
+        pluginName: "",
+        text: 'Could not resolve "is-plain-obj"'
+      }
+    ],
+    warnings: [],
+    path: "",
+    external: false,
+    sideEffects: false,
+    namespace: "",
+    suffix: "",
+    pluginData: undefined
+  }
+}
+class CompileError extends Error {constructor(message) { super(message);this.name = "CompileError"; }};throw new CompileError(`Could not resolve "is-plain-obj" at /packages/one/index.js:1`, { cause: {"id":"","location":{"column":26,"file":"packages/one/index.js","length":14,"line":1,"lineText":"import isPlainObject from 'is-plain-obj'","namespace":"","suggestion":""},"notes":[{"location":null,"text":"You can mark the path \"is-plain-obj\" as external to exclude it from the bundle, which will remove this error."}],"pluginName":"resolve","text":"Could not resolve \"is-plain-obj\""} });export default null;

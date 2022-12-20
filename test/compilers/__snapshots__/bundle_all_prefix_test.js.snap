@@ -1,0 +1,17 @@
+export const snapshot = {};
+
+snapshot[`bundle-all: prefix > js import 1`] = `
+'// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
+console.log(3);
+
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.js
+console.log(2);
+
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.js
+console.log(1);
+
+// lib/bundle_all_import/index.js
+import "/lib/foo.js";
+//# sourceMappingURL=index.js.map
+'
+`;

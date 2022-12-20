@@ -110,30 +110,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'npm: modules' do
-    get '/npm:@proscenium/component-manager'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'npm', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
-  test 'url: modules' do
-    get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'url', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
-  test 'url: modules sourcemap' do
-    get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'url', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
   test 'cache_query_string should set cache header' do
     Proscenium.config.cache_query_string = 'v1'
     get '/lib/query_cache.js?v1'
@@ -157,18 +133,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   test 'config.css_mixin_paths' do
     Proscenium.config.css_mixin_paths << Rails.root.join('config')
     get '/lib/with_mixins_from_alternative_path.css'
-
-    assert_matches_snapshot response.body
-  end
-
-  test 'from ruby gem' do
-    get '/npm:gem1/lib/gem1/gem1.js'
-
-    assert_matches_snapshot response.body
-  end
-
-  test 'sourcemap from ruby gem' do
-    get '/npm:gem1/lib/gem1/gem1.js.map'
 
     assert_matches_snapshot response.body
   end

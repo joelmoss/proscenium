@@ -1,3 +1,3 @@
-// node_modules/gem1/lib/gem1/gem1.js
+// vendor/gem1/lib/gem1/gem1.js
 console.log("gem1");
 //# sourceMappingURL=gem1.js.map

@@ -1,0 +1,60 @@
+export const snapshot = {};
+
+snapshot[`import map > from json 1`] = `
+'// lib/import_map.js
+import axios from "/url:https%3A%2F%2Fcdnjs.cloudflare.com%2Fajax%2Flibs%2Faxios%2F0.24.0%2Faxios.min.js";
+import { createElement } from "/url:https%3A%2F%2Fesm.sh%2Freact%4018.2.0";
+import foo from "/lib/foo.js";
+axios();
+foo();
+createElement();
+import("/url:https%3A%2F%2Fesm.sh%2Fsolid%400.2.1");
+//# sourceMappingURL=import_map.js.map
+'
+`;
+
+snapshot[`import map > resolves imports from a node_module 1`] = `
+'// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+import ipRegex from "/url:https%3A%2F%2Fesm.sh%2Fip-regex";
+import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
+var maxIPv4Length = 15;
+var maxIPv6Length = 45;
+var options = {
+  timeout: 400
+};
+function isIP(string) {
+  return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
+}
+function isIPv6(string) {
+  return isMatch(ipRegex.v6({ exact: true }), string.slice(0, maxIPv6Length), options);
+}
+function isIPv4(string) {
+  return isMatch(ipRegex.v4({ exact: true }), string.slice(0, maxIPv4Length), options);
+}
+function ipVersion(string) {
+  return isIP(string) ? isIPv6(string) ? 6 : 4 : void 0;
+}
+export {
+  ipVersion,
+  isIP,
+  isIPv4,
+  isIPv6
+};
+//# sourceMappingURL=index.js.map
+'
+`;
+
+snapshot[`import map > supports scopes 1`] = `
+'// lib/import_map/scopes.js
+import "/lib/foo2.js";
+//# sourceMappingURL=scopes.js.map
+'
+`;
+
+snapshot[`import map > supports aliasing 1`] = `
+'// lib/import_map/aliases.js
+import isip from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
+isip();
+//# sourceMappingURL=aliases.js.map
+'
+`;

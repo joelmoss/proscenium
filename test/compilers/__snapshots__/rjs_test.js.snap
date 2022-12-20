@@ -1,0 +1,9 @@
+export const snapshot = {};
+
+snapshot[`rjs > imports 1`] = `
+'// lib/rjs.js
+import foo from "/constants.rjs";
+console.log(foo);
+//# sourceMappingURL=rjs.js.map
+'
+`;

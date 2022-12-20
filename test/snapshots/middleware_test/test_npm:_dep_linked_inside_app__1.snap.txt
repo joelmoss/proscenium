@@ -1,0 +1,3 @@
+// packages/one/index.js
+console.log("test/internal/packages/one");
+//# sourceMappingURL=index.js.map

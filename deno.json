@@ -11,5 +11,7 @@
   "files": {
     "exclude": ["lib/proscenium/runtime", "test/internal"]
   },
-  "test": { "files": { "include": ["test/"] } }
+  "test": { "files": { "include": ["test/"] } },
+  "lint": { "files": { "exclude": ["test/internal/"] } },
+  "fmt": { "files": { "exclude": ["test/internal/"] } }
 }

@@ -4,7 +4,10 @@ specifiers:
   '@proscenium/component-manager': ^0.1.4
   '@rails/actioncable': ^7.0.4
   '@react-aria/button': ^3.6.3
+  external-one: link:../external/one
   gem1: link:vendor/gem1
+  internal-one: link:packages/one
+  internal-two: file:packages/two
   is-ip: ^5.0.0
   mypackage: link:packages/mypackage
   react: ^18.2.0
@@ -13,7 +16,10 @@ specifiers:
 dependencies:
   '@proscenium/component-manager': 0.1.4_biqbaboplfbrettd7655fr4n2y
   '@react-aria/button': 3.6.3_react@18.2.0
+  external-one: link:../external/one
   gem1: link:vendor/gem1
+  internal-one: link:packages/one
+  internal-two: file:packages/two
   is-ip: 5.0.0
   mypackage: link:packages/mypackage
   react: 18.2.0
@@ -188,6 +194,11 @@ packages:
       super-regex: 0.2.0
     dev: false
 
+  /is-plain-obj/4.1.0:
+    resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
+    engines: {node: '>=12'}
+    dev: false
+
   /is-regexp/3.1.0:
     resolution: {integrity: sha512-rbku49cWloU5bSMI+zaRaXdQHXnthP6DZ/vLnfdSKyL4zUzuWnomtOEiZZOd+ioQ+avFo/qau3KPTc7Fjy1uPA==}
     engines: {node: '>=12'}
@@ -245,4 +256,12 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       convert-hrtime: 5.0.0
+    dev: false
+
+  file:packages/two:
+    resolution: {directory: packages/two, type: directory}
+    name: internal-two
+    version: 1.0.0
+    dependencies:
+      is-plain-obj: 4.1.0
     dev: false
