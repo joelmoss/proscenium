@@ -1,6 +1,6 @@
-import { assertSnapshot } from 'std/testing/snapshot.ts'
+import { assertSnapshot } from 'testing/snapshot.ts'
+import { beforeEach, describe, it } from 'testing/bdd.ts'
 import { join } from 'std/path/mod.ts'
-import { beforeEach, describe, it } from 'std/testing/bdd.ts'
 
 import main from '../../lib/proscenium/compilers/esbuild.js'
 
@@ -24,7 +24,7 @@ describe('bundle: prefix', () => {
   })
 
   it('css import', async t => {
-    const result = await main('lib/bundle_import.css', {
+    const result = await main('lib/bundle_import/styles.css', {
       root,
       lightningcssBin,
       cssMixinPaths: [join(root, 'lib')],

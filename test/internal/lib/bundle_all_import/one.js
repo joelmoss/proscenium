@@ -1,3 +1,6 @@
-import './two'
+import two from './two'
 
-console.log(1)
+export default () => {
+  console.log('one')
+  two()
+}

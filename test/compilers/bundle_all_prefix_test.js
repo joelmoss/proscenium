@@ -30,9 +30,9 @@ describe('bundle-all: prefix', () => {
 
     const code = new TextDecoder().decode(result)
 
-    assertStringIncludes(code, 'console.log(1)')
-    assertStringIncludes(code, 'console.log(2)')
-    assertStringIncludes(code, 'console.log(3)')
+    assertStringIncludes(code, 'console.log("one")')
+    assertStringIncludes(code, 'console.log("two")')
+    assertStringIncludes(code, 'console.log("three")')
     assertStringIncludes(code, 'import "/lib/foo.js";')
   })
 
@@ -45,6 +45,7 @@ describe('bundle-all: prefix', () => {
     const code = new TextDecoder().decode(result)
 
     assertStringIncludes(code, 'console.log("foo")')
+    assertStringIncludes(code, 'console.log("foo2")')
     assertStringExcludes(code, 'console.log("bar")')
   })
 

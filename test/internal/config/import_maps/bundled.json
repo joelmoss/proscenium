@@ -1,7 +1,7 @@
 {
   "imports": {
     "foo": "/lib/foo.js",
-    "email-regex": "https://esm.sh/email-regex",
+    "email-regex": "https://esm.sh/v99/email-regex@5.0.0/es2022/email-regex.js",
     "styles": "/lib/styles.module.css",
     "@radix-ui/colors/": "https://esm.sh/@radix-ui/colors@0.1.8/"
   }

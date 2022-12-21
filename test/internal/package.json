@@ -4,11 +4,12 @@
   "dependencies": {
     "@proscenium/component-manager": "^0.1.4",
     "@react-aria/button": "^3.6.3",
-    "gem1": "link:vendor/gem1",
+    "date-fns": "^2.29.3",
     "external-one": "link:../external/one",
-    "is-ip": "^5.0.0",
+    "gem1": "link:vendor/gem1",
     "internal-one": "link:packages/one",
     "internal-two": "file:packages/two",
+    "is-ip": "^5.0.0",
     "mypackage": "link:packages/mypackage",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

@@ -1,23 +1,11 @@
 export const snapshot = {};
 
 snapshot[`bundle: prefix > js import 1`] = `
-'var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __export = (target, all) => {
-  for (var name in all)
-    __defProp(target, name, { get: all[name], enumerable: true });
-};
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __reExport = (target, mod, secondTarget) => (__copyProps(target, mod, "default"), secondTarget && __copyProps(secondTarget, mod, "default"));
+'// lib/bundle_import/foo.js
+console.log("bundle_import/foo.js");
+
+// lib/foo3.js
+console.log("/lib/foo3.js");
 
 // lib/foo.js
 console.log("/lib/foo.js");
@@ -25,14 +13,11 @@ console.log("/lib/foo.js");
 // lib/foo2.js
 console.log("/lib/foo2.js");
 
-// lib/foo3.js
-console.log("/lib/foo3.js");
-
 // packages/mypackage/index.js
 console.log("node_modules/mypackage");
 
-// lib/bundle_import/foo.js
-console.log("bundle_import/foo.js");
+// lib/bundle_import/bar.js
+console.log("bundle_import/bar.js");
 
 // lib/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
@@ -41,19 +26,42 @@ var Component = () => {
 };
 var component_default = Component;
 
-// url:https://esm.sh/email-regex
-var email_regex_exports = {};
-__export(email_regex_exports, {
-  default: () => default2
-});
-__reExport(email_regex_exports, email_regex_star);
-import * as email_regex_star from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
-import { default as default2 } from "/url:https%3A%2F%2Fesm.sh%2Fv96%2Femail-regex%405.0.0%2Fdeno%2Femail-regex.js";
+// url:https://esm.sh/v99/email-regex@5.0.0/es2022/email-regex.js
+var e = "[^\\\\\\\\.\\\\\\\\s@:](?:[^\\\\\\\\s@:]*[^\\\\\\\\s@:\\\\\\\\.])?@[^\\\\\\\\.\\\\\\\\s@]+(?:\\\\\\\\.[^\\\\\\\\.\\\\\\\\s@]+)*";
+function s({ exact: n2 } = {}) {
+  return n2 ? new RegExp(\`^\${e}\$\`) : new RegExp(e, "g");
+}
+
+// url:https://esm.sh/v99/ip-regex@5.0.0/es2022/ip-regex.js
+var g = "[a-fA-F\\\\\\\\d:]";
+var d = (e2) => e2 && e2.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "";
+var c = "(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)(?:\\\\\\\\.(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)){3}";
+var \$ = "[a-fA-F\\\\\\\\d]{1,4}";
+var x = \`
+(?:
+(?:\${\$}:){7}(?:\${\$}|:)|                                    // 1:2:3:4:5:6:7::  1:2:3:4:5:6:7:8
+(?:\${\$}:){6}(?:\${c}|:\${\$}|:)|                             // 1:2:3:4:5:6::    1:2:3:4:5:6::8   1:2:3:4:5:6::8  1:2:3:4:5:6::1.2.3.4
+(?:\${\$}:){5}(?::\${c}|(?::\${\$}){1,2}|:)|                   // 1:2:3:4:5::      1:2:3:4:5::7:8   1:2:3:4:5::8    1:2:3:4:5::7:1.2.3.4
+(?:\${\$}:){4}(?:(?::\${\$}){0,1}:\${c}|(?::\${\$}){1,3}|:)| // 1:2:3:4::        1:2:3:4::6:7:8   1:2:3:4::8      1:2:3:4::6:7:1.2.3.4
+(?:\${\$}:){3}(?:(?::\${\$}){0,2}:\${c}|(?::\${\$}){1,4}|:)| // 1:2:3::          1:2:3::5:6:7:8   1:2:3::8        1:2:3::5:6:7:1.2.3.4
+(?:\${\$}:){2}(?:(?::\${\$}){0,3}:\${c}|(?::\${\$}){1,5}|:)| // 1:2::            1:2::4:5:6:7:8   1:2::8          1:2::4:5:6:7:1.2.3.4
+(?:\${\$}:){1}(?:(?::\${\$}){0,4}:\${c}|(?::\${\$}){1,6}|:)| // 1::              1::3:4:5:6:7:8   1::8            1::3:4:5:6:7:1.2.3.4
+(?::(?:(?::\${\$}){0,5}:\${c}|(?::\${\$}){1,7}|:))             // ::2:3:4:5:6:7:8  ::2:3:4:5:6:7:8  ::8             ::1.2.3.4
+)(?:%[0-9a-zA-Z]{1,})?                                             // %eth0            %1
+\`.replace(/\\\\s*\\\\/\\\\/.*\$/gm, "").replace(/\\
+/g, "").trim();
+var n = new RegExp(\`(?:^\${c}\$)|(?:^\${x}\$)\`);
+var t = new RegExp(\`^\${c}\$\`);
+var v = new RegExp(\`^\${x}\$\`);
+var a = (e2) => e2 && e2.exact ? n : new RegExp(\`(?:\${d(e2)}\${c}\${d(e2)})|(?:\${d(e2)}\${x}\${d(e2)})\`, "g");
+a.v4 = (e2) => e2 && e2.exact ? t : new RegExp(\`\${d(e2)}\${c}\${d(e2)}\`, "g");
+a.v6 = (e2) => e2 && e2.exact ? v : new RegExp(\`\${d(e2)}\${x}\${d(e2)}\`, "g");
+var r = a;
 
 // lib/bundle_import/index.js
 component_default();
-default2();
-default2();
+s();
+r();
 //# sourceMappingURL=index.js.map
 '
 `;
@@ -109,10 +117,10 @@ body h1 {
   --gray12: hsl(0, 0%, 9.0%);
 }
 
-/* lib/bundle_import.css */
+/* lib/bundle_import/styles.css */
 header {
   color: pink;
 }
-/*# sourceMappingURL=bundle_import.css.map */
+/*# sourceMappingURL=styles.css.map */
 "
 `;

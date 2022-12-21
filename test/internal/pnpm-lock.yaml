@@ -4,6 +4,7 @@ specifiers:
   '@proscenium/component-manager': ^0.1.4
   '@rails/actioncable': ^7.0.4
   '@react-aria/button': ^3.6.3
+  date-fns: ^2.29.3
   external-one: link:../external/one
   gem1: link:vendor/gem1
   internal-one: link:packages/one
@@ -16,6 +17,7 @@ specifiers:
 dependencies:
   '@proscenium/component-manager': 0.1.4_biqbaboplfbrettd7655fr4n2y
   '@react-aria/button': 3.6.3_react@18.2.0
+  date-fns: 2.29.3
   external-one: link:../external/one
   gem1: link:vendor/gem1
   internal-one: link:packages/one
@@ -174,6 +176,11 @@ packages:
   /convert-hrtime/5.0.0:
     resolution: {integrity: sha512-lOETlkIeYSJWcbbcvjRKGxVMXJR+8+OQb/mTPbA4ObPMytYIsUbuOE0Jzy60hjARYszq1id0j8KgVhC+WGZVTg==}
     engines: {node: '>=12'}
+    dev: false
+
+  /date-fns/2.29.3:
+    resolution: {integrity: sha512-dDCnyH2WnnKusqvZZ6+jA1O51Ibt8ZMRNkDZdyAyK4YfbDwa/cEmuztzG5pk6hqlp9aSBPYcjOlktquahGwGeA==}
+    engines: {node: '>=0.11'}
     dev: false
 
   /function-timeout/0.1.1:

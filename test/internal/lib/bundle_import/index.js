@@ -1,12 +1,13 @@
+import 'bundle:./foo.js' // relative path
+import 'bundle:../foo3' // relative path without extension
 import 'bundle:foo' // import map
 import 'bundle:/lib/foo2' // absolute path
-import 'bundle:../foo3' // relative path
 import 'bundle:mypackage' // bare module
 import 'bundle:./nested' // nested import
 import Component from 'bundle:../component.jsx' // jsx
-import emailRegex from 'bundle:email-regex' // import map to URL - unsupported!
-import emailRegex2 from 'bundle:https://esm.sh/email-regex' // URL - bundle: is ignored and passed though
+import emailRegex from 'bundle:email-regex' // import map to URL
+import ipRegex from 'bundle:https://esm.sh/v99/ip-regex@5.0.0/es2022/ip-regex.js' // URL
 
 Component()
 emailRegex()
-emailRegex2()
+ipRegex()

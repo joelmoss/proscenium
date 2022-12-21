@@ -1,1 +1,1 @@
-import 'bundle:./foo'
+import 'bundle:./bar'
