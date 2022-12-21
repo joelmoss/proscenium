@@ -22,14 +22,13 @@ describe('reactSvgPlugin', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  // it('supports import map', { only: true }, async t => {
-  //   const result = await main('lib/svg/with_import_map.jsx', {
-  //     root,
-  //     importMap: 'config/import_maps/svg.json',
-  //     lightningcssBin,
-  //     debug: true
-  //   })
+  it('supports import map', async t => {
+    const result = await main('lib/svg/with_import_map.jsx', {
+      root,
+      importMap: 'config/import_maps/svg.json',
+      lightningcssBin
+    })
 
-  //   await assertSnapshot(t, new TextDecoder().decode(result))
-  // })
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
 })
