@@ -1,6 +1,7 @@
 import { assertStringIncludes } from 'testing/asserts.ts'
-import { join } from 'std/path/mod.ts'
+import { assertSnapshot } from 'testing/snapshot.ts'
 import { beforeEach, describe, it } from 'testing/bdd.ts'
+import { join } from 'std/path/mod.ts'
 
 import main from '../../lib/proscenium/compilers/esbuild.js'
 
@@ -46,6 +47,26 @@ describe('import map', () => {
     })
 
     assertStringIncludes(new TextDecoder().decode(result), 'import pkg from "/lib/foo2.js";')
+  })
+
+  it('should map to bundle: prefix', async t => {
+    const result = await main('lib/import_map/bare_modules.js', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/bundle_prefix.json'
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
+  it('should map to bundle-all: prefix', async t => {
+    const result = await main('lib/import_map/bare_modules.js', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/bundle_all_prefix.json'
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('maps imports via trailing slash', async () => {

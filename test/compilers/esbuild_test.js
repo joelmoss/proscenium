@@ -1,7 +1,7 @@
-import { assertRejects } from 'std/testing/asserts.ts'
-import { assertSnapshot } from 'std/testing/snapshot.ts'
+import { assertRejects } from 'testing/asserts.ts'
+import { assertSnapshot } from 'testing/snapshot.ts'
+import { beforeEach, describe, it } from 'testing/bdd.ts'
 import { join } from 'std/path/mod.ts'
-import { beforeEach, describe, it } from 'std/testing/bdd.ts'
 
 import main from '../../lib/proscenium/compilers/esbuild.js'
 import ArgumentError from '../../lib/proscenium/compilers/esbuild/argument_error.js'
