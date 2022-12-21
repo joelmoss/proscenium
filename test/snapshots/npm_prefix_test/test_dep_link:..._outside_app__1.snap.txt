@@ -1,0 +1,3 @@
+// lib/pnpm/link_outside_dep.js
+import "/one/index.js";
+//# sourceMappingURL=link_outside_dep.js.map

@@ -1,0 +1,5 @@
+// ../external/one/index.js
+import isPlainObject from "/one/node_modules/.pnpm/is-plain-obj@4.1.0/node_modules/is-plain-obj/index.js";
+console.log("test/external/one");
+isPlainObject();
+//# sourceMappingURL=index.js.map

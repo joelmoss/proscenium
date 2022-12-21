@@ -11,7 +11,6 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: regular dep' do
-    skip
     get '/npm:is-ip'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
@@ -20,7 +19,6 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: dep file:... inside app' do
-    skip
     get '/npm:internal-two/index.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
@@ -29,10 +27,7 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: dep link:... inside app' do
-    skip
     get '/npm:internal-one/index.js'
-
-    pp response.body
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'npm', response.headers['X-Proscenium-Middleware']
@@ -60,14 +55,12 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: from ruby gem' do
-    skip
     get '/npm:gem1/lib/gem1/gem1.js'
 
     assert_matches_snapshot response.body
   end
 
   test 'npm: sourcemap from ruby gem' do
-    skip
     get '/npm:gem1/lib/gem1/gem1.js.map'
 
     assert_matches_snapshot response.body

@@ -1,0 +1,5 @@
+// node_modules/.pnpm/file+packages+two/node_modules/internal-two/index.js
+import isPlainObject from "/node_modules/.pnpm/is-plain-obj@4.1.0/node_modules/is-plain-obj/index.js";
+console.log("test/internal/packages/two");
+isPlainObject();
+//# sourceMappingURL=index.js.map
