@@ -1,2 +1,2 @@
-import isip from 'isip'
-isip()
+import { isIP } from 'isip'
+isIP()

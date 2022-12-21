@@ -266,7 +266,7 @@ if (!e) {
   e.id = "_16bcb75e";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
-  e.appendChild(document.createTextNode(\`@import "bundle:gem1/app/views/user.css";body{color:pink}.name{color:#000}
+  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
 //# sourceMappingURL=import_css.js.map
@@ -281,7 +281,7 @@ if (!e) {
   e.id = "_16bcb75e";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
-  e.appendChild(document.createTextNode(\`@import "bundle:gem1/app/views/user.css";body{color:pink}.name{color:#000}
+  e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
 \`));
 }
 //# sourceMappingURL=import_css.jsx.map

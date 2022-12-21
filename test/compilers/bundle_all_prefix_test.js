@@ -1,4 +1,5 @@
 import { assertStringIncludes, AssertionError } from 'testing/asserts.ts'
+import { assertSnapshot } from 'testing/snapshot.ts'
 import { beforeEach, describe, it } from 'testing/bdd.ts'
 import { join } from 'std/path/mod.ts'
 
@@ -22,18 +23,13 @@ describe('bundle-all: prefix', () => {
     Deno.env.set('PROSCENIUM_TEST', 'test')
   })
 
-  it('js import', async () => {
+  it('js import', async t => {
     const result = await main('lib/bundle_all_import/index.js', {
       root,
       lightningcssBin
     })
 
-    const code = new TextDecoder().decode(result)
-
-    assertStringIncludes(code, 'console.log("one")')
-    assertStringIncludes(code, 'console.log("two")')
-    assertStringIncludes(code, 'console.log("three")')
-    assertStringIncludes(code, 'import "/lib/foo.js";')
+    await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
   it('tree shaking', async () => {
@@ -49,18 +45,15 @@ describe('bundle-all: prefix', () => {
     assertStringExcludes(code, 'console.log("bar")')
   })
 
-  // TODO:
-  it.ignore('with import map', async () => {
+  it('with import map', async () => {
     const result = await main('lib/bundle_all_import/import_map.js', {
       root,
       lightningcssBin,
-      importMap: 'config/import_maps/simple.json',
-      debug: true
+      importMap: 'config/import_maps/simple.json'
     })
 
     const code = new TextDecoder().decode(result)
 
-    assertStringIncludes(code, 'console.log("foo")')
-    assertStringExcludes(code, 'console.log("bar")')
+    assertStringIncludes(code, 'console.log("/lib/foo.js");')
   })
 })

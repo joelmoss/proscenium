@@ -91,6 +91,9 @@ describe('import map', () => {
       importMap: 'config/import_maps/bare_modules.json'
     })
 
-    assertStringIncludes(new TextDecoder().decode(result), 'import isip from "is-ip";')
+    assertStringIncludes(
+      new TextDecoder().decode(result),
+      'import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";'
+    )
   })
 })

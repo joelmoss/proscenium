@@ -1,7 +1,3 @@
-@import "/vendor/gem1/node_modules/.pnpm/open-props@1.5.1/node_modules/open-props/shadows.min.css";
-
-/* vendor/gem1/app/views/user.css */
-
 /* app/views/layouts/application.css */
 body {
   color: pink;

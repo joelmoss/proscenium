@@ -2,16 +2,50 @@ export const snapshot = {};
 
 snapshot[`bundle-all: prefix > js import 1`] = `
 '// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
-console.log(3);
+var three_default = () => console.log("three");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.js
-console.log(2);
+var two_default = () => {
+  console.log("two");
+  three_default();
+};
+
+// url:https://esm.sh/v99/ip-regex@5.0.0/es2022/ip-regex.js
+var g = "[a-fA-F\\\\\\\\d:]";
+var d = (e) => e && e.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "";
+var c = "(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)(?:\\\\\\\\.(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)){3}";
+var \$ = "[a-fA-F\\\\\\\\d]{1,4}";
+var x = \`
+(?:
+(?:\${\$}:){7}(?:\${\$}|:)|                                    // 1:2:3:4:5:6:7::  1:2:3:4:5:6:7:8
+(?:\${\$}:){6}(?:\${c}|:\${\$}|:)|                             // 1:2:3:4:5:6::    1:2:3:4:5:6::8   1:2:3:4:5:6::8  1:2:3:4:5:6::1.2.3.4
+(?:\${\$}:){5}(?::\${c}|(?::\${\$}){1,2}|:)|                   // 1:2:3:4:5::      1:2:3:4:5::7:8   1:2:3:4:5::8    1:2:3:4:5::7:1.2.3.4
+(?:\${\$}:){4}(?:(?::\${\$}){0,1}:\${c}|(?::\${\$}){1,3}|:)| // 1:2:3:4::        1:2:3:4::6:7:8   1:2:3:4::8      1:2:3:4::6:7:1.2.3.4
+(?:\${\$}:){3}(?:(?::\${\$}){0,2}:\${c}|(?::\${\$}){1,4}|:)| // 1:2:3::          1:2:3::5:6:7:8   1:2:3::8        1:2:3::5:6:7:1.2.3.4
+(?:\${\$}:){2}(?:(?::\${\$}){0,3}:\${c}|(?::\${\$}){1,5}|:)| // 1:2::            1:2::4:5:6:7:8   1:2::8          1:2::4:5:6:7:1.2.3.4
+(?:\${\$}:){1}(?:(?::\${\$}){0,4}:\${c}|(?::\${\$}){1,6}|:)| // 1::              1::3:4:5:6:7:8   1::8            1::3:4:5:6:7:1.2.3.4
+(?::(?:(?::\${\$}){0,5}:\${c}|(?::\${\$}){1,7}|:))             // ::2:3:4:5:6:7:8  ::2:3:4:5:6:7:8  ::8             ::1.2.3.4
+)(?:%[0-9a-zA-Z]{1,})?                                             // %eth0            %1
+\`.replace(/\\\\s*\\\\/\\\\/.*\$/gm, "").replace(/\\
+/g, "").trim();
+var n = new RegExp(\`(?:^\${c}\$)|(?:^\${x}\$)\`);
+var t = new RegExp(\`^\${c}\$\`);
+var v = new RegExp(\`^\${x}\$\`);
+var a = (e) => e && e.exact ? n : new RegExp(\`(?:\${d(e)}\${c}\${d(e)})|(?:\${d(e)}\${x}\${d(e)})\`, "g");
+a.v4 = (e) => e && e.exact ? t : new RegExp(\`\${d(e)}\${c}\${d(e)}\`, "g");
+a.v6 = (e) => e && e.exact ? v : new RegExp(\`\${d(e)}\${x}\${d(e)}\`, "g");
+var r = a;
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.js
-console.log(1);
+var one_default = () => {
+  console.log("one");
+  two_default();
+  r();
+};
 
 // lib/bundle_all_import/index.js
 import "/lib/foo.js";
+one_default();
 //# sourceMappingURL=index.js.map
 '
 `;
