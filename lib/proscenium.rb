@@ -15,6 +15,10 @@ module Proscenium
   autoload :LinkToHelper
   autoload :Precompile
 
+  def self.logger
+    @logger ||= Rails.logger.tagged('Proscenium')
+  end
+
   module Utils
     module_function
 

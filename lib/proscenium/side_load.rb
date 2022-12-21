@@ -43,7 +43,7 @@ module Proscenium
     end
 
     def log(value)
-      Rails.logger.debug "[Proscenium] Side loaded #{value}"
+      Proscenium.logger.debug "Side loaded #{value}"
       value
     end
 
