@@ -2,13 +2,13 @@ export const snapshot = {};
 
 snapshot[`bundle: prefix > js import 1`] = `
 '// lib/bundle_import/foo.js
-console.log("bundle_import/foo.js");
+var foo_default = () => console.log("bundle_import/foo.js");
 
 // lib/foo3.js
 console.log("/lib/foo3.js");
 
-// lib/foo.js
-console.log("/lib/foo.js");
+// lib/foo4.js
+var foo4_default = () => console.log("/lib/foo4.js");
 
 // lib/foo2.js
 console.log("/lib/foo2.js");
@@ -59,6 +59,8 @@ a.v6 = (e2) => e2 && e2.exact ? v : new RegExp(\`\${d(e2)}\${x}\${d(e2)}\`, "g")
 var r = a;
 
 // lib/bundle_import/index.js
+foo_default();
+foo4_default();
 component_default();
 s();
 r();

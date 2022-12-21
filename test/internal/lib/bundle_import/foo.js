@@ -1,1 +1,1 @@
-console.log('bundle_import/foo.js')
+export default () => console.log('bundle_import/foo.js')

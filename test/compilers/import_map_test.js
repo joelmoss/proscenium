@@ -102,7 +102,7 @@ describe('import map', () => {
       importMap: 'config/import_maps/scopes.json'
     })
 
-    assertStringIncludes(new TextDecoder().decode(result), 'import "/lib/foo2.js";')
+    assertStringIncludes(new TextDecoder().decode(result), 'import foo from "/lib/foo4.js";')
   })
 
   it('should map bare modules', async () => {

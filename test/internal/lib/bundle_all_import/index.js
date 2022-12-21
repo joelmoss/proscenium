@@ -1,4 +1,5 @@
 import one from 'bundle-all:./one'
-import '/lib/foo.js' // should not be bundled
+import foo4 from '/lib/foo4.js' // should not be bundled
 
 one()
+foo4()

@@ -145,14 +145,16 @@ export {
 
 snapshot[`compilers/esbuild > Import relative module 1`] = `
 '// lib/import_relative_module.js
-import "/lib/foo.js";
+import foo4 from "/lib/foo4.js";
+foo4();
 //# sourceMappingURL=import_relative_module.js.map
 '
 `;
 
 snapshot[`compilers/esbuild > Import absolute module 1`] = `
 '// lib/import_absolute_module.js
-import "/lib/foo.js";
+import foo4 from "/lib/foo4.js";
+foo4();
 //# sourceMappingURL=import_absolute_module.js.map
 '
 `;

@@ -44,8 +44,9 @@ var one_default = () => {
 };
 
 // lib/bundle_all_import/index.js
-import "/lib/foo.js";
+import foo4 from "/lib/foo4.js";
 one_default();
+foo4();
 //# sourceMappingURL=index.js.map
 '
 `;

@@ -1,10 +1,10 @@
 {
   "imports": {
-    "foo": "/lib/foo.js"
+    "foo": "/lib/foo4.js"
   },
   "scopes": {
     "/lib/import_map/": {
-      "foo": "/lib/foo2.js"
+      "foo": "/lib/foo4.js"
     }
   }
 }
