@@ -19,16 +19,16 @@ module Proscenium
     def side_load_stylesheets
       return unless Proscenium::Current.loaded
 
-      Proscenium::Current.loaded[:css].map do |digest, path|
-        stylesheet_link_tag(path, id: "_#{digest}")
+      Proscenium::Current.loaded[:css].map do |path|
+        stylesheet_link_tag(path)
       end.join("\n").html_safe
     end
 
     def side_load_javascripts(**options)
       return unless Proscenium::Current.loaded
 
-      Proscenium::Current.loaded[:js].map do |digest, path|
-        javascript_include_tag(path, options.merge(id: "_#{digest}"))
+      Proscenium::Current.loaded[:js].map do |path|
+        javascript_include_tag(path, options)
       end.join("\n").html_safe
     end
 

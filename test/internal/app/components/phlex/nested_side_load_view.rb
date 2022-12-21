@@ -2,6 +2,8 @@
 
 class Phlex::NestedSideLoadView < Phlex::SideLoadView
   def template
-    div { 'Hello' }
+    super do
+      div { 'world' }
+    end
   end
 end

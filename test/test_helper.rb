@@ -15,6 +15,7 @@ require 'view_component/test_case'
 Combustion.path = 'test/internal'
 Combustion.initialize! :action_controller, :action_view do
   config.consider_all_requests_local = false
+  config.autoload_paths << "#{root}/app"
 end
 
 class ActiveSupport::TestCase

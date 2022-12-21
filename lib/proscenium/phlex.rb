@@ -30,7 +30,7 @@ module Proscenium
     # Side loads the class, and its super classes that respond to `.path`. Assign the
     # `abstract_class` class variable to any abstract class, and it will not be side loaded.
     module Sideload
-      def template(...)
+      def before_template
         klass = self.class
         while !klass.abstract_class && klass.respond_to?(:path) && klass.path
           Proscenium::SideLoad.append klass.path

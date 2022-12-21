@@ -2,6 +2,8 @@
 
 require 'phlex/rails'
 
+# Include this in your view for additional logic for rendering a full HTML page, usually from a
+# controller.
 module Proscenium::Phlex::Page
   include Phlex::Rails::Layout
 
@@ -34,7 +36,7 @@ module Proscenium::Phlex::Page
 
   def body
     super do
-      yield
+      yield if block_given?
 
       side_load_javascripts defer: true, type: :module
       Rails.env.development? && proscenium_dev

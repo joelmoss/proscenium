@@ -9,8 +9,8 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
     render_inline ViewComponent::FirstComponent.new
 
     assert_equal({
-                   js: Set[['44019006', 'app/components/view_component/first_component.js']],
-                   css: Set[['23386d46', 'app/components/view_component/first_component.css']]
+                   js: Set['app/components/view_component/first_component.js'],
+                   css: Set['app/components/view_component/first_component.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -19,8 +19,7 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
 
     assert_equal({
                    js: Set[],
-                   css: Set[['43b86960',
-                             'app/components/view_component/css_module/component.module.css']]
+                   css: Set['app/components/view_component/css_module/component.module.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -41,8 +40,7 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
 
     assert_equal(
       { js: Set[],
-        css: Set[['cf1e531a',
-                  'app/components/view_component/css_module_helper_two_component.module.css']] },
+        css: Set['app/components/view_component/css_module_helper_two_component.module.css'] },
       Proscenium::Current.loaded
     )
   end
@@ -52,8 +50,7 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
 
     assert_equal(
       { js: Set[],
-        css: Set[['08382371',
-                  'app/components/view_component/css_module_helper_three/component.module.css']] },
+        css: Set['app/components/view_component/css_module_helper_three/component.module.css'] },
       Proscenium::Current.loaded
     )
   end
