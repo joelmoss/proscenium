@@ -1,18 +1,4 @@
-// ../external/one/node_modules/.pnpm/is-plain-obj@4.1.0/node_modules/is-plain-obj/index.js
-function isPlainObject(value) {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-  const prototype = Object.getPrototypeOf(value);
-  return (prototype === null || prototype === Object.prototype || Object.getPrototypeOf(prototype) === null) && !(Symbol.toStringTag in value) && !(Symbol.iterator in value);
-}
-
-// ../external/one/index.js
-var one_default = () => {
-  console.log("test/external/one");
-  isPlainObject();
-};
-
 // lib/pnpm/link_outside_dep.js
-one_default();
+import one from "/npm:external-one-link";
+one();
 //# sourceMappingURL=link_outside_dep.js.map
