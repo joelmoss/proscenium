@@ -24,4 +24,4 @@ export {
   isIPv4,
   isIPv6
 };
-//# sourceMappingURL=npm_is-ip.js.map
+//# sourceMappingURL=/npm:is-ip.map
