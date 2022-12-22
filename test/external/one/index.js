@@ -1,4 +1,6 @@
 import isPlainObject from 'is-plain-obj'
 
-console.log('test/external/one')
-isPlainObject()
+export default () => {
+  console.log('test/external/one')
+  isPlainObject()
+}

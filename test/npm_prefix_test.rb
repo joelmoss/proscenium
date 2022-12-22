@@ -27,7 +27,7 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: dep link:... inside app' do
-    get '/npm:internal-one/index.js'
+    get '/npm:internal-one-link/index.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'npm', response.headers['X-Proscenium-Middleware']
@@ -35,9 +35,7 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'dep link:... outside app' do
-    skip
     get '/lib/pnpm/link_outside_dep.js'
-    pp response.body
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
@@ -45,9 +43,7 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'npm: dep link:... outside app' do
-    skip
-    get '/npm:external-one/index.js'
-    pp response.body
+    get '/npm:external-one-link/index.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'npm', response.headers['X-Proscenium-Middleware']
