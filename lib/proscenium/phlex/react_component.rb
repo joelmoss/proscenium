@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 #
-# Renders a div for use with component-manager.
+# Renders a div for use with @proscenium/component-manager.
 #
 class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
