@@ -1,0 +1,4 @@
+@import 'bundle-all:./one.css';
+body {
+  color: red;
+}

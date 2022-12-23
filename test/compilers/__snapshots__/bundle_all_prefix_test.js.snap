@@ -50,3 +50,70 @@ foo4();
 //# sourceMappingURL=index.js.map
 '
 `;
+
+snapshot[`bundle-all: prefix > css 1`] = `
+"/* url:https://unpkg.com/open-props@1.5.3/blue.min.css */
+:where(html) {
+  --blue-0:#e7f5ff;
+  --blue-1:#d0ebff;
+  --blue-2:#a5d8ff;
+  --blue-3:#74c0fc;
+  --blue-4:#4dabf7;
+  --blue-5:#339af0;
+  --blue-6:#228be6;
+  --blue-7:#1c7ed6;
+  --blue-8:#1971c2;
+  --blue-9:#1864ab;
+  --blue-10:#145591;
+  --blue-11:#114678;
+  --blue-12:#0d375e;
+}
+
+/* url:https://unpkg.com/open-props@1.5.3/green.min.css */
+:where(html) {
+  --green-0:#ebfbee;
+  --green-1:#d3f9d8;
+  --green-2:#b2f2bb;
+  --green-3:#8ce99a;
+  --green-4:#69db7c;
+  --green-5:#51cf66;
+  --green-6:#40c057;
+  --green-7:#37b24d;
+  --green-8:#2f9e44;
+  --green-9:#2b8a3e;
+  --green-10:#237032;
+  --green-11:#1b5727;
+  --green-12:#133d1b;
+}
+
+/* url:https://unpkg.com/open-props@1.5.3/red.min.css */
+:where(html) {
+  --red-0:#fff5f5;
+  --red-1:#ffe3e3;
+  --red-2:#ffc9c9;
+  --red-3:#ffa8a8;
+  --red-4:#ff8787;
+  --red-5:#ff6b6b;
+  --red-6:#fa5252;
+  --red-7:#f03e3e;
+  --red-8:#e03131;
+  --red-9:#c92a2a;
+  --red-10:#b02525;
+  --red-11:#962020;
+  --red-12:#7d1a1a;
+}
+
+/* bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.css */
+body {
+  color: green;
+}
+
+/* bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.css */
+
+/* lib/bundle_all_import/index.css */
+body {
+  color: red;
+}
+/*# sourceMappingURL=index.css.map */
+"
+`;

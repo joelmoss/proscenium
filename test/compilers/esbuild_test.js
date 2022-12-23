@@ -43,6 +43,15 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('invalid URL', async t => {
+    const result = await main('url:https://unpkg.com/open-props@1.5.3/red.min.css', {
+      root,
+      lightningcssBin
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   it('allows returns error on unknown bare module', async t => {
     const result = await main('lib/import_unknown_node_module.js', { root, lightningcssBin })
 
@@ -54,20 +63,6 @@ describe('compilers/esbuild', () => {
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
-
-  // describe('pnpm link: protocol', () => {
-  //   it('resolves packages outside app', { only: true }, async t => {
-  //     const result = await main('lib/pnpm/link_outside_dep.js', {
-  //       root,
-  //       lightningcssBin,
-  //       debug: true
-  //     })
-
-  //     console.log(new TextDecoder().decode(result))
-
-  //     await assertSnapshot(t, new TextDecoder().decode(result))
-  //   })
-  // })
 
   it('Import relative module', async t => {
     const result = await main('lib/import_relative_module.js', { root, lightningcssBin })

@@ -32,6 +32,15 @@ describe('bundle-all: prefix', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('css', async t => {
+    const result = await main('lib/bundle_all_import/index.css', {
+      root,
+      lightningcssBin
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   it('tree shaking', async () => {
     const result = await main('lib/bundle_all_import/tree_shaking.js', {
       root,
