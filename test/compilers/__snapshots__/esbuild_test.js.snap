@@ -221,15 +221,15 @@ import foo from "/lib/foo.js";
 
 snapshot[`compilers/esbuild > Import css module from JS 1`] = `
 '// lib/styles.module.css
-var e = document.querySelector("#_9095c7b8");
+var e = document.querySelector("#_0011c694");
 if (!e) {
   e = document.createElement("style");
-  e.id = "_9095c7b8";
+  e.id = "_0011c694";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/lib/styles.module.css"));
-  e.appendChild(document.createTextNode(\`.myClass9095c7b8{color:pink}\`));
+  e.appendChild(document.createTextNode(\`.myClass0011c694{color:pink}\`));
 }
-var styles_module_default = { "myClass": "myClass9095c7b8" };
+var styles_module_default = { "myClass": "myClass0011c694" };
 
 // lib/import_css_module.js
 console.log(styles_module_default);
@@ -243,7 +243,7 @@ var basic_react_component_module_default = new Proxy({}, { get(target, prop, rec
   if (prop in target || typeof prop === "symbol") {
     return Reflect.get(target, prop, receiver);
   } else {
-    return prop + "454467aa";
+    return prop + "2eb71d5d";
   }
 } });
 
@@ -265,7 +265,7 @@ var component_module_default = new Proxy({}, { get(target, prop, receiver) {
   if (prop in target || typeof prop === "symbol") {
     return Reflect.get(target, prop, receiver);
   } else {
-    return prop + "86cfc182";
+    return prop + "72824aab";
   }
 } });
 
@@ -283,10 +283,10 @@ export {
 
 snapshot[`compilers/esbuild > Import css from JS 1`] = `
 '// app/views/layouts/application.css
-var e = document.querySelector("#_16bcb75e");
+var e = document.querySelector("#_d7aef170");
 if (!e) {
   e = document.createElement("style");
-  e.id = "_16bcb75e";
+  e.id = "_d7aef170";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
@@ -298,10 +298,10 @@ if (!e) {
 
 snapshot[`compilers/esbuild > Import css from jsx 1`] = `
 '// app/views/layouts/application.css
-var e = document.querySelector("#_16bcb75e");
+var e = document.querySelector("#_d7aef170");
 if (!e) {
   e = document.createElement("style");
-  e.id = "_16bcb75e";
+  e.id = "_d7aef170";
   document.head.appendChild(e);
   e.appendChild(document.createComment("/app/views/layouts/application.css"));
   e.appendChild(document.createTextNode(\`body{color:pink}.name{color:#000}
