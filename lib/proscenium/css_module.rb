@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
 module Proscenium::CssModule
-  require 'proscenium/css_module/resolver'
+  extend ActiveSupport::Autoload
+
+  autoload :Resolver
 
   # Like `css_modules`, but will raise if the stylesheet cannot be found.
   #

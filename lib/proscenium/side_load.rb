@@ -16,9 +16,17 @@ module Proscenium
       new(path, extension_map).append
     end
 
+    # Forcefully side load the given `path` at `type`.
+    def self.append!(path, type)
+      return if Proscenium::Current.loaded[type].include?(path)
+
+      Proscenium::Current.loaded[type] << path
+      Proscenium.logger.debug "Side loaded #{path}"
+    end
+
     # @param path [Pathname, String] The path of the file to be side loaded.
     # @param extensions [Array] File extensions to side load (default: DEFAULT_EXTENSIONS)
-    def initialize(path, extension_map)
+    def initialize(path, extension_map = EXTENSION_MAP)
       @path = (path.is_a?(Pathname) ? path : Rails.root.join(path)).sub_ext('')
       @extension_map = extension_map
 

@@ -32,6 +32,12 @@ module Proscenium
     module Sideload
       def before_template
         klass = self.class
+
+        if !klass.abstract_class && respond_to?(:side_load, true)
+          side_load
+          klass = klass.superclass
+        end
+
         while !klass.abstract_class && klass.respond_to?(:path) && klass.path
           Proscenium::SideLoad.append klass.path
           klass = klass.superclass

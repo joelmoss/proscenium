@@ -77,6 +77,11 @@ body h1 {
   color: #00f;
 }
 
+/* lib/bundle_import/one.css */
+.stuff a {
+  color: orange;
+}
+
 /* packages/mypackage/styles.css */
 .mypackage {
   color: red;
@@ -122,6 +127,9 @@ body h1 {
 /* lib/bundle_import/styles.css */
 header {
   color: pink;
+}
+header a {
+  color: green;
 }
 /*# sourceMappingURL=styles.css.map */
 "

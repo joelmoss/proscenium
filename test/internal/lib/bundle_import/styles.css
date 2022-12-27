@@ -1,4 +1,5 @@
 @import 'bundle:/lib/foo.css'; /* absolute */
+@import 'bundle:./one.css'; /* relative */
 @import 'bundle:mypackage/styles.css'; /* bare module */
 @import 'bundle:styles'; /* import map */
 @import 'bundle:https://esm.sh/@radix-ui/colors@0.1.8/blue.css'; /* URL - unsupported */
@@ -6,4 +7,8 @@
 
 header {
   color: pink;
+
+  & a {
+    color: green;
+  }
 }

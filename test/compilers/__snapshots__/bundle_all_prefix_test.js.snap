@@ -109,10 +109,16 @@ body {
 }
 
 /* bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.css */
+main a {
+  color: #00f;
+}
 
 /* lib/bundle_all_import/index.css */
 body {
   color: red;
+}
+body main {
+  color: #00f;
 }
 /*# sourceMappingURL=index.css.map */
 "

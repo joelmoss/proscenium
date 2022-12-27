@@ -3,8 +3,24 @@
 #
 # Renders a div for use with @proscenium/component-manager.
 #
-class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
+class Proscenium::Phlex::ReactComponent < Phlex::HTML
+  class << self
+    attr_accessor :path, :abstract_class
+
+    def inherited(child)
+      child.path = if caller_locations(1, 1).first.label == 'inherited'
+                     Pathname.new caller_locations(2, 1).first.path
+                   else
+                     Pathname.new caller_locations(1, 1).first.path
+                   end
+
+      super
+    end
+  end
+
   self.abstract_class = true
+
+  include Proscenium::CssModule
 
   attr_accessor :props, :lazy
 
