@@ -46,7 +46,14 @@ class Proscenium::CssModule::Resolver
   # @returns [Array] of class names generated from the given CSS module `names`.
   def class_names(*names)
     side_load_css_module
-    names.flatten.compact.map { |name| "#{name.to_s.camelize(:lower)}#{hash}" }
+    names.flatten.compact.map do |name|
+      sname = name.to_s
+      if sname.starts_with?('_')
+        "_#{sname[1..-1].camelize(:lower)}#{hash}"
+      else
+        "#{sname.camelize(:lower)}#{hash}"
+      end
+    end
   end
 
   # Like #class_names, but requires that the stylesheet exists.

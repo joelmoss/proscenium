@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'phlex'
+require 'phlex-rails'
 
 module Proscenium
   class Phlex < ::Phlex::HTML
