@@ -78,6 +78,7 @@ module Proscenium
 
         if Rails.application.config.proscenium.side_load
           ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
+          ActionView::PartialRenderer.prepend SideLoad::Monkey::PartialRenderer
         end
 
         ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
