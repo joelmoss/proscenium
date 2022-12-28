@@ -39,6 +39,7 @@ class Proscenium::ViewComponent < ViewComponent::Base
     end
   end
 
+  # @override Auto compilation of class names to css modules.
   def render_in(...)
     cssm.compile_class_names(super(...))
   end
