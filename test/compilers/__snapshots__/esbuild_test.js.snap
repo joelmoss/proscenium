@@ -89,6 +89,7 @@ function \$701a24aa0da5b062\$export\$ea18c227d4417cc3(props, ref) {
     onPressChange,
     preventFocusOnPress,
     allowFocusWhenDisabled,
+    // @ts-ignore
     onClick: deprecatedOnClick,
     href,
     target,
