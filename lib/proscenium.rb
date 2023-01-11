@@ -19,6 +19,10 @@ module Proscenium
     @logger ||= Rails.logger.tagged('Proscenium')
   end
 
+  def self.reset_current_side_loaded
+    Current.loaded = SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
+  end
+
   module Utils
     module_function
 
