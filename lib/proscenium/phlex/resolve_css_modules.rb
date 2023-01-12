@@ -1,12 +1,10 @@
 # frozen_string_literal: true
 
 module Proscenium::Phlex::ResolveCssModules
-  def _build_attributes(attributes, buffer:)
-    attributes.tap do |attrs|
-      attrs[:class] = resolve_css_modules(tokens(attrs[:class])) if attrs.key?(:class)
-    end
+  def _attributes(**attributes)
+    attributes[:class] = resolve_css_modules(tokens(attributes[:class])) if attributes.key?(:class)
 
-    super(attributes, buffer: buffer)
+    super(**attributes)
   end
 
   private
