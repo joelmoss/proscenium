@@ -51,7 +51,7 @@ module Proscenium
     end
 
     def glob_types
-      Proscenium::MIDDLEWARE_GLOB_TYPES
+      @glob_types ||= Proscenium::MIDDLEWARE_GLOB_TYPES
     end
 
     def application_glob_type

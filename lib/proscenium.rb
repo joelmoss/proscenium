@@ -32,6 +32,22 @@ module Proscenium
       Digest::SHA1.hexdigest(value.to_s)[..7]
     end
 
+    # Resolves the given CSS class names to CSS modules.
+    #
+    # @param names [String, Array]
+    # @param hash: [String]
+    # @returns [Array] of class names generated from the given CSS module `names` and `hash`.
+    def class_names(*names, hash:)
+      names.flatten.compact.map do |name|
+        sname = name.to_s
+        if sname.starts_with?('_')
+          "_#{sname[1..].camelize(:lower)}#{hash}"
+        else
+          "#{sname.camelize(:lower)}#{hash}"
+        end
+      end
+    end
+
     # Accepts a `path` to a file, and splits it into pieces:
     #   - The root file path
     #   - The file path relative to the root
