@@ -30,7 +30,7 @@ module Proscenium::Phlex::ResolveCssModules
     if path.starts_with?('@')
       # Scoped NPM module: @scoped/package/lib/button@default
       _, path, name = path.split('@')
-      path = "/npm:@#{path}"
+      path = "npm:@#{path}"
     elsif path.starts_with?('/')
       # Local path with leading slash
       path, name = path[1..].split('@')
