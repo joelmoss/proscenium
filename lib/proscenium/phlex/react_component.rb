@@ -8,11 +8,8 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
     attr_accessor :path, :abstract_class
 
     def inherited(child)
-      child.path = if caller_locations(1, 1).first.label == 'inherited'
-                     Pathname.new caller_locations(2, 1).first.path
-                   else
-                     Pathname.new caller_locations(1, 1).first.path
-                   end
+      position = caller_locations(1, 1).first.label == 'inherited' ? 2 : 1
+      child.path = Pathname.new caller_locations(position, 1).first.path.sub(/\.rb$/, '')
 
       super
     end

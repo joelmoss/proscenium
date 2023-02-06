@@ -34,7 +34,7 @@ module Proscenium
       @path = (path.is_a?(Pathname) ? path : Rails.root.join(path)).sub_ext('')
       @extension_map = extension_map
 
-      Proscenium::Current.loaded ||= EXTENSIONS.to_h { |e| [e, Set.new] }
+      Proscenium::Current.loaded ||= EXTENSIONS.index_with { |_e| Set.new }
     end
 
     def append
