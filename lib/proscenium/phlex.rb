@@ -10,6 +10,7 @@ module Proscenium
     autoload :Page
     autoload :ReactComponent
     autoload :ResolveCssModules
+    autoload :ComponentConcerns
 
     module Helpers
       def side_load_javascripts(...)

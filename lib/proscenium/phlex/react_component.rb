@@ -17,6 +17,7 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
 
   self.abstract_class = true
 
+  include Proscenium::Phlex::ResolveCssModules
   include Proscenium::CssModule
 
   attr_accessor :props, :lazy
@@ -32,8 +33,8 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
   #   `<div>loading...</div>` will be rendered. Use this to display a loading UI while the component
   #   is loading and rendered.
   def template(&block)
-    div(**classes('componentManagedByProscenium', '@component'),
-        data: { component: { path: virtual_path, props: props, lazy: lazy }.to_json }) do
+    div class: ['componentManagedByProscenium', :@component],
+        data: { component: { path: virtual_path, props: props, lazy: lazy }.to_json } do
       block ? div(&block) : div { 'loading...' }
     end
   end
