@@ -42,6 +42,6 @@ module Proscenium::Phlex::ResolveCssModules
     path = "#{path}.module.css"
 
     Proscenium::SideLoad.append! path, :css
-    Proscenium::Utils.class_names name, hash: Proscenium::Utils.digest(path[1..])
+    Proscenium::Utils.class_names name, hash: Proscenium::Utils.digest(path)
   end
 end
