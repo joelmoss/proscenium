@@ -50,15 +50,11 @@ class NpmPrefixTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'npm: from ruby gem' do
-    get '/npm:gem1/lib/gem1/gem1.js'
+  test 'npm: sourcemap' do
+    get '/npm:external-one-link/index.js.map'
 
-    assert_matches_snapshot response.body
-  end
-
-  test 'npm: sourcemap from ruby gem' do
-    get '/npm:gem1/lib/gem1/gem1.js.map'
-
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'npm', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
 end

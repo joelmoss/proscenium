@@ -68,7 +68,14 @@ module Proscenium
       if matched_gem
         sroot = "#{matched_gem[1][:root]}/"
         relpath = spath.delete_prefix(sroot)
-        return [sroot, relpath, "npm:#{matched_gem[1][:package_name] || matched_gem[0]}/#{relpath}"]
+
+        urlpath = if matched_gem[1][:package_name]
+                    "npm:#{matched_gem[1][:package_name]}"
+                  else
+                    "gem:#{matched_gem[0]}"
+                  end
+
+        return [sroot, relpath, "#{urlpath}/#{relpath}"]
       end
 
       sroot = "#{Rails.root}/"

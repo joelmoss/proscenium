@@ -1,0 +1,3 @@
+// app/views/user.js
+console.log("gem1/views/user");
+//# sourceMappingURL=user.js.map

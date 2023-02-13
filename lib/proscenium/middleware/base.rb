@@ -34,6 +34,15 @@ module Proscenium
 
       private
 
+      def real_path
+        @request.path
+      end
+
+      # @return [String] the path to the file without the leading slash which will be built.
+      def path_to_build
+        @request.path[1..]
+      end
+
       def sourcemap?
         @request.path.ends_with?('.map')
       end
@@ -43,7 +52,7 @@ module Proscenium
       end
 
       def file_readable?
-        return unless (path = clean_path(sourcemap? ? @request.path[0...-4] : @request.path_info))
+        return unless (path = clean_path(sourcemap? ? real_path[0...-4] : real_path))
 
         file_stat = File.stat(Pathname(root).join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError
@@ -63,7 +72,7 @@ module Proscenium
 
       def content_type
         @content_type ||
-          ::Rack::Mime.mime_type(::File.extname(@request.path_info), nil) ||
+          ::Rack::Mime.mime_type(::File.extname(path_to_build), nil) ||
           'application/javascript'
       end
 
@@ -84,6 +93,7 @@ module Proscenium
       end
 
       def build(cmd)
+        pp cmd
         stdout, stderr, status = Open3.capture3(cmd)
 
         if !status.success? || !stderr.empty?

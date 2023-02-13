@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium::Phlex::ResolveCssModules
-  def _attributes(**attributes)
+  def __attributes__(**attributes)
     attributes[:class] = resolve_css_modules(tokens(attributes[:class])) if attributes.key?(:class)
 
     super(**attributes)
@@ -9,6 +9,9 @@ module Proscenium::Phlex::ResolveCssModules
 
   private
 
+  # Resolves the given HTML class name or path as a CSS module.
+  #
+  # @param value [String] HTML class name or path to resolve.
   def resolve_css_modules(value)
     if value.include?('/') && Rails.application.config.proscenium.side_load
       value.split.map { |path| resolve_css_module_path path }.join ' '

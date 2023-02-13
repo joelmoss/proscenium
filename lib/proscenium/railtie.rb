@@ -17,10 +17,11 @@ module Proscenium
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     npm: %r{^/npm:.+},
+    gem: %r{^/gem:.+},
     url: %r{^/url:https?%3A%2F%2F}
   }.freeze
 
-  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules', 'ruby_gems'].freeze
+  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
 
   class << self
     def config
