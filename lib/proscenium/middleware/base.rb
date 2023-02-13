@@ -93,7 +93,6 @@ module Proscenium
       end
 
       def build(cmd)
-        pp cmd
         stdout, stderr, status = Open3.capture3(cmd)
 
         if !status.success? || !stderr.empty?

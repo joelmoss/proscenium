@@ -1,6 +1,6 @@
 {
   "version": 3,
-  "sources": ["../../../../app/views/user.js"],
+  "sources": ["../../../../../app/views/user.js"],
   "sourcesContent": ["console.log('gem1/views/user')\n"],
   "mappings": ";AAAA,QAAQ,IAAI,iBAAiB;",
   "names": []

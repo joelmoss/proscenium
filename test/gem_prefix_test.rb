@@ -9,7 +9,6 @@ class GemPrefixTest < ActionDispatch::IntegrationTest
     Proscenium.config.css_mixin_paths = Set[Rails.root.join('lib')]
   end
 
-  focus
   test 'gem URl prefix' do
     get '/gem:gem1/app/views/user.js'
 
