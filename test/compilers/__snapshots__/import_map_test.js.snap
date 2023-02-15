@@ -1,7 +1,10 @@
 export const snapshot = {};
 
 snapshot[`import map > should map to bundle: prefix 1`] = `
-'// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
 import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
 import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv6Length = 45;
@@ -11,6 +14,7 @@ var options = {
 function isIP(string) {
   return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
 }
+__name(isIP, "isIP");
 
 // lib/import_map/bare_modules.js
 isIP();
@@ -19,9 +23,12 @@ isIP();
 `;
 
 snapshot[`import map > should map to bundle-all: prefix 1`] = `
-'// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js
 var word = "[a-fA-F\\\\\\\\d:]";
-var boundry = (options2) => options2 && options2.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${word})|(?<=\${word})(?=\\\\\\\\s|\$))\` : "";
+var boundry = /* @__PURE__ */ __name((options2) => options2 && options2.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${word})|(?<=\${word})(?=\\\\\\\\s|\$))\` : "", "boundry");
 var v4 = "(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)(?:\\\\\\\\.(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)){3}";
 var v6segment = "[a-fA-F\\\\\\\\d]{1,4}";
 var v6 = \`
@@ -40,29 +47,32 @@ var v6 = \`
 var v46Exact = new RegExp(\`(?:^\${v4}\$)|(?:^\${v6}\$)\`);
 var v4exact = new RegExp(\`^\${v4}\$\`);
 var v6exact = new RegExp(\`^\${v6}\$\`);
-var ipRegex = (options2) => options2 && options2.exact ? v46Exact : new RegExp(\`(?:\${boundry(options2)}\${v4}\${boundry(options2)})|(?:\${boundry(options2)}\${v6}\${boundry(options2)})\`, "g");
+var ipRegex = /* @__PURE__ */ __name((options2) => options2 && options2.exact ? v46Exact : new RegExp(\`(?:\${boundry(options2)}\${v4}\${boundry(options2)})|(?:\${boundry(options2)}\${v6}\${boundry(options2)})\`, "g"), "ipRegex");
 ipRegex.v4 = (options2) => options2 && options2.exact ? v4exact : new RegExp(\`\${boundry(options2)}\${v4}\${boundry(options2)}\`, "g");
 ipRegex.v6 = (options2) => options2 && options2.exact ? v6exact : new RegExp(\`\${boundry(options2)}\${v6}\${boundry(options2)}\`, "g");
 var ip_regex_default = ipRegex;
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/function-timeout@0.1.1/node_modules/function-timeout/browser.js
 function functionTimeout(function_) {
-  const wrappedFunction = (...arguments_) => function_(...arguments_);
+  const wrappedFunction = /* @__PURE__ */ __name((...arguments_) => function_(...arguments_), "wrappedFunction");
   Object.defineProperty(wrappedFunction, "name", {
     value: \`functionTimeout(\${function_.name || "<anonymous>"})\`,
     configurable: true
   });
   return wrappedFunction;
 }
+__name(functionTimeout, "functionTimeout");
 function isTimeoutError() {
   return false;
 }
+__name(isTimeoutError, "isTimeoutError");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/is-regexp@3.1.0/node_modules/is-regexp/index.js
 var { toString } = Object.prototype;
 function isRegexp(value) {
   return toString.call(value) === "[object RegExp]";
 }
+__name(isRegexp, "isRegexp");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/clone-regexp@3.0.0/node_modules/clone-regexp/index.js
 var flagMap = {
@@ -82,6 +92,7 @@ function clonedRegexp(regexp, options2 = {}) {
   clonedRegexp2.lastIndex = typeof options2.lastIndex === "number" ? options2.lastIndex : regexp.lastIndex;
   return clonedRegexp2;
 }
+__name(clonedRegexp, "clonedRegexp");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js
 function isMatch(regex, string, { timeout } = {}) {
@@ -94,6 +105,7 @@ function isMatch(regex, string, { timeout } = {}) {
     throw error;
   }
 }
+__name(isMatch, "isMatch");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
 var maxIPv6Length = 45;
@@ -103,6 +115,7 @@ var options = {
 function isIP(string) {
   return isMatch(ip_regex_default({ exact: true }), string.slice(0, maxIPv6Length), options);
 }
+__name(isIP, "isIP");
 
 // lib/import_map/bare_modules.js
 isIP();

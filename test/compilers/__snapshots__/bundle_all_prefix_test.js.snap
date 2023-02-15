@@ -1,18 +1,21 @@
 export const snapshot = {};
 
 snapshot[`bundle-all: prefix > js import 1`] = `
-'// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
-var three_default = () => console.log("three");
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/three.js
+var three_default = /* @__PURE__ */ __name(() => console.log("three"), "default");
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/two.js
-var two_default = () => {
+var two_default = /* @__PURE__ */ __name(() => {
   console.log("two");
   three_default();
-};
+}, "default");
 
 // url:https://esm.sh/v99/ip-regex@5.0.0/es2022/ip-regex.js
 var g = "[a-fA-F\\\\\\\\d:]";
-var d = (e) => e && e.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "";
+var d = /* @__PURE__ */ __name((e) => e && e.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "", "d");
 var c = "(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)(?:\\\\\\\\.(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)){3}";
 var \$ = "[a-fA-F\\\\\\\\d]{1,4}";
 var x = \`
@@ -31,17 +34,17 @@ var x = \`
 var n = new RegExp(\`(?:^\${c}\$)|(?:^\${x}\$)\`);
 var t = new RegExp(\`^\${c}\$\`);
 var v = new RegExp(\`^\${x}\$\`);
-var a = (e) => e && e.exact ? n : new RegExp(\`(?:\${d(e)}\${c}\${d(e)})|(?:\${d(e)}\${x}\${d(e)})\`, "g");
+var a = /* @__PURE__ */ __name((e) => e && e.exact ? n : new RegExp(\`(?:\${d(e)}\${c}\${d(e)})|(?:\${d(e)}\${x}\${d(e)})\`, "g"), "a");
 a.v4 = (e) => e && e.exact ? t : new RegExp(\`\${d(e)}\${c}\${d(e)}\`, "g");
 a.v6 = (e) => e && e.exact ? v : new RegExp(\`\${d(e)}\${x}\${d(e)}\`, "g");
 var r = a;
 
 // bundleAll:/Users/joelmoss/dev/proscenium/test/internal/lib/bundle_all_import/one.js
-var one_default = () => {
+var one_default = /* @__PURE__ */ __name(() => {
   console.log("one");
   two_default();
   r();
-};
+}, "default");
 
 // lib/bundle_all_import/index.js
 import foo4 from "/lib/foo4.js";

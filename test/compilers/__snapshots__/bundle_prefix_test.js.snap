@@ -1,14 +1,17 @@
 export const snapshot = {};
 
 snapshot[`bundle: prefix > js import 1`] = `
-'// lib/bundle_import/foo.js
-var foo_default = () => console.log("bundle_import/foo.js");
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// lib/bundle_import/foo.js
+var foo_default = /* @__PURE__ */ __name(() => console.log("bundle_import/foo.js"), "default");
 
 // lib/foo3.js
 console.log("/lib/foo3.js");
 
 // lib/foo4.js
-var foo4_default = () => console.log("/lib/foo4.js");
+var foo4_default = /* @__PURE__ */ __name(() => console.log("/lib/foo4.js"), "default");
 
 // lib/foo2.js
 console.log("/lib/foo2.js");
@@ -21,9 +24,9 @@ console.log("bundle_import/bar.js");
 
 // lib/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-var Component = () => {
+var Component = /* @__PURE__ */ __name(() => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
-};
+}, "Component");
 var component_default = Component;
 
 // url:https://esm.sh/v99/email-regex@5.0.0/es2022/email-regex.js
@@ -31,10 +34,11 @@ var e = "[^\\\\\\\\.\\\\\\\\s@:](?:[^\\\\\\\\s@:]*[^\\\\\\\\s@:\\\\\\\\.])?@[^\\
 function s({ exact: n2 } = {}) {
   return n2 ? new RegExp(\`^\${e}\$\`) : new RegExp(e, "g");
 }
+__name(s, "s");
 
 // url:https://esm.sh/v99/ip-regex@5.0.0/es2022/ip-regex.js
 var g = "[a-fA-F\\\\\\\\d:]";
-var d = (e2) => e2 && e2.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "";
+var d = /* @__PURE__ */ __name((e2) => e2 && e2.includeBoundaries ? \`(?:(?<=\\\\\\\\s|^)(?=\${g})|(?<=\${g})(?=\\\\\\\\s|\$))\` : "", "d");
 var c = "(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)(?:\\\\\\\\.(?:25[0-5]|2[0-4]\\\\\\\\d|1\\\\\\\\d\\\\\\\\d|[1-9]\\\\\\\\d|\\\\\\\\d)){3}";
 var \$ = "[a-fA-F\\\\\\\\d]{1,4}";
 var x = \`
@@ -53,7 +57,7 @@ var x = \`
 var n = new RegExp(\`(?:^\${c}\$)|(?:^\${x}\$)\`);
 var t = new RegExp(\`^\${c}\$\`);
 var v = new RegExp(\`^\${x}\$\`);
-var a = (e2) => e2 && e2.exact ? n : new RegExp(\`(?:\${d(e2)}\${c}\${d(e2)})|(?:\${d(e2)}\${x}\${d(e2)})\`, "g");
+var a = /* @__PURE__ */ __name((e2) => e2 && e2.exact ? n : new RegExp(\`(?:\${d(e2)}\${c}\${d(e2)})|(?:\${d(e2)}\${x}\${d(e2)})\`, "g"), "a");
 a.v4 = (e2) => e2 && e2.exact ? t : new RegExp(\`\${d(e2)}\${c}\${d(e2)}\`, "g");
 a.v6 = (e2) => e2 && e2.exact ? v : new RegExp(\`\${d(e2)}\${x}\${d(e2)}\`, "g");
 var r = a;

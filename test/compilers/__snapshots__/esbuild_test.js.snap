@@ -1,11 +1,14 @@
 export const snapshot = {};
 
 snapshot[`compilers/esbuild > Successful JSX build 1`] = `
-'// lib/component.jsx
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// lib/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-var Component = () => {
+var Component = /* @__PURE__ */ __name(() => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
-};
+}, "Component");
 var component_default = Component;
 export {
   component_default as default
@@ -15,13 +18,16 @@ export {
 `;
 
 snapshot[`compilers/esbuild > Import bare module 1`] = `
-'// lib/import_node_module.js
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// lib/import_node_module.js
 import myPackage from "/packages/mypackage/index.js";
 import isIp from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
-var import_node_module_default = () => {
+var import_node_module_default = /* @__PURE__ */ __name(() => {
   myPackage();
   isIp("?");
-};
+}, "default");
 export {
   import_node_module_default as default
 };
@@ -75,7 +81,10 @@ snapshot[`compilers/esbuild > allows returns error on unknown bare module 1`] = 
 `;
 
 snapshot[`compilers/esbuild > resolves nested node modules 1`] = `
-'// node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/button/dist/module.js
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// node_modules/.pnpm/@react-aria+button@3.6.3_react@18.2.0/node_modules/@react-aria/button/dist/module.js
 import { mergeProps as \$cE0pI\$mergeProps, filterDOMProps as \$cE0pI\$filterDOMProps, chain as \$cE0pI\$chain } from "/node_modules/.pnpm/@react-aria+utils@3.14.1_react@18.2.0/node_modules/@react-aria/utils/dist/module.js";
 import { useFocusable as \$cE0pI\$useFocusable } from "/node_modules/.pnpm/@react-aria+focus@3.10.0_react@18.2.0/node_modules/@react-aria/focus/dist/module.js";
 import { usePress as \$cE0pI\$usePress } from "/node_modules/.pnpm/@react-aria+interactions@3.13.0_react@18.2.0/node_modules/@react-aria/interactions/dist/module.js";
@@ -144,6 +153,7 @@ function \$701a24aa0da5b062\$export\$ea18c227d4417cc3(props, ref) {
     })
   };
 }
+__name(\$701a24aa0da5b062\$export\$ea18c227d4417cc3, "\$701a24aa0da5b062\$export\$ea18c227d4417cc3");
 function \$55f54f7887471b58\$export\$51e84d46ca0bc451(props, state, ref) {
   const { isSelected } = state;
   const { isPressed, buttonProps } = \$701a24aa0da5b062\$export\$ea18c227d4417cc3({
@@ -157,6 +167,7 @@ function \$55f54f7887471b58\$export\$51e84d46ca0bc451(props, state, ref) {
     })
   };
 }
+__name(\$55f54f7887471b58\$export\$51e84d46ca0bc451, "\$55f54f7887471b58\$export\$51e84d46ca0bc451");
 export {
   \$701a24aa0da5b062\$export\$ea18c227d4417cc3 as useButton,
   \$55f54f7887471b58\$export\$51e84d46ca0bc451 as useToggleButton
@@ -189,7 +200,10 @@ import emailRegex from "/url:https%3A%2F%2Fesm.sh%2Femail-regex";
 `;
 
 snapshot[`compilers/esbuild > npm module with relative import 1`] = `
-'// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
 import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
 import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
 var maxIPv6Length = 45;
@@ -199,6 +213,7 @@ var options = {
 function isIP(string) {
   return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
 }
+__name(isIP, "isIP");
 
 // lib/npm_module_with_relative_import.js
 isIP();
@@ -239,7 +254,10 @@ console.log(styles_module_default);
 `;
 
 snapshot[`compilers/esbuild > de-dupes side loaded ViewComponent default stylesheet - regular 1`] = `
-'// app/components/basic_react_component.module.css
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// app/components/basic_react_component.module.css
 var basic_react_component_module_default = new Proxy({}, { get(target, prop, receiver) {
   if (prop in target || typeof prop === "symbol") {
     return Reflect.get(target, prop, receiver);
@@ -250,9 +268,9 @@ var basic_react_component_module_default = new Proxy({}, { get(target, prop, rec
 
 // app/components/basic_react_component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-var basic_react_component_default = () => {
+var basic_react_component_default = /* @__PURE__ */ __name(() => {
   return /* @__PURE__ */ jsx("div", { className: basic_react_component_module_default.base, children: "Basic React Component" });
-};
+}, "default");
 export {
   basic_react_component_default as default
 };
@@ -261,7 +279,10 @@ export {
 `;
 
 snapshot[`compilers/esbuild > de-dupes side loaded ViewComponent default stylesheet - sidecar 1`] = `
-'// app/components/basic_react/component.module.css
+'var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
+// app/components/basic_react/component.module.css
 var component_module_default = new Proxy({}, { get(target, prop, receiver) {
   if (prop in target || typeof prop === "symbol") {
     return Reflect.get(target, prop, receiver);
@@ -272,9 +293,9 @@ var component_module_default = new Proxy({}, { get(target, prop, receiver) {
 
 // app/components/basic_react/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-var component_default = () => {
+var component_default = /* @__PURE__ */ __name(() => {
   return /* @__PURE__ */ jsx("div", { className: component_module_default.base, children: "Basic React Component" });
-};
+}, "default");
 export {
   component_default as default
 };
