@@ -5,6 +5,7 @@ require_relative 'test_helper'
 class SideLoadTest < ActionDispatch::IntegrationTest
   setup do
     Proscenium.config.cache_query_string = false
+    Proscenium.reset_current_side_loaded
   end
 
   test '.append' do

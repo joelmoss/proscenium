@@ -3,6 +3,10 @@
 require_relative '../test_helper'
 
 class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
+  setup do
+    Proscenium.reset_current_side_loaded
+  end
+
   test 'side load component js and css' do
     Phlex::SideLoadView.new.call
 

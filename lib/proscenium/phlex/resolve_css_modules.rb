@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 module Proscenium::Phlex::ResolveCssModules
-  def _attributes(**attributes)
+  def resolve_attributes(**attributes)
     attributes[:class] = resolve_css_modules(tokens(attributes[:class])) if attributes.key?(:class)
 
-    super(**attributes)
+    attributes
   end
 
   private
