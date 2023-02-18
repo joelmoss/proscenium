@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
+gem 'benchmark-ips'
 gem 'combustion'
 gem 'down'
 gem 'maxitest'

@@ -40,6 +40,7 @@ module Proscenium
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
+    config.proscenium.css_mixin_paths = Set[]
 
     # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
     #
