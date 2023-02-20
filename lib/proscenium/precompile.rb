@@ -22,7 +22,7 @@ module Proscenium
 
     def cli(type)
       if ENV['PROSCENIUM_TEST']
-        "deno run -q --import-map import_map.json -A lib/proscenium/compilers/#{type}.js"
+        "deno run -q -A lib/proscenium/compilers/#{type}.js"
       else
         Gem.bin_path 'proscenium', type.to_s
       end

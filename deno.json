@@ -1,17 +1,27 @@
 {
-  "importMap": "./import_map.json",
+  "imports": {
+    "std/": "https://deno.land/std@0.177.0/",
+    "testing/": "https://deno.land/std@0.177.0/testing/",
+    "cache": "https://deno.land/x/cache@0.2.13/mod.ts",
+    "esbuild": "https://deno.land/x/esbuild@v0.17.9/mod.js",
+    "postcss": "https://deno.land/x/postcss@8.4.16/mod.js",
+    "camelcase": "https://deno.land/x/camelcase@v2.1.0/mod.ts",
+    "camelcase-keys": "https://esm.sh/camelcase-keys@8.0.2",
+    "deepmerge": "https://esm.sh/deepmerge@4.3.0",
+    "yaml": "https://esm.sh/yaml@2.2.1"
+  },
   "tasks": {
     "test": "deno test --allow-env --allow-read --allow-run test",
-    "test-esbuild-compiler": "deno run -q --import-map import_map.json -A lib/proscenium/compilers/esbuild.js",
-    "compile:esbuild:macm": "deno compile --no-config -o bin/esbuild-macm --import-map import_map.json -A --target aarch64-apple-darwin lib/proscenium/compilers/esbuild.js",
-    "compile:esbuild:macintel": "deno compile --no-config -o bin/esbuild-macintel --import-map import_map.json -A --target x86_64-apple-darwin lib/proscenium/compilers/esbuild.js",
-    "compile:esbuild:linux": "deno compile --no-config -o bin/esbuild-linux --import-map import_map.json -A --target x86_64-unknown-linux-gnu lib/proscenium/compilers/esbuild.js",
+    "test-esbuild-compiler": "deno run -q -A lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:macm": "deno compile -o bin/esbuild-macm -A --target aarch64-apple-darwin lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:macintel": "deno compile -o bin/esbuild-macintel  -A --target x86_64-apple-darwin lib/proscenium/compilers/esbuild.js",
+    "compile:esbuild:linux": "deno compile -o bin/esbuild-linux -A --target x86_64-unknown-linux-gnu lib/proscenium/compilers/esbuild.js",
     "compile:esbuild:all": "deno task compile:esbuild:macm && deno task compile:esbuild:macintel && deno task compile:esbuild:linux"
   },
   "files": {
-    "exclude": ["lib/proscenium/runtime", "test/internal"]
+    "exclude": ["lib/proscenium/runtime", "test/internal", "test/external"]
   },
   "test": { "files": { "include": ["test/"] } },
-  "lint": { "files": { "exclude": ["test/internal/"] } },
-  "fmt": { "files": { "exclude": ["test/internal/"] } }
+  "lint": { "files": { "exclude": ["test/internal/", "test/external"] } },
+  "fmt": { "files": { "exclude": ["test/internal/", "test/external"] } }
 }

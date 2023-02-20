@@ -17,7 +17,7 @@ CLOBBER.include 'pkg'
 task default: %i[test rubocop]
 task release: %i[build push]
 
-LIGHTNINGCSS_VERSION = '1.18.0'
+LIGHTNINGCSS_VERSION = '1.19.0'
 PLATFORMS = {
   'x86_64-linux' => {
     deno: 'x86_64-unknown-linux-gnu',
@@ -63,7 +63,7 @@ PLATFORMS.each do |platform, values|
   desc "Compile esbuild for #{platform}"
   task "compile:esbuild:#{platform}" => 'clobber:bin:esbuild' do
     puts ''
-    sh 'deno', 'compile', '--no-config', '-o', 'bin/esbuild', '--import-map', 'import_map.json',
+    sh 'deno', 'compile', '-o', 'bin/esbuild',
        '-A', '--target', values[:deno], 'lib/proscenium/compilers/esbuild.js'
   end
 

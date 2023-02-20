@@ -1,6 +1,6 @@
-import { assertSnapshot } from 'std/testing/snapshot.ts'
+import { assertSnapshot } from 'testing/snapshot.ts'
 import { join } from 'std/path/mod.ts'
-import { beforeEach, describe, it } from 'std/testing/bdd.ts'
+import { beforeEach, describe, it } from 'testing/bdd.ts'
 
 import main from '../../lib/proscenium/compilers/esbuild.js'
 
