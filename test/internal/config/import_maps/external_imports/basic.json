@@ -1,0 +1,5 @@
+{
+  "imports": {
+    "object-assign": "@external/three/src/object_assign"
+  }
+}

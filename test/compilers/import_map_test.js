@@ -69,6 +69,36 @@ describe('import map', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
+  it('should use root as resolveDir', async t => {
+    const result = await main('lib/import_map/nested/index.js', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/external_imports/basic.json'
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
+  it('should use root as resolveDir when using bundle: prefix', async t => {
+    const result = await main('npm:@external/three/src/prop_types', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/external_imports/bundle.json'
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
+  it('should use root as resolveDir when using bundle-all: prefix', async t => {
+    const result = await main('npm:@external/three/src/prop_types', {
+      root,
+      lightningcssBin,
+      importMap: 'config/import_maps/external_imports/bundle-all.json'
+    })
+
+    await assertSnapshot(t, new TextDecoder().decode(result))
+  })
+
   it('maps imports via trailing slash', async () => {
     const result = await main('lib/component.jsx', {
       root,
