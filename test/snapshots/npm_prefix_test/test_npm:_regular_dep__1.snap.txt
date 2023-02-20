@@ -1,3 +1,6 @@
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
 // node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js
 import ipRegex from "/node_modules/.pnpm/ip-regex@5.0.0/node_modules/ip-regex/index.js";
 import { isMatch } from "/node_modules/.pnpm/super-regex@0.2.0/node_modules/super-regex/index.js";
@@ -9,15 +12,19 @@ var options = {
 function isIP(string) {
   return isMatch(ipRegex({ exact: true }), string.slice(0, maxIPv6Length), options);
 }
+__name(isIP, "isIP");
 function isIPv6(string) {
   return isMatch(ipRegex.v6({ exact: true }), string.slice(0, maxIPv6Length), options);
 }
+__name(isIPv6, "isIPv6");
 function isIPv4(string) {
   return isMatch(ipRegex.v4({ exact: true }), string.slice(0, maxIPv4Length), options);
 }
+__name(isIPv4, "isIPv4");
 function ipVersion(string) {
   return isIP(string) ? isIPv6(string) ? 6 : 4 : void 0;
 }
+__name(ipVersion, "ipVersion");
 export {
   ipVersion,
   isIP,

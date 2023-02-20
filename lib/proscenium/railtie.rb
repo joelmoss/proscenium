@@ -17,10 +17,11 @@ module Proscenium
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     npm: %r{^/npm:.+},
+    gem: %r{^/gem:.+},
     url: %r{^/url:https?%3A%2F%2F}
   }.freeze
 
-  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules', 'ruby_gems'].freeze
+  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
 
   class << self
     def config
@@ -39,6 +40,7 @@ module Proscenium
     config.proscenium.auto_reload_paths ||= %w[lib app config]
     config.proscenium.auto_reload_extensions ||= /\.(css|jsx?)$/
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
+    config.proscenium.css_mixin_paths = Set[]
 
     # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
     #

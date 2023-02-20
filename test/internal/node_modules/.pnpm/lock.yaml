@@ -1,6 +1,7 @@
 lockfileVersion: 5.4
 
 specifiers:
+  '@external/three': link:../external/three
   '@proscenium/component-manager': ^0.1.4
   '@rails/actioncable': ^7.0.4
   '@react-aria/button': ^3.6.3
@@ -15,6 +16,7 @@ specifiers:
   react-dom: ^18.2.0
 
 dependencies:
+  '@external/three': link:../external/three
   '@proscenium/component-manager': 0.1.4_biqbaboplfbrettd7655fr4n2y
   '@react-aria/button': 3.6.3_react@18.2.0
   date-fns: 2.29.3

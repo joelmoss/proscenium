@@ -19,7 +19,7 @@ configuration at all!
 - Minification.
 - Auto reload after changes (development only).
 
-## !! EXPERIMENTAL SOFTWARE !!
+## ⚠️ EXPERIMENTAL SOFTWARE ⚠️
 
 While my goal is to use Proscenium in production, I strongly recommended that you **DO NOT** use
 this in production apps! Right now, this is a play thing, and should only be used for
@@ -33,7 +33,7 @@ Add this line to your application's Gemfile, and you're good to go:
 gem 'proscenium'
 ```
 
-## Frontend Code Anywhere!
+## Frontend Code Anywhere
 
 Proscenium believes that your frontend code is just as important as your backend code, and is not an
 afterthought - they should be first class citizens of your Rails app. So instead of throwing all
@@ -312,6 +312,50 @@ Proscenium brings back rjs! Any path ending in .rjs will be served from your Rai
 Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.
 
 This allows your frontend code to become first class citizens of you Rails application.
+
+### Serving Assets by URL
+
+Proscenium's primary function is a Rails middleware that intercepts URL's beginning with
+`/proscenium`, and ending with any one of the supported file extensions (.js, .css, .jsx).
+
+#### Serving from local project
+
+`/proscenium/[path]`
+
+The `path` should map to a path in your Rails project, starting at the root (`Rails.root`).
+
+For example, the URL `/proscenium/app/views/layouts/application.js` will serve the file at
+`[Rails.root]/app/views/layouts/application.js`.
+
+#### Serving from NPM package
+
+`/proscenium/npm:[path]`
+
+If you have a package.json in your project, which includes dependencies, you can also serve these
+with Proscenium.
+
+For example, the URL `/proscenium/npm:react` will use your package dependencies to resolve `react`.
+
+#### Serving from Ruby Gem
+
+`/proscenium/gem:[path]`
+
+Serving assets from a Ruby Gem is also possible. However, any NPM dependencies will fail to resolve.
+This is because your package manager will not be aware of them. If your Gem has dependencies from
+NPM, then you should publish it as a package on NPM, and require it in your project.
+
+For example, the URL `/proscenium/gem:my_gem/lib/stuff.css` will serve the file at
+`[GEMS_PATH]/my_gem/lib/stuff.css`.
+
+#### Serving from a URL
+
+`/proscenium/url:[ENCODED_URL]`
+
+You can serve assets from any URL, such as a CDN. Simply use encode the URL.
+
+For example, to serve the canvas-confetti package from `https://esm.sh/canvas-confetti@1.6.0`,
+simply encode it, and append to `/proscenium/url:`. It will like
+`/proscenium/url:https%3A%2F%2Fesm.sh%2Fcanvas-confetti%401.6.0`.
 
 ## Development
 

@@ -14,6 +14,7 @@ module Proscenium
   autoload :Helper
   autoload :LinkToHelper
   autoload :Precompile
+  autoload :Esbuild
 
   def self.logger
     @logger ||= Rails.logger.tagged('Proscenium')
@@ -58,7 +59,7 @@ module Proscenium
     #
     # @param path [Pathname]
     # @return [Array] the root, relative path, and URL path.
-    def path_pieces(path)
+    def path_pieces(path) # rubocop:disable Metrics/AbcSize
       spath = path.to_s
 
       matched_gem = Proscenium.config.side_load_gems.find do |_name, options|
@@ -68,7 +69,14 @@ module Proscenium
       if matched_gem
         sroot = "#{matched_gem[1][:root]}/"
         relpath = spath.delete_prefix(sroot)
-        return [sroot, relpath, "npm:#{matched_gem[1][:package_name] || matched_gem[0]}/#{relpath}"]
+
+        urlpath = if matched_gem[1][:package_name]
+                    "npm:#{matched_gem[1][:package_name]}"
+                  else
+                    "gem:#{matched_gem[0]}"
+                  end
+
+        return [sroot, relpath, "#{urlpath}/#{relpath}"]
       end
 
       sroot = "#{Rails.root}/"

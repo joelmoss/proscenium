@@ -79,11 +79,9 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'esbuild js compilation error' do
-    get '/lib/includes_error.js'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
+    assert_raises Proscenium::Middleware::Esbuild::CompileError do
+      get '/lib/includes_error.js'
+    end
   end
 
   test 'source map' do

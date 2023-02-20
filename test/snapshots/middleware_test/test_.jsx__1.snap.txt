@@ -1,8 +1,11 @@
+var __defProp = Object.defineProperty;
+var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
+
 // lib/component.jsx
 import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-var Component = () => {
+var Component = /* @__PURE__ */ __name(() => {
   return /* @__PURE__ */ jsx("div", { children: "Hello" });
-};
+}, "Component");
 var component_default = Component;
 export {
   component_default as default

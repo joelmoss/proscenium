@@ -3,6 +3,10 @@
 require_relative '../test_helper'
 
 class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
+  setup do
+    Proscenium.reset_current_side_loaded
+  end
+
   test 'side load component js and css' do
     Phlex::SideLoadView.new.call
 
@@ -44,8 +48,8 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
     Gem1::Views::User.new.call
 
     assert_equal({
-                   js: Set['npm:gem1/app/views/user.js'],
-                   css: Set['npm:gem1/app/views/user.css']
+                   js: Set['gem:gem1/app/views/user.js'],
+                   css: Set['gem:gem1/app/views/user.css']
                  }, Proscenium::Current.loaded)
   end
 end

@@ -12,6 +12,7 @@ module Proscenium
     autoload :Runtime
     autoload :Url
     autoload :Npm
+    autoload :Gem
 
     def initialize(app)
       @app = app
@@ -41,6 +42,7 @@ module Proscenium
 
       return Url if request.path.match?(glob_types[:url])
       return Npm if request.path.match?(glob_types[:npm])
+      return Gem if request.path.match?(glob_types[:gem])
       return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end

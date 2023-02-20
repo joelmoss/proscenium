@@ -21,80 +21,10 @@ module Proscenium
 
       def attempt
         benchmark :esbuild do
-          render_response build([
-            "#{cli} --root #{root}",
-            cache_query_string,
-            css_mixin_paths,
-            # (ruby_gem? && import_map? ? "--import-map #{import_map_path}" : nil),
-            "--lightningcss-bin #{lightningcss_cli} #{path_to_build}"
-          ].compact.join(' '))
+          render_response Proscenium::Esbuild.build(path_to_build, root: root)
         end
-      end
-
-      private
-
-      # @override [Esbuild] Support paths prefixed with '/ruby_gems/' by rewriting the root to be
-      # the the path of the gem.
-      def renderable?
-        if ruby_gem?
-          gem_name = path_to_build.split(File::SEPARATOR)[1]
-          @root = Pathname.new(Bundler.rubygems.loaded_specs(gem_name).full_gem_path)
-          @request.path_info = @request.path_info.delete_prefix("/ruby_gems/#{gem_name}")
-        end
-
-        super
-      end
-
-      # @return [String] the path to the file which will be built.
-      def path_to_build
-        @request.path[1..]
-      end
-
-      def sourcemap?
-        @request.path.ends_with?('.map')
-      end
-
-      def ruby_gem?
-        if instance_variable_defined?(:@is_ruby_gem)
-          @is_ruby_gem
-        else
-          @is_ruby_gem = @request.path.starts_with?('/ruby_gems/')
-        end
-      end
-
-      def import_map?
-        !import_map_path.nil?
-      end
-
-      def import_map_path
-        if (js_map = Rails.root.join('config', 'import_map.js')).exist?
-          js_map
-        elsif (json_map = Rails.root.join('config', 'import_map.json')).exist?
-          json_map
-        end
-      end
-
-      def css_mixin_paths
-        Proscenium.config.css_mixin_paths.map do |mpath|
-          "--css-mixin-path #{mpath}"
-        end.join ' '
-      end
-
-      def cli
-        if ENV['PROSCENIUM_TEST']
-          'deno run -q --import-map import_map.json -A lib/proscenium/compilers/esbuild.js'
-        else
-          Gem.bin_path 'proscenium', 'esbuild'
-        end
-      end
-
-      def lightningcss_cli
-        ENV['PROSCENIUM_TEST'] ? 'bin/lightningcss' : Gem.bin_path('proscenium', 'lightningcss')
-      end
-
-      def cache_query_string
-        q = Proscenium.config.cache_query_string
-        q ? "--cache-query-string #{q}" : nil
+      rescue Proscenium::Esbuild::CompileError => e
+        raise self.class::CompileError, { file: @request.fullpath, detail: e.message }, caller
       end
     end
   end
