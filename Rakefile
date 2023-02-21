@@ -33,6 +33,11 @@ PLATFORMS = {
   }
 }.freeze
 
+desc 'Build golib'
+task 'build:golib' => 'clobber:golib' do
+  `go build -buildmode=c-shared -o lib/proscenium/esbuild/golib.so lib/proscenium/esbuild/golib.go`
+end
+
 desc 'Build Proscenium gems into the pkg directory.'
 task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
 
@@ -95,15 +100,22 @@ end
 
 task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:lightningcss']
 
+desc 'Clobber golib'
+task 'clobber:golib' do
+  FileUtils.rm 'lib/proscenium/esbuild/golib.h', force: true
+  FileUtils.rm 'lib/proscenium/esbuild/golib.so', force: true
+end
+
 desc 'Clobber esbuild binary'
 task 'clobber:bin:esbuild' do
   FileUtils.rm 'bin/esbuild', force: true
 end
+
 desc 'Clobber lightningcss binary'
 task 'clobber:bin:lightningcss' do
   FileUtils.rm 'bin/lightningcss', force: true
 end
 
 Rake::Task['clobber'].tap do |task|
-  task.enhance ['clobber:bin']
+  task.enhance ['clobber:bin', 'clobber:golib']
 end
