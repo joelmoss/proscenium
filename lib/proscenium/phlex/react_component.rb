@@ -43,7 +43,7 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
   #   is loading and rendered.
   def template
     div class: ['componentManagedByProscenium', component_class_name],
-        data: { component: { path: virtual_path, props: props, lazy: lazy }.to_json } do
+        data: { component: component_data } do
       block_given? ? div(yield) : div { 'loading...' }
     end
   end
@@ -56,6 +56,14 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
 
   def lazy
     instance_variable_defined?(:@lazy) ? @lazy : (@lazy = false)
+  end
+
+  def component_data
+    {
+      path: virtual_path,
+      props: props.deep_transform_keys { |k| k.to_s.camelize :lower },
+      lazy: lazy
+    }.to_json
   end
 
   def component_class_name
