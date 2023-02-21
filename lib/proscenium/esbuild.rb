@@ -4,6 +4,10 @@ module Proscenium
   class Esbuild
     class CompileError < StandardError; end
 
+    extend ActiveSupport::Autoload
+
+    autoload :Golib
+
     def self.build(...)
       new(...).build
     end
@@ -14,11 +18,12 @@ module Proscenium
     end
 
     def build
-      stdout, stderr, status = Open3.capture3(command)
+      Proscenium::Esbuild::Golib.build "#{@root}/#{@path}"
 
-      raise CompileError, stderr if !status.success? || !stderr.empty?
+      # stdout, stderr, status = Open3.capture3(command)
+      # raise CompileError, stderr if !status.success? || !stderr.empty?
 
-      stdout
+      # stdout
     end
 
     private

@@ -3,7 +3,7 @@ PATH
   specs:
     proscenium (0.6.0)
       activesupport (>= 6.1.0, < 8.0)
-      concurrent-ruby (~> 1.2.2)
+      ffi (~> 1.15.5)
       nokogiri (~> 1.13)
       oj (~> 3.13)
       phlex (~> 1.8.1)
@@ -112,6 +112,7 @@ GEM
     erb (4.0.2)
       cgi (>= 0.3.3)
     erubi (1.12.0)
+    ffi (1.15.5)
     globalid (1.1.0)
       activesupport (>= 5.0)
     i18n (1.12.0)
