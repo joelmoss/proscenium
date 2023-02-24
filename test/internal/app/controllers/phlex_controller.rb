@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class PhlexController < ApplicationController
-  layout false
+  layout -> { Views::Layouts::Application }
 
   def basic
     render Views::Phlex::Basic.new
