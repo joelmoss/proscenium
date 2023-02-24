@@ -1,9 +1,9 @@
-# frozen_string_literal: true
-
 class Views::Phlex::Basic < Proscenium::Phlex
-  include Proscenium::Phlex::Layout
+  include Proscenium::Phlex::Page
 
   def template
-    h1 { 'Hello' }
+    super do
+      h1 { 'Hello' }
+    end
   end
 end

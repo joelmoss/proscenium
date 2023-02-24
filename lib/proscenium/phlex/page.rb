@@ -2,21 +2,10 @@
 
 require 'phlex/rails'
 
-module Proscenium::Phlex::Layout
-  include Phlex::Rails::Helpers::CSPMetaTag
-  include Phlex::Rails::Helpers::CSRFMetaTags
-  include Phlex::Rails::Helpers::FaviconLinkTag
-  include Phlex::Rails::Helpers::PreloadLinkTag
-  include Phlex::Rails::Helpers::StyleSheetLinkTag
-  include Phlex::Rails::Helpers::ActionCableMetaTag
-  include Phlex::Rails::Helpers::AutoDiscoveryLinkTag
-  include Phlex::Rails::Helpers::JavaScriptIncludeTag
-  include Phlex::Rails::Helpers::JavaScriptImportMapTags
-  include Phlex::Rails::Helpers::JavaScriptImportModuleTag
-
-  def self.included(klass)
-    klass.extend(Phlex::Rails::Layout::Interface)
-  end
+# Include this in your view for additional logic for rendering a full HTML page, usually from a
+# controller.
+module Proscenium::Phlex::Page
+  include Phlex::Rails::Layout
 
   def template(&block)
     doctype

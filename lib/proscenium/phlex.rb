@@ -7,7 +7,7 @@ module Proscenium
     extend ActiveSupport::Autoload
     include Proscenium::CssModule
 
-    autoload :Layout
+    autoload :Page
     autoload :ReactComponent
     autoload :ResolveCssModules
     autoload :ComponentConcerns
