@@ -12,7 +12,7 @@ module Proscenium
 
     module Builder
       extend FFI::Library
-      ffi_lib "#{__dir__}/golib.so"
+      ffi_lib 'main.so'
 
       enum :environment, [:development, 1, :test, :production]
 

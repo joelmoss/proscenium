@@ -35,7 +35,7 @@ PLATFORMS = {
 
 desc 'Build golib'
 task 'build:golib' => 'clobber:golib' do
-  `go build -buildmode=c-shared -o lib/proscenium/esbuild/golib.so lib/proscenium/esbuild/golib.go`
+  `go build -buildmode=c-shared -o main.so main.go`
 end
 
 desc 'Build Proscenium gems into the pkg directory.'

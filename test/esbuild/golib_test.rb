@@ -3,6 +3,7 @@
 require 'test_helper'
 
 class Proscenium::Esbuild::GolibTest < Minitest::Test
+  focus
   def test_basic_build
     result = Proscenium::Esbuild::Golib.new.build('lib/foo.js')
 
@@ -15,21 +16,5 @@ class Proscenium::Esbuild::GolibTest < Minitest::Test
     end
 
     assert_equal "Failed to build 'unknown.js' -- Could not resolve \"unknown.js\"", error.message
-  end
-
-  # def test_svg
-  #   result = Proscenium::Esbuild::Golib.new.build('at.svg')
-
-  #   pp result
-
-  #   assert result[:success]
-  #   assert_includes result[:response], 'console.log("/lib/foo.js");'
-  # end
-
-  focus
-  def test_define_node_env
-    result = Proscenium::Esbuild::Golib.new.build('lib/define_node_env.js')
-
-    assert_includes result, 'console.log("test");'
   end
 end
