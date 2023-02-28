@@ -6,37 +6,44 @@ import (
 	"path"
 	"testing"
 
-	"github.com/gkampitakis/go-snaps/snaps"
-	"github.com/k0kubun/pp/v3"
+	"github.com/evanw/esbuild/pkg/api"
 	"github.com/stretchr/testify/assert"
 )
 
-func root() string {
-	cwd, _ := os.Getwd()
-	return path.Join(cwd, "../", "test", "internal")
+var cwd, _ = os.Getwd()
+var root string = path.Join(cwd, "../", "test", "internal")
+var outDir string = path.Join(root, "public/assets")
+
+func build(path string) api.BuildResult {
+	return golib.Build(golib.BuildOptions{
+		Path: path,
+		Root: root,
+		Env:  2,
+	})
 }
 
-func TestBasic(t *testing.T) {
-	result := golib.Build("lib/foo.js", root(), 2, false)
+func TestBuild(t *testing.T) {
+	t.Run("simple js", func(t *testing.T) {
+		result := build("lib/foo.js")
 
-	snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))
-}
+		assert.Contains(t, string(result.OutputFiles[0].Contents), "console.log(\"/lib/foo.js\")")
+	})
 
-func TestUnknownPath(t *testing.T) {
-	result := golib.Build("unknown.js", root(), 2, false)
+	t.Run("unknown entrypoint", func(t *testing.T) {
+		result := build("unknown.js")
 
-	assert.Equal(t, result.Errors[0].Text, "Could not resolve \"unknown.js\"")
-}
+		assert.Equal(t, result.Errors[0].Text, "Could not resolve \"unknown.js\"")
+	})
 
-func TestSvg(t *testing.T) {
-	result := golib.Build("lib/svg/component.jsx", root(), 2, false)
+	t.Run("jsx", func(t *testing.T) {
+		result := build("lib/component.jsx")
 
-	pp.Println(result)
-	snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))
-}
+		assert.Equal(t, result.OutputFiles[0].Path, path.Join(outDir, "lib/component.js"))
+	})
 
-func TestNodeEnv(t *testing.T) {
-	result := golib.Build("lib/define_node_env.js", root(), 2, false)
+	t.Run("NODE_ENV is defined", func(t *testing.T) {
+		result := build("lib/define_node_env.js")
 
-	snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))
+		assert.Contains(t, string(result.OutputFiles[0].Contents), "console.log(\"test\")")
+	})
 }

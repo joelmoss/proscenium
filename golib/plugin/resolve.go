@@ -5,7 +5,7 @@ import (
 )
 
 var Resolve = api.Plugin{
-	Name: "svg",
+	Name: "resolve",
 	Setup: func(build api.PluginBuild) {
 		// build.OnResolve(api.OnResolveOptions{Filter: `\.svg$`},
 		// 	func(args api.OnResolveArgs) (api.OnResolveResult, error) {

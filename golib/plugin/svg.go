@@ -16,9 +16,6 @@ var Svg = api.Plugin{
 	Setup: func(build api.PluginBuild) {
 		var publicPath = filepath.Join(build.InitialOptions.AbsWorkingDir, "public")
 
-		// Intercept import paths called "env" so esbuild doesn't attempt
-		// to map them to a file system location. Tag them with the "env-ns"
-		// namespace to reserve them for this plugin.
 		build.OnResolve(api.OnResolveOptions{Filter: `\.svg$`},
 			func(args api.OnResolveArgs) (api.OnResolveResult, error) {
 				if args.Kind == api.ResolveJSImportStatement && strings.HasSuffix(args.Importer, ".jsx") {

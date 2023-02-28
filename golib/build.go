@@ -20,6 +20,13 @@ func (e Environment) String() string {
 	return [...]string{"development", "test", "production"}[e-1]
 }
 
+type BuildOptions struct {
+	Path  string
+	Root  string
+	Env   Environment
+	Debug bool
+}
+
 // Build the given `path` in the `root`.
 //
 //	path - The path to build relative to `root`.
@@ -27,11 +34,11 @@ func (e Environment) String() string {
 //	env  - The environment (1 = development, 2 = test, 3 = production)
 //
 //export build
-func Build(path string, root string, env Environment, debug bool) api.BuildResult {
-	minify := !debug && env != TestEnv
+func Build(options BuildOptions) api.BuildResult {
+	minify := !options.Debug && options.Env != TestEnv
 
 	logLevel := func() api.LogLevel {
-		if debug {
+		if options.Debug {
 			return api.LogLevelDebug
 		} else {
 			return api.LogLevelSilent
@@ -39,22 +46,22 @@ func Build(path string, root string, env Environment, debug bool) api.BuildResul
 	}
 
 	result := api.Build(api.BuildOptions{
-		EntryPoints:       []string{path},
-		AbsWorkingDir:     root,
+		EntryPoints:       []string{options.Path},
+		AbsWorkingDir:     options.Root,
 		LogLevel:          logLevel(),
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
 		Format:            api.FormatESModule,
 		JSX:               api.JSXAutomatic,
-		JSXDev:            env != TestEnv && env != ProdEnv,
+		JSXDev:            options.Env != TestEnv && options.Env != ProdEnv,
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
-		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", env)},
+		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", options.Env)},
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		KeepNames:         env != ProdEnv,
+		KeepNames:         options.Env != ProdEnv,
 		Write:             false,
 		// Sourcemap: isSourceMap ? 'external' : false,
 
