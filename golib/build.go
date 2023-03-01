@@ -70,7 +70,7 @@ func Build(options BuildOptions) api.BuildResult {
 		// uses CJS.
 		MainFields: []string{"module", "browser", "main"},
 
-		Plugins: []api.Plugin{plugin.Svg, plugin.Resolve},
+		Plugins: []api.Plugin{plugin.Svg, plugin.Url},
 	})
 
 	return result
