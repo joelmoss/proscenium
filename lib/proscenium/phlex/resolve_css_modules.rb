@@ -1,10 +1,28 @@
 # frozen_string_literal: true
 
 module Proscenium::Phlex::ResolveCssModules
+  extend ActiveSupport::Concern
+
+  class_methods do
+    attr_accessor :side_load_cache
+  end
+
+  def before_template
+    self.class.side_load_cache ||= Set.new
+    super
+  end
+
   def process_attributes(**attributes)
     attributes[:class] = resolve_css_modules(tokens(attributes[:class])) if attributes.key?(:class)
-
     attributes
+  end
+
+  def after_template
+    super
+
+    self.class.side_load_cache&.each do |path|
+      Proscenium::SideLoad.append! path, :css
+    end
   end
 
   private
@@ -12,12 +30,18 @@ module Proscenium::Phlex::ResolveCssModules
   # Resolves the given HTML class name or path as a CSS module.
   #
   # @param value [String] HTML class name or path to resolve.
-  def resolve_css_modules(value)
+  def resolve_css_modules(value) # rubocop:disable Metrics/AbcSize
     if value.include?('/') && Rails.application.config.proscenium.side_load
       value.split.map { |path| resolve_css_module_path path }.join ' '
     elsif value.include?('@')
       value.split.map do |cls|
-        cls.starts_with?('@') ? cssm.class_names!(cls[1..]) : cls
+        if cls.starts_with?('@')
+          classes = cssm.class_names!(cls[1..])
+          cssm.side_loaded? && self.class.side_load_cache.merge(cssm.side_loaded_paths)
+          classes
+        else
+          cls
+        end
       end.join ' '
     else
       value
@@ -42,9 +66,7 @@ module Proscenium::Phlex::ResolveCssModules
       path, name = path.split('@')
     end
 
-    path = "#{path}.module.css"
-
-    Proscenium::SideLoad.append! path, :css
+    self.class.side_load_cache << (path = "#{path}.module.css")
     Proscenium::Utils.class_names name, hash: Proscenium::Utils.digest(path)
   end
 end

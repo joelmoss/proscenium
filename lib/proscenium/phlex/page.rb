@@ -30,6 +30,11 @@ module Proscenium::Phlex::Page
 
   private
 
+  def after_template
+    super
+    @_target.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { side_load_stylesheets })
+  end
+
   def page_title
     Rails.application.class.name.deconstantize
   end
@@ -53,14 +58,6 @@ module Proscenium::Phlex::Page
 
       side_load_javascripts defer: true, type: :module
       Rails.env.development? && proscenium_dev
-    end
-  end
-
-  def html
-    super do
-      yield
-
-      @_target.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { side_load_stylesheets })
     end
   end
 end

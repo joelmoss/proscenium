@@ -12,6 +12,8 @@ class Proscenium::CssModule::Resolver
     end
   end
 
+  attr_reader :side_loaded_paths
+
   def initialize(path, side_load: true, hash: nil)
     raise ArgumentError, "'#{path}' must be a `Pathname`" unless path.is_a?(Pathname)
 
@@ -19,6 +21,7 @@ class Proscenium::CssModule::Resolver
     @hash = hash
     @css_module_path = path.sub_ext('.module.css')
     @side_load = side_load
+    @side_loaded_paths = nil
   end
 
   # Parses the given `content` for CSS modules names ('class' attributes beginning with '@'), and
@@ -60,6 +63,10 @@ class Proscenium::CssModule::Resolver
     class_names(...)
   end
 
+  def side_loaded?
+    @side_loaded_paths.present?
+  end
+
   private
 
   def hash
@@ -69,7 +76,7 @@ class Proscenium::CssModule::Resolver
   def side_load_css_module
     return if !@side_load || !Rails.application.config.proscenium.side_load
 
-    paths = Proscenium::SideLoad.append @path, { '.module.css' => :css }
-    @hash = Proscenium::Utils.digest(paths[0])
+    @side_loaded_paths = Proscenium::SideLoad.append @path, { '.module.css' => :css }
+    @hash = Proscenium::Utils.digest(@side_loaded_paths[0])
   end
 end

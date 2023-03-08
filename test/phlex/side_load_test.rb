@@ -3,12 +3,14 @@
 require_relative '../test_helper'
 
 class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
+  include Phlex::Testing::Rails::ViewHelper
+
   setup do
     Proscenium.reset_current_side_loaded
   end
 
   test 'side load component js and css' do
-    Phlex::SideLoadView.new.call
+    render Phlex::SideLoadView.new
 
     assert_equal({
                    js: Set['app/components/phlex/side_load_view.js'],
@@ -17,7 +19,7 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   end
 
   test 'nested side load' do
-    Phlex::NestedSideLoadView.new.call
+    render Phlex::NestedSideLoadView.new
 
     assert_equal({
                    js: Set['app/components/phlex/side_load_view.js'],
@@ -27,7 +29,7 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   end
 
   test 'should not side load css module when css_module not used' do
-    Phlex::SideLoadCssModuleView.new(false).call
+    render Phlex::SideLoadCssModuleView.new(false)
 
     assert_equal({
                    js: Set[],
@@ -36,7 +38,7 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   end
 
   test 'should side load css module when css_module used' do
-    Phlex::SideLoadCssModuleView.new(true).call
+    render Phlex::SideLoadCssModuleView.new(true)
 
     assert_equal({
                    js: Set[],
@@ -45,7 +47,7 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   end
 
   test 'side load from ruby gem' do
-    Gem1::Views::User.new.call
+    render Gem1::Views::User.new
 
     assert_equal({
                    js: Set['gem:gem1/app/views/user.js'],
