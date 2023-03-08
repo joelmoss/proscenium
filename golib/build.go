@@ -2,7 +2,9 @@ package golib
 
 import (
 	"fmt"
+	"path"
 
+	"joelmoss/proscenium/golib/importmap"
 	plugin "joelmoss/proscenium/golib/plugin"
 
 	"github.com/evanw/esbuild/pkg/api"
@@ -21,17 +23,19 @@ func (e Environment) String() string {
 }
 
 type BuildOptions struct {
-	Path  string
-	Root  string
-	Env   Environment
-	Debug bool
+	Path      string
+	Root      string
+	ImportMap string
+	Env       Environment
+	Debug     bool
 }
 
 // Build the given `path` in the `root`.
 //
 //	path - The path to build relative to `root`.
 //	root - The working directory.
-//	env  - The environment (1 = development, 2 = test, 3 = production)
+//	env - The environment (1 = development, 2 = test, 3 = production)
+//	importMap - Path to an import map (js or json), relative to the given root.
 //
 //export build
 func Build(options BuildOptions) api.BuildResult {
@@ -43,6 +47,19 @@ func Build(options BuildOptions) api.BuildResult {
 		} else {
 			return api.LogLevelSilent
 		}
+	}
+
+	pluginOpts := plugin.PluginOptions{}
+	if len(options.ImportMap) > 0 {
+		file := path.Join(options.Root, options.ImportMap)
+		imap, err := importmap.Parse(&file)
+		if err != nil {
+			return api.BuildResult{
+				Errors: []api.Message{{Text: err.Error()}},
+			}
+		}
+
+		pluginOpts.ImportMap = imap
 	}
 
 	result := api.Build(api.BuildOptions{
@@ -70,7 +87,12 @@ func Build(options BuildOptions) api.BuildResult {
 		// uses CJS.
 		MainFields: []string{"module", "browser", "main"},
 
-		Plugins: []api.Plugin{plugin.Svg, plugin.Url},
+		Plugins: []api.Plugin{
+			// plugin.ImportMap(pluginOpts),
+			plugin.Svg,
+			plugin.Url,
+			plugin.Resolve(pluginOpts),
+		},
 	})
 
 	return result

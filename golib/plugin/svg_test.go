@@ -16,10 +16,10 @@ func TestMain(t *testing.M) {
 	os.Exit(v)
 }
 
-var cwd, _ = os.Getwd()
-var root string = path.Join(cwd, "../../", "test", "fixtures", "svg_plugin")
-
 func TestSvgPlugin(t *testing.T) {
+	var cwd, _ = os.Getwd()
+	var root string = path.Join(cwd, "../../", "test", "fixtures", "svg_plugin")
+
 	t.Run("local import in jsx", func(t *testing.T) {
 		result := api.Build(api.BuildOptions{
 			EntryPoints:   []string{"local.jsx"},
