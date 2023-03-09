@@ -3,7 +3,6 @@ lockfileVersion: 5.4
 specifiers:
   '@external/three': link:../external/three
   '@proscenium/component-manager': ^0.1.4
-  '@rails/actioncable': ^7.0.4
   '@react-aria/button': ^3.6.3
   date-fns: ^2.29.3
   external-one-link: link:../external/one
@@ -29,9 +28,6 @@ dependencies:
   react: 18.2.0
   react-dom: 18.2.0_react@18.2.0
 
-devDependencies:
-  '@rails/actioncable': 7.0.4
-
 packages:
 
   /@babel/runtime/7.20.6:
@@ -50,10 +46,6 @@ packages:
       react: 18.2.0
       react-dom: 18.2.0_react@18.2.0
     dev: false
-
-  /@rails/actioncable/7.0.4:
-    resolution: {integrity: sha512-tz4oM+Zn9CYsvtyicsa/AwzKZKL+ITHWkhiu7x+xF77clh2b4Rm+s6xnOgY/sGDWoFWZmtKsE95hxBPkgQQNnQ==}
-    dev: true
 
   /@react-aria/button/3.6.3_react@18.2.0:
     resolution: {integrity: sha512-t6UHFPFMlAQW0yefjhqwyQya6RYlUtMRtMKZjnRANbK6JskazkkLvu//qULs+vsiM21PLhspKVLcGdS+t2khsA==}

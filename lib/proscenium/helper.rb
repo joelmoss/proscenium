@@ -31,14 +31,5 @@ module Proscenium
         javascript_include_tag(path, options)
       end.join("\n").html_safe
     end
-
-    def proscenium_dev
-      return unless Proscenium.config.auto_reload
-
-      javascript_tag %(
-        import autoReload from '/proscenium-runtime/auto_reload.js';
-        autoReload('#{Proscenium::Railtie.websocket_mount_path}');
-      ), type: 'module', defer: true
-    end
   end
 end

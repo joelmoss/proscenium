@@ -19,12 +19,10 @@ module Proscenium
         @_target << output
       end
 
-      %i[side_load_stylesheets proscenium_dev].each do |name|
-        define_method name do
-          if (output = @_view_context.send(name))
-            @_target << output
-          end
-        end
+      def side_load_stylesheets
+        return unless (output = @_view_context.side_load_stylesheets)
+
+        @_target << output
       end
     end
 

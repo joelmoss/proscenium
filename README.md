@@ -17,7 +17,6 @@ configuration at all!
 - CSS Custom Media Queries.
 - CSS mixins.
 - Minification.
-- Auto reload after changes (development only).
 
 ## ⚠️ EXPERIMENTAL SOFTWARE ⚠️
 
@@ -220,24 +219,6 @@ results of the import will be an object of CSS modules.
 ```js
 import styles from './styles.module.css'
 ```
-
-## Auto Reload
-
-To aid fast development, Proscenium comes with an auto reload feature that will automatically reload
-the page when any files changes. It is enabled by default in development, and requires that you
-mount the Proscenium Railtie into your `config/routes.rb` file:
-
-```ruby
-mount Proscenium::Railtie, at: '/proscenium' if Rails.env.development?
-```
-
-Auto reload uses ActionCable, so make sure the Ruby Gem, and [NPM package](https://www.npmjs.com/package/@rails/actioncable) is installed.
-
-Changes to CSS/JS(X) files in your `app` and `lib` directories will cause the page to reload.
-
-NOTE: that this is hot module reloading (HMR) - a full page reload is triggered.
-
-You can disable auto reload by setting the `config.proscenium.auto_reload` config option to false.
 
 ## CSS Custom Media Queries
 

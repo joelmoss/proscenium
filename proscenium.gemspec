@@ -31,9 +31,7 @@ Gem::Specification.new do |spec|
   spec.executables << 'lightningcss'
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'actioncable', ['>= 6.1.0', '< 8.0']
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
-  spec.add_dependency 'listen', '~> 3.0'
   spec.add_dependency 'nokogiri', '~> 1.13'
   spec.add_dependency 'oj', '~> 3.13'
   spec.add_dependency 'phlex', '~> 1.5.1'

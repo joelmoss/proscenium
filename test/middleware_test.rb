@@ -70,14 +70,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test '/proscenium-runtime/auto_reload.js' do
-    get '/proscenium-runtime/auto_reload.js'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'runtime', response.headers['X-Proscenium-Middleware']
-    refute_includes response.body, "from 'bundle:@rails/actioncable'"
-  end
-
   test 'esbuild js compilation error' do
     assert_raises Proscenium::Middleware::Esbuild::CompileError do
       get '/lib/includes_error.js'

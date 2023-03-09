@@ -57,7 +57,6 @@ module Proscenium::Phlex::Page
       yield if block_given?
 
       side_load_javascripts defer: true, type: :module
-      Rails.env.development? && proscenium_dev
     end
   end
 end
