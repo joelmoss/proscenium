@@ -22,11 +22,11 @@ import (
 //export build
 func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_BuildResult {
 	result := golib.Build(golib.BuildOptions{
-		Path:      C.GoString(path),
-		Root:      C.GoString(root),
-		Env:       golib.Environment(env),
-		ImportMap: C.GoString(importMap),
-		Debug:     debug,
+		Path:          C.GoString(path),
+		Root:          C.GoString(root),
+		Env:           golib.Environment(env),
+		ImportMapPath: C.GoString(importMap),
+		Debug:         debug,
 	})
 
 	if len(result.Errors) != 0 {

@@ -23,11 +23,12 @@ func (e Environment) String() string {
 }
 
 type BuildOptions struct {
-	Path      string
-	Root      string
-	Env       Environment
-	ImportMap string
-	Debug     bool
+	Path          string
+	Root          string
+	Env           Environment
+	ImportMapPath string
+	ImportMap     []byte
+	Debug         bool
 }
 
 // Build the given `path` in the `root`.
@@ -51,7 +52,17 @@ func Build(options BuildOptions) api.BuildResult {
 
 	pluginOpts := plugin.PluginOptions{}
 	if len(options.ImportMap) > 0 {
-		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMap))
+		imap, err := importmap.Parse(options.ImportMap)
+		if err != nil {
+			return api.BuildResult{
+				Errors: []api.Message{{Text: err.Error()}},
+			}
+		}
+
+		pluginOpts.ImportMap = imap
+	}
+	if len(options.ImportMapPath) > 0 {
+		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMapPath))
 		if err != nil {
 			return api.BuildResult{
 				Errors: []api.Message{{Text: err.Error()}},
