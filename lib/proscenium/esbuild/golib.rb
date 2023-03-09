@@ -16,7 +16,13 @@ module Proscenium
 
       enum :environment, [:development, 1, :test, :production]
 
-      attach_function :build, %i[string string environment bool], Result.by_value
+      attach_function :build, [
+        :string,      # path or entry point
+        :string,      # root
+        :environment, # Rails environment as a Symbol
+        :string,      # path to import map, relative to root
+        :bool         # debugging enabled?
+      ], Result.by_value
     end
 
     class CompileError < StandardError
@@ -34,10 +40,25 @@ module Proscenium
     end
 
     def build(path)
-      result = Builder.build(path, @root.to_s, Rails.env.to_sym, true)
+      result = Builder.build(path, @root.to_s, Rails.env.to_sym, import_map, true)
       raise CompileError.new(path, result[:response]) unless result[:success]
 
       result[:response]
+    end
+
+    private
+
+    def import_map
+      path = Rails.root.join('config')
+
+      if (json = path.join('import_map.json')).exist?
+        return json
+      end
+      if (js = path.join('import_map.js')).exist?
+        return js
+      end
+
+      nil
     end
   end
 end

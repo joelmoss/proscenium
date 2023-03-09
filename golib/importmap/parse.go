@@ -5,22 +5,10 @@ import (
 	"os"
 )
 
-type (
-	Specifier struct {
-		Key     string
-		Address string
-	}
-
-	Scope struct {
-		Prefix     string
-		Specifiers []*Specifier
-	}
-
-	ImportMap struct {
-		Imports map[string]interface{}
-		Scopes  map[string]any
-	}
-)
+type ImportMap struct {
+	Imports map[string]string
+	Scopes  map[string]any
+}
 
 type SyntaxError struct {
 	Message string
@@ -48,39 +36,4 @@ func Parse(contents []byte) (*ImportMap, error) {
 	}
 
 	return data, nil
-
-	// importMap := &ImportMap{}
-
-	// if _, ok = entries["imports"]; ok {
-	// 	imports, ok := entries["imports"].(map[string]interface{})
-	// 	if !ok {
-	// 		return nil, SyntaxError{
-	// 			Message: `"imports" must be an object`,
-	// 		}
-	// 	}
-
-	// 	for key, value := range imports {
-	// 		specifier := &Specifier{Key: key}
-
-	// 		switch value := value.(type) {
-	// 		case string:
-	// 			specifier.Address = value
-
-	// 		default:
-	// 			return nil, SyntaxError{
-	// 				Message: `specifier address must be a string`,
-	// 			}
-	// 		}
-
-	// 		importMap.Imports = append(importMap.Imports, specifier)
-	// 	}
-	// }
-
-	// // e, ok = entries["scopes"]
-	// // pp.Print(e, ok)
-	// // if ok {
-	// // 	scopes, ok := entries["scopes"].(map[string]interface{})
-	// // }
-
-	// return importMap, nil
 }

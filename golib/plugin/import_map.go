@@ -1,4 +1,4 @@
-package golib_plugin
+package plugin
 
 import (
 	"github.com/evanw/esbuild/pkg/api"

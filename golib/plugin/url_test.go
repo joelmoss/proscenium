@@ -1,7 +1,7 @@
-package golib_plugin_test
+package plugin_test
 
 import (
-	golib_plugin "joelmoss/proscenium/golib/plugin"
+	"joelmoss/proscenium/golib/plugin"
 	"os"
 	"path"
 	"testing"
@@ -21,7 +21,7 @@ func TestUrlPlugin(t *testing.T) {
 			Format:        api.FormatESModule,
 			Bundle:        true,
 			Write:         false,
-			Plugins:       []api.Plugin{golib_plugin.Url},
+			Plugins:       []api.Plugin{plugin.Url},
 		})
 
 		snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))

@@ -1,7 +1,7 @@
-package golib_plugin_test
+package plugin_test
 
 import (
-	golib_plugin "joelmoss/proscenium/golib/plugin"
+	"joelmoss/proscenium/golib/plugin"
 	"os"
 	"path"
 	"testing"
@@ -19,7 +19,6 @@ func TestMain(t *testing.M) {
 func TestSvgPlugin(t *testing.T) {
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "fixtures", "svg_plugin")
-
 	t.Run("local import in jsx", func(t *testing.T) {
 		result := api.Build(api.BuildOptions{
 			EntryPoints:   []string{"local.jsx"},
@@ -29,7 +28,7 @@ func TestSvgPlugin(t *testing.T) {
 			JSX:           api.JSXPreserve,
 			Bundle:        true,
 			Write:         false,
-			Plugins:       []api.Plugin{golib_plugin.Svg},
+			Plugins:       []api.Plugin{plugin.Svg},
 		})
 
 		snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))
@@ -46,7 +45,7 @@ func TestSvgPlugin(t *testing.T) {
 			JSX:           api.JSXPreserve,
 			Bundle:        true,
 			Write:         false,
-			Plugins:       []api.Plugin{golib_plugin.Svg},
+			Plugins:       []api.Plugin{plugin.Svg},
 		})
 
 		snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))

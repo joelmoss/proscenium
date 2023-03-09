@@ -5,7 +5,7 @@ import (
 	"path"
 
 	"joelmoss/proscenium/golib/importmap"
-	plugin "joelmoss/proscenium/golib/plugin"
+	"joelmoss/proscenium/golib/plugin"
 
 	"github.com/evanw/esbuild/pkg/api"
 )
@@ -25,8 +25,8 @@ func (e Environment) String() string {
 type BuildOptions struct {
 	Path      string
 	Root      string
-	ImportMap string
 	Env       Environment
+	ImportMap string
 	Debug     bool
 }
 
@@ -51,8 +51,7 @@ func Build(options BuildOptions) api.BuildResult {
 
 	pluginOpts := plugin.PluginOptions{}
 	if len(options.ImportMap) > 0 {
-		file := path.Join(options.Root, options.ImportMap)
-		imap, err := importmap.Parse(&file)
+		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMap))
 		if err != nil {
 			return api.BuildResult{
 				Errors: []api.Message{{Text: err.Error()}},

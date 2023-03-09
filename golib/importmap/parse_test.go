@@ -33,7 +33,18 @@ func TestParse(t *testing.T) {
 		contents := `{
 			"imports": {
 				"foo": "/lib/foo.js"
-			},
+			}
+		}`
+		result, _ := importmap.Parse([]byte(contents))
+
+		assert.Equal(map[string]string{"foo": "/lib/foo.js"}, result.Imports)
+	})
+
+	t.Run("scopes", func(t *testing.T) {
+		assert := assert.New(t)
+
+		contents := `{
+			"imports": {},
 			"scopes": {
 				"/lib/import_map/": {
 					"foo": "/lib/foo4.js"
@@ -42,7 +53,9 @@ func TestParse(t *testing.T) {
 		}`
 		result, _ := importmap.Parse([]byte(contents))
 
-		assert.Equal(map[string]interface{}{"foo": "/lib/foo.js"}, result.Imports)
+		assert.Equal(map[string]interface{}{
+			"/lib/import_map/": map[string]interface{}{"foo": "/lib/foo4.js"},
+		}, result.Scopes)
 	})
 }
 
