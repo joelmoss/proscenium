@@ -2,6 +2,8 @@ package utils
 
 import (
 	"joelmoss/proscenium/golib/importmap"
+	"sort"
+	"strings"
 
 	"github.com/evanw/esbuild/pkg/api"
 )
@@ -9,11 +11,39 @@ import (
 func Resolve(args *api.OnResolveArgs, imap *importmap.ImportMap) api.OnResolveResult {
 	if imap != nil {
 		// Find the path in the import map
+
+		// Find the first specifier that is an exact key match.
 		if specifier, ok := imap.Imports[args.Path]; ok {
 			return api.OnResolveResult{
 				Path:     specifier,
 				External: true,
 			}
+		} else {
+			matchedKeys := make([]string, 0, len(imap.Imports))
+
+			// Find all specifiers where the key and value have a trailing slash, and the path starts with the key.
+			for key, value := range imap.Imports {
+				if strings.HasSuffix(key, "/") && strings.HasSuffix(value, "/") && strings.HasPrefix(args.Path, key) {
+					matchedKeys = append(matchedKeys, key)
+				}
+			}
+
+			// Sort the matched keys so longest is first, then use that key.
+			if len(matchedKeys) > 0 {
+				sort.Sort(sort.Reverse(sort.StringSlice(matchedKeys)))
+
+				key := matchedKeys[0]
+				value := imap.Imports[key]
+
+				// In the path, replace the key with the value as a prefix.
+				if after, ok := strings.CutPrefix(args.Path, key); ok {
+					return api.OnResolveResult{
+						Path:     value + after,
+						External: true,
+					}
+				}
+			}
+
 		}
 	}
 
