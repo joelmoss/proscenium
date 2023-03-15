@@ -58,6 +58,18 @@ func TestImportMap(t *testing.T) {
 		})
 	}
 
+	t.Run("js map", func(t *testing.T) {
+		result := golib.Build(golib.BuildOptions{
+			Path:          "lib/import_map/as_js.js",
+			Root:          root,
+			Env:           2,
+			Debug:         true,
+			ImportMapPath: "config/import_maps/as.js",
+		})
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents), "import pkg from \"/lib/foo2.js\";")
+	})
+
 	t.Run("bare specifier", func(t *testing.T) {
 		result := build("lib/import_map/bare_specifier.js", []byte(`{
 			"imports": { "foo": "/lib/foo.js" }

@@ -10,12 +10,16 @@ require (
 )
 
 require (
+	github.com/dlclark/regexp2 v1.7.0 // indirect
+	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/google/btree v1.1.2 // indirect
+	github.com/google/pprof v0.0.0-20230207041349-798e818bf904 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 )
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/dop251/goja v0.0.0-20230304130813-e2f543bf4b4c
 	github.com/gkampitakis/ciinfo v0.2.4 // indirect
 	github.com/gkampitakis/go-diff v1.3.2 // indirect
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
@@ -23,6 +27,7 @@ require (
 	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
+	github.com/mitchellh/mapstructure v1.5.0
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/tidwall/gjson v1.14.4 // indirect

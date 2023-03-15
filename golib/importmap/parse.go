@@ -2,13 +2,20 @@ package importmap
 
 import (
 	"encoding/json"
+	"joelmoss/proscenium/golib/api"
 	"os"
+	"path"
+
+	"github.com/dop251/goja"
+	"github.com/mitchellh/mapstructure"
 )
 
-type ImportMap struct {
-	Imports map[string]string
-	Scopes  map[string]any
-}
+type ContentType uint8
+
+const (
+	JsonType ContentType = iota + 1
+	JavascriptType
+)
 
 type SyntaxError struct {
 	Message string
@@ -18,21 +25,42 @@ func (err SyntaxError) Error() string {
 	return err.Message
 }
 
-func ParseFile(file string) (*ImportMap, error) {
+func ParseFile(file string, env api.Environment) (*api.ImportMap, error) {
 	bytes, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}
 
-	return Parse(bytes)
+	var contentType ContentType
+	switch path.Ext(file) {
+	case ".json":
+		contentType = JsonType
+	case ".js":
+		contentType = JavascriptType
+	}
+
+	return Parse(bytes, contentType, env)
 }
 
-func Parse(contents []byte) (*ImportMap, error) {
-	var data *ImportMap
+func Parse(contents []byte, contentType ContentType, env api.Environment) (*api.ImportMap, error) {
+	var data *api.ImportMap
 
-	err := json.Unmarshal(contents, &data)
-	if err != nil {
-		return nil, err
+	if contentType == JsonType {
+		err := json.Unmarshal(contents, &data)
+		if err != nil {
+			return nil, err
+		}
+	} else if contentType == JavascriptType {
+		vm := goja.New()
+		v, runErr := vm.RunString("(" + string(contents) + ")('" + env.String() + "')")
+		if runErr != nil {
+			return nil, runErr
+		}
+
+		err := mapstructure.Decode(v.Export(), &data)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return data, nil

@@ -1,16 +1,18 @@
 package plugin
 
 import (
-	"github.com/evanw/esbuild/pkg/api"
+	"joelmoss/proscenium/golib/api"
+
+	esbuild "github.com/evanw/esbuild/pkg/api"
 	"github.com/k0kubun/pp/v3"
 )
 
-func ImportMap(options PluginOptions) api.Plugin {
+func ImportMap(options api.PluginOptions) esbuild.Plugin {
 	pp.Print(options)
 
-	return api.Plugin{
+	return esbuild.Plugin{
 		Name: "importMap",
-		Setup: func(build api.PluginBuild) {
+		Setup: func(build esbuild.PluginBuild) {
 			// build.OnResolve(api.OnResolveOptions{Filter: `\.svg$`},
 			// 	func(args api.OnResolveArgs) (api.OnResolveResult, error) {
 			// 		if args.Kind == api.ResolveJSImportStatement && strings.HasSuffix(args.Importer, ".jsx") {

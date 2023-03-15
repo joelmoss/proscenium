@@ -1,20 +1,19 @@
-package utils
+package api
 
 import (
-	"joelmoss/proscenium/golib/importmap"
 	"sort"
 	"strings"
 
-	"github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-func Resolve(args *api.OnResolveArgs, imap *importmap.ImportMap) api.OnResolveResult {
+func Resolve(args *esbuild.OnResolveArgs, imap *ImportMap) esbuild.OnResolveResult {
 	if imap != nil {
 		// Find the path in the import map
 
 		// Find the first specifier that is an exact key match.
 		if specifier, ok := imap.Imports[args.Path]; ok {
-			return api.OnResolveResult{
+			return esbuild.OnResolveResult{
 				Path:     specifier,
 				External: true,
 			}
@@ -37,7 +36,7 @@ func Resolve(args *api.OnResolveArgs, imap *importmap.ImportMap) api.OnResolveRe
 
 				// In the path, replace the key with the value as a prefix.
 				if after, ok := strings.CutPrefix(args.Path, key); ok {
-					return api.OnResolveResult{
+					return esbuild.OnResolveResult{
 						Path:     value + after,
 						External: true,
 					}
@@ -47,5 +46,5 @@ func Resolve(args *api.OnResolveArgs, imap *importmap.ImportMap) api.OnResolveRe
 		}
 	}
 
-	return api.OnResolveResult{}
+	return esbuild.OnResolveResult{}
 }

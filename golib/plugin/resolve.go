@@ -1,22 +1,22 @@
 package plugin
 
 import (
-	"joelmoss/proscenium/golib/utils"
+	"joelmoss/proscenium/golib/api"
 
-	"github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-func Resolve(options PluginOptions) api.Plugin {
-	return api.Plugin{
+func Resolve(options api.PluginOptions) esbuild.Plugin {
+	return esbuild.Plugin{
 		Name: "resolve",
-		Setup: func(build api.PluginBuild) {
-			build.OnResolve(api.OnResolveOptions{Filter: `.*`},
-				func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-					if args.Kind == api.ResolveEntryPoint {
-						return api.OnResolveResult{}, nil
+		Setup: func(build esbuild.PluginBuild) {
+			build.OnResolve(esbuild.OnResolveOptions{Filter: `.*`},
+				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+					if args.Kind == esbuild.ResolveEntryPoint {
+						return esbuild.OnResolveResult{}, nil
 					}
 
-					result := utils.Resolve(&args, options.ImportMap)
+					result := api.Resolve(&args, options.ImportMap)
 
 					return result, nil
 				})

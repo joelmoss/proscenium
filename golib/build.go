@@ -4,28 +4,17 @@ import (
 	"fmt"
 	"path"
 
+	"joelmoss/proscenium/golib/api"
 	"joelmoss/proscenium/golib/importmap"
 	"joelmoss/proscenium/golib/plugin"
 
-	"github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/evanw/esbuild/pkg/api"
 )
-
-type Environment uint8
-
-const (
-	DevEnv Environment = iota + 1
-	TestEnv
-	ProdEnv
-)
-
-func (e Environment) String() string {
-	return [...]string{"development", "test", "production"}[e-1]
-}
 
 type BuildOptions struct {
 	Path          string
 	Root          string
-	Env           Environment
+	Env           api.Environment
 	ImportMapPath string
 	ImportMap     []byte
 	Debug         bool
@@ -39,56 +28,56 @@ type BuildOptions struct {
 //	importMap - Path to an import map (js or json), relative to the given root.
 //
 //export build
-func Build(options BuildOptions) api.BuildResult {
-	minify := !options.Debug && options.Env != TestEnv
+func Build(options BuildOptions) esbuild.BuildResult {
+	minify := !options.Debug && options.Env != api.TestEnv
 
-	logLevel := func() api.LogLevel {
+	logLevel := func() esbuild.LogLevel {
 		if options.Debug {
-			return api.LogLevelDebug
+			return esbuild.LogLevelDebug
 		} else {
-			return api.LogLevelSilent
+			return esbuild.LogLevelSilent
 		}
 	}
 
-	pluginOpts := plugin.PluginOptions{}
+	pluginOpts := api.PluginOptions{}
 	if len(options.ImportMap) > 0 {
-		imap, err := importmap.Parse(options.ImportMap)
+		imap, err := importmap.Parse(options.ImportMap, importmap.JsonType, options.Env)
 		if err != nil {
-			return api.BuildResult{
-				Errors: []api.Message{{Text: err.Error()}},
+			return esbuild.BuildResult{
+				Errors: []esbuild.Message{{Text: err.Error()}},
 			}
 		}
 
 		pluginOpts.ImportMap = imap
 	}
 	if len(options.ImportMapPath) > 0 {
-		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMapPath))
+		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMapPath), options.Env)
 		if err != nil {
-			return api.BuildResult{
-				Errors: []api.Message{{Text: err.Error()}},
+			return esbuild.BuildResult{
+				Errors: []esbuild.Message{{Text: err.Error()}},
 			}
 		}
 
 		pluginOpts.ImportMap = imap
 	}
 
-	result := api.Build(api.BuildOptions{
+	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
 		AbsWorkingDir:     options.Root,
 		LogLevel:          logLevel(),
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
-		Format:            api.FormatESModule,
-		JSX:               api.JSXAutomatic,
-		JSXDev:            options.Env != TestEnv && options.Env != ProdEnv,
+		Format:            esbuild.FormatESModule,
+		JSX:               esbuild.JSXAutomatic,
+		JSXDev:            options.Env != api.TestEnv && options.Env != api.ProdEnv,
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
 		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", options.Env)},
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		KeepNames:         options.Env != ProdEnv,
+		KeepNames:         options.Env != api.ProdEnv,
 		Write:             false,
 		// Sourcemap: isSourceMap ? 'external' : false,
 
@@ -97,7 +86,7 @@ func Build(options BuildOptions) api.BuildResult {
 		// uses CJS.
 		MainFields: []string{"module", "browser", "main"},
 
-		Plugins: []api.Plugin{
+		Plugins: []esbuild.Plugin{
 			// plugin.ImportMap(pluginOpts),
 			plugin.Svg,
 			plugin.Url,
