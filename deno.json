@@ -3,7 +3,7 @@
     "std/": "https://deno.land/std@0.177.0/",
     "testing/": "https://deno.land/std@0.177.0/testing/",
     "cache": "https://deno.land/x/cache@0.2.13/mod.ts",
-    "esbuild": "https://deno.land/x/esbuild@v0.17.9/mod.js",
+    "esbuild": "https://deno.land/x/esbuild@v0.17.12/mod.js",
     "postcss": "https://deno.land/x/postcss@8.4.16/mod.js",
     "camelcase": "https://deno.land/x/camelcase@v2.1.0/mod.ts",
     "camelcase-keys": "https://esm.sh/camelcase-keys@8.0.2",
