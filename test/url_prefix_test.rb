@@ -7,6 +7,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
     Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
     Proscenium.config.css_mixin_paths = Set[Rails.root.join('lib')]
+    Proscenium.reset_current_side_loaded
   end
 
   test 'url: modules' do

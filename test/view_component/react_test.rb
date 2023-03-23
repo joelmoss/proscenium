@@ -3,6 +3,10 @@
 require_relative '../test_helper'
 
 class ViewComponent::ReactTest < ViewComponent::TestCase
+  setup do
+    Proscenium.reset_current_side_loaded
+  end
+
   test 'shallow react component' do
     result = render_inline ViewComponent::FirstReactComponent.new
 

@@ -3,6 +3,10 @@
 require 'test_helper'
 
 class LinkToHelperTest < ActionView::TestCase
+  setup do
+    Proscenium.reset_current_side_loaded
+  end
+
   test 'should allow a shallow component' do
     skip
 

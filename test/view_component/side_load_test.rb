@@ -5,6 +5,10 @@ require_relative '../test_helper'
 class ViewComponent::SideLoadTest < ViewComponent::TestCase
   include Rails::Dom::Testing::Assertions::DomAssertions
 
+  setup do
+    Proscenium.reset_current_side_loaded
+  end
+
   test 'side load component js and css' do
     render_inline ViewComponent::FirstComponent.new
 
