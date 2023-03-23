@@ -5,7 +5,10 @@ if (!e) {
   e.id = "_0011c694";
   document.head.appendChild(e);
   e.before(document.createComment("/lib/styles.module.css"));
-  e.appendChild(document.createTextNode(`.myClass0011c694{color:pink}`));
+  e.appendChild(document.createTextNode(`.myClass0011c694 {
+  color: pink;
+}
+`));
 }
 var styles_module_default = { "myClass": "myClass0011c694" };
 
