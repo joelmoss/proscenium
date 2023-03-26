@@ -78,7 +78,23 @@ func TestImportMap(t *testing.T) {
 		assert.Contains(t, string(result.OutputFiles[0].Contents), "import foo from \"/lib/foo.js\";")
 	})
 
+	t.Run("scopes", func(t *testing.T) {
+		result := build("lib/import_map/scopes.js", []byte(`{
+			"imports": {
+				"foo": "/lib/foo.js"
+			},
+			"scopes": {
+				"/lib/import_map/": {
+					"foo": "/lib/foo4.js"
+				}
+			}
+		}`))
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents), "import foo from \"/lib/foo4.js\";")
+	})
+
 	t.Run("path prefix", func(t *testing.T) {
+		// import four from 'one/two/three/four.js'
 		result := build("lib/import_map/path_prefix.js", []byte(`{
 			"imports": { "one/": "./src/one/" }
 		}`))

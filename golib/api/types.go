@@ -16,7 +16,9 @@ type PluginOptions struct {
 	ImportMap *ImportMap
 }
 
+type ImportMapScopes map[string]string
+
 type ImportMap struct {
 	Imports map[string]string
-	Scopes  map[string]any
+	Scopes  map[string]ImportMapScopes
 }

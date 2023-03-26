@@ -8,7 +8,6 @@ import (
 	"path"
 	"testing"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,14 +31,11 @@ func TestParse(t *testing.T) {
 	t.Run("javascript", func(t *testing.T) {
 		assert := assert.New(t)
 
-		contents := `env => ({
+		result, _ := importmap.Parse([]byte(`env => ({
 			"imports": {
 				"foo": env === 'test' ? "/lib/foo_test.js" : "/lib/foo.js"
 			}
-		})`
-		result, err := importmap.Parse([]byte(contents), importmap.JavascriptType, api.TestEnv)
-
-		pp.Print(result, err)
+		})`), importmap.JavascriptType, api.TestEnv)
 
 		assert.Equal(map[string]string{"foo": "/lib/foo_test.js"}, result.Imports)
 	})
@@ -58,8 +54,6 @@ func TestParse(t *testing.T) {
 	})
 
 	t.Run("scopes", func(t *testing.T) {
-		assert := assert.New(t)
-
 		contents := `{
 			"imports": {},
 			"scopes": {
@@ -70,9 +64,7 @@ func TestParse(t *testing.T) {
 		}`
 		result, _ := importmap.Parse([]byte(contents), importmap.JsonType, api.TestEnv)
 
-		assert.Equal(map[string]interface{}{
-			"/lib/import_map/": map[string]interface{}{"foo": "/lib/foo4.js"},
-		}, result.Scopes)
+		assert.Equal(t, map[string]api.ImportMapScopes(map[string]api.ImportMapScopes{"/lib/import_map/": {"foo": "/lib/foo4.js"}}), result.Scopes)
 	})
 }
 

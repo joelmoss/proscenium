@@ -1,6 +1,6 @@
 {
   "imports": {
-    "foo": "/lib/foo4.js"
+    "foo": "/lib/foo.js"
   },
   "scopes": {
     "/lib/import_map/": {

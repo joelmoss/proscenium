@@ -10,13 +10,15 @@ func Resolve(options api.PluginOptions) esbuild.Plugin {
 	return esbuild.Plugin{
 		Name: "resolve",
 		Setup: func(build esbuild.PluginBuild) {
+			root := build.InitialOptions.AbsWorkingDir
+
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `.*`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					if args.Kind == esbuild.ResolveEntryPoint {
 						return esbuild.OnResolveResult{}, nil
 					}
 
-					result := api.Resolve(&args, options.ImportMap)
+					result := api.Resolve(&args, options.ImportMap, root)
 
 					return result, nil
 				})
