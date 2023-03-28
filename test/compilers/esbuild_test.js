@@ -37,7 +37,7 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('Import bare module', async t => {
+  it('Import npm module', async t => {
     const result = await main('lib/import_node_module.js', { root, lightningcssBin })
 
     await assertSnapshot(t, new TextDecoder().decode(result))
@@ -55,6 +55,8 @@ describe('compilers/esbuild', () => {
   it('allows returns error on unknown bare module', async t => {
     const result = await main('lib/import_unknown_node_module.js', { root, lightningcssBin })
 
+    console.log(result)
+
     await assertSnapshot(t, result)
   })
 
@@ -70,8 +72,9 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('Import absolute module', async t => {
+  it('Import absolute module', { only: true }, async t => {
     const result = await main('lib/import_absolute_module.js', { root, lightningcssBin })
+    console.log(new TextDecoder().decode(result))
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })

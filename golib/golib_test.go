@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/k0kubun/pp/v3"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -37,7 +38,35 @@ func TestBuild(t *testing.T) {
 	t.Run("jsx", func(t *testing.T) {
 		result := build("lib/component.jsx")
 
-		assert.Equal(t, result.OutputFiles[0].Path, path.Join(path.Join(root, "public/assets"), "lib/component.js"))
+		assert.Equal(t, path.Join(path.Join(root, "public/assets"), "lib/component.js"),
+			result.OutputFiles[0].Path)
+	})
+
+	t.Run("import bare module", func(t *testing.T) {
+		result := build("lib/import_npm_module.js")
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents),
+			`import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js"`)
+	})
+
+	t.Run("relative path", func(t *testing.T) {
+		result := build("lib/import_relative_module.js")
+
+		pp.Println(result)
+		pp.Printf(string(result.OutputFiles[0].Contents))
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents),
+			`import foo4 from "/lib/foo4.js"`)
+	})
+
+	t.Run("absolute path", func(t *testing.T) {
+		result := build("lib/import_absolute_module.js")
+
+		pp.Println(result)
+		pp.Printf(string(result.OutputFiles[0].Contents))
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents),
+			`import foo4 from "/lib/foo4.js"`)
 	})
 
 	t.Run("NODE_ENV is defined", func(t *testing.T) {

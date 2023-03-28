@@ -17,8 +17,10 @@ import (
 
 // Build the given `path` in the `root`.
 //
-//	path - The path to build relative to `root`.
-//	root - The working directory.
+//		path - The path to build relative to `root`.
+//		root - The working directory.
+//		importMap - Path to the import map relative to `root`.
+//	 	debug
 //
 //export build
 func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_BuildResult {

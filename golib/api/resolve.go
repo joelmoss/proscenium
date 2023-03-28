@@ -6,7 +6,7 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-func Resolve(args *esbuild.OnResolveArgs, imap *ImportMap, root string) esbuild.OnResolveResult {
+func Resolve(args esbuild.OnResolveArgs, imap *ImportMap, root string) esbuild.OnResolveResult {
 	if imap != nil {
 		// Look for a match in the import map
 		base := strings.TrimPrefix(args.Importer, root)
@@ -19,5 +19,10 @@ func Resolve(args *esbuild.OnResolveArgs, imap *ImportMap, root string) esbuild.
 		}
 	}
 
-	return esbuild.OnResolveResult{}
+	return esbuild.OnResolveResult{
+		Path:     args.Path,
+		External: true,
+	}
+
+	// return esbuild.OnResolveResult{}
 }
