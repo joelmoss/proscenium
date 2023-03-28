@@ -11,3 +11,5 @@
 /test/internal/public/assets
 /bin/*
 meta.json
+main.h
+main.so

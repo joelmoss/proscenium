@@ -32,7 +32,7 @@ module Proscenium::Phlex::Page
 
   def after_template
     super
-    @_target.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { side_load_stylesheets })
+    @_context.target.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { side_load_stylesheets })
   end
 
   def page_title

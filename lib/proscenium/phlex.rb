@@ -12,19 +12,12 @@ module Proscenium
     autoload :ResolveCssModules
     autoload :ComponentConcerns
 
-    module Helpers
-      def side_load_javascripts(...)
-        return unless (output = @_view_context.side_load_javascripts(...))
+    extend ::Phlex::Rails::HelperMacros
+    include ::Phlex::Rails::Helpers::JavaScriptIncludeTag
+    include ::Phlex::Rails::Helpers::StyleSheetLinkTag
 
-        @_target << output
-      end
-
-      def side_load_stylesheets
-        return unless (output = @_view_context.side_load_stylesheets)
-
-        @_target << output
-      end
-    end
+    define_output_helper :side_load_stylesheets
+    define_output_helper :side_load_javascripts
 
     # Side loads the class, and its super classes that respond to `.path`. Assign the
     # `abstract_class` class variable to any abstract class, and it will not be side loaded.
@@ -58,7 +51,6 @@ module Proscenium
                      end
 
         child.prepend Sideload if Rails.application.config.proscenium.side_load
-        child.include Helpers
 
         super
       end
