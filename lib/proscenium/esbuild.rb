@@ -18,12 +18,12 @@ module Proscenium
     end
 
     def build
-      # Proscenium::Esbuild::Golib.build "#{@root}/#{@path}"
+      Proscenium::Esbuild::Golib.new(root: @root).build(@path)
 
-      stdout, stderr, status = Open3.capture3(command)
-      raise CompileError, stderr if !status.success? || !stderr.empty?
+      # stdout, stderr, status = Open3.capture3(command)
+      # raise CompileError, stderr if !status.success? || !stderr.empty?
 
-      stdout
+      # stdout
     end
 
     private

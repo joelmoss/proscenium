@@ -78,6 +78,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		KeepNames:         options.Env != api.ProdEnv,
+		Conditions:        []string{options.Env.String()},
 		Write:             false,
 		// Sourcemap: isSourceMap ? 'external' : false,
 

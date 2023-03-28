@@ -12,7 +12,7 @@ module Proscenium
 
     module Builder
       extend FFI::Library
-      ffi_lib 'main.so'
+      ffi_lib Pathname.new(__dir__).join('../../../main.so').to_s
 
       enum :environment, [:development, 1, :test, :production]
 
@@ -49,13 +49,13 @@ module Proscenium
     private
 
     def import_map
-      path = Rails.root.join('config')
+      return unless (path = Rails.root&.join('config'))
 
       if (json = path.join('import_map.json')).exist?
-        return json
+        return json.relative_path_from(@root).to_s
       end
       if (js = path.join('import_map.js')).exist?
-        return js
+        return js.relative_path_from(@root).to_s
       end
 
       nil
