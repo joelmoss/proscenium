@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/gkampitakis/go-snaps/snaps"
 	"github.com/k0kubun/pp/v3"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,23 +24,29 @@ func TestBuild(t *testing.T) {
 		})
 	}
 
-	t.Run("simple js", func(t *testing.T) {
-		result := build("lib/foo.js")
-
-		assert.Contains(t, string(result.OutputFiles[0].Contents), "console.log(\"/lib/foo.js\")")
-	})
-
-	t.Run("unknown entrypoint", func(t *testing.T) {
+	t.Run("fails on unknown entrypoint", func(t *testing.T) {
 		result := build("unknown.js")
 
 		assert.Equal(t, result.Errors[0].Text, "Could not resolve \"unknown.js\"")
 	})
 
-	t.Run("jsx", func(t *testing.T) {
+	t.Run("build js", func(t *testing.T) {
+		result := build("lib/foo.js")
+
+		assert.Contains(t, string(result.OutputFiles[0].Contents), "console.log(\"/lib/foo.js\")")
+	})
+
+	t.Run("build jsx", func(t *testing.T) {
 		result := build("lib/component.jsx")
 
 		assert.Equal(t, path.Join(path.Join(root, "public/assets"), "lib/component.js"),
 			result.OutputFiles[0].Path)
+	})
+
+	t.Run("build css", func(t *testing.T) {
+		result := build("lib/foo.css")
+
+		snaps.MatchSnapshot(t, string(result.OutputFiles[0].Contents))
 	})
 
 	t.Run("import bare module", func(t *testing.T) {
@@ -49,21 +56,25 @@ func TestBuild(t *testing.T) {
 			`import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js"`)
 	})
 
-	t.Run("relative path", func(t *testing.T) {
+	t.Run("import relative path", func(t *testing.T) {
 		result := build("lib/import_relative_module.js")
-
-		pp.Println(result)
-		pp.Printf(string(result.OutputFiles[0].Contents))
 
 		assert.Contains(t, string(result.OutputFiles[0].Contents),
 			`import foo4 from "/lib/foo4.js"`)
 	})
 
-	t.Run("absolute path", func(t *testing.T) {
+	t.Run("import absolute path", func(t *testing.T) {
 		result := build("lib/import_absolute_module.js")
 
+		assert.Contains(t, string(result.OutputFiles[0].Contents),
+			`import foo4 from "/lib/foo4.js"`)
+	})
+
+	t.Run("import css module from js", func(t *testing.T) {
+		result := build("lib/import_css_module.js")
+
 		pp.Println(result)
-		pp.Printf(string(result.OutputFiles[0].Contents))
+		pp.Println(string(result.OutputFiles[0].Contents))
 
 		assert.Contains(t, string(result.OutputFiles[0].Contents),
 			`import foo4 from "/lib/foo4.js"`)

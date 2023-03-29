@@ -72,9 +72,8 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('Import absolute module', { only: true }, async t => {
+  it('Import absolute module', async t => {
     const result = await main('lib/import_absolute_module.js', { root, lightningcssBin })
-    console.log(new TextDecoder().decode(result))
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
@@ -109,12 +108,14 @@ describe('compilers/esbuild', () => {
     await assertSnapshot(t, new TextDecoder().decode(result))
   })
 
-  it('Import css module from JS', async t => {
+  it('Import css module from JS', { only: true }, async t => {
     const result = await main('lib/import_css_module.js', {
       root,
       lightningcssBin,
       cssMixinPaths: [join(root, 'lib')]
     })
+
+    console.log(new TextDecoder().decode(result))
 
     await assertSnapshot(t, new TextDecoder().decode(result))
   })

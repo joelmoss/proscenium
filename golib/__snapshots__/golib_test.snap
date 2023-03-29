@@ -3045,3 +3045,25 @@ react/cjs/react-jsx-runtime.development.js:
 */
 
 ---
+
+[TestBuild/css - 1]
+/* lib/foo.css */
+body {
+  color: red;
+  & h1 {
+    color: blue;
+  }
+}
+
+---
+
+[TestBuild/build_css - 1]
+/* lib/foo.css */
+body {
+  color: red;
+  & h1 {
+    color: blue;
+  }
+}
+
+---

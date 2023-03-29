@@ -90,7 +90,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Plugins: []esbuild.Plugin{
 			// plugin.ImportMap(pluginOpts),
 			plugin.Svg,
-			plugin.Url,
+			// plugin.Url,
 			plugin.Resolve(pluginOpts),
 		},
 	})
