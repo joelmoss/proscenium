@@ -1,7 +1,8 @@
-body {
+.body {
+  /* @mixin stuff; */
   color: red;
 
-  & h1 {
-    color: blue;
+  :global(.foo) {
+    color: pink;
   }
 }
