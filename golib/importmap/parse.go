@@ -2,7 +2,7 @@ package importmap
 
 import (
 	"encoding/json"
-	"joelmoss/proscenium/golib/api"
+	"joelmoss/proscenium/golib/internal"
 	"os"
 	"path"
 
@@ -25,7 +25,7 @@ func (err SyntaxError) Error() string {
 	return err.Message
 }
 
-func ParseFile(file string, env api.Environment) (*api.ImportMap, error) {
+func ParseFile(file string, env internal.Environment) (*internal.ImportMap, error) {
 	bytes, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func ParseFile(file string, env api.Environment) (*api.ImportMap, error) {
 	return Parse(bytes, contentType, env)
 }
 
-func Parse(contents []byte, contentType ContentType, env api.Environment) (*api.ImportMap, error) {
-	var data *api.ImportMap
+func Parse(contents []byte, contentType ContentType, env internal.Environment) (*internal.ImportMap, error) {
+	var data *internal.ImportMap
 
 	if contentType == JsonType {
 		err := json.Unmarshal(contents, &data)

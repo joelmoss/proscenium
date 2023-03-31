@@ -1,4 +1,4 @@
-package api
+package internal
 
 type Environment uint8
 

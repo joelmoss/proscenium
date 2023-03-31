@@ -1,13 +1,13 @@
 package plugin
 
 import (
-	"joelmoss/proscenium/golib/api"
+	"joelmoss/proscenium/golib/internal"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 	"github.com/k0kubun/pp/v3"
 )
 
-func ImportMap(options api.PluginOptions) esbuild.Plugin {
+func ImportMap(options internal.PluginOptions) esbuild.Plugin {
 	pp.Print(options)
 
 	return esbuild.Plugin{

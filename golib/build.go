@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"path"
 
-	"joelmoss/proscenium/golib/api"
 	"joelmoss/proscenium/golib/importmap"
+	"joelmoss/proscenium/golib/internal"
 	"joelmoss/proscenium/golib/plugin"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
@@ -14,7 +14,7 @@ import (
 type BuildOptions struct {
 	Path          string
 	Root          string
-	Env           api.Environment
+	Env           internal.Environment
 	ImportMapPath string
 	ImportMap     []byte
 	Debug         bool
@@ -29,7 +29,7 @@ type BuildOptions struct {
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
-	minify := !options.Debug && options.Env != api.TestEnv
+	minify := !options.Debug && options.Env != internal.TestEnv
 
 	logLevel := func() esbuild.LogLevel {
 		if options.Debug {
@@ -39,7 +39,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	pluginOpts := api.PluginOptions{}
+	pluginOpts := internal.PluginOptions{}
 	if len(options.ImportMap) > 0 {
 		imap, err := importmap.Parse(options.ImportMap, importmap.JsonType, options.Env)
 		if err != nil {
@@ -70,14 +70,14 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Outbase:           "./",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
-		JSXDev:            options.Env != api.TestEnv && options.Env != api.ProdEnv,
+		JSXDev:            options.Env != internal.TestEnv && options.Env != internal.ProdEnv,
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
 		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", options.Env)},
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		KeepNames:         options.Env != api.ProdEnv,
+		KeepNames:         options.Env != internal.ProdEnv,
 		Conditions:        []string{options.Env.String()},
 		Write:             false,
 		// Sourcemap: isSourceMap ? 'external' : false,

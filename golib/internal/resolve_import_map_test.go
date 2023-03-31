@@ -1,8 +1,8 @@
-package api_test
+package internal_test
 
 import (
-	"joelmoss/proscenium/golib/api"
 	"joelmoss/proscenium/golib/importmap"
+	"joelmoss/proscenium/golib/internal"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,8 +19,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, api.TestEnv)
-			resolvedPath, _ := api.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
+			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -39,8 +39,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, api.TestEnv)
-			resolvedPath, _ := api.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
+			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -71,8 +71,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, api.TestEnv)
-			resolvedPath, _ := api.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
+			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -123,8 +123,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, api.TestEnv)
-			resolvedPath, ok := api.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
+			resolvedPath, ok := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			if ok {
 				return resolvedPath
@@ -157,8 +157,8 @@ func TestImports(t *testing.T) {
 
 func TestScopes(t *testing.T) {
 	resolve := func(specifier string, importer string, importMap []byte) string {
-		parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, api.TestEnv)
-		resolvedPath, _ := api.ResolvePathFromImportMap(specifier, parsedMap, importer)
+		parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
+		resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, importer)
 
 		return resolvedPath
 	}

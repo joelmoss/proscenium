@@ -12,6 +12,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMain(t *testing.M) {
+	v := t.Run()
+	snaps.Clean(t)
+	os.Exit(v)
+}
+
 var cwd, _ = os.Getwd()
 var root string = path.Join(cwd, "../", "test", "internal")
 

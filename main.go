@@ -12,7 +12,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"joelmoss/proscenium/golib"
-	"joelmoss/proscenium/golib/api"
+	"joelmoss/proscenium/golib/internal"
 )
 
 // Build the given `path` in the `root`.
@@ -27,7 +27,7 @@ func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool
 	result := golib.Build(golib.BuildOptions{
 		Path:          C.GoString(path),
 		Root:          C.GoString(root),
-		Env:           api.Environment(env),
+		Env:           internal.Environment(env),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
 	})

@@ -2,8 +2,8 @@ package importmap_test
 
 import (
 	"encoding/json"
-	"joelmoss/proscenium/golib/api"
 	"joelmoss/proscenium/golib/importmap"
+	"joelmoss/proscenium/golib/internal"
 	"os"
 	"path"
 	"testing"
@@ -14,7 +14,7 @@ import (
 func TestParse(t *testing.T) {
 	t.Run("invalid json", func(t *testing.T) {
 		contents := `{[}]}`
-		_, err := importmap.Parse([]byte(contents), importmap.JsonType, api.TestEnv)
+		_, err := importmap.Parse([]byte(contents), importmap.JsonType, internal.TestEnv)
 
 		var syntaxError *json.SyntaxError
 		assert.ErrorAs(t, err, &syntaxError)
@@ -22,7 +22,7 @@ func TestParse(t *testing.T) {
 
 	t.Run("invalid imports", func(t *testing.T) {
 		contents := `{"imports": "as"}`
-		_, err := importmap.Parse([]byte(contents), importmap.JsonType, api.TestEnv)
+		_, err := importmap.Parse([]byte(contents), importmap.JsonType, internal.TestEnv)
 
 		var jsonErr *json.UnmarshalTypeError
 		assert.ErrorAs(t, err, &jsonErr)
@@ -35,7 +35,7 @@ func TestParse(t *testing.T) {
 			"imports": {
 				"foo": env === 'test' ? "/lib/foo_test.js" : "/lib/foo.js"
 			}
-		})`), importmap.JavascriptType, api.TestEnv)
+		})`), importmap.JavascriptType, internal.TestEnv)
 
 		assert.Equal(map[string]string{"foo": "/lib/foo_test.js"}, result.Imports)
 	})
@@ -48,7 +48,7 @@ func TestParse(t *testing.T) {
 				"foo": "/lib/foo.js"
 			}
 		}`
-		result, _ := importmap.Parse([]byte(contents), importmap.JsonType, api.TestEnv)
+		result, _ := importmap.Parse([]byte(contents), importmap.JsonType, internal.TestEnv)
 
 		assert.Equal(map[string]string{"foo": "/lib/foo.js"}, result.Imports)
 	})
@@ -62,9 +62,9 @@ func TestParse(t *testing.T) {
 				}
 			}
 		}`
-		result, _ := importmap.Parse([]byte(contents), importmap.JsonType, api.TestEnv)
+		result, _ := importmap.Parse([]byte(contents), importmap.JsonType, internal.TestEnv)
 
-		assert.Equal(t, map[string]api.ImportMapScopes(map[string]api.ImportMapScopes{"/lib/import_map/": {"foo": "/lib/foo4.js"}}), result.Scopes)
+		assert.Equal(t, map[string]internal.ImportMapScopes(map[string]internal.ImportMapScopes{"/lib/import_map/": {"foo": "/lib/foo4.js"}}), result.Scopes)
 	})
 }
 
@@ -75,7 +75,7 @@ func TestParseFile(t *testing.T) {
 	assert := assert.New(t)
 
 	file := path.Join(root, "config/import_maps/no_imports.json")
-	result, _ := importmap.ParseFile(file, api.TestEnv)
+	result, _ := importmap.ParseFile(file, internal.TestEnv)
 
 	assert.Empty(result.Imports)
 	assert.Empty(result.Scopes)

@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"joelmoss/proscenium/golib/api"
+	"joelmoss/proscenium/golib/internal"
 	"path"
 	"strings"
 
@@ -12,7 +12,7 @@ type PluginData = struct {
 	isResolvingPath bool
 }
 
-func Resolve(options api.PluginOptions) esbuild.Plugin {
+func Resolve(options internal.PluginOptions) esbuild.Plugin {
 	return esbuild.Plugin{
 		Name: "resolve",
 		Setup: func(build esbuild.PluginBuild) {
@@ -28,12 +28,12 @@ func Resolve(options api.PluginOptions) esbuild.Plugin {
 						return esbuild.OnResolveResult{}, nil
 					}
 
-					// result := api.Resolve(args, options.ImportMap, root)
+					// result := internal.Resolve(args, options.ImportMap, root)
 
 					if options.ImportMap != nil {
 						// Look for a match in the import map
 						base := strings.TrimPrefix(args.Importer, root)
-						resolvedImport, matched := api.ResolvePathFromImportMap(args.Path, options.ImportMap, base)
+						resolvedImport, matched := internal.ResolvePathFromImportMap(args.Path, options.ImportMap, base)
 						if matched {
 							return esbuild.OnResolveResult{
 								Path:     resolvedImport,
