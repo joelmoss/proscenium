@@ -1,6 +1,7 @@
-package internal
+package importmap
 
 import (
+	"joelmoss/proscenium/internal/types"
 	"path"
 	"regexp"
 	"sort"
@@ -16,7 +17,7 @@ type Scope struct {
 
 // Resolves the specifier to a path, using the import map and the importer, and returns the resolved
 // path and a boolean indicating whether the resolution was successful.
-func ResolvePathFromImportMap(specifier string, imap *ImportMap, importer string) (string, bool) {
+func ResolvePathFromImportMap(specifier string, imap *types.ImportMap, importer string) (string, bool) {
 	// Normalize the importer as an absolute path.
 	base := path.Dir(importer)
 

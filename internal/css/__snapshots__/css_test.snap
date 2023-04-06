@@ -127,3 +127,84 @@
 }
 
 ---
+
+[TestParseCss/should_pass_through_regular_css - 1]
+body{}
+---
+
+[TestParseCss/mixins/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin foo;
+}
+
+---
+
+[TestParseCss/mixins/mixin_is_replaced_with_defined_mixin - 1]
+header {
+    link
+}
+
+---
+
+[TestParseCss/mixins/local/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin foo;
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_is_replaced_with_defined_mixin - 1]
+
+header {
+    font-size: 20px;
+    div { color: pink; }
+}
+
+---
+
+[TestParseCss/mixins/url/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin unknown from url('/config/button.mixin.css');
+}
+
+---
+
+[TestParseCss/mixins/url/mixin_is_replaced_with_defined_mixin - 1]
+header {
+    @mixin large-button;
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_must_be_defined_at_root_level - 1]
+header {
+    @define-mixin large-button {
+        color: red;
+    }
+    div {
+        @mixin foo;
+    }
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_not_defined_at_root_level_is_passed_through - 1]
+header {
+    @define-mixin large-button {
+        color: red;
+    }
+    div {
+        @mixin foo;
+    }
+}
+
+---
+
+[TestParseCss/mixins/local/dependencies_are_fully_parsed - 1]
+
+header {
+    font-size: 20px;
+    div { color: pink; }
+}
+
+---

@@ -1,8 +1,7 @@
-package internal_test
+package importmap
 
 import (
-	"joelmoss/proscenium/golib/importmap"
-	"joelmoss/proscenium/golib/internal"
+	"joelmoss/proscenium/internal/types"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -19,8 +18,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
-			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := Parse(importMap, JsonType, types.TestEnv)
+			resolvedPath, _ := ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -39,8 +38,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
-			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := Parse(importMap, JsonType, types.TestEnv)
+			resolvedPath, _ := ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -71,8 +70,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
-			resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := Parse(importMap, JsonType, types.TestEnv)
+			resolvedPath, _ := ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			return resolvedPath
 		}
@@ -123,8 +122,8 @@ func TestImports(t *testing.T) {
 				}
 			}`)
 
-			parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
-			resolvedPath, ok := internal.ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
+			parsedMap, _ := Parse(importMap, JsonType, types.TestEnv)
+			resolvedPath, ok := ResolvePathFromImportMap(specifier, parsedMap, "/app/app.js")
 
 			if ok {
 				return resolvedPath
@@ -157,8 +156,8 @@ func TestImports(t *testing.T) {
 
 func TestScopes(t *testing.T) {
 	resolve := func(specifier string, importer string, importMap []byte) string {
-		parsedMap, _ := importmap.Parse(importMap, importmap.JsonType, internal.TestEnv)
-		resolvedPath, _ := internal.ResolvePathFromImportMap(specifier, parsedMap, importer)
+		parsedMap, _ := Parse(importMap, JsonType, types.TestEnv)
+		resolvedPath, _ := ResolvePathFromImportMap(specifier, parsedMap, importer)
 
 		return resolvedPath
 	}

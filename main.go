@@ -11,8 +11,8 @@ import "C"
 import (
 	"encoding/json"
 	"fmt"
-	"joelmoss/proscenium/golib"
-	"joelmoss/proscenium/golib/internal"
+	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 )
 
 // Build the given `path` in the `root`.
@@ -24,10 +24,10 @@ import (
 //
 //export build
 func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_BuildResult {
-	result := golib.Build(golib.BuildOptions{
+	result := builder.Build(builder.BuildOptions{
 		Path:          C.GoString(path),
 		Root:          C.GoString(root),
-		Env:           internal.Environment(env),
+		Env:           types.Environment(env),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
 	})

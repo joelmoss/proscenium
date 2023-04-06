@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	"joelmoss/proscenium/golib/internal/css"
+	"joelmoss/proscenium/internal/css"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
