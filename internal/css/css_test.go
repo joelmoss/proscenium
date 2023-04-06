@@ -1,11 +1,13 @@
 package css_test
 
 import (
+	. "joelmoss/proscenium/internal/test"
+
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Css/Css", func() {
+var _ = Describe("Internal/Css", func() {
 	Describe("ParseCss", func() {
 
 		It("should pass through regular css", func() {

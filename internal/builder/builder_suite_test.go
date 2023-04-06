@@ -1,4 +1,4 @@
-package css_test
+package builder_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestCss(t *testing.T) {
+func TestBuilder(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Proscenium CSS")
+	RunSpecs(t, "Proscenium Builder")
 }
