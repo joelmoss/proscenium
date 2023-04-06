@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/css/scanner"
+	"github.com/k0kubun/pp/v3"
 )
 
 type handleNextTokenUntilFunc func(token *scanner.Token) bool
@@ -34,8 +35,11 @@ type CssParser struct {
 	// global rule was declared, then the rule is global. Otherwise, it's local.
 	nestedLevels int
 
-	// The nesting level of each global declaration.
+	// The nesting level of each `:global` declaration.
 	globalRuleLevels [][2]int
+
+	// The nesting level of each `:local` declaration.
+	localRuleLevels [][2]int
 
 	// The hash value of the path. This is used to generate unique class names.
 	pathHash string
@@ -75,17 +79,32 @@ func (parser *CssParser) nextToken() *scanner.Token {
 		} else if token.Value == "}" {
 			parser.nestedLevels--
 
-			count := len(parser.globalRuleLevels)
-			if count > 0 {
-				level := parser.globalRuleLevels[count-1]
-				if parser.nestedLevels < level[0] {
-					// pp.Printf("\n<<<<< :global is closed at line:%s, col:%s\n", token.Line, token.Column)
+			gcount := len(parser.globalRuleLevels)
+			if gcount > 0 {
+				glevel := parser.globalRuleLevels[gcount-1]
+				if parser.nestedLevels < glevel[0] {
+					pp.Printf("\n<<<<< :global is closed at line:%s, col:%s\n", token.Line, token.Column)
 
-					if level[1] > 0 {
+					if glevel[1] > 0 {
 						parser.output += token.Value
 					}
 
-					parser.globalRuleLevels = parser.globalRuleLevels[:count-1]
+					parser.globalRuleLevels = parser.globalRuleLevels[:gcount-1]
+					return parser.nextToken()
+				}
+			}
+
+			lcount := len(parser.localRuleLevels)
+			if lcount > 0 {
+				llevel := parser.localRuleLevels[lcount-1]
+				if parser.nestedLevels < llevel[0] {
+					pp.Printf("\n<<<<< :local is closed at line:%s, col:%s\n", token.Line, token.Column)
+
+					if llevel[1] > 0 {
+						parser.output += token.Value
+					}
+
+					parser.localRuleLevels = parser.localRuleLevels[:lcount-1]
 					return parser.nextToken()
 				}
 			}
@@ -256,20 +275,70 @@ func (parser *CssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 				if nextT.Type == scanner.TokenIdent {
 					// Return the unhashed class name if we are in a global rule.
-					count := len(parser.globalRuleLevels)
-					if count > 0 {
-						level := parser.globalRuleLevels[count-1]
-						if level[0] > 0 && level[1] < 1 {
+
+					isGlobal := false
+					gcount := len(parser.globalRuleLevels)
+					if gcount > 0 {
+						glevel := parser.globalRuleLevels[gcount-1]
+						if glevel[0] > 0 && glevel[1] < 1 {
+							isGlobal = true
 							return "." + nextT.Value, true
 						}
 					}
+
+					isLocal := false
+					lcount := len(parser.localRuleLevels)
+					if lcount > 0 {
+						llevel := parser.localRuleLevels[lcount-1]
+						if llevel[0] > 0 && llevel[1] < 1 {
+							isLocal = true
+							// return "." + nextT.Value, true
+						}
+					}
+
+					pp.Println("--------------------isGlobal:", isGlobal)
+					pp.Println("isLocal:", isLocal)
 
 					return "." + nextT.Value + parser.pathHash, true
 				}
 			} else if token.Value == ":" {
 				nextT := parser.nextToken()
 
-				if nextT.Type == scanner.TokenFunction && nextT.Value == "global(" {
+				if nextT.Type == scanner.TokenFunction && nextT.Value == "local(" {
+					untilV, tokensUntil := parser.outputUntilValue(")", false)
+					if untilV == nil {
+						return "", false
+					}
+
+					var containsClass bool
+					var className string
+					for _, t := range tokensUntil {
+						if t.Type == scanner.TokenChar && t.Value == "." {
+							containsClass = true
+						} else if containsClass && t.Type == scanner.TokenIdent {
+							className = t.Value
+						}
+					}
+
+					if !containsClass {
+						panic("local() must contain a class name")
+					}
+
+					parser.output += "." + className + parser.pathHash
+
+					untilV, _ = parser.outputUntilValue("{", true)
+					if untilV == nil {
+						return "", false
+					}
+
+					pp.Printf("\n>>>>> :local() is opened at line:%s, col:%s\n", untilV.Line, untilV.Column)
+
+					parser.output += untilV.Value
+
+					parser.localRuleLevels = append(parser.localRuleLevels, [2]int{parser.nestedLevels, 1})
+
+					token = parser.nextToken()
+				} else if nextT.Type == scanner.TokenFunction && nextT.Value == "global(" {
 					untilV, tokensUntil := parser.outputUntilValue(")", true)
 					if untilV == nil {
 						return "", false
@@ -291,11 +360,47 @@ func (parser *CssParser) handleNextToken(args ...interface{}) (string, bool) {
 						return "", false
 					}
 
-					// pp.Printf("\n>>>>> :global(%s) is opened at line:%s, col:%s\n", "."+className, untilV.Line, untilV.Column)
+					pp.Printf("\n>>>>> :global() is opened at line:%s, col:%s\n", untilV.Line, untilV.Column)
 
 					parser.output += untilV.Value
 
 					parser.globalRuleLevels = append(parser.globalRuleLevels, [2]int{parser.nestedLevels, 1})
+
+					token = parser.nextToken()
+				} else if nextT.Type == scanner.TokenIdent && nextT.Value == "local" {
+					untilV, tokensUntil := parser.outputUntilValue("{", false)
+					if untilV == nil {
+						return "", false
+					}
+
+					var tmpOutput string
+					var containsClass bool
+					for _, t := range tokensUntil {
+						if t.Type == scanner.TokenChar && t.Value == "." {
+							containsClass = true
+						}
+
+						if containsClass && t.Type == scanner.TokenIdent {
+							tmpOutput += t.Value + parser.pathHash
+						} else {
+							tmpOutput += t.Value
+						}
+					}
+
+					tmpOutput += untilV.Value
+
+					// A class ident may not be present for the local rule, so we need to check for one. If
+					// none is found we treat all children as local.
+					if !containsClass {
+						// pp.Printf("\n>>>>> :local is opened at line:%s, col:%s\n", untilV.Line, untilV.Column)
+
+						// No class is present, all children are local.
+						parser.localRuleLevels = append(parser.localRuleLevels, [2]int{parser.nestedLevels, 0})
+					} else {
+						// pp.Printf("\n>>>>> :local %s is opened at line:%s, col:%s\n", tmpOutput, untilV.Line, untilV.Column)
+						// parser.output += "." + className + parser.pathHash + untilV.Value
+						parser.output += strings.TrimSpace(tmpOutput)
+					}
 
 					token = parser.nextToken()
 				} else if nextT.Type == scanner.TokenIdent && nextT.Value == "global" {

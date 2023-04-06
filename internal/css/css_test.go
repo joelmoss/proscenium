@@ -152,6 +152,63 @@ var _ = Describe("Internal/Css", func() {
 				`))
 			})
 
+			Describe("local function", func() {
+				It("top level local", func() {
+					Expect(`
+						.title { color: red; }
+						:local(.subtitle) { color: green; }
+					`).To(BeParsedTo(`
+						.title43c30152 { color: red; }
+						.subtitle43c30152 { color: green; }
+					`))
+				})
+
+				It("should rename argument", func() {
+					Expect(`
+						:global {
+							:local(.subtitle) { color: green; }
+							.title { color: red; }
+						}
+					`).To(BeParsedTo(`
+						.subtitle43c30152 { color: green; }
+						.title { color: red; }
+					`))
+				})
+
+				It("nested locals are parsed", func() {
+					Expect(`
+						:global(.subtitle) {
+							:local(.day) { color: orange; }
+							:local .month { color: red; }
+							:local {
+								.year { color: pink; }
+								:global(.foo) { color: blue; }
+							}
+						}
+					`).To(BeParsedTo(`
+						.subtitle {
+							.day43c30152 { color: orange; }
+							.month43c30152 { color: red; }
+							.year43c30152 { color: pink; }
+							.foo { color: blue; }
+						}
+					`))
+				})
+			})
+
+			Describe("local shorthand with argument", func() {
+				FIt("should not rename argument", func() {
+					Expect(`
+						:global {
+							:local
+								.subtitle { color: green; }
+						}
+					`).To(BeParsedTo(`
+						.subtitle43c30152 { color: green; }
+					`))
+				})
+			})
+
 			Describe("global function", func() {
 				It("should not rename argument", func() {
 					Expect(`
@@ -165,14 +222,20 @@ var _ = Describe("Internal/Css", func() {
 					`))
 				})
 
-				It("nested globals are ignored", func() {
+				It("nested globals are parsed", func() {
 					Expect(`
 						:global(.subtitle) {
 							:global(.day) { color: orange; }
+							:global .month { color: red; }
+							:global {
+								.year { color: pink; }
+							}
 						}
 					`).To(BeParsedTo(`
 						.subtitle {
 							.day { color: orange; }
+							.month { color: red; }
+							.year { color: pink; }
 						}
 					`))
 				})
