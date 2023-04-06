@@ -34,9 +34,8 @@ type CssParser struct {
 	// global rule was declared, then the rule is global. Otherwise, it's local.
 	nestedLevels int
 
-	// Count of number of nesting levels, which is essentially just the count of each opening curly
-	// brace `{`.
-	globalRuleStartsAtLevel int
+	// The nesting level of each global declaration.
+	globalRuleLevels [][2]int
 
 	// The hash value of the path. This is used to generate unique class names.
 	pathHash string
@@ -76,14 +75,24 @@ func (parser *CssParser) nextToken() *scanner.Token {
 		} else if token.Value == "}" {
 			parser.nestedLevels--
 
-			if parser.nestedLevels < parser.globalRuleStartsAtLevel {
-				parser.globalRuleStartsAtLevel = 0
-				return parser.nextToken()
+			count := len(parser.globalRuleLevels)
+			if count > 0 {
+				level := parser.globalRuleLevels[count-1]
+				if parser.nestedLevels < level[0] {
+					// pp.Printf("\n<<<<< :global is closed at line:%s, col:%s\n", token.Line, token.Column)
+
+					if level[1] > 0 {
+						parser.output += token.Value
+					}
+
+					parser.globalRuleLevels = parser.globalRuleLevels[:count-1]
+					return parser.nextToken()
+				}
 			}
 		}
 	}
 
-	// pp.Println(token.Type.String(), token, parser.nestedLevels)
+	// pp.Println(token.Type.String(), token, parser.nestedLevels, parser.globalRuleLevels)
 
 	return token
 }
@@ -246,9 +255,13 @@ func (parser *CssParser) handleNextToken(args ...interface{}) (string, bool) {
 				nextT := parser.nextToken()
 
 				if nextT.Type == scanner.TokenIdent {
-					// Return the unhashed class if we are in a global rule.
-					if parser.globalRuleStartsAtLevel > 0 {
-						return "." + nextT.Value, true
+					// Return the unhashed class name if we are in a global rule.
+					count := len(parser.globalRuleLevels)
+					if count > 0 {
+						level := parser.globalRuleLevels[count-1]
+						if level[0] > 0 && level[1] < 1 {
+							return "." + nextT.Value, true
+						}
 					}
 
 					return "." + nextT.Value + parser.pathHash, true
@@ -257,10 +270,32 @@ func (parser *CssParser) handleNextToken(args ...interface{}) (string, bool) {
 				nextT := parser.nextToken()
 
 				if nextT.Type == scanner.TokenFunction && nextT.Value == "global(" {
-					untilV, _ := parser.outputUntilValue(")", true)
+					untilV, tokensUntil := parser.outputUntilValue(")", true)
 					if untilV == nil {
 						return "", false
 					}
+
+					var containsClass bool
+					for _, t := range tokensUntil {
+						if t.Type == scanner.TokenChar && t.Value == "." {
+							containsClass = true
+						}
+					}
+
+					if !containsClass {
+						panic("global() must contain a class name")
+					}
+
+					untilV, _ = parser.outputUntilValue("{", true)
+					if untilV == nil {
+						return "", false
+					}
+
+					// pp.Printf("\n>>>>> :global(%s) is opened at line:%s, col:%s\n", "."+className, untilV.Line, untilV.Column)
+
+					parser.output += untilV.Value
+
+					parser.globalRuleLevels = append(parser.globalRuleLevels, [2]int{parser.nestedLevels, 1})
 
 					token = parser.nextToken()
 				} else if nextT.Type == scanner.TokenIdent && nextT.Value == "global" {
@@ -284,9 +319,12 @@ func (parser *CssParser) handleNextToken(args ...interface{}) (string, bool) {
 					// A class ident may not be present for the global rule, so we need to check for one. If
 					// none is found we treat all children as global.
 					if !containsClass {
+						// pp.Printf("\n>>>>> :global is opened at line:%s, col:%s\n", untilV.Line, untilV.Column)
+
 						// No class is present, all children are global.
-						parser.globalRuleStartsAtLevel = parser.nestedLevels
+						parser.globalRuleLevels = append(parser.globalRuleLevels, [2]int{parser.nestedLevels, 0})
 					} else {
+						// pp.Printf("\n>>>>> :global %s is opened at line:%s, col:%s\n", tmpOutput, untilV.Line, untilV.Column)
 						parser.output += strings.TrimSpace(tmpOutput)
 					}
 

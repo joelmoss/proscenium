@@ -165,7 +165,17 @@ var _ = Describe("Internal/Css", func() {
 					`))
 				})
 
-				It("nested globals are ignored", Pending, func() {})
+				It("nested globals are ignored", func() {
+					Expect(`
+						:global(.subtitle) {
+							:global(.day) { color: orange; }
+						}
+					`).To(BeParsedTo(`
+						.subtitle {
+							.day { color: orange; }
+						}
+					`))
+				})
 
 				It("nested classes should be renamed", func() {
 					Expect(`
@@ -196,7 +206,29 @@ var _ = Describe("Internal/Css", func() {
 					`))
 				})
 
-				It("nested globals are ignored", Pending, func() {})
+				It("nested globals are ignored", func() {
+					Expect(`
+						.title { color: blue; }
+						:global .subtitle {
+							color: green;
+							:global(.day) { color: orange; }
+							:global .month { color: pink; }
+							:global {
+								.year { color: black; }
+							}
+						}
+						.author { color: red; }
+					`).To(BeParsedTo(`
+						.title43c30152 { color: blue; }
+						.subtitle {
+							color: green;
+							.day { color: orange; }
+							.month { color: pink; }
+							.year { color: black; }
+						}
+						.author43c30152 {	color: red; }
+					`))
+				})
 
 				It("nested classes should be renamed", func() {
 					Expect(`
@@ -234,7 +266,37 @@ var _ = Describe("Internal/Css", func() {
 					`))
 				})
 
-				It("nested globals are ignored", Pending, func() {})
+				It("nested globals without class ident are ignored", func() {
+					Expect(`
+						:global {
+							:global {
+								.subtitle { color: green; }
+							}
+						}
+					`).To(BeParsedTo(`
+						.subtitle { color: green; }
+					`))
+				})
+
+				It("nested globals with class ident are ignored", func() {
+					Expect(`
+						:global {
+							.title { color: green; }
+							:global(.subtitle) {
+								color: blue;
+								:global {
+									.day { color: orange; }
+								}
+							}
+						}
+					`).To(BeParsedTo(`
+						.title { color: green; }
+						.subtitle {
+							color: blue;
+							.day { color: orange; }
+						}
+					`))
+				})
 			})
 		})
 	})
