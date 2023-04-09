@@ -91,24 +91,74 @@ var _ = Describe("Internal/Css", func() {
 			})
 
 			Describe("url", func() {
-				It("undefined mixin is passed through", func() {
+				It("mixin is replaced with defined mixin", func() {
 					Expect(`
 						header {
-							@mixin unknown from url('/config/button.mixin.css');
+							@mixin red from url('/lib/mixins/colors.css');
 						}
 					`).To(BeParsedTo(`
 						header {
-							@mixin unknown from url('/config/button.mixin.css');
+							color: red;
 						}
 					`, "/foo.css"))
 				})
 
-				It("mixin is replaced with defined mixin", Pending, func() {
-					Expect(`
+				When("mixin file is not found", func() {
+					It("should log warning", Pending)
+
+					It("should pass through the @mixin declaration", func() {
+						Expect(`
 						header {
-							@mixin large-button from url('/config/button.mixin.css');
+							@mixin red from url("/unknown.css");
 						}
-					`).To(BeParsedTo(``, "/foo.css"))
+					`).To(BeParsedTo(`
+						header {
+							@mixin red from url("/unknown.css");
+						}
+					`, "/foo.css"))
+					})
+				})
+
+				When("mixin is undefined", func() {
+					It("mixin is passed through", func() {
+						Expect(`
+						header {
+							@mixin unknown from url("/lib/mixins/colors.css");
+						}
+					`).To(BeParsedTo(`
+						header {
+							@mixin unknown from url("/lib/mixins/colors.css");
+						}
+					`, "/foo.css"))
+					})
+				})
+
+				When("mixin declaration has no name", func() {
+					It("mixin is passed through", func() {
+						Expect(`
+							header {
+								@mixin purple from url("/lib/mixins/colors.css");
+							}
+						`).To(BeParsedTo(`
+							header {
+								@mixin purple from url("/lib/mixins/colors.css");
+							}
+						`, "/foo.css"))
+					})
+				})
+
+				When("mixin declaration is nested", func() {
+					It("should ignore nested mixin", func() {
+						Expect(`
+							header {
+								@mixin blue from url("/lib/mixins/colors.css");
+							}
+						`).To(BeParsedTo(`
+							header {
+								color: blue;
+							}
+						`, "/foo.css"))
+					})
 				})
 			})
 		})
@@ -197,7 +247,7 @@ var _ = Describe("Internal/Css", func() {
 			})
 
 			Describe("local shorthand with argument", func() {
-				FIt("should not rename argument", func() {
+				It("should not rename argument", func() {
 					Expect(`
 						:global {
 							:local

@@ -29,7 +29,7 @@ func Resolve(options types.PluginOptions) esbuild.Plugin {
 						return esbuild.OnResolveResult{}, nil
 					}
 
-					// result := internal.Resolve(args, options.ImportMap, root)
+					// result := resolver.Resolve(args, options.ImportMap, root)
 
 					if options.ImportMap != nil {
 						// Look for a match in the import map
@@ -45,7 +45,7 @@ func Resolve(options types.PluginOptions) esbuild.Plugin {
 
 					pathToResolve := args.Path
 
-					// Absolute path - append to current working dir. This enabled absolute path imports
+					// Absolute path - append to current working dir. This enables absolute path imports
 					// (eg, import '/lib/foo').
 					if strings.HasPrefix(pathToResolve, "/") {
 						pathToResolve = path.Join(root, pathToResolve)

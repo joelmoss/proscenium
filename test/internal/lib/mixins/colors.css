@@ -1,0 +1,19 @@
+@define-mixin red {
+  color: red;
+}
+
+@define-mixin {
+  color: purple;
+}
+
+@define-mixin blue {
+  color: blue;
+
+  @define-mixin pink {
+    color: pink;
+  }
+
+  @define-mixin {
+    color: black;
+  }
+}
