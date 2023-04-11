@@ -103,6 +103,25 @@ var _ = Describe("Internal/Css", func() {
 					`, "/foo.css"))
 				})
 
+				PIt("should cache mixin definition", func() {
+					Expect(`
+						header {
+							@mixin red from url('/lib/mixins/colors.css');
+						}
+						footer {
+							@mixin bigRed from url('/lib/mixins/colors.css');
+						}
+					`).To(BeParsedTo(`
+						header {
+							color: red;
+						}
+						footer {
+							color: red;
+							font-size: 50px;
+						}
+					`, "/foo.css"))
+				})
+
 				When("mixin file is not found", func() {
 					It("should log warning", Pending)
 
@@ -164,7 +183,7 @@ var _ = Describe("Internal/Css", func() {
 					})
 				})
 
-				FIt("should include nested mixins", func() {
+				It("should include nested mixins", func() {
 					Expect(`
 						header {
 							@mixin bigRed from url("/lib/mixins/colors.css");

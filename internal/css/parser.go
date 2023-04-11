@@ -11,6 +11,7 @@ type cssParser struct {
 
 	input    string
 	output   string
+	filePath string
 	rootPath string
 
 	// Map of mixin names and their contents.
@@ -144,12 +145,12 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 	switch token.Type {
 	case tokenizer.TokenAtKeyword:
 		if token.Value == "define-mixin" {
-			key, def := p.tokens.assignMixinDefinition()
+			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
 				return token.Render(), true
 			}
 
-			p.mixins[key] = def
+			p.mixins[p.filePath+"#"+key] = def
 
 			return "", true
 		} else if token.Value == "mixin" {
@@ -180,8 +181,6 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 				return true
 			})
-
-			p.tokens.log("%v, %v", mixinIdent, uri)
 
 			if p.resolveMixin(mixinIdent, uri) {
 				return "", true

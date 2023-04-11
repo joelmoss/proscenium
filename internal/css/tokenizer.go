@@ -11,14 +11,14 @@ import (
 )
 
 type cssTokenizers struct {
-	tokenizer tokenizer.Tokenizer
+	tokenizer *tokenizer.Tokenizer
 
 	// The file path of the current file being parsed.
 	filePath string
 }
 
 type cssTokenizer struct {
-	tokenizers []cssTokenizers
+	tokenizers []*cssTokenizers
 
 	// Position of the current tokenizer in the tokenizers slice.
 	position int
@@ -29,14 +29,19 @@ type cssTokenizer struct {
 	incrNestingOnNext bool
 }
 
-func newCssTokenizer(input interface{}) (*cssTokenizer, error) {
+func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) {
 	inputString, ok := utils.ToString(input)
 	if !ok {
 		return nil, errors.New("newCssTokenizer: input is not a string")
 	}
 
+	tk := cssTokenizers{
+		tokenizer: tokenizer.NewTokenizer(strings.NewReader(inputString)),
+		filePath:  filePath,
+	}
+
 	return &cssTokenizer{
-		tokenizers: cssTokenizers{tokenizer.NewTokenizer(strings.NewReader(inputString)), nil},
+		tokenizers: []*cssTokenizers{&tk},
 	}, nil
 }
 
@@ -69,20 +74,23 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 }
 
 func (x *cssTokenizer) currentTokenizer() *tokenizer.Tokenizer {
-	return x.tokenizers[x.position]
+	return x.tokenizers[x.position].tokenizer
 }
 
 func (x *cssTokenizer) currentToken() tokenizer.Token {
 	return x.currentTokenizer().Token()
 }
 
-func (x *cssTokenizer) insertTokens(tokens string) {
-	x.tokenizers = append(x.tokenizers, tokenizer.NewTokenizer(strings.NewReader(tokens)))
+func (x *cssTokenizer) insertTokens(tokens string, filePath string) {
+	x.tokenizers = append(x.tokenizers, &cssTokenizers{
+		tokenizer: tokenizer.NewTokenizer(strings.NewReader(tokens)),
+		filePath:  filePath,
+	})
 	x.position++
 }
 
 // Fetch the mixin definition at the current token, and return its name and definition.
-func (x *cssTokenizer) assignMixinDefinition() (string, string) {
+func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 	if x.nesting > 0 {
 		// @define-mixin must be declared at the root level. Pass it through as is.
 		return "", ""
