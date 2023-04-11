@@ -12,8 +12,9 @@
   @define-mixin pink {
     color: pink;
   }
+}
 
-  @define-mixin {
-    color: black;
-  }
+@define-mixin bigRed {
+  @mixin red;
+  font-size: 50px;
 }

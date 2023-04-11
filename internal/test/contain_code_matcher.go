@@ -2,6 +2,7 @@ package test
 
 import (
 	"fmt"
+	"joelmoss/proscenium/internal/utils"
 	"strings"
 
 	"4d63.com/collapsewhitespace"
@@ -15,7 +16,7 @@ type ContainCodeMatcher struct {
 }
 
 func (matcher *ContainCodeMatcher) Match(actual interface{}) (success bool, err error) {
-	actualString, ok := toString(actual)
+	actualString, ok := utils.ToString(actual)
 	if !ok {
 		return false, fmt.Errorf("ContainCode matcher requires a string.  Got:\n%s", format.Object(actual, 1))
 	}
@@ -47,18 +48,4 @@ func ContainCode(expected string) types.GomegaMatcher {
 	return &ContainCodeMatcher{
 		code: strings.TrimSpace(collapsewhitespace.String(expected)),
 	}
-}
-
-func toString(a interface{}) (string, bool) {
-	aString, isString := a.(string)
-	if isString {
-		return aString, true
-	}
-
-	aBytes, isBytes := a.([]byte)
-	if isBytes {
-		return string(aBytes), true
-	}
-
-	return "", false
 }

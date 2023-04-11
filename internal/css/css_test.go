@@ -58,11 +58,13 @@ var _ = Describe("Internal/Css", func() {
 						}
 						header {
 							@mixin large-button;
+							color: blue;
 						}
 					`).To(BeParsedTo(`
 						header {
 							font-size: 20px;
 							div { color: pink; }
+							color: blue;
 						}
 					`, "/foo.css"))
 				})
@@ -75,7 +77,6 @@ var _ = Describe("Internal/Css", func() {
 						@define-mixin large-button {
 							@mixin button;
 							font-size: 20px;
-							div { color: pink; }
 						}
 						header {
 							@mixin large-button;
@@ -84,7 +85,6 @@ var _ = Describe("Internal/Css", func() {
 						header {
 							appearance: none;
 							font-size: 20px;
-							div { color: pink; }
 						}
 					`, "/foo.css"))
 				})
@@ -148,7 +148,7 @@ var _ = Describe("Internal/Css", func() {
 				})
 
 				When("mixin declaration is nested", func() {
-					It("should ignore nested mixin", func() {
+					It("should pass through nested mixin", func() {
 						Expect(`
 							header {
 								@mixin blue from url("/lib/mixins/colors.css");
@@ -156,9 +156,25 @@ var _ = Describe("Internal/Css", func() {
 						`).To(BeParsedTo(`
 							header {
 								color: blue;
+								@define-mixin pink {
+									color: pink;
+								}
 							}
 						`, "/foo.css"))
 					})
+				})
+
+				FIt("should include nested mixins", func() {
+					Expect(`
+						header {
+							@mixin bigRed from url("/lib/mixins/colors.css");
+						}
+					`).To(BeParsedTo(`
+						header {
+							color: red;
+							font-size: 50px;
+						}
+					`, "/foo.css"))
 				})
 			})
 		})
