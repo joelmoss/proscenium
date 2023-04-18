@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+	"os"
 	"path"
 
 	"joelmoss/proscenium/internal/importmap"
@@ -29,6 +30,8 @@ type BuildOptions struct {
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
+	os.Setenv("RAILS_ENV", options.Env.String())
+
 	minify := !options.Debug && options.Env != types.TestEnv
 
 	logLevel := func() esbuild.LogLevel {
@@ -89,6 +92,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 		Plugins: []esbuild.Plugin{
 			// plugin.ImportMap(pluginOpts),
+			plugin.Env,
 			plugin.Svg,
 			plugin.Css(),
 			// plugin.Url,
