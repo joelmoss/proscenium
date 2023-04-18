@@ -1,9 +1,9 @@
 module joelmoss/proscenium
 
-go 1.19
+go 1.20
 
 require (
-	github.com/evanw/esbuild v0.17.15
+	github.com/evanw/esbuild v0.17.17
 	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/onsi/ginkgo/v2 v2.9.2
 	github.com/sergi/go-diff v1.3.1
@@ -39,5 +39,3 @@ require (
 	golang.org/x/text v0.9.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
-
-replace github.com/joelmoss/gocss => /Users/joelmoss/dev/gocss
