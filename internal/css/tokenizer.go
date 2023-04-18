@@ -48,11 +48,9 @@ func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) 
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
 
-	if token.Type.StopToken() {
-		if x.position > 0 {
-			x.position--
-			token = x.currentTokenizer().Next()
-		}
+	if token.Type.StopToken() && x.position > 0 {
+		x.position--
+		return x.next()
 	}
 
 	if x.incrNestingOnNext {
@@ -81,12 +79,14 @@ func (x *cssTokenizer) currentToken() tokenizer.Token {
 	return x.currentTokenizer().Token()
 }
 
-func (x *cssTokenizer) insertTokens(tokens string, filePath string) {
-	x.tokenizers = append(x.tokenizers, &cssTokenizers{
+func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinName string) {
+	t := &cssTokenizers{
 		tokenizer: tokenizer.NewTokenizer(strings.NewReader(tokens)),
 		filePath:  filePath,
-	})
-	x.position++
+	}
+
+	x.position = len(x.tokenizers)
+	x.tokenizers = append(x.tokenizers, t)
 }
 
 // Fetch the mixin definition at the current token, and return its name and definition.
@@ -171,6 +171,19 @@ func (x *cssTokenizer) log(msg string, args ...interface{}) {
 	log.Printf("!%s%s", indent, fmt.Sprintf(msg, args...))
 }
 
+func (x *cssTokenizer) logOutput(output string) {
+	if !debug {
+		return
+	}
+
+	indent := strings.Repeat("..", x.nesting)
+	if indent != "" {
+		indent += " "
+	}
+
+	log.Printf(" %s> %#v", indent, fmt.Sprint(output))
+}
+
 func (x *cssTokenizer) logToken(args ...interface{}) {
 	if !debug {
 		return
@@ -183,9 +196,9 @@ func (x *cssTokenizer) logToken(args ...interface{}) {
 
 	if len(args) > 0 {
 		token := args[0].(tokenizer.Token)
-		log.Printf("!%s%s %#v (p:%v, n:%v)", indent, token.Type.String(), token.Value, x.position, x.nesting)
+		log.Printf("!%s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
 	} else {
 		token := x.currentToken()
-		log.Printf(" %s%s %#v (p:%v, n:%v)", indent, token.Type.String(), token.Value, x.position, x.nesting)
+		log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
 	}
 }

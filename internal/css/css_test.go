@@ -103,7 +103,7 @@ var _ = Describe("Internal/Css", func() {
 					`, "/foo.css"))
 				})
 
-				PIt("should cache mixin definition", func() {
+				It("should cache mixin definition", func() {
 					Expect(`
 						header {
 							@mixin red from url('/lib/mixins/colors.css');

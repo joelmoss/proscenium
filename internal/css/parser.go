@@ -39,10 +39,16 @@ func (p *cssParser) parse() (string, error) {
 			break
 		}
 
-		p.output += result
+		p.append(result)
 	}
 
 	return p.output, nil
+}
+
+// Append the given input to the output.
+func (p *cssParser) append(input string) {
+	p.tokens.logOutput(input)
+	p.output += input
 }
 
 // Returns the next token, or nil if the end or an error is reached.
@@ -62,7 +68,7 @@ func (p *cssParser) nextToken() *tokenizer.Token {
 				p.tokens.log(":global is closed at %v", p.tokens.nesting)
 
 				if glevel[1] > 0 {
-					p.output += token.Value
+					p.append(token.Value)
 				}
 
 				p.globalRuleLevels = p.globalRuleLevels[:gcount-1]
@@ -78,7 +84,7 @@ func (p *cssParser) nextToken() *tokenizer.Token {
 				p.tokens.log(":local is closed at %v", p.tokens.nesting)
 
 				if llevel[1] > 0 {
-					p.output += token.Value
+					p.append(token.Value)
 				}
 
 				p.localRuleLevels = p.localRuleLevels[:lcount-1]
@@ -106,7 +112,7 @@ func (p *cssParser) outputUntilTokenType(tokenType tokenizer.TokenType, appendTo
 		tokensUntil = append(tokensUntil, token)
 
 		if appendToOutput {
-			p.output += token.Render()
+			p.append(token.Render())
 		}
 	}
 }
@@ -155,6 +161,8 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 			return "", true
 		} else if token.Value == "mixin" {
 			var mixinIdent, uri string
+
+			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
 			original := token.Render()
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
@@ -162,20 +170,20 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 				original += token.Render()
 
 				if token.Type == tokenizer.TokenSemicolon {
-					// Current token is a semicolon, so we're done. But we need to skip it, otherwise we get
-					// duplicates.
+					// Current token is a semicolon, so we're done. But we need to skip to the next token,
+					// otherwise we get duplicates of the semicolon.
 					p.nextToken()
 
 					return false
 				}
 
 				switch token.Type {
-				case tokenizer.TokenIdent:
+				case tokenizer.TokenIdent: // get the mixin name.
 					if mixinIdent == "" {
 						mixinIdent = token.Value
 					}
 
-				case tokenizer.TokenURI:
+				case tokenizer.TokenURI: // get the mixin URI - if any.
 					uri = token.Value
 				}
 
@@ -234,7 +242,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 					panic("local() must contain a class name")
 				}
 
-				p.output += "." + className + p.pathHash
+				p.append("." + className + p.pathHash)
 
 				untilV, _ = p.outputUntilTokenType(tokenizer.TokenOpenBrace, true)
 				if untilV == nil {
@@ -243,7 +251,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 				p.tokens.log(":local is opened")
 
-				p.output += untilV.Value
+				p.append(untilV.Value)
 
 				p.localRuleLevels = append(p.localRuleLevels, [2]int{p.tokens.nesting, 1})
 
@@ -272,7 +280,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 				p.tokens.log(":global() is opened at %v", p.tokens.nesting)
 
-				p.output += untilV.Value
+				p.append(untilV.Value)
 
 				p.globalRuleLevels = append(p.globalRuleLevels, [2]int{p.tokens.nesting, 1})
 
@@ -309,7 +317,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 				} else {
 					p.tokens.log(":local is opened")
 					// p.output += "." + className + p.pathHash + untilV.Value
-					p.output += strings.TrimSpace(tmpOutput)
+					p.append(strings.TrimSpace(tmpOutput))
 				}
 
 				token = p.nextToken()
@@ -342,7 +350,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 				} else {
 					p.tokens.log(":global is opened at %v", p.tokens.nesting)
-					p.output += strings.TrimSpace(tmpOutput)
+					p.append(strings.TrimSpace(tmpOutput))
 					token = p.nextToken()
 				}
 

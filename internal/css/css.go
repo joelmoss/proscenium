@@ -9,7 +9,7 @@ import (
 	"github.com/riking/cssparse/tokenizer"
 )
 
-const debug = true
+const debug = false
 
 type handleNextTokenUntilFunc func(token *tokenizer.Token) bool
 

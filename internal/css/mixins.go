@@ -16,29 +16,34 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		return false
 	}
 
-	filePath := p.tokens.tokenizers[p.tokens.position].filePath
-
-	if uri != "" {
-		// Resolve the path.
-		absPath, ok := resolver.Absolute(uri, p.rootPath)
-		if !ok {
-			// Mixin path not found, so pass it through as-is.
-			return false
+	findAndInsertMixin := func(filePath string, mixinName string) bool {
+		def, ok := p.mixins[filePath+"#"+mixinName]
+		if ok {
+			p.tokens.insertTokens(def, filePath, mixinName)
+			return true
 		}
 
-		// TODO: cache this!
-		if !p.parseMixinDefinitions(absPath) {
-			// Mixin file not found, so pass it through as-is.
-			return false
-		}
-
-		filePath = absPath
+		return false
 	}
 
-	def, ok := p.mixins[filePath+"#"+mixinIdent]
-	if ok {
-		p.tokens.insertTokens(def, filePath)
-		return true
+	if uri != "" {
+		// Resolve the uri.
+		absPath, ok := resolver.Absolute(uri, p.rootPath)
+		if !ok {
+			return false
+		}
+
+		if findAndInsertMixin(absPath, mixinIdent) {
+			return true
+		}
+
+		if p.parseMixinDefinitions(absPath) {
+			// We've successfully parsed the mixin file, so look up the definition.
+			return findAndInsertMixin(absPath, mixinIdent)
+		}
+	} else {
+		filePath := p.tokens.tokenizers[p.tokens.position].filePath
+		return findAndInsertMixin(filePath, mixinIdent)
 	}
 
 	return false
@@ -48,7 +53,6 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 // will ignore everything except mixin definitions, and does not parse the mixin definition contents.
 // The parsing is done when the mixin is included.
 func (p *cssParser) parseMixinDefinitions(filePath string) bool {
-
 	contents, err := os.ReadFile(filePath)
 	if err != nil {
 		return false
