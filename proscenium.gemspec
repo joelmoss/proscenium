@@ -35,7 +35,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'concurrent-ruby', '~> 1.2.2'
   spec.add_dependency 'nokogiri', '~> 1.13'
   spec.add_dependency 'oj', '~> 3.13'
-  spec.add_dependency 'phlex', '~> 1.6.1'
-  spec.add_dependency 'phlex-rails', '~> 0.9.0'
+  spec.add_dependency 'phlex', '~> 1.8.1'
+  spec.add_dependency 'phlex-rails', '~> 1.0.0'
   spec.add_dependency 'railties', ['>= 6.1.0', '< 8.0']
 end
