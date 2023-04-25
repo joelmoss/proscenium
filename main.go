@@ -13,6 +13,8 @@ import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
+	"path"
+	"strings"
 )
 
 // Build the given `path` in the `root`.
@@ -24,9 +26,11 @@ import (
 //   - debug
 //
 //export build
-func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_Result {
+func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_Result {
+	pathStr := C.GoString(filepath)
+
 	result := builder.Build(builder.BuildOptions{
-		Path:          C.GoString(path),
+		Path:          pathStr,
 		Root:          C.GoString(root),
 		Env:           types.Environment(env),
 		ImportMapPath: C.GoString(importMap),
@@ -43,6 +47,18 @@ func build(path *C.char, root *C.char, env C.uint, importMap *C.char, debug bool
 	}
 
 	contents := string(result.OutputFiles[0].Contents)
+
+	isSourceMap := strings.HasSuffix(pathStr, ".map")
+	if isSourceMap {
+		return C.struct_Result{C.int(1), C.CString(contents)}
+	}
+
+	sourcemapUrl := path.Base(pathStr)
+	if strings.HasSuffix(result.OutputFiles[0].Path, ".css") {
+		contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
+	} else {
+		contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
+	}
 
 	return C.struct_Result{C.int(1), C.CString(contents)}
 }
@@ -69,6 +85,4 @@ func resolve(path *C.char, root *C.char, env C.uint, importMap *C.char) C.struct
 	return C.struct_Result{C.int(1), C.CString(result)}
 }
 
-func main() {
-	// fmt.Printf("%s", build("input.ts"))
-}
+func main() {}

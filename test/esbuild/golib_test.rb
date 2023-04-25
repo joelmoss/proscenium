@@ -3,10 +3,31 @@
 require 'test_helper'
 
 class Proscenium::Esbuild::GolibTest < Minitest::Test
-  def test_basic_build
+  def test_build_basic_js
     result = Proscenium::Esbuild::Golib.new.build('lib/foo.js')
 
     assert_includes result, 'console.log("/lib/foo.js");'
+    assert_includes result, '//# sourceMappingURL=foo.js.map'
+  end
+
+  def test_build_basic_css
+    result = Proscenium::Esbuild::Golib.new.build('lib/foo.css')
+
+    assert_includes result, ".body {\n  color: red;\n}"
+    assert_includes result, '/*# sourceMappingURL=foo.css.map */'
+  end
+
+  def test_build_source_map_js
+    result = Proscenium::Esbuild::Golib.new.build('lib/foo.js.map')
+
+    assert_includes result, "\"sourcesContent\": [\"console.log('/lib/foo.js')\\n\""
+  end
+
+  def test_build_source_map_css
+    result = Proscenium::Esbuild::Golib.new.build('lib/foo.css.map')
+    pp result
+
+    assert_includes result, '"sourcesContent": [".body {\\ncolor: red;\\n}\\n"'
   end
 
   def test_resolve
@@ -15,8 +36,8 @@ class Proscenium::Esbuild::GolibTest < Minitest::Test
     assert_equal '/lib/foo.js', result
   end
 
-  def test_unknown_path
-    error = assert_raises Proscenium::Esbuild::Golib::CompileError do
+  def test_build_unknown_path
+    error = assert_raises Proscenium::Esbuild::Golib::BuildError do
       Proscenium::Esbuild::Golib.new.build('unknown.js')
     end
 

@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
@@ -36,14 +37,7 @@ type BuildOptions struct {
 func Build(options BuildOptions) esbuild.BuildResult {
 	os.Setenv("RAILS_ENV", options.Env.String())
 
-	logLevel := func() esbuild.LogLevel {
-		if options.Debug {
-			return esbuild.LogLevelDebug
-		} else {
-			return esbuild.LogLevelSilent
-		}
-	}
-
+	isSourceMap := strings.HasSuffix(options.Path, ".map")
 	pluginOpts := types.PluginOptions{Env: options.Env}
 
 	imap, err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root, options.Env)
@@ -60,10 +54,21 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	minify := !options.Debug && options.Env != types.TestEnv
 
+	logLevel := esbuild.LogLevelSilent
+	if options.Debug {
+		logLevel = esbuild.LogLevelDebug
+	}
+
+	sourcemap := esbuild.SourceMapNone
+	if isSourceMap {
+		options.Path = strings.TrimSuffix(options.Path, ".map")
+		sourcemap = esbuild.SourceMapExternal
+	}
+
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
 		AbsWorkingDir:     options.Root,
-		LogLevel:          logLevel(),
+		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
@@ -79,7 +84,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		KeepNames:         options.Env != types.ProdEnv,
 		Conditions:        []string{options.Env.String()},
 		Write:             false,
-		// Sourcemap: isSourceMap ? 'external' : false,
+		Sourcemap:         sourcemap,
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still

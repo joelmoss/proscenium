@@ -38,8 +38,9 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   end
 
   test 'should side load css module when css_module used' do
-    render Phlex::SideLoadCssModuleView.new(true)
+    view = render Phlex::SideLoadCssModuleView.new(true)
 
+    assert_equal('<div class="base03b26e31"></div>', view)
     assert_equal({
                    js: Set[],
                    css: Set['app/components/phlex/side_load_css_module_view.module.css']

@@ -77,6 +77,8 @@ class Proscenium::CssModule::Resolver
     return if !@side_load || !Rails.application.config.proscenium.side_load
 
     @side_loaded_paths = Proscenium::SideLoad.append @path, { '.module.css' => :css }
-    @hash = Proscenium::Utils.digest(@side_loaded_paths[0])
+
+    # FIXME: ??
+    # @hash = Proscenium::Utils.digest(@side_loaded_paths[0])
   end
 end

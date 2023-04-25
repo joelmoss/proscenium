@@ -33,6 +33,14 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		`))
 	})
 
+	It("should build css module", func() {
+		result := build("app/components/phlex/side_load_css_module_view.module.css")
+
+		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			.base03b26e31 { color: red; }
+		`))
+	})
+
 	It("should import absolute path", func() {
 		result := build("lib/import_absolute.css")
 
