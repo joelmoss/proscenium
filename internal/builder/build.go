@@ -3,7 +3,6 @@ package builder
 import (
 	"fmt"
 	"os"
-	"path"
 
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
@@ -13,26 +12,29 @@ import (
 )
 
 type BuildOptions struct {
-	Path          string
-	Root          string
-	Env           types.Environment
+	// The path to build relative to `root`.
+	Path string
+
+	// The working directory.
+	Root string
+
+	// The environment (1 = development, 2 = test, 3 = production)
+	Env types.Environment
+
+	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
-	ImportMap     []byte
-	Debug         bool
+
+	// Import map as a string.
+	ImportMap []byte
+
+	Debug bool
 }
 
 // Build the given `path` in the `root`.
 //
-//	path - The path to build relative to `root`.
-//	root - The working directory.
-//	env - The environment (1 = development, 2 = test, 3 = production)
-//	importMap - Path to an import map (js or json), relative to the given root.
-//
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
 	os.Setenv("RAILS_ENV", options.Env.String())
-
-	minify := !options.Debug && options.Env != types.TestEnv
 
 	logLevel := func() esbuild.LogLevel {
 		if options.Debug {
@@ -42,27 +44,21 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	pluginOpts := types.PluginOptions{}
-	if len(options.ImportMap) > 0 {
-		imap, err := importmap.Parse(options.ImportMap, importmap.JsonType, options.Env)
-		if err != nil {
-			return esbuild.BuildResult{
-				Errors: []esbuild.Message{{Text: err.Error()}},
-			}
-		}
+	pluginOpts := types.PluginOptions{Env: options.Env}
 
+	imap, err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root, options.Env)
+	if err == nil {
 		pluginOpts.ImportMap = imap
-	}
-	if len(options.ImportMapPath) > 0 {
-		imap, err := importmap.ParseFile(path.Join(options.Root, options.ImportMapPath), options.Env)
-		if err != nil {
-			return esbuild.BuildResult{
-				Errors: []esbuild.Message{{Text: err.Error()}},
-			}
+	} else {
+		return esbuild.BuildResult{
+			Errors: []esbuild.Message{{
+				Text:   "Failed to parse import map",
+				Detail: err.Error(),
+			}},
 		}
-
-		pluginOpts.ImportMap = imap
 	}
+
+	minify := !options.Debug && options.Env != types.TestEnv
 
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
@@ -91,12 +87,9 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		MainFields: []string{"module", "browser", "main"},
 
 		Plugins: []esbuild.Plugin{
-			// plugin.ImportMap(pluginOpts),
 			plugin.Env,
+			mainPlugin(pluginOpts),
 			plugin.Svg,
-			plugin.Css(),
-			// plugin.Url,
-			plugin.Resolve(pluginOpts),
 		},
 	})
 

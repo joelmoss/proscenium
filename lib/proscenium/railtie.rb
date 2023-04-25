@@ -16,7 +16,7 @@ module Proscenium
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     npm: %r{^/npm:.+},
     gem: %r{^/gem:.+},
-    url: %r{^/url:https?%3A%2F%2F}
+    url: %r{^/https?%3A%2F%2F.+\.(css|m?jsx?)(\.map)?$}
   }.freeze
 
   APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze

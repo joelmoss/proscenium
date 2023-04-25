@@ -10,7 +10,7 @@ module Proscenium
              :response, :string
     end
 
-    module Builder
+    module Request
       extend FFI::Library
       ffi_lib Pathname.new(__dir__).join('../../../main.so').to_s
 
@@ -23,9 +23,16 @@ module Proscenium
         :string,      # path to import map, relative to root
         :bool         # debugging enabled?
       ], Result.by_value
+
+      attach_function :resolve, [
+        :string,      # path or entry point
+        :string,      # root
+        :environment, # Rails environment as a Symbol
+        :string       # path to import map, relative to root
+      ], Result.by_value
     end
 
-    class CompileError < StandardError
+    class BuildError < StandardError
       attr_reader :error, :path
 
       def initialize(path, error)
@@ -35,13 +42,28 @@ module Proscenium
       end
     end
 
+    class ResolveError < StandardError
+      attr_reader :error_msg, :path
+
+      def initialize(path, error_msg)
+        super "Failed to resolve '#{path}' -- #{error_msg}"
+      end
+    end
+
     def initialize(root: nil)
       @root = root || Rails.root
     end
 
     def build(path)
-      result = Builder.build(path, @root.to_s, Rails.env.to_sym, import_map, true)
-      raise CompileError.new(path, result[:response]) unless result[:success]
+      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, false)
+      raise BuildError.new(path, result[:response]) unless result[:success]
+
+      result[:response]
+    end
+
+    def resolve(path)
+      result = Request.resolve(path, @root.to_s, Rails.env.to_sym, import_map)
+      raise ResolveError.new(path, result[:response]) unless result[:success]
 
       result[:response]
     end

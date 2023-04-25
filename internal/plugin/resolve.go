@@ -21,10 +21,12 @@ func Resolve(options types.PluginOptions) esbuild.Plugin {
 
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `.*`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+					// Ignore entry points.
 					if args.Kind == esbuild.ResolveEntryPoint {
 						return esbuild.OnResolveResult{}, nil
 					}
 
+					// Ignore imports that currently resolving.
 					if args.PluginData != nil && args.PluginData.(PluginData).isResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
@@ -33,31 +35,25 @@ func Resolve(options types.PluginOptions) esbuild.Plugin {
 
 					if options.ImportMap != nil {
 						// Look for a match in the import map
-						base := strings.TrimPrefix(args.Importer, root)
-						resolvedImport, matched := importmap.ResolvePathFromImportMap(args.Path, options.ImportMap, base)
+						resolvedImport, matched := importmap.Resolve(args.Path, args.ResolveDir, options.ImportMap)
 						if matched {
-							return esbuild.OnResolveResult{
-								Path:     resolvedImport,
-								External: true,
-							}, nil
+							args.Path = resolvedImport
+						}
+					} else {
+						// Absolute path - append to current working dir. This enables absolute path imports
+						// (eg, import '/lib/foo').
+						if path.IsAbs(args.Path) {
+							args.Path = path.Join(root, args.Path)
 						}
 					}
 
-					pathToResolve := args.Path
-
-					// Absolute path - append to current working dir. This enables absolute path imports
-					// (eg, import '/lib/foo').
-					if strings.HasPrefix(pathToResolve, "/") {
-						pathToResolve = path.Join(root, pathToResolve)
-					}
-
 					// Resolve with esbuild
-					result := build.Resolve(pathToResolve, esbuild.ResolveOptions{
-						ResolveDir: args.ResolveDir,
-						Importer:   args.Importer,
-						Kind:       esbuild.ResolveJSImportStatement,
-						PluginData: PluginData{isResolvingPath: true},
-					})
+					// result := build.Resolve(pathToResolve, esbuild.ResolveOptions{
+					// 	ResolveDir: args.ResolveDir,
+					// 	Importer:   args.Importer,
+					// 	Kind:       esbuild.ResolveJSImportStatement,
+					// 	PluginData: PluginData{isResolvingPath: true},
+					// })
 
 					// pp.Println(pathToResolve, esbuild.ResolveOptions{
 					// 	ResolveDir: args.ResolveDir,
@@ -66,14 +62,14 @@ func Resolve(options types.PluginOptions) esbuild.Plugin {
 					// 	PluginData: PluginData{isResolvingPath: true},
 					// }, result)
 
-					if len(result.Errors) > 0 {
-						return esbuild.OnResolveResult{Errors: result.Errors}, nil
-					}
+					// if len(result.Errors) > 0 {
+					// 	return esbuild.OnResolveResult{Errors: result.Errors}, nil
+					// }
 
-					// Path is external, so make sure it is relative to the root.
-					relativePath := strings.TrimPrefix(result.Path, root)
+					// Make sure the path is relative to the root.
+					args.Path = strings.TrimPrefix(args.Path, root)
 
-					return esbuild.OnResolveResult{Path: relativePath, External: true}, nil
+					return esbuild.OnResolveResult{Path: args.Path, External: true}, nil
 				})
 		},
 	}

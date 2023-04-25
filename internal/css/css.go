@@ -1,8 +1,7 @@
 package css
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
+	"joelmoss/proscenium/internal/utils"
 	"os"
 	"strings"
 
@@ -46,15 +45,10 @@ func ParseCss(input string, path string, root string) (string, error) {
 		input:    input,
 		filePath: path,
 		rootPath: root,
-		pathHash: getSHA1Hash(path),
+		pathHash: utils.ToDigest(path),
 		isModule: isModule,
 		mixins:   cssMixins{},
 	}
 
 	return p.parse()
-}
-
-func getSHA1Hash(message string) string {
-	hash := sha1.Sum([]byte(message))
-	return hex.EncodeToString(hash[:])[0:8]
 }

@@ -13,6 +13,7 @@ func (e Environment) String() string {
 }
 
 type PluginOptions struct {
+	Env       Environment
 	ImportMap *ImportMap
 }
 

@@ -18,9 +18,10 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 
 	build := func(path string) api.BuildResult {
 		return builder.Build(builder.BuildOptions{
-			Path: path,
-			Root: root,
-			Env:  2,
+			Path:          path,
+			Root:          root,
+			Env:           2,
+			ImportMapPath: "config/import_maps/no_imports.json",
 		})
 	}
 
@@ -32,8 +33,25 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		`))
 	})
 
-	Describe("mixin from URL", func() {
-		It("mixin is replaced with defined mixin", func() {
+	It("should import absolute path", func() {
+		result := build("lib/import_absolute.css")
+
+		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			@import "/config/foo.css";
+		`))
+	})
+
+	It("should import relative path", func() {
+		result := build("lib/import_relative.css")
+
+		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			@import "/lib/foo.css";
+			@import "/lib/foo2.css";
+		`))
+	})
+
+	When("mixin from URL", func() {
+		It("is replaced with defined mixin", func() {
 			result := build("lib/with_mixin_from_url.css")
 
 			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
@@ -45,7 +63,17 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		})
 	})
 
-	It("import css module from js", Pending, func() {
+	When("importing bare specifier", func() {
+		It("is replaced with absolute path", func() {
+			result := build("lib/import_npm_module.css")
+
+			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+				@import "/node_modules/.pnpm/normalize.css@8.0.1/node_modules/normalize.css/normalize.css";
+			`))
+		})
+	})
+
+	PIt("import css module from js", func() {
 		result := build("lib/import_css_module.js")
 
 		pp.Println(result)

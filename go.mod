@@ -17,6 +17,7 @@ require (
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/pprof v0.0.0-20230406165453-00490a63f317 // indirect
+	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/stretchr/testify v1.8.2 // indirect
 	golang.org/x/net v0.9.0 // indirect
@@ -28,6 +29,7 @@ require (
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/dop251/goja v0.0.0-20230402114112-623f9dda9079
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
+	github.com/h2non/gock v1.2.0
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.18 // indirect

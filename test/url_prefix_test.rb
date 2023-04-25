@@ -11,7 +11,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'url: modules' do
-    get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
+    get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'url', response.headers['X-Proscenium-Middleware']
@@ -19,7 +19,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
   end
 
   test 'url: modules sourcemap' do
-    get '/url:https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
+    get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'url', response.headers['X-Proscenium-Middleware']

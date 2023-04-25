@@ -1,4 +1,4 @@
-package builder_test
+package resolver_test
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestBuilder(t *testing.T) {
+func TestResolver(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Proscenium builder")
+	RunSpecs(t, "Proscenium resolver")
 }

@@ -28,8 +28,6 @@ module Proscenium
 
     private
 
-    # Look for the precompiled file in public/assets first, then fallback to the Proscenium
-    # middleware that matches the type of file requested.
     def attempt(request)
       return unless (type = find_type(request))
 
@@ -41,9 +39,9 @@ module Proscenium
       path = Pathname.new(request.path)
 
       return Url if request.path.match?(glob_types[:url])
-      return Npm if request.path.match?(glob_types[:npm])
-      return Gem if request.path.match?(glob_types[:gem])
-      return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
+      # return Npm if request.path.match?(glob_types[:npm])
+      # return Gem if request.path.match?(glob_types[:gem])
+      # return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end
 
