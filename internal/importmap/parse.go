@@ -14,6 +14,9 @@ import (
 
 type ContentType uint8
 
+// Holds the parsed content of the import map.
+var Contents *types.ImportMap = &types.ImportMap{}
+
 const (
 	JsonType ContentType = iota + 1
 	JavascriptType
@@ -27,31 +30,31 @@ func (err SyntaxError) Error() string {
 	return err.Message
 }
 
-func Parse(importMap []byte, importMapPath string, root string, env types.Environment) (*types.ImportMap, error) {
-	if len(importMap) > 0 {
-		imap, err := ParseContents(importMap, JsonType, env)
-		if err != nil {
-			return nil, errors.New(reflect.TypeOf(err).String() + ": " + err.Error())
-		}
-
-		return imap, nil
-	} else if len(importMapPath) > 0 {
-		imap, err := ParseFile(path.Join(root, importMapPath), env)
-		if err != nil {
-			return nil, err
-		}
-
-		return imap, nil
+func Parse(importMap []byte, importMapPath string, root string) error {
+	if Contents.IsParsed {
+		return nil
 	}
 
-	return nil, nil
+	if len(importMap) > 0 {
+		err := parseContents(importMap, JsonType)
+		if err != nil {
+			return errors.New(reflect.TypeOf(err).String() + ": " + err.Error())
+		}
+	} else if len(importMapPath) > 0 {
+		err := parseFile(path.Join(root, importMapPath))
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Parses the import map file at the given path, and for the given environment. The file can be a JSON or JS file.
-func ParseFile(file string, env types.Environment) (*types.ImportMap, error) {
+func parseFile(file string) error {
 	bytes, err := os.ReadFile(file)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var contentType ContentType
@@ -62,30 +65,30 @@ func ParseFile(file string, env types.Environment) (*types.ImportMap, error) {
 		contentType = JavascriptType
 	}
 
-	return ParseContents(bytes, contentType, env)
+	return parseContents(bytes, contentType)
 }
 
 // Parses the given import map contents as JSON or JS, and for the given environment.
-func ParseContents(contents []byte, contentType ContentType, env types.Environment) (*types.ImportMap, error) {
-	var data *types.ImportMap
-
+func parseContents(contents []byte, contentType ContentType) error {
 	if contentType == JsonType {
-		err := json.Unmarshal(contents, &data)
+		err := json.Unmarshal(contents, &Contents)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	} else if contentType == JavascriptType {
 		vm := goja.New()
-		v, runErr := vm.RunString("(" + string(contents) + ")('" + env.String() + "')")
+		v, runErr := vm.RunString("(" + string(contents) + ")('" + types.Env.String() + "')")
 		if runErr != nil {
-			return nil, runErr
+			return runErr
 		}
 
-		err := mapstructure.Decode(v.Export(), &data)
+		err := mapstructure.Decode(v.Export(), &Contents)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return data, nil
+	Contents.IsParsed = true
+
+	return nil
 }

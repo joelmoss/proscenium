@@ -2,7 +2,9 @@ package builder_test
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -14,6 +16,8 @@ import (
 
 var _ = Describe("Internal/Builder.Build/url", func() {
 	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
 		builder.DiskvCache.EraseAll()
 	})
 
@@ -30,7 +34,6 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 			Path:      path,
 			Root:      root,
 			ImportMap: []byte(importMap),
-			Env:       2,
 		})
 	}
 

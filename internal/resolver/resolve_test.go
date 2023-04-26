@@ -1,7 +1,9 @@
 package resolver_test
 
 import (
+	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -10,6 +12,11 @@ import (
 )
 
 var _ = Describe("Internal/Resolver.Resolve", func() {
+	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
+	})
+
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
@@ -17,7 +24,6 @@ var _ = Describe("Internal/Resolver.Resolve", func() {
 		options := resolver.Options{
 			Path: path,
 			Root: root,
-			Env:  2,
 		}
 
 		if len(importMap) > 0 {
@@ -35,6 +41,27 @@ var _ = Describe("Internal/Resolver.Resolve", func() {
 
 	It("resolves absolute path", func() {
 		Expect(resolve("/lib/foo.js")).To(Equal("/lib/foo.js"))
+	})
+
+	When("relative path without importer", func() {
+		It("returns errors", func() {
+			_, err := resolve("./lib/foo.js")
+			Expect(err).NotTo(Succeed())
+		})
+	})
+
+	When("importer is given", func() {
+		resolve := func(path string, importer string) (string, error) {
+			return resolver.Resolve(resolver.Options{
+				Path:     path,
+				Importer: importer,
+				Root:     root,
+			})
+		}
+
+		It("resolves relative path", func() {
+			Expect(resolve("./foo2.js", "/lib/foo.js")).To(Equal("/lib/foo2.js"))
+		})
 	})
 
 	It("resolves bare specifier", func() {

@@ -2,7 +2,9 @@ package builder_test
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -12,6 +14,11 @@ import (
 )
 
 var _ = Describe("Internal/Builder.Build", func() {
+	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
+	})
+
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
@@ -19,7 +26,6 @@ var _ = Describe("Internal/Builder.Build", func() {
 		return builder.Build(builder.BuildOptions{
 			Path: path,
 			Root: root,
-			Env:  2,
 		})
 	}
 

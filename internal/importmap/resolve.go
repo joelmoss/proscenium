@@ -1,7 +1,6 @@
 package importmap
 
 import (
-	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"log"
 	"path"
@@ -14,32 +13,32 @@ import (
 
 // Resolves the `specifier` to a file system path, using the given `importMap` and `resolveDir`.
 //
-// - specifier: The specifier to resolve.
-// - resolveDir: The path of the dir that is importing the specifier.
-// - importMap: The import map to use.
+//   - specifier: The specifier to resolve.
+//   - resolveDir: The path of the dir that is importing the specifier.
+//   - root
 //
 // Returns the resolved specifier, and a boolean indicating whether the resolution was successful.
 // It is important to note that the resolved specifier could be an absolute file system path, an
 // HTTP(S) URL, or a bare module specifier.
-func Resolve(specifier string, resolveDir string, importMap *types.ImportMap) (string, bool) {
-	if len(importMap.Imports) == 0 {
+func Resolve(specifier string, resolveDir string, root string) (string, bool) {
+	if Contents == nil || len(Contents.Imports) == 0 {
 		return "", false
 	}
 
 	// Sort and normalize the "imports" of the import map.
 	// See https://html.spec.whatwg.org/multipage/webappapis.html#sorting-and-normalizing-a-module-specifier-map
-	log.Printf("[importMap] Resolving %v in %v from %v import(s)", specifier, resolveDir, len(importMap.Imports))
+	log.Printf("[importMap] Resolving %v in %v from %v import(s)", specifier, resolveDir, len(Contents.Imports))
 
 	normalizedImports := make(map[string]string)
 
 	// Sort and normalize imports.
-	for key, value := range importMap.Imports {
+	for key, value := range Contents.Imports {
 		if key == "" || value == "" {
 			continue
 		}
 
 		// Normalize the value.
-		value = normalize(value, resolveDir)
+		value = normalize(value, resolveDir, root)
 
 		normalizedImports[key] = value
 	}
@@ -55,9 +54,11 @@ func Resolve(specifier string, resolveDir string, importMap *types.ImportMap) (s
 
 // Returns the full and absolute file system path of the given `pathValue`. If the path is a bare
 // module, then it is returned as-is. Otherwise, it is resolved relative to the given `resolveDir`.
-func normalize(pathValue string, resolveDir string) string {
+func normalize(pathValue string, resolveDir string, root string) string {
 	if utils.IsBareModule(pathValue) || utils.IsUrl(pathValue) {
 		return pathValue
+	} else if path.IsAbs(pathValue) {
+		return path.Join(root, pathValue)
 	} else {
 		return path.Join(resolveDir, pathValue)
 	}

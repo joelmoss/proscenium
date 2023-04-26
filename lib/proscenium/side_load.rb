@@ -38,8 +38,8 @@ module Proscenium
     end
 
     def append
-      @extension_map.map do |ext, type|
-        next unless (resolved_path = resolve_path(path, ext))
+      @extension_map.filter_map do |ext, type|
+        next unless (resolved_path = resolve_path(path.sub_ext(ext)))
 
         # Make sure path is not already side loaded.
         unless Proscenium::Current.loaded[type].include?(resolved_path)
@@ -52,35 +52,8 @@ module Proscenium
 
     private
 
-    # Resolve the given absolute file system `path` and `ext` to a URL path.
-    def resolve_path(path, ext) # rubocop:disable Metrics/AbcSize
-      path = path.sub_ext(ext)
-
-      # First check that path exists on the file system.
-      return unless path.exist?
-
-      path = path.to_s
-
-      matched_gem = Proscenium.config.side_load_gems.find do |_, opts|
-        path.starts_with?("#{opts[:root]}/")
-      end
-
-      if matched_gem
-        sroot = "#{matched_gem[1][:root]}/"
-        relpath = path.delete_prefix(sroot)
-
-        if matched_gem[1][:package_name]
-          return Esbuild::Golib.resolve("#{matched_gem[1][:package_name]}/#{relpath}")
-        end
-
-        # TODO: manually resolve the path without esbuild
-        raise "Path #{path} cannot be found in app or gems"
-      end
-
-      sroot = "#{Rails.root}/"
-      return path.delete_prefix(sroot) if path.starts_with?(sroot)
-
-      raise "Path #{path} cannot be found in app or gems"
+    def resolve_path(path)
+      path.exist? ? Utils.resolve_path(path.to_s) : nil
     end
 
     def log(value)

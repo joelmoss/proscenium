@@ -6,7 +6,6 @@ import (
 	"io"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/importmap"
-	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"net/http"
 	"net/url"
@@ -17,7 +16,6 @@ import (
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 	httpcache "github.com/gregjones/httpcache/diskcache"
-	"github.com/k0kubun/pp/v3"
 	"github.com/peterbourgon/diskv"
 )
 
@@ -37,7 +35,7 @@ type PluginData = struct {
 	importedFromJs  bool
 }
 
-func mainPlugin(options types.PluginOptions) esbuild.Plugin {
+func mainPlugin() esbuild.Plugin {
 	return esbuild.Plugin{
 		Name: "buildPlugin",
 		Setup: func(build esbuild.PluginBuild) {
@@ -49,7 +47,7 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 			// URL, bundled, and tagged with the url namespace.
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-					pp.Println("1", args)
+					// pp.Println("1", args)
 
 					return esbuild.OnResolveResult{
 						Path:     "/" + url.QueryEscape(args.Path),
@@ -61,7 +59,7 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 			// to the original URL, and tag them with the url namespace.
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?%3A%2F%2F`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-					pp.Println("2", args)
+					// pp.Println("2", args)
 
 					path, err := url.QueryUnescape(args.Path)
 					if err != nil {
@@ -80,7 +78,7 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 			// URLs recursively.
 			build.OnResolve(esbuild.OnResolveOptions{Filter: ".*", Namespace: "url"},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-					pp.Println("3", args)
+					// pp.Println("3", args)
 
 					// Pass through bare imports.
 					if utils.IsBareModule(args.Path) {
@@ -115,26 +113,24 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 						return esbuild.OnResolveResult{}, nil
 					}
 
-					pp.Println("4", args)
+					// pp.Println("4", args)
 
-					if options.ImportMap != nil {
-						resolvedImport, matched := importmap.Resolve(args.Path, args.ResolveDir, options.ImportMap)
-						if matched {
-							if path.IsAbs(resolvedImport) {
-								return esbuild.OnResolveResult{
-									// Make sure the path is relative to the root.
-									Path:     strings.TrimPrefix(resolvedImport, root),
-									External: true,
-								}, nil
-							} else if utils.IsUrl(resolvedImport) {
-								return esbuild.OnResolveResult{
-									Path:     "/" + url.QueryEscape(resolvedImport),
-									External: true,
-								}, nil
-							}
-
-							args.Path = resolvedImport
+					resolvedImport, matched := importmap.Resolve(args.Path, args.ResolveDir, root)
+					if matched {
+						if path.IsAbs(resolvedImport) {
+							return esbuild.OnResolveResult{
+								// Make sure the path is relative to the root.
+								Path:     strings.TrimPrefix(resolvedImport, root),
+								External: true,
+							}, nil
+						} else if utils.IsUrl(resolvedImport) {
+							return esbuild.OnResolveResult{
+								Path:     "/" + url.QueryEscape(resolvedImport),
+								External: true,
+							}, nil
 						}
+
+						args.Path = resolvedImport
 					}
 
 					result := esbuild.OnResolveResult{External: true}
@@ -256,7 +252,7 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 
 					// relativePath := strings.TrimPrefix(args.Path, root)
 					hash := utils.ToDigest(args.Path)
-					pp.Println(`\.css$`, args, hash)
+					// pp.Println(`\.css$`, args, hash)
 
 					importedFromJs := args.PluginData != nil && args.PluginData.(PluginData).importedFromJs
 

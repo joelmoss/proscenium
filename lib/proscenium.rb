@@ -34,14 +34,43 @@ module Proscenium
       Digest::SHA1.hexdigest(value.to_s)[..7]
     end
 
+    def resolve(specifier)
+      Esbuild::Golib.resolve specifier
+    end
+
+    # Resolve the given absolute file system `path` to a URL path.
+    #
+    # @param path [String]
+    def resolve_path(path) # rubocop:disable Metrics/AbcSize
+      raise ArgumentError, 'path must be a string' unless path.is_a?(String)
+
+      matched_gem = Proscenium.config.side_load_gems.find do |_, opts|
+        path.starts_with?("#{opts[:root]}/")
+      end
+
+      if matched_gem
+        sroot = "#{matched_gem[1][:root]}/"
+        relpath = path.delete_prefix(sroot)
+
+        if matched_gem[1][:package_name]
+          return Esbuild::Golib.resolve("#{matched_gem[1][:package_name]}/#{relpath}")
+        end
+
+        # TODO: manually resolve the path without esbuild
+        raise "Path #{path} cannot be found in app or gems"
+      end
+
+      return path.delete_prefix(Rails.root.to_s) if path.starts_with?("#{Rails.root}/")
+
+      raise "Path #{path} cannot be found in app or gems"
+    end
+
     # Resolves the given CSS class names to CSS modules.
     #
     # @param names [String, Array]
     # @param hash: [String]
     # @returns [Array] of class names generated from the given CSS module `names` and `hash`.
-    def class_names(*names, hash:)
-      raise ArgumentError, "hash must be a non-blank string, but was #{hash.inspect}" if hash.blank?
-
+    def class_names(*names, hash: nil)
       names.flatten.compact.map do |name|
         sname = name.to_s
         if sname.starts_with?('_')

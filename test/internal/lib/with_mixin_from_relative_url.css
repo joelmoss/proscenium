@@ -1,0 +1,4 @@
+a {
+  @mixin red from url('./mixins/colors.css');
+  font-size: 20px;
+}

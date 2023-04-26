@@ -19,11 +19,11 @@ type Options struct {
 	// The path to build relative to `root`.
 	Path string
 
+	// The absolute file system path fof the importing file.
+	Importer string
+
 	// The working directory.
 	Root string
-
-	// The environment (1 = development, 2 = test, 3 = production)
-	Env types.Environment
 
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
@@ -39,26 +39,32 @@ type Options struct {
 // Returns an absolute URL path. That is, one that has a leading slash and can be appended to the
 // app domain.
 func Resolve(options Options) (string, error) {
-	os.Setenv("RAILS_ENV", options.Env.String())
+	os.Setenv("RAILS_ENV", types.Env.String())
 
 	// Parse the import map - if any.
-	imap, err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root, options.Env)
+	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
 	if err != nil {
 		return "", errors.New("Failed to parse import map: " + err.Error())
 	}
 
-	if imap != nil {
-		// Look for a match in the import map
-		resolvedImport, matched := importmap.Resolve(options.Path, options.Root, imap)
-		if matched {
-			if path.IsAbs(resolvedImport) {
-				return strings.TrimPrefix(resolvedImport, options.Root), nil
-			} else if utils.IsUrl(resolvedImport) {
-				return "/" + url.QueryEscape(resolvedImport), nil
-			}
-
-			options.Path = resolvedImport
+	// Look for a match in the import map
+	resolvedImport, matched := importmap.Resolve(options.Path, options.Root, options.Root)
+	if matched {
+		if path.IsAbs(resolvedImport) {
+			return strings.TrimPrefix(resolvedImport, options.Root), nil
+		} else if utils.IsUrl(resolvedImport) {
+			return "/" + url.QueryEscape(resolvedImport), nil
 		}
+
+		options.Path = resolvedImport
+	}
+
+	if utils.PathIsRelative(options.Path) {
+		if options.Importer == "" {
+			return "", errors.New("relative paths are not supported when an importer not is given")
+		}
+
+		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), options.Path), options.Root), nil
 	}
 
 	// Absolute paths need no resolution.
@@ -70,7 +76,7 @@ func Resolve(options Options) (string, error) {
 		EntryPoints:   []string{options.Path},
 		AbsWorkingDir: options.Root,
 		Format:        esbuild.FormatESModule,
-		Conditions:    []string{options.Env.String()},
+		Conditions:    []string{types.Env.String()},
 		Write:         false,
 		Metafile:      true,
 		MainFields:    []string{"module", "browser", "main"},
@@ -87,14 +93,4 @@ func Resolve(options Options) (string, error) {
 	}
 
 	return "/" + reflect.ValueOf(metadata.Inputs).MapKeys()[0].String(), nil
-}
-
-// Resolves the given path to an absolute file system path.
-func Absolute(pathToResolve string, root string) (string, bool) {
-	// Absolute path - append to root. This enables absolute path imports (eg, import '/lib/foo').
-	if strings.HasPrefix(pathToResolve, "/") {
-		pathToResolve = path.Join(root, pathToResolve)
-	}
-
-	return pathToResolve, true
 }

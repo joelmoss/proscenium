@@ -27,12 +27,13 @@ import (
 //
 //export build
 func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_Result {
+	types.Env = types.Environment(env)
+
 	pathStr := C.GoString(filepath)
 
 	result := builder.Build(builder.BuildOptions{
 		Path:          pathStr,
 		Root:          C.GoString(root),
-		Env:           types.Environment(env),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
 	})
@@ -63,7 +64,7 @@ func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug 
 	return C.struct_Result{C.int(1), C.CString(contents)}
 }
 
-// Resolve the given `path` in the `root`.
+// Resolve the given `path` relative to the `root`.
 //
 //   - path - The path to build relative to `root`.
 //   - root - The working directory.
@@ -72,10 +73,11 @@ func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug 
 //
 //export resolve
 func resolve(path *C.char, root *C.char, env C.uint, importMap *C.char) C.struct_Result {
+	types.Env = types.Environment(env)
+
 	resolvedPath, err := resolver.Resolve(resolver.Options{
 		Path:          C.GoString(path),
 		Root:          C.GoString(root),
-		Env:           types.Environment(env),
 		ImportMapPath: C.GoString(importMap),
 	})
 	if err != nil {

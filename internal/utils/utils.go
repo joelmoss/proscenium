@@ -30,6 +30,11 @@ func IsUrl(name string) bool {
 	return re.MatchString(name)
 }
 
+func PathIsRelative(name string) bool {
+	var re = regexp.MustCompile(`^\.(\.)?\/`)
+	return re.MatchString(name)
+}
+
 func ToDigest(s string) string {
 	hash := sha1.Sum([]byte(s))
 	return hex.EncodeToString(hash[:])[0:8]

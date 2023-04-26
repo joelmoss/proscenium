@@ -19,9 +19,6 @@ type BuildOptions struct {
 	// The working directory.
 	Root string
 
-	// The environment (1 = development, 2 = test, 3 = production)
-	Env types.Environment
-
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
 
@@ -35,15 +32,12 @@ type BuildOptions struct {
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
-	os.Setenv("RAILS_ENV", options.Env.String())
+	os.Setenv("RAILS_ENV", types.Env.String())
 
 	isSourceMap := strings.HasSuffix(options.Path, ".map")
-	pluginOpts := types.PluginOptions{Env: options.Env}
 
-	imap, err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root, options.Env)
-	if err == nil {
-		pluginOpts.ImportMap = imap
-	} else {
+	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
+	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
 				Text:   "Failed to parse import map",
@@ -52,7 +46,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	minify := !options.Debug && options.Env != types.TestEnv
+	minify := !options.Debug && types.Env == types.ProdEnv
 
 	logLevel := esbuild.LogLevelSilent
 	if options.Debug {
@@ -74,15 +68,15 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Outbase:           "./",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
-		JSXDev:            options.Env != types.TestEnv && options.Env != types.ProdEnv,
+		JSXDev:            types.Env != types.TestEnv && types.Env != types.ProdEnv,
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
-		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", options.Env)},
+		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", types.Env)},
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		KeepNames:         options.Env != types.ProdEnv,
-		Conditions:        []string{options.Env.String()},
+		KeepNames:         types.Env != types.ProdEnv,
+		Conditions:        []string{types.Env.String()},
 		Write:             false,
 		Sourcemap:         sourcemap,
 
@@ -93,7 +87,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 		Plugins: []esbuild.Plugin{
 			plugin.Env,
-			mainPlugin(pluginOpts),
+			mainPlugin(),
 			plugin.Svg,
 		},
 	})

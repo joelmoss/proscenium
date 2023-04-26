@@ -2,7 +2,9 @@ package builder_test
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -12,6 +14,11 @@ import (
 )
 
 var _ = Describe("Internal/Builder.Build/import_map", func() {
+	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
+	})
+
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
@@ -19,7 +26,6 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 		return builder.Build(builder.BuildOptions{
 			Path:      path,
 			Root:      root,
-			Env:       2,
 			ImportMap: []byte(importMap),
 		})
 	}
@@ -34,7 +40,6 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 		result := builder.Build(builder.BuildOptions{
 			Path:          "lib/import_map/as_js.js",
 			Root:          root,
-			Env:           2,
 			ImportMapPath: "config/import_maps/as.js",
 		})
 
@@ -45,7 +50,6 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 		result := builder.Build(builder.BuildOptions{
 			Path:          "lib/foo.js",
 			Root:          root,
-			Env:           2,
 			ImportMapPath: "config/import_maps/invalid.js",
 		})
 
@@ -84,7 +88,7 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 				}`)
 
 				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
-					import foo from "https%3A%2F%2Fsome.com%2Ffoo.js";
+					import foo from "/https%3A%2F%2Fsome.com%2Ffoo.js";
 				`))
 			})
 		})

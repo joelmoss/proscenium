@@ -2,7 +2,9 @@ package builder_test
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -13,6 +15,11 @@ import (
 )
 
 var _ = Describe("Internal/Builder.Build/css", func() {
+	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
+	})
+
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
@@ -20,7 +27,6 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		return builder.Build(builder.BuildOptions{
 			Path:          path,
 			Root:          root,
-			Env:           2,
 			ImportMapPath: "config/import_maps/no_imports.json",
 		})
 	}
@@ -58,16 +64,31 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		`))
 	})
 
-	When("mixin from URL", func() {
-		It("is replaced with defined mixin", func() {
-			result := build("lib/with_mixin_from_url.css")
+	Describe("mixins", func() {
+		When("from URL", func() {
+			It("is replaced with defined mixin", func() {
+				result := build("lib/with_mixin_from_url.css")
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
-				a {
-					color: red;
-					font-size: 20px;
-				}
-			`))
+				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+					a {
+						color: red;
+						font-size: 20px;
+					}
+				`))
+			})
+		})
+
+		When("from relative URL", func() {
+			It("is replaced with defined mixin", func() {
+				result := build("lib/with_mixin_from_relative_url.css")
+
+				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+					a {
+						color: red;
+						font-size: 20px;
+					}
+				`))
+			})
 		})
 	})
 

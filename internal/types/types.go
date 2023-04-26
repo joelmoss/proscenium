@@ -2,6 +2,7 @@ package types
 
 type Environment uint8
 
+// The environment (1 = development, 2 = test, 3 = production)
 const (
 	DevEnv Environment = iota + 1
 	TestEnv
@@ -12,14 +13,12 @@ func (e Environment) String() string {
 	return [...]string{"development", "test", "production"}[e-1]
 }
 
-type PluginOptions struct {
-	Env       Environment
-	ImportMap *ImportMap
-}
-
 type ImportMapScopes map[string]string
 
 type ImportMap struct {
-	Imports map[string]string
-	Scopes  map[string]ImportMapScopes
+	Imports  map[string]string
+	Scopes   map[string]ImportMapScopes
+	IsParsed bool
 }
+
+var Env Environment

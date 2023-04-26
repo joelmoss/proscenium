@@ -1,15 +1,21 @@
 package css_test
 
 import (
+	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
+	"joelmoss/proscenium/internal/types"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Internal/Css", func() {
-	Describe("ParseCss", func() {
+	BeforeEach(func() {
+		types.Env = types.TestEnv
+		importmap.Contents = &types.ImportMap{}
+	})
 
+	Describe("ParseCss", func() {
 		It("should pass through regular css", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css"))
 		})
@@ -25,7 +31,7 @@ var _ = Describe("Internal/Css", func() {
 						header {
 							@mixin foo;
 						}
-					`), "/foo.css")
+					`, "/foo.css"))
 				})
 
 				It("mixin not defined at root level is passed through", func() {
@@ -102,6 +108,32 @@ var _ = Describe("Internal/Css", func() {
 						}
 					`, "/foo.css"))
 				})
+
+				It("bare specifier mixin is resolved", func() {
+					Expect(`
+						header {
+							@mixin red from url('mypackage/colors.mixin.css');
+						}
+					`).To(BeParsedTo(`
+						header {
+							color: red;
+						}
+					`, "/foo.css"))
+				})
+
+				It("relative mixin is resolved", func() {
+					Expect(`
+					header {
+						@mixin red from url('./mixins/colors.css');
+						}
+					`).To(BeParsedTo(`
+						header {
+							color: red;
+						}
+					`, "/lib/foo.css"))
+				})
+
+				It("nested relative mixin is resolved")
 
 				It("should cache mixin definition", func() {
 					Expect(`
@@ -207,12 +239,23 @@ var _ = Describe("Internal/Css", func() {
 				`, "/foo.css"))
 			})
 
+			It("should support mixins", func() {
+				Expect(`
+					@define-mixin red {
+						color: red;
+					}
+					.title { @mixin red; }
+				`).To(BeParsedTo(`
+					.title43c30152 { color: red; }
+				`, "/foo.module.css"))
+			})
+
 			It("should rename classes", func() {
 				Expect(`
 					.title { color: green; }
 				`).To(BeParsedTo(`
 					.title43c30152 { color: green; }
-				`))
+				`, "/foo.module.css"))
 			})
 
 			It("should rename nested classes", func() {
@@ -226,7 +269,7 @@ var _ = Describe("Internal/Css", func() {
 						color: green;
 						.subtitle43c30152 { color: blue; }
 					}
-				`))
+				`, "/foo.module.css"))
 			})
 
 			It("should rename compound classes", func() {
@@ -234,7 +277,7 @@ var _ = Describe("Internal/Css", func() {
 					.title.subtitle { color: green; }
 				`).To(BeParsedTo(`
 					.title43c30152.subtitle43c30152 { color: green; }
-				`))
+				`, "/foo.module.css"))
 			})
 
 			Describe("local function", func() {
@@ -245,7 +288,7 @@ var _ = Describe("Internal/Css", func() {
 					`).To(BeParsedTo(`
 						.title43c30152 { color: red; }
 						.subtitle43c30152 { color: green; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("should rename argument", func() {
@@ -257,7 +300,7 @@ var _ = Describe("Internal/Css", func() {
 					`).To(BeParsedTo(`
 						.subtitle43c30152 { color: green; }
 						.title { color: red; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested locals are parsed", func() {
@@ -277,7 +320,7 @@ var _ = Describe("Internal/Css", func() {
 							.year43c30152 { color: pink; }
 							.foo { color: blue; }
 						}
-					`))
+					`, "/foo.module.css"))
 				})
 			})
 
@@ -290,7 +333,7 @@ var _ = Describe("Internal/Css", func() {
 						}
 					`).To(BeParsedTo(`
 						.subtitle43c30152 { color: green; }
-					`))
+					`, "/foo.module.css"))
 				})
 			})
 
@@ -304,7 +347,7 @@ var _ = Describe("Internal/Css", func() {
 						.title43c30152 { color: blue; }
 						.subtitle { color: green; }
 						.author43c30152 {	color: red; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested globals are parsed", func() {
@@ -322,7 +365,7 @@ var _ = Describe("Internal/Css", func() {
 							.month { color: red; }
 							.year { color: pink; }
 						}
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested classes should be renamed", func() {
@@ -336,7 +379,7 @@ var _ = Describe("Internal/Css", func() {
 							color: green;
 							.foo43c30152 { color: orange; }
 						}
-					`))
+					`, "/foo.module.css"))
 				})
 			})
 
@@ -351,7 +394,7 @@ var _ = Describe("Internal/Css", func() {
 						.title43c30152 { color: blue; }
 						.subtitle { color: green; }
 						.author43c30152 { color: red; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested globals are ignored", func() {
@@ -375,7 +418,7 @@ var _ = Describe("Internal/Css", func() {
 							.year { color: black; }
 						}
 						.author43c30152 {	color: red; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested classes should be renamed", func() {
@@ -389,7 +432,7 @@ var _ = Describe("Internal/Css", func() {
         			color: green;
         			.foo43c30152 { color: orange; }
 						}
-					`))
+					`, "/foo.module.css"))
 				})
 			})
 
@@ -411,7 +454,7 @@ var _ = Describe("Internal/Css", func() {
 						}
 						.bar { color: blue; }
 						.author43c30152 { color: red; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested globals without class ident are ignored", func() {
@@ -423,7 +466,7 @@ var _ = Describe("Internal/Css", func() {
 						}
 					`).To(BeParsedTo(`
 						.subtitle { color: green; }
-					`))
+					`, "/foo.module.css"))
 				})
 
 				It("nested globals with class ident are ignored", func() {
@@ -443,7 +486,7 @@ var _ = Describe("Internal/Css", func() {
 							color: blue;
 							.day { color: orange; }
 						}
-					`))
+					`, "/foo.module.css"))
 				})
 			})
 		})

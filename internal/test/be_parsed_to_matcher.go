@@ -12,7 +12,7 @@ import (
 	"github.com/MakeNowJust/heredoc"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/format"
-	"github.com/onsi/gomega/types"
+	gomegaTypes "github.com/onsi/gomega/types"
 	"github.com/sergi/go-diff/diffmatchpatch"
 )
 
@@ -78,13 +78,7 @@ func (matcher *BeParsedToMatcher) message(isNegated bool) string {
 		format.IndentString(matcher.Output, 2))
 }
 
-func BeParsedTo(expected interface{}, params ...string) types.GomegaMatcher {
-	path := "/foo.module.css"
-	switch len(params) {
-	case 1:
-		path = params[0]
-	}
-
+func BeParsedTo(expected interface{}, path string) gomegaTypes.GomegaMatcher {
 	return &BeParsedToMatcher{
 		Path:     path,
 		Expected: expected,

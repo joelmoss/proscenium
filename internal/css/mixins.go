@@ -3,7 +3,9 @@ package css
 import (
 	"joelmoss/proscenium/internal/resolver"
 	"os"
+	"path"
 
+	"github.com/k0kubun/pp/v3"
 	"github.com/riking/cssparse/tokenizer"
 )
 
@@ -27,11 +29,20 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 	}
 
 	if uri != "" {
+
 		// Resolve the uri.
-		absPath, ok := resolver.Absolute(uri, p.rootPath)
-		if !ok {
+		absPath, err := resolver.Resolve(resolver.Options{
+			Path:     uri,
+			Importer: p.filePath,
+			Root:     p.rootPath,
+		})
+		if err != nil {
 			return false
 		}
+		pp.Println("uri", uri, p.filePath, p.rootPath, absPath)
+
+		// We need the absolute file system path
+		absPath = path.Join(p.rootPath, absPath)
 
 		if findAndInsertMixin(absPath, mixinIdent) {
 			return true
@@ -50,8 +61,8 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 }
 
 // Parse the given `filePath` for mixin definitions, and append each to the given `mixins` map. This
-// will ignore everything except mixin definitions, and does not parse the mixin definition contents.
-// The parsing is done when the mixin is included.
+// will ignore everything except mixin definitions, and does not parse the mixin definition
+// contents. The parsing is done when the mixin is included.
 func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 	contents, err := os.ReadFile(filePath)
 	if err != nil {
