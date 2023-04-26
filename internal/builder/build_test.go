@@ -7,7 +7,6 @@ import (
 	"path"
 
 	"github.com/evanw/esbuild/pkg/api"
-	"github.com/k0kubun/pp/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )

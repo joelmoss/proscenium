@@ -39,10 +39,19 @@ module Proscenium
 
     # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
     #
+    # Because side loading uses URL paths, any gem dependencies that side load assets will fail,
+    # because the URL path will be relative to the application's root, and not the gem's root. By
+    # specifying a list of gems that can be side loaded, Proscenium will be able to resolve the URL
+    # path to the gem's root, and side load the asset.
+    #
+    # Side loading gems rely on NPM and a package.json file in the gem root. This ensures that any
+    # dependencies are resolved correctly. This is required even if your gem has no package
+    # dependencies.
+    #
     # Example:
-    #   config.proscenium.side_load_gems['proscenium-stage'] = {
-    #     root: root,
-    #     package_name: '@proscenium/stage'
+    #   config.proscenium.side_load_gems['mygem'] = {
+    #     root: gem_root,
+    #     package_name: 'mygem'
     #   }
     config.proscenium.side_load_gems = {}
 

@@ -72,7 +72,7 @@ func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug 
 //
 //export resolve
 func resolve(path *C.char, root *C.char, env C.uint, importMap *C.char) C.struct_Result {
-	result, err := resolver.Resolve(resolver.Options{
+	resolvedPath, err := resolver.Resolve(resolver.Options{
 		Path:          C.GoString(path),
 		Root:          C.GoString(root),
 		Env:           types.Environment(env),
@@ -82,7 +82,7 @@ func resolve(path *C.char, root *C.char, env C.uint, importMap *C.char) C.struct
 		return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
 	}
 
-	return C.struct_Result{C.int(1), C.CString(result)}
+	return C.struct_Result{C.int(1), C.CString(resolvedPath)}
 }
 
 func main() {}

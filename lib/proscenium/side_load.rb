@@ -38,23 +38,50 @@ module Proscenium
     end
 
     def append
-      root, relative_path, path_to_load = Proscenium::Utils.path_pieces(path)
-
       @extension_map.map do |ext, type|
-        path_with_ext = "#{relative_path}#{ext}"
-        url_with_ext = "#{path_to_load}#{ext}"
+        next unless (resolved_path = resolve_path(path, ext))
 
-        # Make sure path is not already side loaded, and actually exists.
-        if !Proscenium::Current.loaded[type].include?(url_with_ext) &&
-           Pathname.new(root).join(path_with_ext).exist?
-          Proscenium::Current.loaded[type] << log(url_with_ext)
+        # Make sure path is not already side loaded.
+        unless Proscenium::Current.loaded[type].include?(resolved_path)
+          Proscenium::Current.loaded[type] << log(resolved_path)
         end
 
-        url_with_ext
+        resolved_path
       end
     end
 
     private
+
+    # Resolve the given absolute file system `path` and `ext` to a URL path.
+    def resolve_path(path, ext) # rubocop:disable Metrics/AbcSize
+      path = path.sub_ext(ext)
+
+      # First check that path exists on the file system.
+      return unless path.exist?
+
+      path = path.to_s
+
+      matched_gem = Proscenium.config.side_load_gems.find do |_, opts|
+        path.starts_with?("#{opts[:root]}/")
+      end
+
+      if matched_gem
+        sroot = "#{matched_gem[1][:root]}/"
+        relpath = path.delete_prefix(sroot)
+
+        if matched_gem[1][:package_name]
+          return Esbuild::Golib.resolve("#{matched_gem[1][:package_name]}/#{relpath}")
+        end
+
+        # TODO: manually resolve the path without esbuild
+        raise "Path #{path} cannot be found in app or gems"
+      end
+
+      sroot = "#{Rails.root}/"
+      return path.delete_prefix(sroot) if path.starts_with?(sroot)
+
+      raise "Path #{path} cannot be found in app or gems"
+    end
 
     def log(value)
       Proscenium.logger.debug "Side loaded #{value}"

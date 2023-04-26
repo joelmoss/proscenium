@@ -54,6 +54,14 @@ module Proscenium
       @root = root || Rails.root
     end
 
+    def self.resolve(path)
+      new.resolve(path)
+    end
+
+    def self.build(path)
+      new.build(path)
+    end
+
     def build(path)
       result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, false)
       raise BuildError.new(path, result[:response]) unless result[:success]

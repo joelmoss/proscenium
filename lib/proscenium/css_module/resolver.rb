@@ -49,7 +49,7 @@ class Proscenium::CssModule::Resolver
   # @returns [Array] of class names generated from the given CSS module `names`.
   def class_names(*names)
     side_load_css_module
-    Proscenium::Utils.class_names(names, hash: hash)
+    Proscenium::Utils.class_names(names, hash: @hash)
   end
 
   # Like #class_names, but requires that the stylesheet exists.
@@ -69,16 +69,15 @@ class Proscenium::CssModule::Resolver
 
   private
 
-  def hash
-    @hash ||= Proscenium::Utils.digest(@css_module_path)
-  end
+  # FIXME: Needed?
+  # def hash
+  #   @hash ||= Proscenium::Utils.digest(@css_module_path)
+  # end
 
   def side_load_css_module
     return if !@side_load || !Rails.application.config.proscenium.side_load
 
     @side_loaded_paths = Proscenium::SideLoad.append @path, { '.module.css' => :css }
-
-    # FIXME: ??
-    # @hash = Proscenium::Utils.digest(@side_loaded_paths[0])
+    @hash = Proscenium::Utils.digest(Rails.root.to_s + @side_loaded_paths[0])
   end
 end

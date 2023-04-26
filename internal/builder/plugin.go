@@ -254,8 +254,9 @@ func mainPlugin(options types.PluginOptions) esbuild.Plugin {
 			build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 
+					// relativePath := strings.TrimPrefix(args.Path, root)
 					hash := utils.ToDigest(args.Path)
-					pp.Println(`\.css$`, args)
+					pp.Println(`\.css$`, args, hash)
 
 					importedFromJs := args.PluginData != nil && args.PluginData.(PluginData).importedFromJs
 

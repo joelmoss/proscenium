@@ -31,9 +31,9 @@ class Proscenium::Esbuild::GolibTest < Minitest::Test
   end
 
   def test_resolve
-    result = Proscenium::Esbuild::Golib.new.resolve('/lib/foo.js')
+    result = Proscenium::Esbuild::Golib.resolve('is-ip')
 
-    assert_equal '/lib/foo.js', result
+    assert_equal '/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js', result
   end
 
   def test_build_unknown_path

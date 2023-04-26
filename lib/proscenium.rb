@@ -40,6 +40,8 @@ module Proscenium
     # @param hash: [String]
     # @returns [Array] of class names generated from the given CSS module `names` and `hash`.
     def class_names(*names, hash:)
+      raise ArgumentError, "hash must be a non-blank string, but was #{hash.inspect}" if hash.blank?
+
       names.flatten.compact.map do |name|
         sname = name.to_s
         if sname.starts_with?('_')
@@ -48,45 +50,6 @@ module Proscenium
           "#{sname.camelize(:lower)}#{hash}"
         end
       end
-    end
-
-    # Accepts a `path` to a file, and splits it into pieces:
-    #   - The root file path
-    #   - The file path relative to the root
-    #   - The URL path relative to the application host
-    #
-    # If the `path` starts with any path found in `config.side_load_gems`, then we treat it as
-    # from a ruby gem, and use it's NPM package by prefixing the URL path with "npm:".
-    #
-    # @param path [Pathname]
-    # @return [Array] the root, relative path, and URL path.
-    def path_pieces(path) # rubocop:disable Metrics/AbcSize
-      spath = path.to_s
-
-      matched_gem = Proscenium.config.side_load_gems.find do |_name, options|
-        spath.starts_with?("#{options[:root]}/")
-      end
-
-      if matched_gem
-        sroot = "#{matched_gem[1][:root]}/"
-        relpath = spath.delete_prefix(sroot)
-
-        urlpath = if matched_gem[1][:package_name]
-                    "npm:#{matched_gem[1][:package_name]}"
-                  else
-                    "gem:#{matched_gem[0]}"
-                  end
-
-        return [sroot, relpath, "#{urlpath}/#{relpath}"]
-      end
-
-      sroot = "#{Rails.root}/"
-      if spath.starts_with?(sroot)
-        relpath = spath.delete_prefix(sroot)
-        return [sroot, relpath, relpath]
-      end
-
-      raise "Path #{path} cannot be found in app or gems"
     end
   end
 end
