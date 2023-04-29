@@ -4,6 +4,9 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"regexp"
+	"strings"
+
+	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
 func ToString(a interface{}) (string, bool) {
@@ -38,4 +41,25 @@ func PathIsRelative(name string) bool {
 func ToDigest(s string) string {
 	hash := sha1.Sum([]byte(s))
 	return hex.EncodeToString(hash[:])[0:8]
+}
+
+func pathIsJs(path string) bool {
+	var re = regexp.MustCompile(`\.jsx?$`)
+	return re.MatchString(path)
+}
+
+func PathIsCss(path string) bool {
+	return strings.HasSuffix(path, ".css")
+}
+
+func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
+	return args.Kind == esbuild.ResolveJSImportStatement &&
+		PathIsCss(path) &&
+		pathIsJs(args.Importer)
+}
+
+func IsSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
+	return args.Kind == esbuild.ResolveJSImportStatement &&
+		strings.HasSuffix(path, ".svg") &&
+		strings.HasSuffix(args.Importer, ".jsx")
 }

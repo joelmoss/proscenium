@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,6 +19,9 @@ var _ = Describe("Internal/Builder.Build/svg", func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
 		builder.DiskvCache.EraseAll()
+	})
+	AfterEach(func() {
+		gock.Off()
 	})
 
 	var cwd, _ = os.Getwd()
@@ -83,8 +87,6 @@ var _ = Describe("Internal/Builder.Build/svg", func() {
 			})
 		})
 	})
-
-	PIt("url('/hue/icons/angle-right-regular.svg')")
 
 	PIt("imports remote svg specifier in jsx", func() {
 		MockURL("/at.svg", `

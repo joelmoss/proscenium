@@ -20,6 +20,9 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 		importmap.Contents = &types.ImportMap{}
 		builder.DiskvCache.EraseAll()
 	})
+	AfterEach(func() {
+		gock.Off()
+	})
 
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
@@ -92,7 +95,6 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 		})
 
 		It("should error on non-2** response", func() {
-			defer gock.Off()
 			gock.New("https://proscenium.test").
 				Get("/import-url-module.js").
 				Reply(404)

@@ -6,12 +6,12 @@ import (
 	"io"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"net/http"
 	"net/url"
 	"os"
 	"path"
-	"regexp"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
@@ -29,11 +29,6 @@ var DiskvCache = diskv.New(diskv.Options{
 	CacheSizeMax: 1024 * 1024, // FIXME: This doesn't seem to have any effect
 })
 var cache = httpcache.NewWithDiskv(DiskvCache)
-
-type PluginData = struct {
-	isResolvingPath bool
-	importedFromJs  bool
-}
 
 var unbundler = esbuild.Plugin{
 	Name: "unbundler",
@@ -103,7 +98,7 @@ var unbundler = esbuild.Plugin{
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `.*`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				// Pass through paths that are currently resolving.
-				if args.PluginData != nil && args.PluginData.(PluginData).isResolvingPath {
+				if args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath {
 					return esbuild.OnResolveResult{}, nil
 				}
 
@@ -134,12 +129,12 @@ var unbundler = esbuild.Plugin{
 					result.Path = resolvedImport
 				}
 
-				if isCssImportedFromJs(result.Path, args) {
+				if utils.IsCssImportedFromJs(result.Path, args) {
 					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
 					// the css plugin to return the CSS as a JS object of class names (css module).
-					result.PluginData = PluginData{importedFromJs: true}
+					result.PluginData = types.PluginData{ImportedFromJs: true}
 					result.External = false
-				} else if isSvgImportedFromJsx(result.Path, args) {
+				} else if utils.IsSvgImportedFromJsx(result.Path, args) {
 					// We're importing an SVG file from JSX. Assigning the `svgFromJsx` namespace tells
 					// the svg plugin to return the SVG as a JSX component.
 					result.Namespace = "svgFromJsx"
@@ -166,7 +161,7 @@ var unbundler = esbuild.Plugin{
 					ResolveDir: resolveDir,
 					Importer:   args.Importer,
 					Kind:       args.Kind,
-					PluginData: PluginData{isResolvingPath: true},
+					PluginData: types.PluginData{IsResolvingPath: true},
 				})
 				if len(r.Errors) > 0 {
 					result.Errors = r.Errors
@@ -198,7 +193,7 @@ var unbundler = esbuild.Plugin{
 					if ok {
 						contents := string(cached)
 
-						if pathIsCss(args.Path) {
+						if utils.PathIsCss(args.Path) {
 							contents, err := css.ParseCss(contents, args.Path, root)
 							if err != nil {
 								return esbuild.OnLoadResult{}, err
@@ -237,7 +232,7 @@ var unbundler = esbuild.Plugin{
 
 				contents := string(bytes)
 
-				if pathIsCss(args.Path) {
+				if utils.PathIsCss(args.Path) {
 					contents, err := css.ParseCss(contents, args.Path, root)
 					if err != nil {
 						return esbuild.OnLoadResult{}, err
@@ -248,122 +243,5 @@ var unbundler = esbuild.Plugin{
 
 				return esbuild.OnLoadResult{Contents: &contents}, nil
 			})
-
-		// Parse CSS files.
-		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
-			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[6] filter(.css$)", args)
-
-				// relativePath := strings.TrimPrefix(args.Path, root)
-				hash := utils.ToDigest(args.Path)
-				// pp.Println(`\.css$`, args, hash)
-
-				importedFromJs := args.PluginData != nil && args.PluginData.(PluginData).importedFromJs
-
-				// If path is a CSS module, imported from JS, and a side-loaded ViewComponent stylesheet,
-				// simply return a JS proxy of the class names. The stylesheet itself will have already been
-				// side loaded. This avoids compiling the CSS all over again.
-				// if pathIsCssModule(args.Path) && importedFromJs {
-				// 	contents := cssModulesProxyTemplate(hash)
-				// 	return esbuild.OnLoadResult{
-				// 		Contents:   &contents,
-				// 		ResolveDir: root,
-				// 		Loader:     esbuild.LoaderJS,
-				// 	}, nil
-				// }
-
-				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
-				// in a <style> tag in the <head> of the page, and if the stylesheet is a CSS module, it
-				// exports a plain object of class names.
-				if importedFromJs {
-					// debugComment := ""
-					// if options.Env != types.ProdEnv {
-					// 	debugComment = `e.before(document.createComment('` + args.Path + `'));`
-					// }
-
-					// contents = `
-					// 	let e = document.querySelector('#_` + hash + `');
-					// 	if (!e) {
-					// 		e = document.createElement('style');
-					// 		e.id = '_` + hash + `';
-					// 		document.head.appendChild(e);
-					// 		` + debugComment + `
-					// 		e.appendChild(document.createTextNode(` + "`" + contents + "`" + `));
-					// 	}
-					// `
-
-					contents := `
-							let e = document.querySelector('#_` + hash + `');
-							if (!e) {
-								e = document.createElement('link');
-								e.id = '_` + hash + `';
-								e.rel = 'stylesheet';
-								e.href = '` + strings.TrimPrefix(args.Path, root) + `';
-								document.head.appendChild(e);
-							}
-						`
-
-					if pathIsCssModule(args.Path) {
-						contents = contents + cssModulesProxyTemplate(hash)
-					}
-
-					return esbuild.OnLoadResult{
-						Contents:   &contents,
-						ResolveDir: root,
-						Loader:     esbuild.LoaderJS,
-					}, nil
-				}
-
-				contents, err := css.ParseCssFile(args.Path, root)
-				if err != nil {
-					return esbuild.OnLoadResult{}, err
-				}
-
-				return esbuild.OnLoadResult{
-					Contents: &contents,
-					Loader:   esbuild.LoaderCSS,
-				}, nil
-			})
 	},
-}
-
-func pathIsCss(path string) bool {
-	var re = regexp.MustCompile(`\.css$`)
-	return re.MatchString(path)
-}
-
-func pathIsCssModule(path string) bool {
-	var re = regexp.MustCompile(`\.module\.css$`)
-	return re.MatchString(path)
-}
-
-func pathIsJs(path string) bool {
-	var re = regexp.MustCompile(`\.jsx?$`)
-	return re.MatchString(path)
-}
-
-func isCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement &&
-		pathIsCss(path) &&
-		pathIsJs(args.Importer)
-}
-
-func isSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement &&
-		strings.HasSuffix(path, ".svg") &&
-		strings.HasSuffix(args.Importer, ".jsx")
-}
-
-func cssModulesProxyTemplate(hash string) string {
-	return `
-    export default new Proxy( {}, {
-      get(target, prop, receiver) {
-        if (prop in target || typeof prop === 'symbol') {
-          return Reflect.get(target, prop, receiver);
-        } else {
-          return prop + '` + hash + `';
-        }
-      }
-    });
-	`
 }

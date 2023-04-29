@@ -66,11 +66,12 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	plugins := []esbuild.Plugin{plugin.Env}
 	if options.Bundle {
-		plugins = append(plugins, bundler)
+		plugins = append(plugins, plugin.Bundler)
 	} else {
 		plugins = append(plugins, unbundler)
 	}
 	plugins = append(plugins, plugin.Svg)
+	plugins = append(plugins, plugin.Css)
 
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},

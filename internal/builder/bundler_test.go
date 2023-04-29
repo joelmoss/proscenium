@@ -18,6 +18,7 @@ var _ = Describe("Internal/Builder.bundler", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
+		builder.DiskvCache.EraseAll()
 	})
 	AfterEach(func() {
 		gock.Off()
@@ -65,47 +66,11 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		`))
 	})
 
-	// FIt("bundles URL with relative dependency", func() {
-	// 	MockURL("/dep1.js", `
-	// 		export default () => { return 'with dep1' };
-	// 	`)
-	// 	MockURL("/import-url-module.js", `
-	// 		import dep from './dep1.js';
-	// 		export default () => { return 'Hello World' + dep };
-	// 	`)
+	It("should define NODE_ENV", func() {
+		result := build("lib/define_node_env.js")
 
-	// 	result := build("lib/import_url.js")
-
-	// 	Expect(result).To(ContainCode(`return "Hello World"`))
-	// 	Expect(result).To(ContainCode(`return "with dep1"`))
-	// })
-
-	// It("bundles URL with absolute dependency", func() {
-	// 	MockURL("/dep1.js", `
-	// 		export default () => { return 'with dep1' };
-	// 	`)
-	// 	MockURL("/import-url-module.js", `
-	// 		import dep from '/dep1.js';
-	// 		export default () => { return 'Hello World' + dep };
-	// 	`)
-
-	// 	result := build("lib/import_url.js")
-
-	// 	Expect(result).To(ContainCode(`return "Hello World"`))
-	// 	Expect(result).To(ContainCode(`return "with dep1"`))
-	// })
-
-	// It("bundles URL with bare dependency", func() {
-	// 	MockURL("/import-url-module.js", `
-	// 		import dep from 'dep1';
-	// 		export default () => { return 'Hello World' + dep };
-	// 	`)
-
-	// 	result := build("lib/import_url.js")
-
-	// 	Expect(result).To(ContainCode(`return "Hello World"`))
-	// 	Expect(result).To(ContainCode(`import dep from "dep1"`))
-	// })
+		Expect(result.OutputFiles[0].Contents).To(ContainCode(`console.log("test")`))
+	})
 
 	When("css", func() {
 		It("should bundle absolute path", func() {
@@ -130,12 +95,6 @@ var _ = Describe("Internal/Builder.bundler", func() {
 				}
 			`))
 		})
-
-		// It("bundles URL", func() {
-		// 	MockURL("/dep1.css", "body { color: red; }")
-
-		// 	Expect(build("lib/import_url.css")).To(ContainCode(`body { color: red; }`))
-		// })
 
 		It("should not bundle fonts", func() {
 			result := build("lib/fonts.css")

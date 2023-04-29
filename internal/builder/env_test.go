@@ -9,6 +9,7 @@ import (
 	"path"
 
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -17,6 +18,10 @@ var _ = Describe("Internal/Builder.Build/env", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
+		builder.DiskvCache.EraseAll()
+	})
+	AfterEach(func() {
+		gock.Off()
 	})
 
 	var cwd, _ = os.Getwd()
@@ -30,18 +35,14 @@ var _ = Describe("Internal/Builder.Build/env", func() {
 	}
 
 	It("exports requested env var as default", func() {
-		result := build("lib/env/rails_env.js")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(build("lib/env/rails_env.js")).To(ContainCode(`
 			var RAILS_ENV_default = "test";
 		`))
 	})
 
 	When("env var is not set", func() {
 		It("exports undefined", func() {
-			result := build("lib/env/undefined_env.js")
-
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(build("lib/env/undefined_env.js")).To(ContainCode(`
 				var UNDEF_default = UNDEF;
 			`))
 		})

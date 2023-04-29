@@ -9,14 +9,19 @@ import (
 	"path"
 
 	"github.com/evanw/esbuild/pkg/api"
+	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Builder.Build", func() {
+var _ = Describe("Internal/Builder.unbundler", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
+		builder.DiskvCache.EraseAll()
+	})
+	AfterEach(func() {
+		gock.Off()
 	})
 
 	var cwd, _ = os.Getwd()
@@ -36,9 +41,7 @@ var _ = Describe("Internal/Builder.Build", func() {
 	})
 
 	It("should build js", func() {
-		result := build("lib/foo.js")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`console.log("/lib/foo.js")`))
+		Expect(build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
 	It("should build jsx", func() {
@@ -49,32 +52,24 @@ var _ = Describe("Internal/Builder.Build", func() {
 	})
 
 	It("should import bare module", func() {
-		result := build("lib/import_npm_module.js")
-
-		Expect(result).To(ContainCode(`
+		Expect(build("lib/import_npm_module.js")).To(ContainCode(`
 			import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js"
 		`))
 	})
 
 	It("should import relative path", func() {
-		result := build("lib/import_relative_module.js")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(build("lib/import_relative_module.js")).To(ContainCode(`
 			import foo4 from "/lib/foo4.js"
 		`))
 	})
 
 	It("should import absolute path", func() {
-		result := build("lib/import_absolute_module.js")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(build("lib/import_absolute_module.js")).To(ContainCode(`
 			import foo4 from "/lib/foo4.js"
 		`))
 	})
 
 	It("should define NODE_ENV", func() {
-		result := build("lib/define_node_env.js")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`console.log("test")`))
+		Expect(build("lib/define_node_env.js")).To(ContainCode(`console.log("test")`))
 	})
 })

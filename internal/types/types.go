@@ -22,3 +22,8 @@ type ImportMap struct {
 }
 
 var Env Environment
+
+type PluginData = struct {
+	IsResolvingPath bool
+	ImportedFromJs  bool
+}

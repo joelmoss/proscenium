@@ -5,11 +5,8 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	. "joelmoss/proscenium/internal/test"
 	"joelmoss/proscenium/internal/types"
-	"os"
-	"path"
 
-	"github.com/evanw/esbuild/pkg/api"
-	"github.com/k0kubun/pp/v3"
+	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -18,47 +15,34 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
+		builder.DiskvCache.EraseAll()
+	})
+	AfterEach(func() {
+		gock.Off()
 	})
 
-	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "../../", "test", "internal")
-
-	build := func(path string) api.BuildResult {
-		return builder.Build(builder.BuildOptions{
-			Path:          path,
-			Root:          root,
-			ImportMapPath: "config/import_maps/no_imports.json",
-		})
-	}
-
 	It("should build css", func() {
-		result := build("lib/foo.css")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(Build("lib/foo.css")).To(ContainCode(`
 			.body { color: red; }
 		`))
 	})
 
 	It("should build css module", func() {
-		result := build("app/components/phlex/side_load_css_module_view.module.css")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(Build("app/components/phlex/side_load_css_module_view.module.css")).To(ContainCode(`
 			.base03b26e31 { color: red; }
 		`))
 	})
 
 	It("should import absolute path", func() {
-		result := build("lib/import_absolute.css")
-
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(Build("lib/import_absolute.css")).To(ContainCode(`
 			@import "/config/foo.css";
 		`))
 	})
 
 	It("should import relative path", func() {
-		result := build("lib/import_relative.css")
+		result := Build("lib/import_relative.css")
 
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(result).To(ContainCode(`
 			@import "/lib/foo.css";
 			@import "/lib/foo2.css";
 		`))
@@ -67,9 +51,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	Describe("mixins", func() {
 		When("from URL", func() {
 			It("is replaced with defined mixin", func() {
-				result := build("lib/with_mixin_from_url.css")
-
-				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+				Expect(Build("lib/with_mixin_from_url.css")).To(ContainCode(`
 					a {
 						color: red;
 						font-size: 20px;
@@ -80,9 +62,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 
 		When("from relative URL", func() {
 			It("is replaced with defined mixin", func() {
-				result := build("lib/with_mixin_from_relative_url.css")
-
-				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+				Expect(Build("lib/with_mixin_from_relative_url.css")).To(ContainCode(`
 					a {
 						color: red;
 						font-size: 20px;
@@ -94,20 +74,63 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 
 	When("importing bare specifier", func() {
 		It("is replaced with absolute path", func() {
-			result := build("lib/import_npm_module.css")
-
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(Build("lib/import_npm_module.css")).To(ContainCode(`
 				@import "/node_modules/.pnpm/normalize.css@8.0.1/node_modules/normalize.css/normalize.css";
 			`))
 		})
 	})
 
-	PIt("import css module from js", func() {
-		result := build("lib/import_css_module.js")
+	It("import css module from js", func() {
+		Expect(Build("lib/import_css_module.js")).To(EqualCode(`
+			// lib/styles.module.css
+			var e = document.querySelector("#_9095c7b8");
+			if (!e) {
+				e = document.createElement("link");
+				e.id = "_9095c7b8";
+				e.rel = "stylesheet";
+				e.href = "/lib/styles.module.css";
+				document.head.appendChild(e);
+			}
+			var styles_module_default = new Proxy({}, {
+				get(target, prop, receiver) {
+					if (prop in target || typeof prop === "symbol") {
+						return Reflect.get(target, prop, receiver);
+					} else {
+						return prop + "9095c7b8";
+					}
+				}
+			});
 
-		pp.Println(result)
-		pp.Println(string(result.OutputFiles[0].Contents))
+			// lib/import_css_module.js
+			console.log(styles_module_default);
+		`))
+	})
 
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`import foo4 from "/lib/foo4.js"`))
+	When("bundling", func() {
+		It("import css module from js", func() {
+			Expect(Build("lib/import_css_module.js", BuildOpts{Bundle: true})).To(EqualCode(`
+			// lib/styles.module.css
+			var e = document.querySelector("#_9095c7b8");
+			if (!e) {
+				e = document.createElement("link");
+				e.id = "_9095c7b8";
+				e.rel = "stylesheet";
+				e.href = "/lib/styles.module.css";
+				document.head.appendChild(e);
+			}
+			var styles_module_default = new Proxy({}, {
+				get(target, prop, receiver) {
+					if (prop in target || typeof prop === "symbol") {
+						return Reflect.get(target, prop, receiver);
+					} else {
+						return prop + "9095c7b8";
+					}
+				}
+			});
+
+			// lib/import_css_module.js
+			console.log(styles_module_default);
+		`))
+		})
 	})
 })

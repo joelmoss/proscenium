@@ -1,8 +1,9 @@
-package builder
+package plugin
 
 import (
 	"io"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"net/http"
 	"net/url"
@@ -16,7 +17,7 @@ import (
 //
 //   - *.woff and *.woff2 files are externalized.
 //   - URL's are encoded as a local URL path, and externalized.
-var bundler = esbuild.Plugin{
+var Bundler = esbuild.Plugin{
 	Name: "bundler",
 	Setup: func(build esbuild.PluginBuild) {
 		root := build.InitialOptions.AbsWorkingDir
@@ -88,7 +89,7 @@ var bundler = esbuild.Plugin{
 		build.OnResolve(esbuild.OnResolveOptions{Filter: ".*"},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				// Pass through paths that are currently resolving.
-				if args.PluginData != nil && args.PluginData.(PluginData).isResolvingPath {
+				if args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath {
 					return esbuild.OnResolveResult{}, nil
 				}
 
@@ -124,7 +125,11 @@ var bundler = esbuild.Plugin{
 					}
 				}
 
-				if isSvgImportedFromJsx(result.Path, args) {
+				if utils.IsCssImportedFromJs(result.Path, args) {
+					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
+					// the css plugin to return the CSS as a JS object of class names (css module).
+					result.PluginData = types.PluginData{ImportedFromJs: true}
+				} else if utils.IsSvgImportedFromJsx(result.Path, args) {
 					// We're importing an SVG file from JSX. Assigning the `svgFromJsx` namespace tells
 					// the svg plugin to return the SVG as a JSX component.
 					result.Namespace = "svgFromJsx"
@@ -149,7 +154,7 @@ var bundler = esbuild.Plugin{
 					ResolveDir: args.ResolveDir,
 					Importer:   args.Importer,
 					Kind:       esbuild.ResolveJSImportStatement,
-					PluginData: PluginData{isResolvingPath: true},
+					PluginData: types.PluginData{IsResolvingPath: true},
 				})
 
 				if len(r.Errors) > 0 {
