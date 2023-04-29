@@ -11,6 +11,7 @@ require (
 
 require (
 	github.com/dlclark/regexp2 v1.9.0 // indirect
+	github.com/fatih/structs v1.1.0 // indirect
 	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.3+incompatible // indirect
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
@@ -28,6 +29,7 @@ require (
 	4d63.com/collapsewhitespace v0.0.0-20190109064012-23971e8e1f30
 	github.com/MakeNowJust/heredoc v1.0.0
 	github.com/dop251/goja v0.0.0-20230402114112-623f9dda9079
+	github.com/geraldo-labs/merge-struct v1.0.0
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
 	github.com/kr/pretty v0.3.1 // indirect

@@ -15,6 +15,7 @@ import (
 type ContentType uint8
 
 // Holds the parsed content of the import map.
+// FIXME: This is cached, which means we have to restart rails to pick up changes to the import map.
 var Contents *types.ImportMap = &types.ImportMap{}
 
 const (

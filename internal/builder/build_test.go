@@ -51,7 +51,7 @@ var _ = Describe("Internal/Builder.Build", func() {
 	It("should import bare module", func() {
 		result := build("lib/import_npm_module.js")
 
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+		Expect(result).To(ContainCode(`
 			import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js"
 		`))
 	})

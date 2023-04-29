@@ -22,10 +22,16 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
-	build := func(path string, importMap string) api.BuildResult {
+	build := func(path string, importMap string, rest ...bool) api.BuildResult {
+		bundle := false
+		if len(rest) > 0 {
+			bundle = rest[0]
+		}
+
 		return builder.Build(builder.BuildOptions{
 			Path:      path,
 			Root:      root,
+			Bundle:    bundle,
 			ImportMap: []byte(importMap),
 		})
 	}
@@ -67,6 +73,18 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 					import foo from "/lib/foo.js";
 				`))
 			})
+
+			When("bundling", func() {
+				It("resolves", func() {
+					result := build("lib/import_map/bare_specifier.js", `{
+						"imports": { "foo": "/lib/foo.js" }
+					}`, true)
+
+					Expect(result).To(ContainCode(`
+						console.log("/lib/foo.js");
+					`))
+				})
+			})
 		})
 
 		When("value starts with ./", func() {
@@ -75,7 +93,7 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 					"imports": { "foo": "./foo.js" }
 				}`)
 
-				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+				Expect(result).To(ContainCode(`
 					import foo from "/lib/import_map/foo.js";
 				`))
 			})
@@ -87,9 +105,23 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 					"imports": { "foo": "https://some.com/foo.js" }
 				}`)
 
-				Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+				Expect(result).To(ContainCode(`
 					import foo from "/https%3A%2F%2Fsome.com%2Ffoo.js";
 				`))
+			})
+
+			When("bundling", func() {
+				It("is not bundled", func() {
+					MockURL("/foo.js", "console.log('foo');")
+
+					result := build("lib/import_map/bare_specifier.js", `{
+						"imports": { "foo": "https://proscenium.test/foo.js" }
+					}`, true)
+
+					Expect(result).To(ContainCode(`
+						import foo from "/https%3A%2F%2Fproscenium.test%2Ffoo.js";
+					`))
+				})
 			})
 		})
 	})

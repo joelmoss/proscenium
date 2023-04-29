@@ -23,10 +23,18 @@ import (
 //   - root - The working directory.
 //   - env - The environment (1 = development, 2 = test, 3 = production)
 //   - importMap - Path to the import map relative to `root`.
+//   - bundle
 //   - debug
 //
 //export build
-func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug bool) C.struct_Result {
+func build(
+	filepath *C.char,
+	root *C.char,
+	env C.uint,
+	importMap *C.char,
+	bundle bool,
+	debug bool,
+) C.struct_Result {
 	types.Env = types.Environment(env)
 
 	pathStr := C.GoString(filepath)
@@ -36,6 +44,7 @@ func build(filepath *C.char, root *C.char, env C.uint, importMap *C.char, debug 
 		Root:          C.GoString(root),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
+		Bundle:        bundle,
 	})
 
 	if len(result.Errors) != 0 {

@@ -3,6 +3,7 @@ package builder
 import (
 	"fmt"
 	"os"
+	"path"
 	"strings"
 
 	"joelmoss/proscenium/internal/importmap"
@@ -25,7 +26,11 @@ type BuildOptions struct {
 	// Import map as a string.
 	ImportMap []byte
 
-	Debug bool
+	// Bundle everything into a single file.
+	Bundle bool
+
+	Debug    bool
+	Metafile bool
 }
 
 // Build the given `path` in the `root`.
@@ -59,6 +64,14 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		sourcemap = esbuild.SourceMapExternal
 	}
 
+	plugins := []esbuild.Plugin{plugin.Env}
+	if options.Bundle {
+		plugins = append(plugins, bundler)
+	} else {
+		plugins = append(plugins, unbundler)
+	}
+	plugins = append(plugins, plugin.Svg)
+
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
 		AbsWorkingDir:     options.Root,
@@ -79,18 +92,19 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Conditions:        []string{types.Env.String()},
 		Write:             false,
 		Sourcemap:         sourcemap,
+		LegalComments:     esbuild.LegalCommentsNone,
+		Metafile:          options.Metafile,
+		Plugins:           plugins,
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
 		// uses CJS.
 		MainFields: []string{"module", "browser", "main"},
-
-		Plugins: []esbuild.Plugin{
-			plugin.Env,
-			mainPlugin(),
-			plugin.Svg,
-		},
 	})
+
+	if options.Metafile {
+		os.WriteFile(path.Join(options.Root, "meta.json"), []byte(result.Metafile), 0644)
+	}
 
 	return result
 }

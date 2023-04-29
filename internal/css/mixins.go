@@ -5,7 +5,6 @@ import (
 	"os"
 	"path"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/riking/cssparse/tokenizer"
 )
 
@@ -39,7 +38,6 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		if err != nil {
 			return false
 		}
-		pp.Println("uri", uri, p.filePath, p.rootPath, absPath)
 
 		// We need the absolute file system path
 		absPath = path.Join(p.rootPath, absPath)

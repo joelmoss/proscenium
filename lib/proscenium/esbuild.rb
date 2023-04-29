@@ -18,7 +18,7 @@ module Proscenium
     end
 
     def build
-      Proscenium::Esbuild::Golib.new(root: @root).build(@path)
+      Proscenium::Esbuild::Golib.new(root: @root).build(@path, bundle: true)
 
       # stdout, stderr, status = Open3.capture3(command)
       # raise CompileError, stderr if !status.success? || !stderr.empty?

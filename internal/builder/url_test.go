@@ -24,38 +24,49 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 	var cwd, _ = os.Getwd()
 	var root string = path.Join(cwd, "../../", "test", "internal")
 
-	build := func(path string, rest ...interface{}) api.BuildResult {
-		importMap := ""
-		if len(rest) > 0 {
-			importMap = rest[0].(string)
-		}
-
-		return builder.Build(builder.BuildOptions{
-			Path:      path,
-			Root:      root,
-			ImportMap: []byte(importMap),
-		})
+	type buildOpts struct {
+		ImportMap string
+		Bundle    bool
 	}
 
-	When("direct build", func() {
+	build := func(path string, rest ...buildOpts) api.BuildResult {
+		restOpts := buildOpts{}
+		if len(rest) > 0 {
+			restOpts = rest[0]
+		}
+
+		options := builder.BuildOptions{
+			Path:   path,
+			Root:   root,
+			Bundle: restOpts.Bundle,
+		}
+		if restOpts.ImportMap != "" {
+			options.ImportMap = []byte(restOpts.ImportMap)
+		}
+
+		return builder.Build(options)
+	}
+
+	When("entry point is encoded URL", func() {
 		It("should bundle", func() {
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/foo.js").
-				Reply(200).
-				BodyString("export default 'Hello World'")
+			MockURL("/foo.js", "export default 'Hello World'")
 
-			result := build("https%3A%2F%2Fproscenium.test%2Ffoo.js")
+			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+		})
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`= "Hello World";`))
+		When("bundling", func() {
+			It("should bundle", func() {
+				MockURL("/foo.js", "export default 'Hello World'")
+
+				result := build("https%3A%2F%2Fproscenium.test%2Ffoo.js", buildOpts{Bundle: true})
+				Expect(result).To(ContainCode(`= "Hello World";`))
+			})
 		})
 	})
 
 	When("importing a URL", func() {
 		It("should encode URL", func() {
-			result := build("lib/import_url.js")
-
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(build("lib/import_url.js")).To(ContainCode(`
 				import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
 		})
@@ -63,11 +74,11 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("import map resolves to url", func() {
 		It("should encode URL", func() {
-			result := build("lib/import_map/bare_specifier.js", `{
+			result := build("lib/import_map/bare_specifier.js", buildOpts{ImportMap: `{
 				"imports": { "foo": "https://proscenium.test/import-url-module.js" }
-			}`)
+			}`})
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(result).To(ContainCode(`
 				import foo from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
 		})
@@ -75,17 +86,9 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("importing an encoded URL", func() {
 		It("should bundle decoded URL", func() {
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/import-url-module.js").
-				Reply(200).
-				BodyString("export default () => { return 'Hello World' };")
+			MockURL("/import-url-module.js", "export default () => { return 'Hello World' };")
 
-			result := build("lib/import_encoded_url.js")
-
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
-				return "Hello World"
-			`))
+			Expect(build("lib/import_encoded_url.js")).To(ContainCode(`return "Hello World"`))
 		})
 
 		It("should error on non-2** response", func() {
@@ -104,11 +107,7 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 			builder.MaxHttpBodySize = 2
 			defer func() { builder.MaxHttpBodySize = originalMaxHttpBodySize }()
 
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/import-url-module.js").
-				Reply(200).
-				BodyString("hello")
+			MockURL("/import-url-module.js", "hello")
 
 			result := build("lib/import_encoded_url.js")
 
@@ -118,19 +117,15 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("importing encoded URL with relative dependency", func() {
 		It("should resolve as URL ,encode and not bundle dependency", func() {
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/import-url-module.js").
-				Reply(200).
-				BodyString(`
-					import dep from './dependency';
-					export default () => { return 'Hello World' + dep };
-				`)
+			MockURL("/import-url-module.js", `
+				import dep from './dependency';
+				export default () => { return 'Hello World' + dep };
+			`)
 
 			result := build("lib/import_encoded_url.js")
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`return "Hello World"`))
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(result).To(ContainCode(`return "Hello World"`))
+			Expect(result).To(ContainCode(`
 				import dep from "/https%3A%2F%2Fproscenium.test%2Fdependency";
 			`))
 		})
@@ -138,19 +133,15 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("importing encoded URL with URL dependency", func() {
 		It("should encode and not bundle dependency", func() {
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/import-url-module.js").
-				Reply(200).
-				BodyString(`
-					import dep from 'https://some.url/dependency';
-					export default () => { return 'Hello World' + dep };
-				`)
+			MockURL("/import-url-module.js", `
+				import dep from 'https://some.url/dependency';
+				export default () => { return 'Hello World' + dep };
+			`)
 
 			result := build("lib/import_encoded_url.js")
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`return "Hello World`))
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(result).To(ContainCode(`return "Hello World`))
+			Expect(result).To(ContainCode(`
 				import dep from "/https%3A%2F%2Fsome.url%2Fdependency";
 			`))
 		})
@@ -158,19 +149,15 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("importing encoded URL with bare dependency", func() {
 		It("should pass through as is", func() {
-			defer gock.Off()
-			gock.New("https://proscenium.test").
-				Get("/import-url-module.js").
-				Reply(200).
-				BodyString(`
-					import dep from 'is-ip';
-					export default () => { return 'Hello World' + dep };
-				`)
+			MockURL("/import-url-module.js", `
+				import dep from 'is-ip';
+				export default () => { return 'Hello World' + dep };
+			`)
 
 			result := build("lib/import_encoded_url.js")
 
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`return "Hello World`))
-			Expect(result.OutputFiles[0].Contents).To(ContainCode(`
+			Expect(result).To(ContainCode(`return "Hello World`))
+			Expect(result).To(ContainCode(`
 				import dep from "/node_modules/.pnpm/is-ip@
 			`))
 		})

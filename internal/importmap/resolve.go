@@ -2,7 +2,6 @@ package importmap
 
 import (
 	"joelmoss/proscenium/internal/utils"
-	"log"
 	"path"
 )
 
@@ -27,7 +26,7 @@ func Resolve(specifier string, resolveDir string, root string) (string, bool) {
 
 	// Sort and normalize the "imports" of the import map.
 	// See https://html.spec.whatwg.org/multipage/webappapis.html#sorting-and-normalizing-a-module-specifier-map
-	log.Printf("[importMap] Resolving %v in %v from %v import(s)", specifier, resolveDir, len(Contents.Imports))
+	// log.Printf("[importMap] Resolving %v in %v from %v import(s)", specifier, resolveDir, len(Contents.Imports))
 
 	normalizedImports := make(map[string]string)
 
@@ -45,7 +44,7 @@ func Resolve(specifier string, resolveDir string, root string) (string, bool) {
 
 	value, found := normalizedImports[specifier]
 	if found {
-		log.Printf("[importMap] match! %v => %v", specifier, value)
+		// log.Printf("[importMap] match! %v => %v", specifier, value)
 		return value, true
 	}
 

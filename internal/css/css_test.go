@@ -133,7 +133,7 @@ var _ = Describe("Internal/Css", func() {
 					`, "/lib/foo.css"))
 				})
 
-				It("nested relative mixin is resolved")
+				It("nested relative mixin is resolved", func() {})
 
 				It("should cache mixin definition", func() {
 					Expect(`

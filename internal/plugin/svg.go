@@ -32,20 +32,22 @@ var Svg = api.Plugin{
 
 		build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "svgFromJsx"},
 			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
+				// pp.Println("[svg] namespace(svgFromJsx)", args)
+
 				bytes, err := os.ReadFile(args.Path)
 				if err != nil {
 					return api.OnLoadResult{}, err
 				}
 
 				contents := fmt.Sprintf(`
-            import { cloneElement, Children } from 'react';
-            const svg = %s;
-            const props = { ...svg.props, className: svg.props.class };
-            delete props.class;
-            export default function() {
-              return <svg { ...props }>{Children.only(svg.props.children)}</svg>
-            }
-          `, string(bytes))
+					import { cloneElement, Children } from 'react';
+					const svg = %s;
+					const props = { ...svg.props, className: svg.props.class };
+					delete props.class;
+					export default function() {
+						return <svg { ...props }>{Children.only(svg.props.children)}</svg>
+					}
+				`, string(bytes))
 
 				return api.OnLoadResult{
 					Contents:   &contents,

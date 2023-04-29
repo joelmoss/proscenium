@@ -28,6 +28,9 @@ dependencies:
   is-ip:
     specifier: ^5.0.0
     version: 5.0.0
+  lodash-es:
+    specifier: ^4.17.21
+    version: 4.17.21
   mypackage:
     specifier: link:packages/mypackage
     version: link:packages/mypackage
@@ -220,6 +223,10 @@ packages:
 
   /js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
+    dev: false
+
+  /lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
     dev: false
 
   /loose-envify@1.4.0:

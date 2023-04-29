@@ -1,4 +1,4 @@
-import AtIcon from '/at.svg'
+import AtIcon from '/public/at.svg'
 
 export default () => {
   return <AtIcon />
