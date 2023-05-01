@@ -1,36 +1,17 @@
-package builder
+package plugin
 
 import (
-	"errors"
-	"fmt"
-	"io"
-	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"net/http"
 	"net/url"
-	"os"
 	"path"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
-	httpcache "github.com/gregjones/httpcache/diskcache"
-	"github.com/peterbourgon/diskv"
 )
 
-const shouldCacheHttp = true
-
-// The maximum size of an HTTP response body to cache.
-var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
-
-var DiskvCache = diskv.New(diskv.Options{
-	BasePath:     os.TempDir(),
-	CacheSizeMax: 1024 * 1024, // FIXME: This doesn't seem to have any effect
-})
-var cache = httpcache.NewWithDiskv(DiskvCache)
-
-var unbundler = esbuild.Plugin{
+var Unbundler = esbuild.Plugin{
 	Name: "unbundler",
 	Setup: func(build esbuild.PluginBuild) {
 		root := build.InitialOptions.AbsWorkingDir
@@ -181,67 +162,6 @@ var unbundler = esbuild.Plugin{
 				}
 
 				return result, nil
-			})
-
-		// When a URL is loaded, we want to actually download the content from the internet.
-		build.OnLoad(esbuild.OnLoadOptions{Filter: ".*", Namespace: "url"},
-			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[5] namespace(url)", args)
-
-				if shouldCacheHttp {
-					cached, ok := cache.Get(args.Path)
-					if ok {
-						contents := string(cached)
-
-						if utils.PathIsCss(args.Path) {
-							contents, err := css.ParseCss(contents, args.Path, root)
-							if err != nil {
-								return esbuild.OnLoadResult{}, err
-							}
-
-							return esbuild.OnLoadResult{Contents: &contents, Loader: esbuild.LoaderCSS}, nil
-						}
-
-						return esbuild.OnLoadResult{Contents: &contents}, nil
-					}
-				}
-
-				result, err := http.Get(args.Path)
-				if err != nil {
-					return esbuild.OnLoadResult{}, err
-				}
-
-				defer result.Body.Close()
-
-				r := http.MaxBytesReader(nil, result.Body, MaxHttpBodySize)
-
-				if result.StatusCode > 299 {
-					err := fmt.Sprintf("Fetch of %v failed with status code: %d", args.Path, result.StatusCode)
-					return esbuild.OnLoadResult{}, errors.New(err)
-				}
-
-				bytes, err := io.ReadAll(r)
-				if err != nil {
-					errMsg := fmt.Sprintf("Fetch of %v failed: %v", args.Path, err.Error())
-					return esbuild.OnLoadResult{}, errors.New(errMsg)
-				}
-
-				if shouldCacheHttp {
-					cache.Set(args.Path, bytes)
-				}
-
-				contents := string(bytes)
-
-				if utils.PathIsCss(args.Path) {
-					contents, err := css.ParseCss(contents, args.Path, root)
-					if err != nil {
-						return esbuild.OnLoadResult{}, err
-					}
-
-					return esbuild.OnLoadResult{Contents: &contents, Loader: esbuild.LoaderCSS}, nil
-				}
-
-				return esbuild.OnLoadResult{Contents: &contents}, nil
 			})
 	},
 }

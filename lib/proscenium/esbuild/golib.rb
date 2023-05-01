@@ -21,7 +21,7 @@ module Proscenium
         :string,      # root
         :environment, # Rails environment as a Symbol
         :string,      # path to import map, relative to root
-        :bool, # bundle?
+        :bool,        # bundle?
         :bool         # debugging enabled?
       ], Result.by_value
 
@@ -64,7 +64,7 @@ module Proscenium
     end
 
     def build(path, bundle: false)
-      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, bundle, true)
+      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, bundle, false)
       raise BuildError.new(path, result[:response]) unless result[:success]
 
       result[:response]

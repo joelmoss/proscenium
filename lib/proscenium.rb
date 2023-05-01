@@ -25,6 +25,17 @@ module Proscenium
     Current.loaded = SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
   end
 
+  class PathResolutionFailed < StandardError
+    def initialize(path)
+      @path = path
+      super
+    end
+
+    def message
+      "Path #{@path.inspect} cannot be resolved"
+    end
+  end
+
   module Utils
     module_function
 
@@ -34,15 +45,16 @@ module Proscenium
       Digest::SHA1.hexdigest(value.to_s)[..7]
     end
 
-    def resolve(specifier)
-      Esbuild::Golib.resolve specifier
-    end
-
-    # Resolve the given absolute file system `path` to a URL path.
+    # Resolve the given `path` to a URL path.
     #
-    # @param path [String]
+    # @param path [String] Can be URL path, file system path, or bare specifier (ie. NPM package).
+    # @return [String] URL path.
     def resolve_path(path) # rubocop:disable Metrics/AbcSize
       raise ArgumentError, 'path must be a string' unless path.is_a?(String)
+
+      if path.starts_with?('./', '../')
+        raise ArgumentError, 'path must be an absolute file system or URL path'
+      end
 
       matched_gem = Proscenium.config.side_load_gems.find do |_, opts|
         path.starts_with?("#{opts[:root]}/")
@@ -57,27 +69,31 @@ module Proscenium
         end
 
         # TODO: manually resolve the path without esbuild
-        raise "Path #{path} cannot be found in app or gems"
+        raise PathResolutionFailed, path
       end
 
       return path.delete_prefix(Rails.root.to_s) if path.starts_with?("#{Rails.root}/")
 
-      raise "Path #{path} cannot be found in app or gems"
+      Esbuild::Golib.resolve(path)
     end
 
-    # Resolves the given CSS class names to CSS modules.
+    # Resolves CSS class `names` to CSS module names. Each name will be converted to a CSS module
+    # name, consisting of the camelCased name (lower case first character), and suffixed with the
+    # given `digest`.
     #
     # @param names [String, Array]
-    # @param hash: [String]
-    # @returns [Array] of class names generated from the given CSS module `names` and `hash`.
-    def class_names(*names, hash: nil)
-      names.flatten.compact.map do |name|
-        sname = name.to_s
-        if sname.starts_with?('_')
-          "_#{sname[1..].camelize(:lower)}#{hash}"
-        else
-          "#{sname.camelize(:lower)}#{hash}"
-        end
+    # @param digest: [String]
+    # @returns [Array] of class names generated from the given CSS module `names` and `digest`.
+    def css_modularise_class_names(*names, digest: nil)
+      names.flatten.compact.map { |name| css_modularise_class_name name, digest: digest }
+    end
+
+    def css_modularise_class_name(name, digest: nil)
+      sname = name.to_s
+      if sname.starts_with?('_')
+        "_#{sname[1..].camelize(:lower)}#{digest}"
+      else
+        "#{sname.camelize(:lower)}#{digest}"
       end
     end
   end

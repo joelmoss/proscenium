@@ -20,9 +20,8 @@ var Css = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// pp.Println("[6] filter(.css$)", args)
 
-				// relativePath := strings.TrimPrefix(args.Path, root)
-				hash := utils.ToDigest(args.Path)
-				// pp.Println(`\.css$`, args, hash)
+				relativePath := strings.TrimPrefix(args.Path, root)
+				hash := utils.ToDigest(relativePath)
 
 				importedFromJs := args.PluginData != nil && args.PluginData.(types.PluginData).ImportedFromJs
 
@@ -80,7 +79,7 @@ var Css = esbuild.Plugin{
 					}, nil
 				}
 
-				contents, err := css.ParseCssFile(args.Path, root)
+				contents, err := css.ParseCssFile(args.Path, root, hash)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}

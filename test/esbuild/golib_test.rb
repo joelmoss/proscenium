@@ -25,7 +25,6 @@ class Proscenium::Esbuild::GolibTest < Minitest::Test
 
   def test_build_source_map_css
     result = Proscenium::Esbuild::Golib.new.build('lib/foo.css.map')
-    pp result
 
     assert_includes result, '"sourcesContent": [".body {\\ncolor: red;\\n}\\n"'
   end

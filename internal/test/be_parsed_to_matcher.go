@@ -30,7 +30,7 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, match
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, root)
+	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, root, "")
 	matcher.Output = strings.TrimSpace(matcher.Output)
 
 	defer func() {

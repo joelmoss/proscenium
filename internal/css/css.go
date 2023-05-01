@@ -17,13 +17,13 @@ type handleNextTokenUntilFunc func(token *tokenizer.Token) bool
 // Arguments:
 //   - path: The absolute file system path of the file being parsed.
 //   - root: The root directory of the project.
-func ParseCssFile(path string, root string) (string, error) {
+func ParseCssFile(path string, root string, pathHash string) (string, error) {
 	input, err := os.ReadFile(path)
 	if err != nil {
 		return "", err
 	}
 
-	return ParseCss(string(input), path, root)
+	return ParseCss(string(input), path, root, pathHash)
 }
 
 // Parse the given CSS, and return the transformed CSS.
@@ -32,10 +32,16 @@ func ParseCssFile(path string, root string) (string, error) {
 //   - input: The CSS to parse.
 //   - path: The absolute file system path of the file being parsed.
 //   - root: The root directory of the project.
-func ParseCss(input string, path string, root string) (string, error) {
+func ParseCss(input string, path string, root string, pathHash string) (string, error) {
 	isModule := false
 	if strings.HasSuffix(path, ".module.css") {
 		isModule = true
+
+		if pathHash == "" {
+			pathHash = utils.ToDigest(path)
+		}
+	} else {
+		pathHash = ""
 	}
 
 	t, _ := newCssTokenizer(input, path)
@@ -45,7 +51,7 @@ func ParseCss(input string, path string, root string) (string, error) {
 		input:    input,
 		filePath: path,
 		rootPath: root,
-		pathHash: utils.ToDigest(path),
+		pathHash: pathHash,
 		isModule: isModule,
 		mixins:   cssMixins{},
 	}

@@ -1,16 +1,21 @@
 // lib/styles.module.css
-var e = document.querySelector("#_0011c694");
+var e = document.querySelector("#_330940eb");
 if (!e) {
-  e = document.createElement("style");
-  e.id = "_0011c694";
+  e = document.createElement("link");
+  e.id = "_330940eb";
+  e.rel = "stylesheet";
+  e.href = "/lib/styles.module.css";
   document.head.appendChild(e);
-  e.before(document.createComment("/lib/styles.module.css"));
-  e.appendChild(document.createTextNode(`.myClass0011c694 {
-  color: pink;
 }
-`));
-}
-var styles_module_default = { "myClass": "myClass0011c694" };
+var styles_module_default = new Proxy({}, {
+  get(target, prop, receiver) {
+    if (prop in target || typeof prop === "symbol") {
+      return Reflect.get(target, prop, receiver);
+    } else {
+      return prop + "330940eb";
+    }
+  }
+});
 
 // lib/import_css_module.js
 console.log(styles_module_default);

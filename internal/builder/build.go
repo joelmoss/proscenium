@@ -68,9 +68,10 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	if options.Bundle {
 		plugins = append(plugins, plugin.Bundler)
 	} else {
-		plugins = append(plugins, unbundler)
+		plugins = append(plugins, plugin.Unbundler)
 	}
 	plugins = append(plugins, plugin.Svg)
+	plugins = append(plugins, plugin.Url)
 	plugins = append(plugins, plugin.Css)
 
 	result := esbuild.Build(esbuild.BuildOptions{

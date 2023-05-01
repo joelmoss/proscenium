@@ -17,7 +17,7 @@ Benchmark.ips do |x|
   end
 
   x.report('proscenium golib') do
-    Proscenium::Esbuild::Golib.new(root: root).build(path)
+    Proscenium::Esbuild::Golib.new(root: root).build(path, bundle: true)
   end
 
   x.report('esbuild-cli') do

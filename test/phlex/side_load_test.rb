@@ -13,8 +13,8 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
     render Phlex::SideLoadView.new
 
     assert_equal({
-                   js: Set['app/components/phlex/side_load_view.js'],
-                   css: Set['app/components/phlex/side_load_view.css']
+                   js: Set['/app/components/phlex/side_load_view.js'],
+                   css: Set['/app/components/phlex/side_load_view.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -22,9 +22,9 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
     render Phlex::NestedSideLoadView.new
 
     assert_equal({
-                   js: Set['app/components/phlex/side_load_view.js'],
-                   css: Set['app/components/phlex/nested_side_load_view.css',
-                            'app/components/phlex/side_load_view.css']
+                   js: Set['/app/components/phlex/side_load_view.js'],
+                   css: Set['/app/components/phlex/nested_side_load_view.css',
+                            '/app/components/phlex/side_load_view.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -40,19 +40,10 @@ class Proscenium::Phlex::SideLoadTest < ActiveSupport::TestCase
   test 'should side load css module when css_module used' do
     view = render Phlex::SideLoadCssModuleView.new(true)
 
-    assert_equal('<div class="base2895a13f"></div>', view)
+    assert_equal('<div class="basebd9b41e5"></div>', view)
     assert_equal({
                    js: Set[],
-                   css: Set['app/components/phlex/side_load_css_module_view.module.css']
-                 }, Proscenium::Current.loaded)
-  end
-
-  test 'side load from ruby gem' do
-    render Gem1::Views::User.new
-
-    assert_equal({
-                   js: Set['gem:gem1/app/views/user.js'],
-                   css: Set['gem:gem1/app/views/user.css']
+                   css: Set['/app/components/phlex/side_load_css_module_view.module.css']
                  }, Proscenium::Current.loaded)
   end
 end

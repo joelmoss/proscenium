@@ -12,8 +12,8 @@ class SideLoadTest < ActionDispatch::IntegrationTest
     Proscenium::SideLoad.append 'app/views/layouts/application'
 
     assert_equal({
-                   js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css']
+                   js: Set['/app/views/layouts/application.js'],
+                   css: Set['/app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -22,8 +22,8 @@ class SideLoadTest < ActionDispatch::IntegrationTest
     Proscenium::SideLoad.append 'app/views/layouts/application'
 
     assert_equal({
-                   js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css']
+                   js: Set['/app/views/layouts/application.js'],
+                   css: Set['/app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -32,8 +32,8 @@ class SideLoadTest < ActionDispatch::IntegrationTest
     Proscenium::SideLoad.append 'app/views/layouts/application', { '.css' => :css }
 
     assert_equal({
-                   js: Set['app/views/layouts/application.js'],
-                   css: Set['app/views/layouts/application.css']
+                   js: Set['/app/views/layouts/application.js'],
+                   css: Set['/app/views/layouts/application.css']
                  }, Proscenium::Current.loaded)
   end
 
@@ -41,7 +41,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
     Proscenium::SideLoad.append 'app/views/layouts/application', { '.js' => :js }
 
     assert_equal({
-                   js: Set['app/views/layouts/application.js'],
+                   js: Set['/app/views/layouts/application.js'],
                    css: Set[]
                  }, Proscenium::Current.loaded)
   end
@@ -51,7 +51,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_equal({
                    js: Set[],
-                   css: Set['lib/styles.module.css']
+                   css: Set['/lib/styles.module.css']
                  }, Proscenium::Current.loaded)
   end
 

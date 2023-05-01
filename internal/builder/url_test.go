@@ -3,6 +3,7 @@ package builder_test
 import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/plugin"
 	. "joelmoss/proscenium/internal/test"
 	"joelmoss/proscenium/internal/types"
 	"os"
@@ -18,7 +19,7 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
-		builder.DiskvCache.EraseAll()
+		plugin.DiskvCache.EraseAll()
 	})
 	AfterEach(func() {
 		gock.Off()
@@ -57,7 +58,36 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
 		})
 
+		It("should cache", func() {
+			MockURL("/foo.js", "export default 'Hello World'")
+			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+
+			MockURL("/foo.js", "invalid code")
+			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+		})
+
+		It("bundles css", func() {
+			MockURL("/foo.css", "body { color: red; }")
+
+			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css")).To(ContainCode(`body { color: red; }`))
+		})
+
 		When("bundling", func() {
+			It("bundles css", func() {
+				MockURL("/foo.css", "body { color: red; }")
+
+				result := build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})
+				Expect(result).To(ContainCode(`body { color: red; }`))
+			})
+
+			It("should cache", func() {
+				MockURL("/foo.css", "body { color: red; }")
+				Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
+
+				MockURL("/foo.css", "invalid code")
+				Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
+			})
+
 			It("should bundle", func() {
 				MockURL("/foo.js", "export default 'Hello World'")
 
@@ -72,6 +102,14 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 			Expect(build("lib/import_url.js")).To(ContainCode(`
 				import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
+		})
+
+		When("bundling", func() {
+			It("should encode URL", func() {
+				Expect(build("lib/import_url.js", buildOpts{Bundle: true})).To(ContainCode(`
+				import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
+			`))
+			})
 		})
 	})
 
@@ -105,9 +143,9 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 		})
 
 		It("should error on reaching max response size", func() {
-			originalMaxHttpBodySize := builder.MaxHttpBodySize
-			builder.MaxHttpBodySize = 2
-			defer func() { builder.MaxHttpBodySize = originalMaxHttpBodySize }()
+			originalMaxHttpBodySize := plugin.MaxHttpBodySize
+			plugin.MaxHttpBodySize = 2
+			defer func() { plugin.MaxHttpBodySize = originalMaxHttpBodySize }()
 
 			MockURL("/import-url-module.js", "hello")
 

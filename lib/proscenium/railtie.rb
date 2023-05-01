@@ -15,7 +15,6 @@ module Proscenium
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
     npm: %r{^/npm:.+},
-    gem: %r{^/gem:.+},
     url: %r{^/https?%3A%2F%2F.+\.(css|m?jsx?)(\.map)?$}
   }.freeze
 
@@ -35,7 +34,6 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
-    config.proscenium.css_mixin_paths = Set[]
 
     # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
     #
@@ -54,10 +52,6 @@ module Proscenium
     #     package_name: 'mygem'
     #   }
     config.proscenium.side_load_gems = {}
-
-    config.before_configuration do |app|
-      app.config.proscenium.css_mixin_paths = Set[app.root.join('lib')]
-    end
 
     initializer 'proscenium.configuration' do |app|
       options = app.config.proscenium

@@ -3,6 +3,7 @@ package builder_test
 import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/plugin"
 	. "joelmoss/proscenium/internal/test"
 	"joelmoss/proscenium/internal/types"
 	"os"
@@ -18,7 +19,7 @@ var _ = Describe("Internal/Builder.bundler", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
-		builder.DiskvCache.EraseAll()
+		plugin.DiskvCache.EraseAll()
 	})
 	AfterEach(func() {
 		gock.Off()
@@ -34,6 +35,24 @@ var _ = Describe("Internal/Builder.bundler", func() {
 			Bundle: true,
 		})
 	}
+
+	It("should bundle bare module", func() {
+		Expect(build("lib/import_npm_module.js")).NotTo(ContainCode(`
+			import { isIP } from "/node_modules/.pnpm/is-ip@
+		`))
+	})
+
+	It("should bundle relative path", func() {
+		Expect(build("lib/import_relative_module.js")).To(ContainCode(`
+			console.log("/lib/foo4.js")
+		`))
+	})
+
+	It("should bundle absolute path", func() {
+		Expect(build("lib/import_absolute_module.js")).To(ContainCode(`
+			console.log("/lib/foo4.js")
+		`))
+	})
 
 	It("tree shakes bare import", func() {
 		Expect(build("lib/import_tree_shake.js")).To(EqualCode(`

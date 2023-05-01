@@ -13,6 +13,7 @@ import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"path"
 	"strings"
 )
@@ -63,11 +64,15 @@ func build(
 		return C.struct_Result{C.int(1), C.CString(contents)}
 	}
 
-	sourcemapUrl := path.Base(pathStr)
-	if strings.HasSuffix(result.OutputFiles[0].Path, ".css") {
-		contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
+	if utils.IsEncodedUrl(pathStr) {
+		contents += "//# sourceMappingURL=" + pathStr + ".map"
 	} else {
-		contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
+		sourcemapUrl := path.Base(pathStr)
+		if utils.PathIsCss(result.OutputFiles[0].Path) {
+			contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
+		} else {
+			contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
+		}
 	}
 
 	return C.struct_Result{C.int(1), C.CString(contents)}

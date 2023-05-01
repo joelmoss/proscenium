@@ -11,3 +11,4 @@ var npm_is_fn_3_0_default = isFunction;
 export {
   npm_is_fn_3_0_default as default
 };
+//# sourceMappingURL=https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map

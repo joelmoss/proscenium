@@ -243,12 +243,6 @@ p {
 }
 ```
 
-You can configure where Proscenium will look for your mixins with the `css_mixin_paths` config option:
-
-```ruby
-Proscenium.config.css_mixin_paths << Rails.root.join('app', 'lib')
-```
-
 ## Cache Busting
 
 By default, all assets are not cached by the browser. But if in production, you populate the

@@ -2,7 +2,7 @@
 
 module Proscenium
   class Middleware
-    # Handles requests for URL encoded URL's; downloading, caching, and compiling them.
+    # Handles requests for URL encoded URL's.
     class Url < Esbuild
       private
 

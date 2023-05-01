@@ -12,10 +12,16 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     Proscenium.reset_current_side_loaded
   end
 
-  test 'class names' do
+  test 'class names with .component' do
+    render Phlex::ReactComponentWithComponentClass.new
+
+    assert_selector '.componentManagedByProscenium.component66ab4da6'
+  end
+
+  test 'class names without .component' do
     render Phlex::BasicReactComponent.new
 
-    assert_selector '.componentManagedByProscenium.component8d1943e8'
+    assert_selector '.componentManagedByProscenium.component'
   end
 
   test 'data-component attribute' do

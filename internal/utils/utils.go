@@ -33,6 +33,11 @@ func IsUrl(name string) bool {
 	return re.MatchString(name)
 }
 
+func IsEncodedUrl(name string) bool {
+	var re = regexp.MustCompile(`^https?%3A%2F%2F`)
+	return re.MatchString(name)
+}
+
 func PathIsRelative(name string) bool {
 	var re = regexp.MustCompile(`^\.(\.)?\/`)
 	return re.MatchString(name)

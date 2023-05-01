@@ -1,11 +1,9 @@
 package plugin
 
 import (
-	"io"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"net/http"
 	"net/url"
 	"path"
 	"strings"
@@ -111,14 +109,13 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				}
 
-				resolvedImport, matched := importmap.Resolve(args.Path, args.ResolveDir, root)
-				if matched {
+				resolvedImport, importMapMatched := importmap.Resolve(args.Path, args.ResolveDir, root)
+				if importMapMatched {
 					result.Path = resolvedImport
 
 					if path.IsAbs(result.Path) {
 						return result, nil
 					} else if utils.IsUrl(result.Path) {
-						// result.Namespace = "url"
 						result.Path = "/" + url.QueryEscape(result.Path)
 						result.External = true
 						return result, nil
@@ -141,15 +138,26 @@ var Bundler = esbuild.Plugin{
 				}
 
 				// Absolute path - pass through as is.
-				if path.IsAbs(args.Path) {
-					if !result.External {
+				if path.IsAbs(result.Path) {
+					if !shouldBeExternal {
 						result.Path = path.Join(root, args.Path)
 					}
 
 					return result, nil
 				}
 
+				if !importMapMatched && !shouldBeExternal {
+					// We got no match from the import map, and it should not be external, so we'll try to
+					// resolve the path manually without needing to call esbuild.Resolve. If the path is
+					// relative or a bare module, we'll pass through without returning a path.
+					if utils.PathIsRelative(result.Path) || utils.IsBareModule(result.Path) {
+						result.Path = ""
+						return result, nil
+					}
+				}
+
 				// Resolve with esbuild
+				// TODO: try and avoid this call as much as possible!
 				r := build.Resolve(args.Path, esbuild.ResolveOptions{
 					ResolveDir: args.ResolveDir,
 					Importer:   args.Importer,
@@ -158,7 +166,7 @@ var Bundler = esbuild.Plugin{
 				})
 
 				if len(r.Errors) > 0 {
-					// Could not reolve the path, so pass through as external. This ensures we receive no
+					// Could not resolve the path, so pass through as external. This ensures we receive no
 					// error, and instead allows the browser to handle the import failure.
 					result.External = true
 
@@ -178,35 +186,5 @@ var Bundler = esbuild.Plugin{
 				}
 
 				return result, nil
-			})
-
-		build.OnLoad(esbuild.OnLoadOptions{Filter: ".*", Namespace: "url"},
-			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[4] namespace(url)", args)
-
-				res, err := http.Get(args.Path)
-				if err != nil {
-					return esbuild.OnLoadResult{}, err
-				}
-				defer res.Body.Close()
-				bytes, err := io.ReadAll(res.Body)
-				if err != nil {
-					return esbuild.OnLoadResult{}, err
-				}
-
-				contents := string(bytes)
-
-				loader := esbuild.LoaderJS
-				if strings.HasSuffix(args.Path, ".css") {
-					loader = esbuild.LoaderCSS
-				}
-
-				// Returning the resolveDir ensures that imports fall back to the context of the root
-				// directory.
-				return esbuild.OnLoadResult{
-					Contents:   &contents,
-					Loader:     loader,
-					ResolveDir: root,
-				}, nil
 			})
 	}}

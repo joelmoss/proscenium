@@ -3,6 +3,7 @@ package builder_test
 import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/plugin"
 	. "joelmoss/proscenium/internal/test"
 	"joelmoss/proscenium/internal/types"
 	"os"
@@ -18,7 +19,7 @@ var _ = Describe("Internal/Builder.unbundler", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
-		builder.DiskvCache.EraseAll()
+		plugin.DiskvCache.EraseAll()
 	})
 	AfterEach(func() {
 		gock.Off()

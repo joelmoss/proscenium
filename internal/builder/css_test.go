@@ -1,8 +1,8 @@
 package builder_test
 
 import (
-	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/plugin"
 	. "joelmoss/proscenium/internal/test"
 	"joelmoss/proscenium/internal/types"
 
@@ -15,7 +15,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	BeforeEach(func() {
 		types.Env = types.TestEnv
 		importmap.Contents = &types.ImportMap{}
-		builder.DiskvCache.EraseAll()
+		plugin.DiskvCache.EraseAll()
 	})
 	AfterEach(func() {
 		gock.Off()
@@ -29,7 +29,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 
 	It("should build css module", func() {
 		Expect(Build("app/components/phlex/side_load_css_module_view.module.css")).To(ContainCode(`
-			.base03b26e31 { color: red; }
+			.basebd9b41e5 { color: red; }
 		`))
 	})
 
@@ -83,10 +83,10 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	It("import css module from js", func() {
 		Expect(Build("lib/import_css_module.js")).To(EqualCode(`
 			// lib/styles.module.css
-			var e = document.querySelector("#_9095c7b8");
+			var e = document.querySelector("#_330940eb");
 			if (!e) {
 				e = document.createElement("link");
-				e.id = "_9095c7b8";
+				e.id = "_330940eb";
 				e.rel = "stylesheet";
 				e.href = "/lib/styles.module.css";
 				document.head.appendChild(e);
@@ -96,7 +96,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 					if (prop in target || typeof prop === "symbol") {
 						return Reflect.get(target, prop, receiver);
 					} else {
-						return prop + "9095c7b8";
+						return prop + "330940eb";
 					}
 				}
 			});
@@ -110,10 +110,10 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		It("import css module from js", func() {
 			Expect(Build("lib/import_css_module.js", BuildOpts{Bundle: true})).To(EqualCode(`
 			// lib/styles.module.css
-			var e = document.querySelector("#_9095c7b8");
+			var e = document.querySelector("#_330940eb");
 			if (!e) {
 				e = document.createElement("link");
-				e.id = "_9095c7b8";
+				e.id = "_330940eb";
 				e.rel = "stylesheet";
 				e.href = "/lib/styles.module.css";
 				document.head.appendChild(e);
@@ -123,7 +123,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 					if (prop in target || typeof prop === "symbol") {
 						return Reflect.get(target, prop, receiver);
 					} else {
-						return prop + "9095c7b8";
+						return prop + "330940eb";
 					}
 				}
 			});

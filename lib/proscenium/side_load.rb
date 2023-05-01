@@ -29,7 +29,7 @@ module Proscenium
     end
 
     # @param path [Pathname, String] The path of the file to be side loaded.
-    # @param extensions [Array] File extensions to side load (default: DEFAULT_EXTENSIONS)
+    # @param extension_map [Hash] File extensions to side load.
     def initialize(path, extension_map = EXTENSION_MAP)
       @path = (path.is_a?(Pathname) ? path : Rails.root.join(path)).sub_ext('')
       @extension_map = extension_map
