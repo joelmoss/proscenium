@@ -109,28 +109,56 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	When("bundling", func() {
 		It("import css module from js", func() {
 			Expect(Build("lib/import_css_module.js", BuildOpts{Bundle: true})).To(EqualCode(`
-			// lib/styles.module.css
-			var e = document.querySelector("#_330940eb");
-			if (!e) {
-				e = document.createElement("link");
-				e.id = "_330940eb";
-				e.rel = "stylesheet";
-				e.href = "/lib/styles.module.css";
-				document.head.appendChild(e);
-			}
-			var styles_module_default = new Proxy({}, {
-				get(target, prop, receiver) {
-					if (prop in target || typeof prop === "symbol") {
-						return Reflect.get(target, prop, receiver);
-					} else {
-						return prop + "330940eb";
-					}
+				// lib/styles.module.css
+				var e = document.querySelector("#_330940eb");
+				if (!e) {
+					e = document.createElement("link");
+					e.id = "_330940eb";
+					e.rel = "stylesheet";
+					e.href = "/lib/styles.module.css";
+					document.head.appendChild(e);
 				}
-			});
+				var styles_module_default = new Proxy({}, {
+					get(target, prop, receiver) {
+						if (prop in target || typeof prop === "symbol") {
+							return Reflect.get(target, prop, receiver);
+						} else {
+							return prop + "330940eb";
+						}
+					}
+				});
 
-			// lib/import_css_module.js
-			console.log(styles_module_default);
-		`))
+				// lib/import_css_module.js
+				console.log(styles_module_default);
+			`))
+		})
+
+		FIt("import relative css module from js", func() {
+			result := Build("lib/import_relative_css_module.js", BuildOpts{Bundle: true})
+
+			Expect(result).To(EqualCode(`
+				// lib/styles.module.css
+				var e = document.querySelector("#_330940eb");
+				if (!e) {
+					e = document.createElement("link");
+					e.id = "_330940eb";
+					e.rel = "stylesheet";
+					e.href = "/lib/styles.module.css";
+					document.head.appendChild(e);
+				}
+				var styles_module_default = new Proxy({}, {
+					get(target, prop, receiver) {
+						if (prop in target || typeof prop === "symbol") {
+							return Reflect.get(target, prop, receiver);
+						} else {
+							return prop + "330940eb";
+						}
+					}
+				});
+
+				// lib/import_relative_css_module.js
+				console.log(styles_module_default);
+			`))
 		})
 	})
 })

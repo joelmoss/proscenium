@@ -13,23 +13,6 @@ import (
 var Svg = api.Plugin{
 	Name: "svg",
 	Setup: func(build api.PluginBuild) {
-		// var publicPath = filepath.Join(build.InitialOptions.AbsWorkingDir, "public")
-
-		// build.OnResolve(api.OnResolveOptions{Filter: `\.svg$`},
-		// 	func(args api.OnResolveArgs) (api.OnResolveResult, error) {
-		// 		if args.Kind == api.ResolveJSImportStatement && strings.HasSuffix(args.Importer, ".jsx") {
-		// 			return api.OnResolveResult{
-		// 				Path:      filepath.Join(publicPath, args.Path),
-		// 				Namespace: "svgFromJsx",
-		// 			}, nil
-		// 		} else {
-		// 			return api.OnResolveResult{
-		// 				Path:     args.Path,
-		// 				External: true,
-		// 			}, nil
-		// 		}
-		// 	})
-
 		build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "svgFromJsx"},
 			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
 				// pp.Println("[svg] namespace(svgFromJsx)", args)

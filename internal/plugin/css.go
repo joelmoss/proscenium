@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
+	"github.com/k0kubun/pp/v3"
 )
 
 var Css = esbuild.Plugin{
@@ -18,55 +19,27 @@ var Css = esbuild.Plugin{
 		// Parse CSS files.
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[6] filter(.css$)", args)
+				pp.Println("[6] filter(.css$)", args)
 
 				relativePath := strings.TrimPrefix(args.Path, root)
 				hash := utils.ToDigest(relativePath)
 
 				importedFromJs := args.PluginData != nil && args.PluginData.(types.PluginData).ImportedFromJs
 
-				// If path is a CSS module, imported from JS, and a side-loaded ViewComponent stylesheet,
-				// simply return a JS proxy of the class names. The stylesheet itself will have already been
-				// side loaded. This avoids compiling the CSS all over again.
-				// if pathIsCssModule(args.Path) && importedFromJs {
-				// 	contents := cssModulesProxyTemplate(hash)
-				// 	return esbuild.OnLoadResult{
-				// 		Contents:   &contents,
-				// 		ResolveDir: root,
-				// 		Loader:     esbuild.LoaderJS,
-				// 	}, nil
-				// }
-
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
-				// in a <style> tag in the <head> of the page, and if the stylesheet is a CSS module, it
+				// in a <link> tag in the <head> of the page, and if the stylesheet is a CSS module, it
 				// exports a plain object of class names.
 				if importedFromJs {
-					// debugComment := ""
-					// if options.Env != types.ProdEnv {
-					// 	debugComment = `e.before(document.createComment('` + args.Path + `'));`
-					// }
-
-					// contents = `
-					// 	let e = document.querySelector('#_` + hash + `');
-					// 	if (!e) {
-					// 		e = document.createElement('style');
-					// 		e.id = '_` + hash + `';
-					// 		document.head.appendChild(e);
-					// 		` + debugComment + `
-					// 		e.appendChild(document.createTextNode(` + "`" + contents + "`" + `));
-					// 	}
-					// `
-
 					contents := `
-							let e = document.querySelector('#_` + hash + `');
-							if (!e) {
-								e = document.createElement('link');
-								e.id = '_` + hash + `';
-								e.rel = 'stylesheet';
-								e.href = '` + strings.TrimPrefix(args.Path, root) + `';
-								document.head.appendChild(e);
-							}
-						`
+						let e = document.querySelector('#_` + hash + `');
+						if (!e) {
+							e = document.createElement('link');
+							e.id = '_` + hash + `';
+							e.rel = 'stylesheet';
+							e.href = '` + strings.TrimPrefix(args.Path, root) + `';
+							document.head.appendChild(e);
+						}
+					`
 
 					if pathIsCssModule(args.Path) {
 						contents = contents + cssModulesProxyTemplate(hash)

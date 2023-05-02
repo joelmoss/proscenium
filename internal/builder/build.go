@@ -97,6 +97,11 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		LegalComments:     esbuild.LegalCommentsNone,
 		Metafile:          options.Metafile,
 		Plugins:           plugins,
+		Target:            esbuild.ES2022,
+		Supported: map[string]bool{
+			// Ensure CSS  esting is transformed for browsers that don't support it.
+			"nesting": false,
+		},
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still

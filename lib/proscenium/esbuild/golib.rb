@@ -64,7 +64,8 @@ module Proscenium
     end
 
     def build(path, bundle: false)
-      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, bundle, false)
+      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, bundle,
+                             Rails.env.development?)
       raise BuildError.new(path, result[:response]) unless result[:success]
 
       result[:response]

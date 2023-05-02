@@ -148,9 +148,19 @@ var Bundler = esbuild.Plugin{
 
 				if !importMapMatched && !shouldBeExternal {
 					// We got no match from the import map, and it should not be external, so we'll try to
-					// resolve the path manually without needing to call esbuild.Resolve. If the path is
-					// relative or a bare module, we'll pass through without returning a path.
-					if utils.PathIsRelative(result.Path) || utils.IsBareModule(result.Path) {
+					// resolve the path manually without needing to call esbuild.Resolve. By Not returning the
+					// path, we let esbuild handle resolving the path, which also ensures tree shaking works.
+
+					// If the path is relative, simply prepend the ResolveDir to it.
+					if utils.PathIsRelative(result.Path) {
+						result.Path = ""
+						return result, nil
+					}
+
+					// If the path is a bare module, we'll pass through without returning a path.
+					// FIXME: Because we return an empty path, subsequent onLoad callbacks will not receive
+					// the PluginData. See https://github.com/evanw/esbuild/issues/3098
+					if utils.IsBareModule(result.Path) {
 						result.Path = ""
 						return result, nil
 					}
@@ -169,7 +179,6 @@ var Bundler = esbuild.Plugin{
 					// Could not resolve the path, so pass through as external. This ensures we receive no
 					// error, and instead allows the browser to handle the import failure.
 					result.External = true
-
 					return result, nil
 				}
 
