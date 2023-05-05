@@ -10,7 +10,6 @@ import (
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 	httpcache "github.com/gregjones/httpcache/diskcache"
-	"github.com/k0kubun/pp/v3"
 	"github.com/peterbourgon/diskv"
 )
 
@@ -34,7 +33,7 @@ var Url = esbuild.Plugin{
 		// FIXME: Note that CSS is not parsed with our custom parser (ie. no CSS module, mixin support).
 		build.OnLoad(esbuild.OnLoadOptions{Filter: ".*", Namespace: "url"},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				pp.Println("[5] namespace(url)", args)
+				// pp.Println("[5] namespace(url)", args)
 
 				contents, err := DownloadURL(args.Path)
 				if err != nil {

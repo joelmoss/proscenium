@@ -8,7 +8,6 @@ import (
 	"path"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
-	"github.com/k0kubun/pp/v3"
 )
 
 type esbuildResolveResult struct {
@@ -67,7 +66,7 @@ var Bundler = esbuild.Plugin{
 		// URL's as local paths for later bundling and transforming.
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				pp.Println("[1a] filter(^https://)", args)
+				// pp.Println("[1a] filter(^https://)", args)
 
 				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
 				// namespace.
@@ -143,7 +142,7 @@ var Bundler = esbuild.Plugin{
 					return esbuild.OnResolveResult{}, nil
 				}
 
-				pp.Println("[3] filter(.*)", args)
+				// pp.Println("[3] filter(.*)", args)
 
 				// Build the result.
 				result := esbuild.OnResolveResult{Path: args.Path}
