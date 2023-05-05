@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
@@ -26,16 +27,30 @@ var Css = esbuild.Plugin{
 				importedFromJs := args.PluginData != nil && args.PluginData.(types.PluginData).ImportedFromJs
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
-				// in a <link> tag in the <head> of the page, and if the stylesheet is a CSS module, it
-				// exports a plain object of class names.
+				// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
+				// module, it exports a plain object of class names.
 				if importedFromJs {
-					contents := `
+					cssResult := cssBuild(CssBuildOptions{
+						Path:   relativePath[1:],
+						Root:   root,
+						Bundle: true,
+					})
+
+					if len(cssResult.Errors) != 0 {
+						return esbuild.OnLoadResult{
+							Errors:   cssResult.Errors,
+							Warnings: cssResult.Warnings,
+						}, fmt.Errorf(cssResult.Errors[0].Text)
+					}
+
+					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
+					contents = `
 						let e = document.querySelector('#_` + hash + `');
 						if (!e) {
-							e = document.createElement('link');
+							e = document.createElement('style');
 							e.id = '_` + hash + `';
-							e.rel = 'stylesheet';
-							e.href = '` + strings.TrimPrefix(args.Path, root) + `';
+							e.dataset.href = '` + relativePath + `';
+							e.appendChild(document.createTextNode(` + fmt.Sprintf("`%s`", contents) + `));
 							document.head.appendChild(e);
 						}
 					`
@@ -50,6 +65,32 @@ var Css = esbuild.Plugin{
 						Loader:     esbuild.LoaderJS,
 					}, nil
 				}
+
+				contents, err := css.ParseCssFile(args.Path, root, hash)
+				if err != nil {
+					return esbuild.OnLoadResult{}, err
+				}
+
+				return esbuild.OnLoadResult{
+					Contents: &contents,
+					Loader:   esbuild.LoaderCSS,
+				}, nil
+			})
+	},
+}
+
+var cssOnly = esbuild.Plugin{
+	Name: "cssOnly",
+	Setup: func(build esbuild.PluginBuild) {
+		root := build.InitialOptions.AbsWorkingDir
+
+		// Parse CSS files.
+		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
+			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+				// pp.Println("[6] filter(.css$)", args)
+
+				relativePath := strings.TrimPrefix(args.Path, root)
+				hash := utils.ToDigest(relativePath)
 
 				contents, err := css.ParseCssFile(args.Path, root, hash)
 				if err != nil {
@@ -81,4 +122,66 @@ func cssModulesProxyTemplate(hash string) string {
       }
     });
 	`
+}
+
+type CssBuildOptions struct {
+	// The path to build relative to `root`.
+	Path string
+
+	Root   string
+	Bundle bool
+	Debug  bool
+}
+
+// Build the given `path` in the `root`.
+//
+//export build
+func cssBuild(options CssBuildOptions) esbuild.BuildResult {
+	// minify := !options.Debug && types.Env == types.ProdEnv
+	minify := true
+
+	logLevel := esbuild.LogLevelSilent
+	if options.Debug {
+		logLevel = esbuild.LogLevelDebug
+	}
+
+	plugins := []esbuild.Plugin{}
+	if options.Bundle {
+		plugins = append(plugins, Bundler)
+	} else {
+		plugins = append(plugins, Unbundler)
+	}
+	plugins = append(plugins, Svg)
+	plugins = append(plugins, Url)
+	plugins = append(plugins, cssOnly)
+
+	return esbuild.Build(esbuild.BuildOptions{
+		EntryPoints:       []string{options.Path},
+		AbsWorkingDir:     options.Root,
+		LogLevel:          logLevel,
+		LogLimit:          1,
+		Outdir:            "public/assets",
+		Outbase:           "./",
+		MinifyWhitespace:  minify,
+		MinifyIdentifiers: minify,
+		MinifySyntax:      minify,
+		Bundle:            true,
+		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
+		KeepNames:         types.Env != types.ProdEnv,
+		Conditions:        []string{types.Env.String()},
+		Write:             false,
+		Sourcemap:         esbuild.SourceMapNone,
+		LegalComments:     esbuild.LegalCommentsNone,
+		Plugins:           plugins,
+		Target:            esbuild.ES2022,
+		Supported: map[string]bool{
+			// Ensure CSS  esting is transformed for browsers that don't support it.
+			"nesting": false,
+		},
+
+		// The Esbuild default places browser before module, but we're building for modern browsers
+		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
+		// uses CJS.
+		MainFields: []string{"module", "browser", "main"},
+	})
 }

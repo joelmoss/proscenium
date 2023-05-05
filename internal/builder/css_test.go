@@ -21,84 +21,84 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		gock.Off()
 	})
 
-	It("should build css", func() {
-		Expect(Build("lib/foo.css")).To(ContainCode(`.body { color: red; }`))
-	})
+	Describe("plain css", func() {
+		path := "lib/foo.css"
 
-	When("bundling", func() {
-		It("should build css", func() {
-			Expect(Build("lib/foo.css", BuildOpts{Bundle: true})).To(ContainCode(`.body { color: red; }`))
+		It("should build", func() {
+			Expect(Build(path)).To(ContainCode(`.body { color: red; }`))
+		})
+
+		When("bundling", func() {
+			It("should build", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`.body { color: red; }`))
+			})
 		})
 	})
 
-	It("should build css module", func() {
-		Expect(Build("app/components/phlex/side_load_css_module_view.module.css")).To(ContainCode(`
-			.basebd9b41e5 { color: red; }
-		`))
-	})
+	Describe("css module", func() {
+		path := "app/components/phlex/side_load_css_module_view.module.css"
 
-	When("bundling", func() {
-		It("should build css module", func() {
-			Expect(Build("app/components/phlex/side_load_css_module_view.module.css", BuildOpts{Bundle: true})).To(ContainCode(`
-				.basebd9b41e5 { color: red; }
-			`))
+		It("should build", func() {
+			Expect(Build(path)).To(ContainCode(`.basebd9b41e5 { color: red; }`))
+		})
+
+		When("bundling", func() {
+			It("should build", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`.basebd9b41e5 { color: red; }`))
+			})
 		})
 	})
 
-	It("should import absolute path", func() {
-		Expect(Build("lib/import_absolute.css")).To(ContainCode(`@import "/config/foo.css";`))
-	})
+	When("importing absolute path", func() {
+		path := "lib/import_absolute.css"
 
-	When("bundling", func() {
-		It("should bundle absolute path", func() {
-			Expect(Build("lib/import_absolute.css", BuildOpts{Bundle: true})).To(ContainCode(`
-				.stuff {
-					color: red;
-				}
-			`))
+		It("should pass through as is", func() {
+			Expect(Build(path)).To(ContainCode(`@import "/config/foo.css";`))
+		})
+
+		When("bundling", func() {
+			It("should bundle", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`.stuff { color: red; }`))
+			})
 		})
 	})
 
-	It("should import relative path", func() {
-		Expect(Build("lib/import_relative.css")).To(ContainCode(`
-			@import "/lib/foo.css";
-			@import "/lib/foo2.css";
-		`))
-	})
+	When("importing relative path", func() {
+		path := "lib/import_relative.css"
 
-	When("bundling", func() {
-		It("should bundle relative path", func() {
-			Expect(Build("lib/import_relative.css", BuildOpts{Bundle: true})).To(ContainCode(`
-				/* lib/foo.css */
-				.body {
-					color: red;
-				}
-
-				/* lib/foo2.css */
-				.body {
-					color: blue;
-				}
+		It("should resolve paths unbundled", func() {
+			Expect(Build(path)).To(ContainCode(`
+				@import "/lib/foo.css";
+				@import "/lib/foo2.css";
 			`))
+		})
+
+		When("bundling", func() {
+			It("should bundle", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`
+					/* lib/foo.css */
+					.body { color: red; }
+					/* lib/foo2.css */
+					.body { color: blue; }
+				`))
+			})
 		})
 	})
 
 	When("importing bare specifier", func() {
+		path := "lib/import_npm_module.css"
+
 		It("is replaced with absolute path", func() {
-			Expect(Build("lib/import_npm_module.css")).To(ContainCode(`
+			Expect(Build(path)).To(ContainCode(`
 				@import "/node_modules/.pnpm/normalize.css@8.0.1/node_modules/normalize.css/normalize.css";
 			`))
 		})
 
 		When("bundling", func() {
 			It("is replaced with absolute path", func() {
-				result := Build("lib/import_npm_module.css", BuildOpts{Bundle: true})
+				result := Build(path, BuildOpts{Bundle: true})
 
-				Expect(result).To(ContainCode(`
-					[hidden] {
-            display: none;
-          }
-				`))
-
+				Expect(result).To(ContainCode(`[hidden] { display: none; }`))
 				Expect(result).NotTo(ContainCode(`@import 'normalize.css';`))
 				Expect(result).NotTo(ContainCode(`
 					@import "/node_modules/.pnpm/normalize.css@8.0.1/node_modules/normalize.css/normalize.css";
@@ -109,58 +109,45 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 
 	Describe("mixins", func() {
 		When("from URL", func() {
+			path := "lib/with_mixin_from_url.css"
+
 			It("is replaced with defined mixin", func() {
-				Expect(Build("lib/with_mixin_from_url.css")).To(ContainCode(`
-					a {
-						color: red;
-						font-size: 20px;
-					}
-				`))
+				Expect(Build(path)).To(ContainCode(`a { color: red; font-size: 20px; }`))
 			})
 
 			When("bundling", func() {
 				It("is replaced with defined mixin", func() {
-					Expect(Build("lib/with_mixin_from_url.css", BuildOpts{Bundle: true})).To(ContainCode(`
-						a {
-							color: red;
-							font-size: 20px;
-						}
+					Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`
+						a { color: red; font-size: 20px; }
 					`))
 				})
 			})
 		})
 
 		When("from relative URL", func() {
+			path := "lib/with_mixin_from_relative_url.css"
+
 			It("is replaced with defined mixin", func() {
-				Expect(Build("lib/with_mixin_from_relative_url.css")).To(ContainCode(`
-					a {
-						color: red;
-						font-size: 20px;
-					}
-				`))
+				Expect(Build(path)).To(ContainCode(`a {	color: red;	font-size: 20px; }`))
 			})
 
 			When("bundling", func() {
 				It("is replaced with defined mixin", func() {
-					Expect(Build("lib/with_mixin_from_relative_url.css", BuildOpts{Bundle: true})).To(ContainCode(`
-						a {
-							color: red;
-							font-size: 20px;
-						}
-					`))
+					Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`a { color: red; font-size: 20px; }`))
 				})
 			})
 		})
 	})
 
 	When("importing css module from js", func() {
+		css := "`.myClass330940eb{color:pink}`"
 		var expectedCode = `
 			var e = document.querySelector("#_330940eb");
 			if (!e) {
-				e = document.createElement("link");
+				e = document.createElement("style");
 				e.id = "_330940eb";
-				e.rel = "stylesheet";
-				e.href = "/lib/styles.module.css";
+				e.dataset.href = "/lib/styles.module.css";
+				e.appendChild(document.createTextNode(` + css + `));
 				document.head.appendChild(e);
 			}
 			var styles_module_default = new Proxy({}, {
@@ -178,8 +165,16 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 			Expect(Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
 		})
 
+		When("invalid css", func() {
+			It("returns error", func() {
+				result := Build("lib/import_invalid_css_module.js")
+
+				Expect(result.Errors[0].Text).To(Equal("Could not resolve \"lib/invalid.module.css\""))
+			})
+		})
+
 		When("bundling", func() {
-			It("includes stylesheet and proxies class names", func() {
+			It("includes stylesheet and proxied class names", func() {
 				Expect(Build("lib/import_css_module.js", BuildOpts{Bundle: true})).To(ContainCode(expectedCode))
 			})
 

@@ -213,12 +213,16 @@ The above produces:
 }
 ```
 
-Importing a CSS file from JS will automatically append the stylesheet to the document's head. The
-results of the import will be an object of CSS modules.
+Importing a CSS file from JS will automatically append the stylesheet to the document's head. And
+the results of the import will be an object of CSS class to module names.
 
 ```js
 import styles from './styles.module.css'
+// styles == { header: 'header5564cdbb' }
 ```
+
+It is important to note that the exported object of CSS module names is actually a Proxy object. So
+destructuring the object will not work. Instead, you must access the properties directly.
 
 ## CSS Custom Media Queries
 
@@ -290,13 +294,14 @@ This allows your frontend code to become first class citizens of you Rails appli
 
 The logic of how assets are handled is as follows:
 
-- **fonts** (`.woff`, `.woff2`) are externalized.
+- **fonts** (`.woff`, `.woff2`) are externalized
 - **SVG** (`.svg`)
   - When imported from JSX (`.jsx`):
-    - It is bundled and its contents rendered as a JSX component.
-  - Else is not bundled.
+    - is bundled and its contents rendered as a JSX component
+  - Else
+    - is not bundled
 - **URL's**'s are encoded as a local URL path, and externalized.
-- **Encoded URL's** are decoded, downloaded, cached
+- **Encoded URL's** are decoded, downloaded and cached.
 
 ### Serving Assets by URL
 
