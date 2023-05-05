@@ -1,15 +1,11 @@
 package builder_test
 
 import (
-	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/test"
+	. "joelmoss/proscenium/internal/testing"
 	"joelmoss/proscenium/internal/types"
-	"os"
-	"path"
 
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,37 +21,55 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		gock.Off()
 	})
 
-	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "../../", "test", "internal")
+	It("should fail on unknown entrypoint", func() {
+		result := Build("unknown.js", BuildOpts{Bundle: true})
 
-	build := func(path string) api.BuildResult {
-		return builder.Build(builder.BuildOptions{
-			Path:   path,
-			Root:   root,
-			Bundle: true,
-		})
-	}
+		Expect(result.Errors[0].Text).To(Equal("Could not resolve \"unknown.js\""))
+	})
+
+	It("should build js", func() {
+		Expect(Build("lib/foo.js", BuildOpts{Bundle: true})).To(ContainCode(`console.log("/lib/foo.js")`))
+	})
+
+	It("should build jsx", func() {
+		result := Build("lib/component.jsx", BuildOpts{Bundle: true})
+
+		Expect(result).NotTo(ContainCode(`
+			import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
+		`))
+
+		Expect(Build("lib/component.jsx", BuildOpts{Bundle: true})).To(ContainCode(`
+			var import_jsx_runtime = __toESM(require_jsx_runtime());
+			var Component = /* @__PURE__ */ __name(() => {
+				return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Hello" });
+			}, "Component");
+			var component_default = Component;
+			export {
+				component_default as default
+			};
+		`))
+	})
 
 	It("should bundle bare module", func() {
-		Expect(build("lib/import_npm_module.js")).NotTo(ContainCode(`
+		Expect(Build("lib/import_npm_module.js", BuildOpts{Bundle: true})).NotTo(ContainCode(`
 			import { isIP } from "/node_modules/.pnpm/is-ip@
 		`))
 	})
 
 	It("should bundle relative path", func() {
-		Expect(build("lib/import_relative_module.js")).To(ContainCode(`
+		Expect(Build("lib/import_relative_module.js", BuildOpts{Bundle: true})).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
 	})
 
 	It("should bundle absolute path", func() {
-		Expect(build("lib/import_absolute_module.js")).To(ContainCode(`
+		Expect(Build("lib/import_absolute_module.js", BuildOpts{Bundle: true})).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
 	})
 
 	It("tree shakes bare import", func() {
-		Expect(build("lib/import_tree_shake.js")).To(EqualCode(`
+		Expect(Build("lib/import_tree_shake.js", BuildOpts{Bundle: true})).To(EqualCode(`
 			var __defProp = Object.defineProperty;
 			var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
@@ -80,20 +94,20 @@ var _ = Describe("Internal/Builder.bundler", func() {
 	It("does not bundle URLs", func() {
 		MockURL("/import-url-module.js", "export default 'Hello World'")
 
-		Expect(build("lib/import_url.js")).To(ContainCode(`
+		Expect(Build("lib/import_url.js", BuildOpts{Bundle: true})).To(ContainCode(`
 			import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 		`))
 	})
 
 	It("should define NODE_ENV", func() {
-		result := build("lib/define_node_env.js")
+		result := Build("lib/define_node_env.js", BuildOpts{Bundle: true})
 
-		Expect(result.OutputFiles[0].Contents).To(ContainCode(`console.log("test")`))
+		Expect(result).To(ContainCode(`console.log("test")`))
 	})
 
 	When("css", func() {
 		It("should bundle absolute path", func() {
-			Expect(build("lib/import_absolute.css")).To(ContainCode(`
+			Expect(Build("lib/import_absolute.css", BuildOpts{Bundle: true})).To(ContainCode(`
 				.stuff {
 					color: red;
 				}
@@ -101,7 +115,7 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		})
 
 		It("should bundle relative path", func() {
-			result := build("lib/import_relative.css")
+			result := Build("lib/import_relative.css", BuildOpts{Bundle: true})
 
 			Expect(result).To(ContainCode(`
 				.body {
@@ -116,7 +130,7 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		})
 
 		It("should not bundle fonts", func() {
-			result := build("lib/fonts.css")
+			result := Build("lib/fonts.css", BuildOpts{Bundle: true})
 
 			Expect(result).To(ContainCode(`url(/somefont.woff2)`))
 			Expect(result).To(ContainCode(`url(/somefont.woff)`))

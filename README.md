@@ -288,6 +288,16 @@ Proscenium provides a Rails middleware that proxies requests for your frontend c
 
 This allows your frontend code to become first class citizens of you Rails application.
 
+The logic of how assets are handled is as follows:
+
+- **fonts** (`.woff`, `.woff2`) are externalized.
+- **SVG** (`.svg`)
+  - When imported from JSX (`.jsx`):
+    - It is bundled and its contents rendered as a JSX component.
+  - Else is not bundled.
+- **URL's**'s are encoded as a local URL path, and externalized.
+- **Encoded URL's** are decoded, downloaded, cached
+
 ### Serving Assets by URL
 
 Proscenium's primary function is a Rails middleware that intercepts URL's beginning with
@@ -295,11 +305,11 @@ Proscenium's primary function is a Rails middleware that intercepts URL's beginn
 
 #### Serving from local project
 
-`/proscenium/[path]`
+`/[path]`
 
 The `path` should map to a path in your Rails project, starting at the root (`Rails.root`).
 
-For example, the URL `/proscenium/app/views/layouts/application.js` will serve the file at
+For example, the URL `/app/views/layouts/application.js` will serve the file at
 `[Rails.root]/app/views/layouts/application.js`.
 
 #### Serving from NPM package

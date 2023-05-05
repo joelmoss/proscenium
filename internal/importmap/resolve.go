@@ -2,6 +2,7 @@ package importmap
 
 import (
 	"joelmoss/proscenium/internal/utils"
+	"log"
 	"path"
 )
 
@@ -44,7 +45,7 @@ func Resolve(specifier string, resolveDir string, root string) (string, bool) {
 
 	value, found := normalizedImports[specifier]
 	if found {
-		// log.Printf("[importMap] match! %v => %v", specifier, value)
+		log.Printf("[importMap] match! %v => %v", specifier, value)
 		return value, true
 	}
 

@@ -8,7 +8,6 @@ import (
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
-	"github.com/k0kubun/pp/v3"
 )
 
 var Css = esbuild.Plugin{
@@ -19,7 +18,7 @@ var Css = esbuild.Plugin{
 		// Parse CSS files.
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				pp.Println("[6] filter(.css$)", args)
+				// pp.Println("[6] filter(.css$)", args)
 
 				relativePath := strings.TrimPrefix(args.Path, root)
 				hash := utils.ToDigest(relativePath)

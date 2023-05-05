@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"path"
 	"regexp"
 	"strings"
 
@@ -24,8 +25,7 @@ func ToString(a interface{}) (string, bool) {
 }
 
 func IsBareModule(name string) bool {
-	var re = regexp.MustCompile(`(?m)^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$`)
-	return re.MatchString(name)
+	return !path.IsAbs(name) && !PathIsRelative(name)
 }
 
 func IsUrl(name string) bool {
@@ -57,14 +57,22 @@ func PathIsCss(path string) bool {
 	return strings.HasSuffix(path, ".css")
 }
 
+func PathIsJsx(path string) bool {
+	return strings.HasSuffix(path, ".jsx")
+}
+
+func PathIsSvg(path string) bool {
+	return strings.HasSuffix(path, ".svg")
+}
+
 func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement &&
-		PathIsCss(path) &&
-		pathIsJs(args.Importer)
+	return args.Kind == esbuild.ResolveJSImportStatement && PathIsCss(path) && pathIsJs(args.Importer)
 }
 
 func IsSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement &&
-		strings.HasSuffix(path, ".svg") &&
-		strings.HasSuffix(args.Importer, ".jsx")
+	return args.Kind == esbuild.ResolveJSImportStatement && PathIsSvg(path) && PathIsJsx(args.Importer)
+}
+
+func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {
+	return PathIsSvg(path) && PathIsCss(args.Importer)
 }

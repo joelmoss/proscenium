@@ -1,15 +1,11 @@
 package builder_test
 
 import (
-	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/test"
+	. "joelmoss/proscenium/internal/testing"
 	"joelmoss/proscenium/internal/types"
-	"os"
-	"path"
 
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,88 +21,62 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 		gock.Off()
 	})
 
-	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "../../", "test", "internal")
-
-	type buildOpts struct {
-		ImportMap string
-		Bundle    bool
-	}
-
-	build := func(path string, rest ...buildOpts) api.BuildResult {
-		restOpts := buildOpts{}
-		if len(rest) > 0 {
-			restOpts = rest[0]
-		}
-
-		options := builder.BuildOptions{
-			Path:   path,
-			Root:   root,
-			Bundle: restOpts.Bundle,
-		}
-		if restOpts.ImportMap != "" {
-			options.ImportMap = []byte(restOpts.ImportMap)
-		}
-
-		return builder.Build(options)
-	}
-
 	When("entry point is encoded URL", func() {
-		It("should bundle", func() {
+		It("bundles js", func() {
 			MockURL("/foo.js", "export default 'Hello World'")
 
-			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
 		})
 
 		It("should cache", func() {
 			MockURL("/foo.js", "export default 'Hello World'")
-			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
 
 			MockURL("/foo.js", "invalid code")
-			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
+			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`= "Hello World";`))
 		})
 
 		It("bundles css", func() {
 			MockURL("/foo.css", "body { color: red; }")
 
-			Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css")).To(ContainCode(`body { color: red; }`))
+			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.css")).To(ContainCode(`body { color: red; }`))
 		})
 
 		When("bundling", func() {
+			It("bundles js", func() {
+				MockURL("/foo.js", "export default 'Hello World'")
+
+				result := Build("https%3A%2F%2Fproscenium.test%2Ffoo.js", BuildOpts{Bundle: true})
+				Expect(result).To(ContainCode(`= "Hello World";`))
+			})
+
 			It("bundles css", func() {
 				MockURL("/foo.css", "body { color: red; }")
 
-				result := build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})
+				result := Build("https%3A%2F%2Fproscenium.test%2Ffoo.css", BuildOpts{Bundle: true})
 				Expect(result).To(ContainCode(`body { color: red; }`))
 			})
 
 			It("should cache", func() {
 				MockURL("/foo.css", "body { color: red; }")
-				Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
+				Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.css", BuildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
 
 				MockURL("/foo.css", "invalid code")
-				Expect(build("https%3A%2F%2Fproscenium.test%2Ffoo.css", buildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
-			})
-
-			It("should bundle", func() {
-				MockURL("/foo.js", "export default 'Hello World'")
-
-				result := build("https%3A%2F%2Fproscenium.test%2Ffoo.js", buildOpts{Bundle: true})
-				Expect(result).To(ContainCode(`= "Hello World";`))
+				Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.css", BuildOpts{Bundle: true})).To(ContainCode(`body { color: red; }`))
 			})
 		})
 	})
 
 	When("importing a URL", func() {
 		It("should encode URL", func() {
-			Expect(build("lib/import_url.js")).To(ContainCode(`
+			Expect(Build("lib/import_url.js")).To(ContainCode(`
 				import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
 		})
 
 		When("bundling", func() {
 			It("should encode URL", func() {
-				Expect(build("lib/import_url.js", buildOpts{Bundle: true})).To(ContainCode(`
+				Expect(Build("lib/import_url.js", BuildOpts{Bundle: true})).To(ContainCode(`
 				import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
 			})
@@ -115,7 +85,7 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 	When("import map resolves to url", func() {
 		It("should encode URL", func() {
-			result := build("lib/import_map/bare_specifier.js", buildOpts{ImportMap: `{
+			result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
 				"imports": { "foo": "https://proscenium.test/import-url-module.js" }
 			}`})
 
@@ -123,13 +93,28 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 				import foo from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
 			`))
 		})
+
+		When("bundling", func() {
+			It("should encode URL", func() {
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					Bundle: true,
+					ImportMap: `{
+						"imports": { "foo": "https://proscenium.test/import-url-module.js" }
+					}`,
+				})
+
+				Expect(result).To(ContainCode(`
+					import foo from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
+				`))
+			})
+		})
 	})
 
 	When("importing an encoded URL", func() {
 		It("should bundle decoded URL", func() {
 			MockURL("/import-url-module.js", "export default () => { return 'Hello World' };")
 
-			Expect(build("lib/import_encoded_url.js")).To(ContainCode(`return "Hello World"`))
+			Expect(Build("lib/import_encoded_url.js")).To(ContainCode(`return "Hello World"`))
 		})
 
 		It("should error on non-2** response", func() {
@@ -137,9 +122,11 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 				Get("/import-url-module.js").
 				Reply(404)
 
-			result := build("lib/import_encoded_url.js")
+			result := Build("lib/import_encoded_url.js")
 
-			Expect(result.Errors[0].Text).To(Equal("Fetch of https://proscenium.test/import-url-module.js failed with status code: 404"))
+			Expect(result.Errors[0].Text).To(Equal(
+				"Fetch of https://proscenium.test/import-url-module.js failed with status code: 404",
+			))
 		})
 
 		It("should error on reaching max response size", func() {
@@ -149,9 +136,11 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 
 			MockURL("/import-url-module.js", "hello")
 
-			result := build("lib/import_encoded_url.js")
+			result := Build("lib/import_encoded_url.js")
 
-			Expect(result.Errors[0].Text).To(Equal("Fetch of https://proscenium.test/import-url-module.js failed: http: request body too large"))
+			Expect(result.Errors[0].Text).To(Equal(
+				"Fetch of https://proscenium.test/import-url-module.js failed: http: request body too large",
+			))
 		})
 	})
 
@@ -162,12 +151,27 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 				export default () => { return 'Hello World' + dep };
 			`)
 
-			result := build("lib/import_encoded_url.js")
+			result := Build("lib/import_encoded_url.js")
 
 			Expect(result).To(ContainCode(`return "Hello World"`))
 			Expect(result).To(ContainCode(`
 				import dep from "/https%3A%2F%2Fproscenium.test%2Fdependency";
 			`))
+		})
+
+		When("bundling", func() {
+			It("should resolve as URL ,encode and not bundle dependency", func() {
+				MockURL("/dependency", `export default "dependency"`)
+				MockURL("/import-url-module.js", `
+					import dep from './dependency';
+					export default () => { return 'Hello World' + dep };
+				`)
+
+				result := Build("lib/import_encoded_url.js", BuildOpts{Bundle: true})
+
+				Expect(result).To(ContainCode(`return "Hello World" + dependency_default`))
+				Expect(result).To(ContainCode(`= "dependency";`))
+			})
 		})
 	})
 
@@ -178,28 +182,54 @@ var _ = Describe("Internal/Builder.Build/url", func() {
 				export default () => { return 'Hello World' + dep };
 			`)
 
-			result := build("lib/import_encoded_url.js")
+			result := Build("lib/import_encoded_url.js")
 
 			Expect(result).To(ContainCode(`return "Hello World`))
 			Expect(result).To(ContainCode(`
 				import dep from "/https%3A%2F%2Fsome.url%2Fdependency";
 			`))
 		})
+
+		When("bundling", func() {
+			It("should encode and not bundle dependency", func() {
+				MockURL("/import-url-module.js", `
+					import dep from 'https://some.url/dependency';
+					export default () => { return 'Hello World' + dep };
+				`)
+
+				result := Build("lib/import_encoded_url.js", BuildOpts{Bundle: true})
+
+				Expect(result).To(ContainCode(`return "Hello World`))
+				Expect(result).To(ContainCode(`import dep from "/https%3A%2F%2Fsome.url%2Fdependency";`))
+			})
+		})
 	})
 
 	When("importing encoded URL with bare dependency", func() {
 		It("should pass through as is", func() {
 			MockURL("/import-url-module.js", `
-				import dep from 'is-ip';
-				export default () => { return 'Hello World' + dep };
+				import { one } from 'mypackage/treeshake';
+				export default () => { return 'Hello World' + one };
 			`)
 
-			result := build("lib/import_encoded_url.js")
+			result := Build("lib/import_encoded_url.js")
 
-			Expect(result).To(ContainCode(`return "Hello World`))
-			Expect(result).To(ContainCode(`
-				import dep from "/node_modules/.pnpm/is-ip@
-			`))
+			Expect(result).To(ContainCode(`return "Hello World" + one`))
+			Expect(result).To(ContainCode(`import { one } from "/packages/mypackage/treeshake.js";`))
+		})
+
+		When("bundling", func() {
+			It("should bundle", func() {
+				MockURL("/import-url-module.js", `
+					import { one } from 'mypackage/treeshake';
+					export default () => { return 'Hello World' + one };
+				`)
+
+				result := Build("lib/import_encoded_url.js", BuildOpts{Bundle: true})
+
+				Expect(result).To(ContainCode(`return "Hello World" + one`))
+				Expect(result).To(ContainCode(`console.log("one");`))
+			})
 		})
 	})
 })

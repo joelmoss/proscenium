@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"fmt"
+	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path/filepath"
 
@@ -17,12 +18,24 @@ var Svg = api.Plugin{
 			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
 				// pp.Println("[svg] namespace(svgFromJsx)", args)
 
-				bytes, err := os.ReadFile(args.Path)
+				contents, err := func() (string, error) {
+					if utils.IsUrl(args.Path) {
+						return DownloadURL(args.Path)
+					} else {
+						bytes, err := os.ReadFile(args.Path)
+						if err != nil {
+							return "", err
+						}
+
+						return string(bytes), nil
+					}
+				}()
+
 				if err != nil {
 					return api.OnLoadResult{}, err
 				}
 
-				contents := fmt.Sprintf(`
+				contents = fmt.Sprintf(`
 					import { cloneElement, Children } from 'react';
 					const svg = %s;
 					const props = { ...svg.props, className: svg.props.class };
@@ -30,7 +43,7 @@ var Svg = api.Plugin{
 					export default function() {
 						return <svg { ...props }>{Children.only(svg.props.children)}</svg>
 					}
-				`, string(bytes))
+				`, contents)
 
 				return api.OnLoadResult{
 					Contents:   &contents,

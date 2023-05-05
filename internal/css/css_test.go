@@ -2,7 +2,7 @@ package css_test
 
 import (
 	"joelmoss/proscenium/internal/importmap"
-	. "joelmoss/proscenium/internal/test"
+	. "joelmoss/proscenium/internal/testing"
 	"joelmoss/proscenium/internal/types"
 
 	. "github.com/onsi/ginkgo/v2"

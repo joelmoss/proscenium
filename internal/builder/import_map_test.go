@@ -4,12 +4,11 @@ import (
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/test"
+	. "joelmoss/proscenium/internal/testing"
 	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
-	"github.com/evanw/esbuild/pkg/api"
 	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -25,55 +24,43 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 		gock.Off()
 	})
 
-	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "../../", "test", "internal")
-
-	build := func(path string, importMap string, rest ...bool) api.BuildResult {
-		bundle := false
-		if len(rest) > 0 {
-			bundle = rest[0]
-		}
-
-		return builder.Build(builder.BuildOptions{
-			Path:      path,
-			Root:      root,
-			Bundle:    bundle,
-			ImportMap: []byte(importMap),
-		})
-	}
-
 	It("produces error on invalid json", func() {
-		result := build("lib/foo.js", `{[}]}`)
+		result := Build("lib/foo.js", BuildOpts{ImportMap: `{[}]}`})
 
 		Expect(result.Errors[0].Text).To(Equal("Failed to parse import map"))
 	})
 
-	It("should parse js import map", func() {
-		result := builder.Build(builder.BuildOptions{
-			Path:          "lib/import_map/as_js.js",
-			Root:          root,
-			ImportMapPath: "config/import_maps/as.js",
+	When("import map is JS", func() {
+		var cwd, _ = os.Getwd()
+		var root string = path.Join(cwd, "../../", "test", "internal")
+
+		It("should parse", func() {
+			result := builder.Build(builder.BuildOptions{
+				Path:          "lib/import_map/as_js.js",
+				Root:          root,
+				ImportMapPath: "config/import_maps/as.js",
+			})
+
+			Expect(result).To(ContainCode(`import pkg from "/lib/foo2.js";`))
 		})
 
-		Expect(result).To(ContainCode(`import pkg from "/lib/foo2.js";`))
-	})
+		It("produces error when invalid", func() {
+			result := builder.Build(builder.BuildOptions{
+				Path:          "lib/foo.js",
+				Root:          root,
+				ImportMapPath: "config/import_maps/invalid.js",
+			})
 
-	It("produces error on invalid js", func() {
-		result := builder.Build(builder.BuildOptions{
-			Path:          "lib/foo.js",
-			Root:          root,
-			ImportMapPath: "config/import_maps/invalid.js",
+			Expect(result.Errors[0].Text).To(Equal("Failed to parse import map"))
 		})
-
-		Expect(result.Errors[0].Text).To(Equal("Failed to parse import map"))
 	})
 
-	When("bare specifier", func() {
+	When("specifier is bare", func() {
 		When("value starts with /", func() {
 			It("resolves", func() {
-				result := build("lib/import_map/bare_specifier.js", `{
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
 					"imports": { "foo": "/lib/foo.js" }
-				}`)
+				}`})
 
 				Expect(result).To(ContainCode(`
 					import foo from "/lib/foo.js";
@@ -82,34 +69,48 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 
 			When("bundling", func() {
 				It("resolves", func() {
-					result := build("lib/import_map/bare_specifier.js", `{
-						"imports": { "foo": "/lib/foo.js" }
-					}`, true)
+					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+						Bundle: true,
+						ImportMap: `{
+							"imports": { "foo": "/lib/foo.js" }
+						}`,
+					})
 
-					Expect(result).To(ContainCode(`
-						console.log("/lib/foo.js");
-					`))
+					Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
 				})
 			})
 		})
 
-		When("value starts with ./", func() {
+		When("value starts with ./ or ../", func() {
 			It("resolves", func() {
-				result := build("lib/import_map/bare_specifier.js", `{
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
 					"imports": { "foo": "./foo.js" }
-				}`)
+				}`})
 
 				Expect(result).To(ContainCode(`
 					import foo from "/lib/import_map/foo.js";
 				`))
 			})
+
+			When("bundling", func() {
+				It("resolves", func() {
+					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+						Bundle: true,
+						ImportMap: `{
+							"imports": { "foo": "../foo.js" }
+						}`,
+					})
+
+					Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
+				})
+			})
 		})
 
 		When("value is URL", func() {
 			It("resolves", func() {
-				result := build("lib/import_map/bare_specifier.js", `{
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
 					"imports": { "foo": "https://some.com/foo.js" }
-				}`)
+				}`})
 
 				Expect(result).To(ContainCode(`
 					import foo from "/https%3A%2F%2Fsome.com%2Ffoo.js";
@@ -120,9 +121,12 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 				It("is not bundled", func() {
 					MockURL("/foo.js", "console.log('foo');")
 
-					result := build("lib/import_map/bare_specifier.js", `{
-						"imports": { "foo": "https://proscenium.test/foo.js" }
-					}`, true)
+					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+						Bundle: true,
+						ImportMap: `{
+							"imports": { "foo": "https://proscenium.test/foo.js" }
+						}`,
+					})
 
 					Expect(result).To(ContainCode(`
 						import foo from "/https%3A%2F%2Fproscenium.test%2Ffoo.js";
@@ -130,11 +134,28 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 				})
 			})
 		})
+
+		When("value is bare specifier", func() {
+			When("bundling", func() {
+				It("resolves the value", func() {
+					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+						Bundle: true,
+						ImportMap: `{
+						"imports": { "foo": "mypackage" }
+					}`,
+					})
+
+					Expect(result).To(ContainCode(`
+					console.log("node_modules/mypackage");
+				`))
+				})
+			})
+		})
 	})
 
 	// It("path prefix", Pending, func() {
 	// 	// import four from 'one/two/three/four.js'
-	// 	result := build("lib/import_map/path_prefix.js", `{
+	// 	result := Build("lib/import_map/path_prefix.js", `{
 	// 		"imports": { "one/": "./src/one/" }
 	// 	}`)
 
@@ -144,7 +165,7 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 	// })
 
 	// It("scopes", Pending, func() {
-	// 	result := build("lib/import_map/scopes.js", `{
+	// 	result := Build("lib/import_map/scopes.js", `{
 	// 		"imports": {
 	// 			"foo": "/lib/foo.js"
 	// 		},
@@ -159,7 +180,7 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 	// })
 
 	// It("path prefix multiple matches", Pending, func() {
-	// 	result := build("lib/import_map/path_prefix.js", `{
+	// 	result := Build("lib/import_map/path_prefix.js", `{
 	// 		"imports": {
 	// 			"one/": "./one/",
 	// 			"one/two/three/": "./three/",
