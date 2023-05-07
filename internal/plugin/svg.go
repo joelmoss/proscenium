@@ -9,8 +9,7 @@ import (
 	"github.com/evanw/esbuild/pkg/api"
 )
 
-// When importing an svg image from a jsx module, the svg is exported as a react component. It is
-// assumed that the SVG file is located in /public.
+// When importing an svg image from a jsx module, the svg is exported as a react component.
 var Svg = api.Plugin{
 	Name: "svg",
 	Setup: func(build api.PluginBuild) {
@@ -20,7 +19,7 @@ var Svg = api.Plugin{
 
 				contents, err := func() (string, error) {
 					if utils.IsUrl(args.Path) {
-						return DownloadURL(args.Path)
+						return DownloadURL(args.Path, true)
 					} else {
 						bytes, err := os.ReadFile(args.Path)
 						if err != nil {

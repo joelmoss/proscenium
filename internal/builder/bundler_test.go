@@ -31,6 +31,12 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		Expect(Build("lib/foo.js", BuildOpts{Bundle: true})).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
+	PIt("should bundle rjs", func() {
+		MockURL("/constants.rjs", "export default 'constants';")
+
+		Expect(Build("lib/rjs.js", BuildOpts{Bundle: true})).To(ContainCode(`"constants"`))
+	})
+
 	It("should build jsx", func() {
 		result := Build("lib/component.jsx", BuildOpts{Bundle: true})
 

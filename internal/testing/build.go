@@ -22,9 +22,10 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	}
 
 	options := builder.BuildOptions{
-		Path:   pathToBuild,
-		Root:   path.Join(path.Dir(filename), "../../test/internal"),
-		Bundle: restOpts.Bundle,
+		Path:    pathToBuild,
+		Root:    path.Join(path.Dir(filename), "../../test/internal"),
+		BaseUrl: "https://proscenium.test",
+		Bundle:  restOpts.Bundle,
 	}
 
 	if restOpts.ImportMap != "" {

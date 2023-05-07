@@ -12,13 +12,14 @@ module Proscenium
       new(...).build
     end
 
-    def initialize(path, root:)
+    def initialize(path, root:, base_url:)
       @path = path
       @root = root
+      @base_url = base_url
     end
 
     def build
-      Proscenium::Esbuild::Golib.new(root: @root).build(@path, bundle: true)
+      Proscenium::Esbuild::Golib.new(root: @root, base_url: @base_url).build(@path, bundle: true)
     end
 
     private

@@ -1,10 +1,10 @@
 // lib/styles.module.css
 var e = document.querySelector("#_330940eb");
 if (!e) {
-  e = document.createElement("link");
+  e = document.createElement("style");
   e.id = "_330940eb";
-  e.rel = "stylesheet";
-  e.href = "/lib/styles.module.css";
+  e.dataset.href = "/lib/styles.module.css";
+  e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
   document.head.appendChild(e);
 }
 var styles_module_default = new Proxy({}, {

@@ -284,7 +284,7 @@ Rails.application.config.proscenium.include_paths << 'app/components'
 
 ## rjs is back!
 
-Proscenium brings back rjs! Any path ending in .rjs will be served from your Rails app. This allows you to render dynamic server rendered JS.
+Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to render dynamic server rendered JS.
 
 ## How It Works
 

@@ -17,8 +17,11 @@ type BuildOptions struct {
 	// The path to build relative to `root`.
 	Path string
 
-	// The working directory.
+	// The working directory. Usually the Rails root.
 	Root string
+
+	// Base URL of the Rails app. eg. https://example.com
+	BaseUrl string
 
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
@@ -65,6 +68,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	plugins := []esbuild.Plugin{plugin.Env}
+	plugins = append(plugins, plugin.Rjs(options.BaseUrl))
 	if options.Bundle {
 		plugins = append(plugins, plugin.Bundler)
 	} else {

@@ -22,6 +22,7 @@ import (
 //
 //   - path - The path to build relative to `root`.
 //   - root - The working directory.
+//   - baseUrl - base URL of the Rails app. eg. https://example.com
 //   - env - The environment (1 = development, 2 = test, 3 = production)
 //   - importMap - Path to the import map relative to `root`.
 //   - bundle
@@ -31,6 +32,7 @@ import (
 func build(
 	filepath *C.char,
 	root *C.char,
+	baseUrl *C.char,
 	env C.uint,
 	importMap *C.char,
 	bundle bool,
@@ -43,6 +45,7 @@ func build(
 	result := builder.Build(builder.BuildOptions{
 		Path:          pathStr,
 		Root:          C.GoString(root),
+		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
 		Bundle:        bundle,

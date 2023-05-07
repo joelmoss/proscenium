@@ -19,6 +19,7 @@ module Proscenium
       attach_function :build, [
         :string,      # path or entry point
         :string,      # root
+        :string,      # base URL of the Rails app. eg. https://example.com
         :environment, # Rails environment as a Symbol
         :string,      # path to import map, relative to root
         :bool,        # bundle?
@@ -51,8 +52,9 @@ module Proscenium
       end
     end
 
-    def initialize(root: nil)
+    def initialize(root: nil, base_url: nil)
       @root = root || Rails.root
+      @base_url = base_url
     end
 
     def self.resolve(path)
@@ -64,7 +66,7 @@ module Proscenium
     end
 
     def build(path, bundle: false)
-      result = Request.build(path, @root.to_s, Rails.env.to_sym, import_map, bundle,
+      result = Request.build(path, @root.to_s, @base_url, Rails.env.to_sym, import_map, bundle,
                              Rails.env.development?)
       raise BuildError.new(path, result[:response]) unless result[:success]
 

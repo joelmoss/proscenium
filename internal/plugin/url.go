@@ -13,8 +13,6 @@ import (
 	"github.com/peterbourgon/diskv"
 )
 
-const shouldCacheHttp = true
-
 // The maximum size of an HTTP response body to cache.
 var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
 
@@ -35,7 +33,7 @@ var Url = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// pp.Println("[5] namespace(url)", args)
 
-				contents, err := DownloadURL(args.Path)
+				contents, err := DownloadURL(args.Path, true)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
@@ -56,8 +54,8 @@ var Url = esbuild.Plugin{
 	},
 }
 
-func DownloadURL(url string) (string, error) {
-	if shouldCacheHttp {
+func DownloadURL(url string, shouldCache bool) (string, error) {
+	if shouldCache {
 		cached, ok := cache.Get(url)
 		if ok {
 			return string(cached), nil
@@ -84,7 +82,7 @@ func DownloadURL(url string) (string, error) {
 		return "", errors.New(errMsg)
 	}
 
-	if shouldCacheHttp {
+	if shouldCache {
 		cache.Set(url, bytes)
 	}
 

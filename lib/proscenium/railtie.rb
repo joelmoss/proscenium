@@ -13,8 +13,6 @@ module Proscenium
   # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   MIDDLEWARE_GLOB_TYPES = {
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
-    runtime: '/proscenium-runtime/**.{js,jsx,js.map,jsx.map}',
-    npm: %r{^/npm:.+},
     url: %r{^/https?%3A%2F%2F.+\.(css|m?jsx?)(\.map)?$}
   }.freeze
 
