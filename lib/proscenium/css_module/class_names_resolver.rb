@@ -36,12 +36,14 @@ module Proscenium
           end
 
           path += '.module.css'
-        else
-          path = @phlex_path
-          name = class_name[1..]
-        end
 
-        Utils.css_modularise_class_name name, digest: add_stylesheet(path)[:digest]
+          Utils.css_modularise_class_name name, digest: add_stylesheet(path)[:digest]
+        elsif class_name.starts_with?('@')
+          Utils.css_modularise_class_name class_name[1..],
+                                          digest: add_stylesheet(@phlex_path)[:digest]
+        else
+          class_name
+        end
       end
     end
 

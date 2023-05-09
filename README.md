@@ -224,10 +224,6 @@ import styles from './styles.module.css'
 It is important to note that the exported object of CSS module names is actually a Proxy object. So
 destructuring the object will not work. Instead, you must access the properties directly.
 
-## CSS Custom Media Queries
-
-Proscenium supports [custom media queries](https://css-tricks.com/can-we-have-custom-media-queries-please/) as per the [spec](https://www.w3.org/TR/mediaqueries-5/#custom-mq). However, because of the way they are parsed, they cannot be imported using `@import`. So if you define your custom media queries in `/config/custom_media_queries.css`, Proscenium will automatically inject them into your CSS, so you can use them anywhere.
-
 ## CSS Mixins
 
 CSS mixins are supported using the `@mixin` at-rule. Simply define your mixins in `<root>/lib` in one or more files ending in `.mixin.css`, and using the `@define-mixin` at-rule...
