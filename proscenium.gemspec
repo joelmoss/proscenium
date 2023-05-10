@@ -28,7 +28,6 @@ Gem::Specification.new do |spec|
     'LICENSE.txt']
   spec.bindir = 'bin'
   spec.executables << 'esbuild'
-  spec.executables << 'lightningcss'
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']

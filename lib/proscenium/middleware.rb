@@ -28,7 +28,9 @@ module Proscenium
     def attempt(request)
       return unless (type = find_type(request))
 
-      file_handler.attempt(request.env) || type.attempt(request)
+      # file_handler.attempt(request.env) || type.attempt(request)
+
+      type.attempt(request)
     end
 
     # Returns the type of file being requested using Proscenium::MIDDLEWARE_GLOB_TYPES.
@@ -39,6 +41,7 @@ module Proscenium
       return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end
 
+    # TODO: handle precompiled assets
     def file_handler
       ::ActionDispatch::FileHandler.new Rails.public_path.join('assets').to_s,
                                         headers: { 'X-Proscenium-Middleware' => 'precompiled' }

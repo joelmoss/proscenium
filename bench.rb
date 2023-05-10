@@ -24,9 +24,5 @@ Benchmark.ips do |x|
     Open3.capture3(['/Users/joelmoss/dev/esbuild-ruby/bin/esbuild', path].join(' '))
   end
 
-  # x.report('esbuild build') do
-  #   Esbuild.build(entry_points: [path], write: false, abs_working_dir: root.to_s)
-  # end
-
   x.compare!
 end

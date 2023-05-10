@@ -7,10 +7,6 @@ ENV['RAILS_ENV'] = Rails.env
 module Proscenium
   FILE_EXTENSIONS = ['js', 'mjs', 'jsx', 'css', 'js.map', 'mjs.map', 'jsx.map', 'css.map'].freeze
 
-  # These globs should actually be Deno supported globs, and not ruby globs. This is because when
-  # precompiling, the glob paths are passed as is to the compiler run by Deno.
-  #
-  # See https://doc.deno.land/https://deno.land/std@0.145.0/path/mod.ts/~/globToRegExp
   MIDDLEWARE_GLOB_TYPES = {
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
     url: %r{^/https?%3A%2F%2F.+\.(css|m?jsx?)(\.map)?$}
@@ -74,8 +70,6 @@ module Proscenium
           ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
           ActionView::PartialRenderer.prepend SideLoad::Monkey::PartialRenderer
         end
-
-        ActionView::Helpers::UrlHelper.prepend Proscenium::LinkToHelper
       end
     end
   end

@@ -12,8 +12,6 @@ module Proscenium
   autoload :ViewComponent
   autoload :Phlex
   autoload :Helper
-  autoload :LinkToHelper
-  autoload :Precompile
   autoload :Esbuild
 
   def self.logger

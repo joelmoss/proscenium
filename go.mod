@@ -4,7 +4,6 @@ go 1.20
 
 require (
 	github.com/evanw/esbuild v0.17.18
-	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/onsi/ginkgo/v2 v2.9.4
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sergi/go-diff v1.3.1
@@ -31,8 +30,6 @@ require (
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
 	github.com/kr/pretty v0.3.1 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.18 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/onsi/gomega v1.27.6
 	github.com/riking/cssparse v0.0.0-20180325025645-c37ded0aac89

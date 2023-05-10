@@ -13,11 +13,7 @@ jobs:
         with:
           bundler-cache: true
           ruby-version: 3.1
-      - uses: denoland/setup-deno@v1.0.0
-        with:
-          deno-version: v1.x
       - run: bundle exec rake
-      - run: deno test -A
 
   release:
     runs-on: ubuntu-latest
@@ -29,13 +25,6 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: 3.1
-
-      - uses: denoland/setup-deno@v1.0.0
-        with:
-          deno-version: v1.x
-
-      - name: Compile esbuild
-        run: deno task compile:esbuild:macm
 
       - name: Install gem dependencies
         run: bundle install
