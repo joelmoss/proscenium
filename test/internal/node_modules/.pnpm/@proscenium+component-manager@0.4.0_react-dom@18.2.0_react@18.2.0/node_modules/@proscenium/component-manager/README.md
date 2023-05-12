@@ -53,7 +53,18 @@ import init from '@proscenium/component-manager'
 
 init({
   // Wrap all components with this component.
-  wrapWith: '/my/application/component.jsx',
+  //
+  // If a String, it should be a path to a module that will be dynamically imported and wrapped with
+  // React's `lazy` helper. If a function, that function should return a dynamic `import()` of the
+  // component you want to wrap with. If a promise, it should be the result of a dynamic `import()`.
+  wrapWithComponent: '/my/application/component.jsx',
+
+  // Wrap each components with this component.
+  //
+  // If a String, it should be a path to a module that will be dynamically imported and wrapped with
+  // React's `lazy` helper. If a function, that function should return a dynamic `import()` of the
+  // component you want to wrap with. If a promise, it should be the result of a dynamic `import()`.
+  wrapEachWithComponent: '/my/each/component.jsx',
 
   // The Node selector to use for querying for components.
   selector: '.componentManagedByProscenium',

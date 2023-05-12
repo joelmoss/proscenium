@@ -5,8 +5,8 @@ dependencies:
     specifier: link:../external/three
     version: link:../external/three
   '@proscenium/component-manager':
-    specifier: ^0.1.4
-    version: 0.1.4(react-dom@18.2.0)(react@18.2.0)
+    specifier: ^0.4.0
+    version: 0.4.0(react-dom@18.2.0)(react@18.2.0)
   '@react-aria/button':
     specifier: ^3.6.3
     version: 3.6.3(react@18.2.0)
@@ -53,8 +53,8 @@ packages:
       regenerator-runtime: 0.13.11
     dev: false
 
-  /@proscenium/component-manager@0.1.4(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-khS0roNr/rxuvGAD41c0pL1HJ52z3Bq6GfyqyMnRrBpnMCsPrlfcds+mRuJysCcnTq8EAUUt/jv4xr+fuk//qQ==}
+  /@proscenium/component-manager@0.4.0(react-dom@18.2.0)(react@18.2.0):
+    resolution: {integrity: sha512-GD+CAo7CUs53UOH0GS3FKPIk+70Qwf4DL/39RKNDd0xebnMQd3C4bg2SqBV7VdeYDa+OAG3zN+EmLtV2SlsJPw==}
     peerDependencies:
       react: '>=18'
       react-dom: '>=18'

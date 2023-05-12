@@ -6,8 +6,11 @@ source 'https://rubygems.org'
 gemspec
 
 gem 'benchmark-ips'
+gem 'capybara'
 gem 'combustion'
+gem 'cuprite'
 gem 'down'
+gem 'launchy'
 gem 'maxitest'
 gem 'minitest-focus'
 gem 'minitest-heat'

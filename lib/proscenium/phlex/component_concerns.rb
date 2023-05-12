@@ -8,7 +8,9 @@ module Proscenium::Phlex::ComponentConcerns
 
     class_methods do
       def path
-        Pathname.new(Module.const_source_location(name).first)
+        name && Pathname.new(Module.const_source_location(name).first)
+      rescue NameError
+        nil
       end
     end
 

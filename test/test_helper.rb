@@ -16,6 +16,7 @@ Combustion.path = 'test/internal'
 Combustion.initialize! :action_controller, :action_view do
   config.consider_all_requests_local = false
   config.autoload_paths << "#{root}/app"
+  config.proscenium.include_paths << 'app/components'
 end
 
 class ActiveSupport::TestCase

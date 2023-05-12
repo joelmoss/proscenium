@@ -45,9 +45,10 @@ var Css = esbuild.Plugin{
 
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
 					contents = `
-						let e = document.querySelector('#_` + hash + `');
-						if (!e) {
-							e = document.createElement('style');
+						const existingStyle = document.querySelector('#_` + hash + `');
+						const existingLink = document.querySelector('link[href="` + relativePath + `"]');
+						if (!existingStyle && !existingLink) {
+							const e = document.createElement('style');
 							e.id = '_` + hash + `';
 							e.dataset.href = '` + relativePath + `';
 							e.appendChild(document.createTextNode(` + fmt.Sprintf("`%s`", contents) + `));

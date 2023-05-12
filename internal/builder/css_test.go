@@ -142,9 +142,10 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	When("importing css module from js", func() {
 		css := "`.myClass330940eb{color:pink}`"
 		var expectedCode = `
-			var e = document.querySelector("#_330940eb");
-			if (!e) {
-				e = document.createElement("style");
+			var existingStyle = document.querySelector("#_330940eb");
+			var existingLink = document.querySelector('link[href="/lib/styles.module.css"]');
+			if (!existingStyle && !existingLink) {
+				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
 				e.appendChild(document.createTextNode(` + css + `));

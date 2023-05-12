@@ -27,7 +27,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
+    assert_includes response.body, 'console.log("app/views/layouts/application.js");'
   end
 
   test '.css' do

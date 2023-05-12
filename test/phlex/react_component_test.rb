@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../test_helper'
+require_relative '../system_test_case'
 require 'phlex/testing/rails/view_helper'
 require 'phlex/testing/capybara'
 
@@ -12,13 +12,20 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     Proscenium.reset_current_side_loaded
   end
 
-  test 'class names with .component' do
-    render Phlex::ReactComponentWithComponentClass.new
+  class SystemTest < SystemTestCase
+    test 'with side loaded component.module.css' do
+      visit '/phlex/react/one'
 
-    assert_selector '.componentManagedByProscenium.component66ab4da6'
+      href = '/app/components/phlex/react/one/component.module.css'
+
+      assert_selector 'button'
+      assert_selector "head>link[href='#{href}']", visible: false
+      refute_selector "head>style[data-href='#{href}']", visible: false
+      assert_selector '.componentManagedByProscenium.component2d707834'
+    end
   end
 
-  test 'class names without .component' do
+  test 'without side loaded component.module.css' do
     render Phlex::BasicReactComponent.new
 
     assert_selector '.componentManagedByProscenium.component'

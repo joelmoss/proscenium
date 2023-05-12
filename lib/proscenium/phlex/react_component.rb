@@ -10,7 +10,7 @@
 #
 # The component will automatically side load a component.module.css if present, but this is not
 # required. The base div is rendered with a "component" CSS module allowing you to style it by
-# simply defining a `component` class in a siode loaded component.module.css.
+# simply defining a `component` class in a side loaded component.module.css.
 #
 class Proscenium::Phlex::ReactComponent < Phlex::HTML
   class << self
