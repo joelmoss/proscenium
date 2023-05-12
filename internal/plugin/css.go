@@ -52,7 +52,7 @@ var Css = esbuild.Plugin{
 							e.id = '_` + hash + `';
 							e.dataset.href = '` + relativePath + `';
 							e.appendChild(document.createTextNode(` + fmt.Sprintf("`%s`", contents) + `));
-							document.head.appendChild(e);
+							document.head.insertBefore(e, document.querySelector('style'));
 						}
 					`
 

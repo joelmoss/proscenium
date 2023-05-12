@@ -149,7 +149,7 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
 				e.appendChild(document.createTextNode(` + css + `));
-				document.head.appendChild(e);
+				document.head.insertBefore(e, document.querySelector("style"));
 			}
 			var styles_module_default = new Proxy({}, {
 				get(target, prop, receiver) {

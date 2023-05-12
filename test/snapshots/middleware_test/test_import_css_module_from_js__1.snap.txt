@@ -6,7 +6,7 @@ if (!existingStyle && !existingLink) {
   e.id = "_330940eb";
   e.dataset.href = "/lib/styles.module.css";
   e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
-  document.head.appendChild(e);
+  document.head.insertBefore(e, document.querySelector("style"));
 }
 var styles_module_default = new Proxy({}, {
   get(target, prop, receiver) {
