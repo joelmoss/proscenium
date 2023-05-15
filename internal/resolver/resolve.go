@@ -79,7 +79,11 @@ func Resolve(options Options) (string, error) {
 		Conditions:    []string{types.Env.String()},
 		Write:         false,
 		Metafile:      true,
-		MainFields:    []string{"module", "browser", "main"},
+
+		// The Esbuild default places browser before module, but we're building for modern browsers
+		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
+		// uses CJS.
+		MainFields: []string{"module", "browser", "main"},
 	})
 
 	if len(result.Errors) > 0 {

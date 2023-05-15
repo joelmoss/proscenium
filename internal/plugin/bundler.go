@@ -186,13 +186,9 @@ var Bundler = esbuild.Plugin{
 					ensureExternal()
 				}
 
-				// Absolute path - pass through as is.
-				if path.IsAbs(result.Path) {
-					if !shouldBeExternal {
-						result.Path = path.Join(root, args.Path)
-					}
-
-					return result, nil
+				// Absolute path - prepend the root to prepare for resolution.
+				if path.IsAbs(result.Path) && !shouldBeExternal {
+					result.Path = path.Join(root, args.Path)
 				}
 
 				// If we have reached here, then the path is relative or a bare specifier.

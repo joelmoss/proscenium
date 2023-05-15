@@ -62,6 +62,12 @@ var _ = Describe("Internal/Builder.bundler", func() {
 		`))
 	})
 
+	It("should resolve extension-less imports", func() {
+		Expect(Build("lib/import_absolute_module_without_extension.js", BuildOpts{Debug: true, Bundle: true})).To(ContainCode(`
+			console.log("/lib/foo.js")
+		`))
+	})
+
 	It("should bundle relative path", func() {
 		Expect(Build("lib/import_relative_module.js", BuildOpts{Bundle: true})).To(ContainCode(`
 			console.log("/lib/foo4.js")

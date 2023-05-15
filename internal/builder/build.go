@@ -102,9 +102,9 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Metafile:          options.Metafile,
 		Plugins:           plugins,
 		Target:            esbuild.ES2022,
-		Supported: map[string]bool{
-			// Ensure CSS  esting is transformed for browsers that don't support it.
-			"nesting": false,
+		Supported:         map[string]bool{
+			// Ensure CSS nesting is transformed for browsers that don't support it.
+			// "nesting": false,
 		},
 
 		// TODO: Will using aliases instead of import be faster?
