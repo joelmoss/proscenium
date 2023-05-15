@@ -33,8 +33,8 @@ module Proscenium
       doc.to_html.html_safe
     end
 
-    # Resolves the given CSS class names to CSS modules. This will also side load the stylesheet if it
-    # exists.
+    # Resolves the given CSS class names to CSS modules. This will also side load the stylesheet if
+    # it exists.
     #
     # @param names [String, Array]
     # @returns [Array] of class names generated from the given CSS module `names`.

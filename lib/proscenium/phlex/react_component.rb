@@ -8,9 +8,9 @@
 # By default, the component is lazy loaded when intersecting using IntersectionObserver. Pass in
 # :lazy as false to disable this and render the component immediately.
 #
-# The component will automatically side load a component.module.css if present, but this is not
-# required. The base div is rendered with a "component" CSS module allowing you to style it by
-# simply defining a `component` class in a side loaded component.module.css.
+# The component will automatically side load a component.module.css if present. The base div is
+# rendered with a "component" CSS module allowing you to style it by simply defining a `component`
+# class in a side loaded component.module.css.
 #
 class Proscenium::Phlex::ReactComponent < Phlex::HTML
   class << self
