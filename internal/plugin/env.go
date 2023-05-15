@@ -8,7 +8,8 @@ import (
 )
 
 // Export named environment variables as default module. For security reasons, it is not possible to
-// access environment variables that are not explicitly named.
+// access environment variables that are not explicitly named. Will export `undefined` if the env
+// variable is not defined.
 //
 // Example:
 //
@@ -31,7 +32,7 @@ var Env = esbuild.Plugin{
 				if ok {
 					contents = "export default '" + value + "';"
 				} else {
-					contents = "export default " + args.Path + ";"
+					contents = "export default undefined;"
 				}
 
 				return esbuild.OnLoadResult{
