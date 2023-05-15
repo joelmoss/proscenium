@@ -55,7 +55,7 @@ var Bundler = esbuild.Plugin{
 		}
 
 		// File types which should be external.
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `\.woff2?$`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `\.(gif|jpe?g|png|woff2?)$`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				return esbuild.OnResolveResult{
 					External: true,
