@@ -18,7 +18,8 @@ module Proscenium
     # system path of the Phlex class, and any CSS file is side loaded.
     #
     # For example, the following will side load the CSS module file at
-    # app/components/user/component.module.css, and add the CSS Module name `user_name` to the <div>.
+    # app/components/user/component.module.css, and add the CSS Module name `user_name` to the
+    # <div>.
     #
     #   # app/components/user/component.rb
     #   class User::Component < Proscenium::Phlex
@@ -32,8 +33,8 @@ module Proscenium
     # Additionally, any class name containing a `/` is resolved as a CSS module path. Allowing you
     # to use the same syntax as a CSS module, but without the need to manually import the CSS file.
     #
-    # For example, the following will side load the CSS module file at /lib/users.module.css, and add
-    # the CSS Module name `name` to the <div>.
+    # For example, the following will side load the CSS module file at /lib/users.module.css, and
+    # add the CSS Module name `name` to the <div>.
     #
     #   class User::Component < Proscenium::Phlex
     #     def template

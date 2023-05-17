@@ -26,7 +26,7 @@ type BuildOptions struct {
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
 
-	// Import map as a string.
+	// Import map contents.
 	ImportMap []byte
 
 	// Bundle everything into a single file.

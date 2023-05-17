@@ -63,6 +63,32 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 		})
 	})
 
+	When("importing css module from css", func() {
+		path := "lib/css_modules/import_css_module.css"
+
+		When("bundling", func() {
+			It("should bundle", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`
+					/* lib/css_modules/basic.module.css */
+          .fooc3f452b4 { color: red; }
+          /* lib/css_modules/import_css_module.css */
+          .bar { color: blue; }
+				`))
+			})
+		})
+	})
+
+	When("importing css module from css module", func() {
+		path := "lib/css_modules/import_css_module.module.css"
+
+		When("bundling", func() {
+			It("should bundle with same digest", func() {
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`.foo60bd820c { color: red; }`))
+				Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`.bar60bd820c { color: blue; }`))
+			})
+		})
+	})
+
 	When("importing relative path", func() {
 		path := "lib/import_relative.css"
 

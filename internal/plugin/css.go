@@ -16,20 +16,28 @@ var Css = esbuild.Plugin{
 	Setup: func(build esbuild.PluginBuild) {
 		root := build.InitialOptions.AbsWorkingDir
 
-		// Parse CSS files.
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// pp.Println("[6] filter(.css$)", args)
 
-				relativePath := strings.TrimPrefix(args.Path, root)
-				hash := utils.ToDigest(relativePath)
+				var pluginData types.PluginData
+				if args.PluginData != nil {
+					pluginData = args.PluginData.(types.PluginData)
+				}
 
-				importedFromJs := args.PluginData != nil && args.PluginData.(types.PluginData).ImportedFromJs
+				relativePath := strings.TrimPrefix(args.Path, root)
+
+				hash := ""
+				if pluginData.CssModuleHash != "" {
+					hash = pluginData.CssModuleHash
+				} else {
+					hash = utils.ToDigest(relativePath)
+				}
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
 				// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
 				// module, it exports a plain object of class names.
-				if importedFromJs {
+				if pluginData.ImportedFromJs {
 					cssResult := cssBuild(CssBuildOptions{
 						Path:   relativePath[1:],
 						Root:   root,
@@ -73,8 +81,9 @@ var Css = esbuild.Plugin{
 				}
 
 				return esbuild.OnLoadResult{
-					Contents: &contents,
-					Loader:   esbuild.LoaderCSS,
+					Contents:   &contents,
+					Loader:     esbuild.LoaderCSS,
+					PluginData: types.PluginData{CssModuleHash: hash},
 				}, nil
 			})
 	},

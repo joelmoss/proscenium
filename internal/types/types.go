@@ -24,8 +24,10 @@ type ImportMap struct {
 var Env Environment
 
 type PluginData = struct {
-	IsResolvingPath bool
-	ImportedFromJs  bool
+	IsResolvingPath                bool
+	ImportedFromJs                 bool
+	CssModuleImportedFromCssModule bool
+	CssModuleHash                  string
 }
 
 // The maximum size of an HTTP response body to cache.

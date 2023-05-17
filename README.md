@@ -224,6 +224,9 @@ import styles from './styles.module.css'
 It is important to note that the exported object of CSS module names is actually a Proxy object. So
 destructuring the object will not work. Instead, you must access the properties directly.
 
+Also, importing a CSS module from another CSS module will result in the same digest string for all
+classes.
+
 ## CSS Mixins
 
 CSS mixins are supported using the `@mixin` at-rule. Simply define your mixins in `<root>/lib` in one or more files ending in `.mixin.css`, and using the `@define-mixin` at-rule...

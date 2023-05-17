@@ -7,11 +7,12 @@ module Proscenium::Phlex::ComponentConcerns
     include Proscenium::Phlex::ResolveCssModules
 
     class_methods do
-      def path
-        name && Pathname.new(Module.const_source_location(name).first)
-      rescue NameError
-        nil
-      end
+      # FIXME: Still needed?
+      # def path
+      #   name && Pathname.new(Module.const_source_location(name).first)
+      # rescue NameError
+      #   nil
+      # end
     end
 
     private
