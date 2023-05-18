@@ -7,6 +7,6 @@ end
 
 class ViewComponent::DryInitializerComponent < DryInitializerAppComponent
   def call
-    tag.h1 'Hello', class: css_module(:base)
+    tag.h1 'Hello', class: :base
   end
 end

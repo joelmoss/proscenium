@@ -12,6 +12,6 @@ class ViewComponentTest < ViewComponent::TestCase
   test 'with dry initializer' do
     result = render_inline ViewComponent::DryInitializerComponent.new
 
-    assert_matches_snapshot result.to_html
+    assert_equal '<h1 class="base">Hello</h1>', result.to_html
   end
 end

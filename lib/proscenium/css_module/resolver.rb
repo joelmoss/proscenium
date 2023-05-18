@@ -49,7 +49,7 @@ module Proscenium
     # @raises Proscenium::CssModule::NotFound if stylesheet does not exists.
     # @see #class_names
     def class_names!(...)
-      raise StylesheetNotFound, @css_module_path unless @css_module_path.exist?
+      raise CssModule::StylesheetNotFound, @css_module_path unless @css_module_path.exist?
 
       class_names(...)
     end
