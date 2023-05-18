@@ -8,9 +8,7 @@
 # By default, the component is lazy loaded when intersecting using IntersectionObserver. Pass in
 # :lazy as false to disable this and render the component immediately.
 #
-# The component will automatically side load a component.module.css if present. The base div is
-# rendered with a "component" CSS module allowing you to style it by simply defining a `component`
-# class in a side loaded component.module.css.
+# React components are not side loaded at all.
 #
 class Proscenium::Phlex::ReactComponent < Phlex::HTML
   class << self
@@ -41,14 +39,17 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
   # @yield the given block to a `div` within the top level component div. If not given,
   #   `<div>loading...</div>` will be rendered. Use this to display a loading UI while the component
   #   is loading and rendered.
-  def template
-    div class: ['componentManagedByProscenium', component_class_name],
-        data: { component: component_data } do
-      block_given? ? div(yield) : div { 'loading...' }
-    end
+  def template(**attributes, &block)
+    component_root(:div, **attributes, &block)
   end
 
   private
+
+  def component_root(element, **attributes, &block)
+    send element, data: { proscenium_component: component_data }, **attributes do
+      block ? div(&block) : div { 'loading...' }
+    end
+  end
 
   def props
     @props ||= {}
@@ -64,10 +65,6 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
       props: props.deep_transform_keys { |k| k.to_s.camelize :lower },
       lazy: lazy
     }.to_json
-  end
-
-  def component_class_name
-    cssm.class_names 'component'
   end
 
   def virtual_path

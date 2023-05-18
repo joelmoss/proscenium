@@ -20,7 +20,11 @@ module Proscenium
       new(path, extension_map).append
     end
 
-    # Forcefully side load the given `path` at `type`.
+    # Side load the given `path` at `type`, without first resolving the path. This still respects
+    # idempotency of `Proscenium::Current.loaded`.
+    #
+    # @param path [String]
+    # @param type [Symbol] :js or :css
     def self.append!(path, type)
       return if Proscenium::Current.loaded[type].include?(path)
 
