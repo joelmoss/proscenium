@@ -46,9 +46,7 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
   private
 
   def component_root(element, **attributes, &block)
-    send element, data: { proscenium_component: component_data }, **attributes do
-      block ? div(&block) : div { 'loading...' }
-    end
+    send element, data: { proscenium_component: component_data }, **attributes, &block
   end
 
   def props
@@ -61,9 +59,8 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
 
   def component_data
     {
-      path: virtual_path,
-      props: props.deep_transform_keys { |k| k.to_s.camelize :lower },
-      lazy: lazy
+      path: virtual_path, lazy: lazy,
+      props: props.deep_transform_keys { |k| k.to_s.camelize :lower }
     }.to_json
   end
 

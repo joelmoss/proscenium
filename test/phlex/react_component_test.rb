@@ -87,10 +87,4 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
       data
     )
   end
-
-  test 'should contain a div "loading"' do
-    render Phlex::BasicReactComponent.new
-
-    assert_selector 'div>div', text: 'loading...'
-  end
 end
