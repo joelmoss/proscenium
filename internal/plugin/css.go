@@ -97,10 +97,21 @@ var cssOnly = esbuild.Plugin{
 		// Parse CSS files.
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[6] filter(.css$)", args)
+				// pp.Println("[cssOnly] filter(.css$)", args)
+
+				var pluginData types.PluginData
+				if args.PluginData != nil {
+					pluginData = args.PluginData.(types.PluginData)
+				}
 
 				relativePath := strings.TrimPrefix(args.Path, root)
-				hash := utils.ToDigest(relativePath)
+
+				hash := ""
+				if pluginData.CssModuleHash != "" {
+					hash = pluginData.CssModuleHash
+				} else {
+					hash = utils.ToDigest(relativePath)
+				}
 
 				contents, err := css.ParseCssFile(args.Path, root, hash)
 				if err != nil {
@@ -108,8 +119,9 @@ var cssOnly = esbuild.Plugin{
 				}
 
 				return esbuild.OnLoadResult{
-					Contents: &contents,
-					Loader:   esbuild.LoaderCSS,
+					Contents:   &contents,
+					Loader:     esbuild.LoaderCSS,
+					PluginData: types.PluginData{CssModuleHash: hash},
 				}, nil
 			})
 	},

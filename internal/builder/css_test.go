@@ -208,6 +208,18 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 			It("import relative css module from js", func() {
 				Expect(Build("lib/import_relative_css_module.js", BuildOpts{Bundle: true})).To(ContainCode(expectedCode))
 			})
+
+			When("importing css module from css module", func() {
+				path := "lib/css_modules/import_css_module.js"
+
+				When("bundling", func() {
+					It("should bundle with same digest", func() {
+						Expect(Build(path, BuildOpts{Bundle: true})).To(ContainCode(`
+							.foo60bd820c{color:red}.bar60bd820c{color:#00f}
+						`))
+					})
+				})
+			})
 		})
 	})
 })
