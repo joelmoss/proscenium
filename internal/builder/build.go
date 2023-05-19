@@ -67,8 +67,11 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		sourcemap = esbuild.SourceMapExternal
 	}
 
-	plugins := []esbuild.Plugin{plugin.Env}
-	plugins = append(plugins, plugin.Rjs(options.BaseUrl))
+	plugins := []esbuild.Plugin{
+		plugin.I18n,
+		plugin.Env,
+		plugin.Rjs(options.BaseUrl),
+	}
 	if options.Bundle {
 		plugins = append(plugins, plugin.Bundler)
 	} else {
