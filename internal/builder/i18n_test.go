@@ -23,16 +23,21 @@ var _ = Describe("Internal/Builder.Build/i18n", func() {
 	})
 
 	It("exports json", func() {
-		Expect(Build("@proscenium/i18n")).To(ContainCode(`
+		Expect(Build("lib/i18n/benchmark/index.js", BuildOpts{Bundle: true})).To(ContainCode(`
 			{ first_name: "Joel", foo: { bar: { baz: 1 } }, last_name: "Moss" }
 		`))
 	})
 })
 
-// Avg 350,000 ns/op
+// Avg 875,000 ns/op
 func BenchmarkI18n(b *testing.B) {
 	b.ResetTimer()
+
 	for i := 0; i < b.N; i++ {
-		Build("@proscenium/i18n")
+		result := Build("lib/i18n/benchmark/index.js", BuildOpts{Bundle: true})
+
+		if len(result.Errors) > 0 {
+			panic("Build failed: " + result.Errors[0].Text)
+		}
 	}
 }
