@@ -29,7 +29,9 @@ var _ = Describe("Internal/Builder.Build/i18n", func() {
 	})
 })
 
+// Avg 350,000 ns/op
 func BenchmarkI18n(b *testing.B) {
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		Build("@proscenium/i18n")
 	}

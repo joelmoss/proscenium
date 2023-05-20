@@ -2,6 +2,7 @@ package testing
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 	"path"
 	"runtime"
 
@@ -16,6 +17,9 @@ type BuildOpts struct {
 
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	_, filename, _, _ := runtime.Caller(1)
+
+	// Ensure test environment.
+	types.Env = types.Environment(2)
 
 	restOpts := BuildOpts{}
 	if len(rest) > 0 {
