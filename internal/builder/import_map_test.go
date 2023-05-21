@@ -41,7 +41,7 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 				ImportMapPath: "config/import_maps/as.js",
 			})
 
-			Expect(result).To(ContainCode(`import pkg from "/lib/foo2.js";`))
+			Expect(result).To(ContainCode(`console.log("/lib/foo2.js");`))
 		})
 
 		It("produces error when invalid", func() {
@@ -58,97 +58,55 @@ var _ = Describe("Internal/Builder.Build/import_map", func() {
 	When("specifier is bare", func() {
 		When("value starts with /", func() {
 			It("resolves", func() {
-				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
-					"imports": { "foo": "/lib/foo.js" }
-				}`})
-
-				Expect(result).To(ContainCode(`
-					import foo from "/lib/foo.js";
-				`))
-			})
-
-			When("bundling", func() {
-				It("resolves", func() {
-					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
-						Bundle: true,
-						ImportMap: `{
-							"imports": { "foo": "/lib/foo.js" }
-						}`,
-					})
-
-					Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
+						"imports": { "foo": "/lib/foo.js" }
+					}`,
 				})
+
+				Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
 			})
 		})
 
 		When("value starts with ./ or ../", func() {
 			It("resolves", func() {
-				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
-					"imports": { "foo": "./foo.js" }
-				}`})
-
-				Expect(result).To(ContainCode(`
-					import foo from "/lib/import_map/foo.js";
-				`))
-			})
-
-			When("bundling", func() {
-				It("resolves", func() {
-					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
-						Bundle: true,
-						ImportMap: `{
-							"imports": { "foo": "../foo.js" }
-						}`,
-					})
-
-					Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
+						"imports": { "foo": "../foo.js" }
+					}`,
 				})
+
+				Expect(result).To(ContainCode(`console.log("/lib/foo.js");`))
 			})
 		})
 
 		When("value is URL", func() {
-			It("resolves", func() {
-				result := Build("lib/import_map/bare_specifier.js", BuildOpts{ImportMap: `{
-					"imports": { "foo": "https://some.com/foo.js" }
-				}`})
+			It("is not bundled", func() {
+				MockURL("/foo.js", "console.log('foo');")
+
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
+						"imports": { "foo": "https://proscenium.test/foo.js" }
+					}`,
+				})
 
 				Expect(result).To(ContainCode(`
-					import foo from "/https%3A%2F%2Fsome.com%2Ffoo.js";
+					import foo from "/https%3A%2F%2Fproscenium.test%2Ffoo.js";
 				`))
-			})
-
-			When("bundling", func() {
-				It("is not bundled", func() {
-					MockURL("/foo.js", "console.log('foo');")
-
-					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
-						Bundle: true,
-						ImportMap: `{
-							"imports": { "foo": "https://proscenium.test/foo.js" }
-						}`,
-					})
-
-					Expect(result).To(ContainCode(`
-						import foo from "/https%3A%2F%2Fproscenium.test%2Ffoo.js";
-					`))
-				})
 			})
 		})
 
 		When("value is bare specifier", func() {
-			When("bundling", func() {
-				It("resolves the value", func() {
-					result := Build("lib/import_map/bare_specifier.js", BuildOpts{
-						Bundle: true,
-						ImportMap: `{
+			It("resolves the value", func() {
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
 						"imports": { "foo": "mypackage" }
 					}`,
-					})
+				})
 
-					Expect(result).To(ContainCode(`
+				Expect(result).To(ContainCode(`
 					console.log("node_modules/mypackage");
 				`))
-				})
 			})
 		})
 	})

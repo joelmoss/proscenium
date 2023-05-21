@@ -39,9 +39,8 @@ var Css = esbuild.Plugin{
 				// module, it exports a plain object of class names.
 				if pluginData.ImportedFromJs {
 					cssResult := cssBuild(CssBuildOptions{
-						Path:   relativePath[1:],
-						Root:   root,
-						Bundle: true,
+						Path: relativePath[1:],
+						Root: root,
 					})
 
 					if len(cssResult.Errors) != 0 {
@@ -150,9 +149,8 @@ type CssBuildOptions struct {
 	// The path to build relative to `root`.
 	Path string
 
-	Root   string
-	Bundle bool
-	Debug  bool
+	Root  string
+	Debug bool
 }
 
 // Build the given `path` in the `root`.
@@ -166,16 +164,6 @@ func cssBuild(options CssBuildOptions) esbuild.BuildResult {
 	if options.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
-
-	plugins := []esbuild.Plugin{}
-	if options.Bundle {
-		plugins = append(plugins, Bundler)
-	} else {
-		plugins = append(plugins, Unbundler)
-	}
-	plugins = append(plugins, Svg)
-	plugins = append(plugins, Url)
-	plugins = append(plugins, cssOnly)
 
 	return esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
@@ -194,7 +182,7 @@ func cssBuild(options CssBuildOptions) esbuild.BuildResult {
 		Write:             false,
 		Sourcemap:         esbuild.SourceMapNone,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Plugins:           plugins,
+		Plugins:           []esbuild.Plugin{Bundler, Svg, Url, cssOnly},
 		Target:            esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS  esting is transformed for browsers that don't support it.

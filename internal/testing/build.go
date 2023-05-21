@@ -11,7 +11,6 @@ import (
 
 type BuildOpts struct {
 	ImportMap string
-	Bundle    bool
 	Debug     bool
 }
 
@@ -30,7 +29,6 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 		Path:    pathToBuild,
 		Root:    path.Join(path.Dir(filename), "../../test/internal"),
 		BaseUrl: "https://proscenium.test",
-		Bundle:  restOpts.Bundle,
 		Debug:   restOpts.Debug,
 	}
 

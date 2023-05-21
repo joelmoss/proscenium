@@ -48,7 +48,6 @@ func build(
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		Debug:         debug,
-		Bundle:        bundle,
 	})
 
 	if len(result.Errors) != 0 {

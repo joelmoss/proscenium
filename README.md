@@ -94,20 +94,6 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
-## Bundling
-
-Proscenium does not do any bundling, as we believe that **the web is now fast by default**. So we
-let you decide if and when to bundle your code using query parameters in your JS and CSS imports.
-
-```js
-import doStuff from 'bundle:stuff'
-doStuff()
-```
-
-Note that `bundle:*` will only bundle that exact path. It will not bundle any descendant imports.
-You can bundle all imports within a file by using the `bundle-all:` prefix. Use this with caution,
-as you could end up swallowing everything, resulting in a very large file.
-
 ## Import Map
 
 Import map for both JS and CSS is supported out of the box, and works with no regard to the browser

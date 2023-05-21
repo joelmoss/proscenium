@@ -27,27 +27,11 @@ var _ = Describe("Internal/Builder.Build/env", func() {
 		`))
 	})
 
-	When("bundling", func() {
-		It("exports requested env var as default", func() {
-			Expect(Build("lib/env/rails_env.js", BuildOpts{Bundle: true})).To(ContainCode(`
-				var RAILS_ENV_default = "test";
-			`))
-		})
-	})
-
 	When("env var is not set", func() {
 		It("exports undefined", func() {
 			Expect(Build("lib/env/undefined_env.js")).To(ContainCode(`
 				var UNDEF_default = void 0;
 			`))
-		})
-
-		When("bundling", func() {
-			It("exports undefined", func() {
-				Expect(Build("lib/env/undefined_env.js", BuildOpts{Bundle: true})).To(ContainCode(`
-					var UNDEF_default = void 0;
-				`))
-			})
 		})
 	})
 })

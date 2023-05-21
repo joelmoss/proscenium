@@ -19,7 +19,7 @@ module Proscenium
     end
 
     def build
-      Proscenium::Esbuild::Golib.new(root: @root, base_url: @base_url).build(@path, bundle: true)
+      Proscenium::Esbuild::Golib.new(root: @root, base_url: @base_url).build(@path)
     end
 
     private

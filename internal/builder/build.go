@@ -29,9 +29,6 @@ type BuildOptions struct {
 	// Import map contents.
 	ImportMap []byte
 
-	// Bundle everything into a single file.
-	Bundle bool
-
 	Debug    bool
 	Metafile bool
 }
@@ -71,11 +68,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		plugin.I18n,
 		plugin.Env,
 		plugin.Rjs(options.BaseUrl),
-	}
-	if options.Bundle {
-		plugins = append(plugins, plugin.Bundler)
-	} else {
-		plugins = append(plugins, plugin.Unbundler)
+		plugin.Bundler,
 	}
 	plugins = append(plugins, plugin.Svg)
 	plugins = append(plugins, plugin.Url)
