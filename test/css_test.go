@@ -1,27 +1,13 @@
-package builder_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
-	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/testing"
-	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 
-	"github.com/h2non/gock"
-	"github.com/k0kubun/pp/v3"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Builder.Build/css", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-		plugin.DiskvCache.EraseAll()
-	})
-	AfterEach(func() {
-		gock.Off()
-	})
-
+var _ = Describe("Build(css)", func() {
 	Describe("plain css", func() {
 		It("should build", func() {
 			Expect(Build("lib/foo.css")).To(ContainCode(`.body { color: red; }`))
@@ -104,7 +90,6 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 	})
 
 	When("importing css module from js", func() {
-		css := "`.myClass330940eb{color:pink}`"
 		var expectedCode = `
 			var existingStyle = document.querySelector("#_330940eb");
 			var existingLink = document.querySelector('link[href="/lib/styles.module.css"]');
@@ -112,7 +97,10 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
-				e.appendChild(document.createTextNode(` + css + `));
+				e.appendChild(document.createTextNode(` + "`/* lib/styles.module.css */" + `
+			.myClass330940eb {
+        color: pink;
+      }` + "`" + `));
 				document.head.insertBefore(e, document.querySelector("style"));
 			}
 			var styles_module_default = new Proxy({}, {
@@ -130,35 +118,18 @@ var _ = Describe("Internal/Builder.Build/css", func() {
 			Expect(Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
 		})
 
-		When("invalid css", func() {
-			It("returns error", Pending, func() {
-				result := Build("lib/import_invalid_css_module.js")
-
-				pp.Println(string(result.OutputFiles[0].Contents))
-
-				Expect(result.Errors[0].Text).To(Equal("Could not resolve \"lib/invalid.module.css\""))
-			})
+		It("import relative css module from js", func() {
+			Expect(Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
 		})
 
-		When("bundling", func() {
-			It("includes stylesheet and proxied class names", func() {
-				Expect(Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
-			})
+		When("importing css module from css module", func() {
+			path := "lib/css_modules/import_css_module.js"
 
-			It("import relative css module from js", func() {
-				Expect(Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
-			})
+			It("should bundle with same digest", func() {
+				result := Build(path)
 
-			When("importing css module from css module", func() {
-				path := "lib/css_modules/import_css_module.js"
-
-				When("bundling", func() {
-					It("should bundle with same digest", func() {
-						Expect(Build(path)).To(ContainCode(`
-							.foo60bd820c{color:red}.bar60bd820c{color:#00f}
-						`))
-					})
-				})
+				Expect(result).To(ContainCode(`.foo60bd820c { color: red; }`))
+				Expect(result).To(ContainCode(`.bar60bd820c { color: blue; }`))
 			})
 		})
 	})

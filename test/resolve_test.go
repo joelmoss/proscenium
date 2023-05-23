@@ -1,9 +1,7 @@
-package resolver_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/resolver"
-	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -11,14 +9,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Resolver.Resolve", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-	})
-
+var _ = Describe("Resolve", func() {
 	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "../../", "test", "internal")
+	var root string = path.Join(cwd, "internal")
 
 	resolve := func(path string, importMap ...string) (string, error) {
 		options := resolver.Options{

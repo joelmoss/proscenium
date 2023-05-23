@@ -1,10 +1,10 @@
-import init from '@proscenium/component-manager'
+import init from "@proscenium/component-manager";
 
 init({
   debug: true,
   buildComponentPath(component) {
-    return `${component}.jsx`
-  }
-})
+    return `${component}.jsx`;
+  },
+});
 
-console.log('app/views/layouts/application.js')
+console.log("app/views/layouts/application.js");

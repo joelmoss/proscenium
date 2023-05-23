@@ -1,26 +1,13 @@
-package builder_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
-	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/testing"
-	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 
-	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Builder.build", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-		plugin.DiskvCache.EraseAll()
-	})
-	AfterEach(func() {
-		gock.Off()
-	})
-
+var _ = Describe("Build", func() {
 	It("should fail on unknown entrypoint", func() {
 		result := Build("unknown.js")
 
@@ -31,7 +18,7 @@ var _ = Describe("Internal/Builder.build", func() {
 		Expect(Build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
-	PIt("should bundle rjs", func() {
+	It("should bundle rjs", Pending, func() {
 		MockURL("/constants.rjs", "export default 'constants';")
 
 		Expect(Build("lib/rjs.js")).To(ContainCode(`"constants"`))

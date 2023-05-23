@@ -1,27 +1,14 @@
-package builder_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
-	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/testing"
-	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 	"testing"
 
-	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Builder.Build/i18n", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-		plugin.DiskvCache.EraseAll()
-	})
-	AfterEach(func() {
-		gock.Off()
-	})
-
+var _ = Describe("Build(i18n)", func() {
 	It("exports json", func() {
 		Expect(Build("lib/i18n/benchmark/index.js")).To(ContainCode(`
 			{ first_name: "Joel", foo: { bar: { baz: 1 } }, last_name: "Moss" }

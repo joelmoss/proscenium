@@ -5,7 +5,6 @@ import (
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"regexp"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
@@ -63,7 +62,7 @@ var Css = esbuild.Plugin{
 						}
 					`
 
-					if pathIsCssModule(args.Path) {
+					if utils.PathIsCssModule(args.Path) {
 						contents = contents + cssModulesProxyTemplate(hash)
 					}
 
@@ -126,11 +125,6 @@ var cssOnly = esbuild.Plugin{
 	},
 }
 
-func pathIsCssModule(path string) bool {
-	var re = regexp.MustCompile(`\.module\.css$`)
-	return re.MatchString(path)
-}
-
 func cssModulesProxyTemplate(hash string) string {
 	return `
     export default new Proxy( {}, {
@@ -146,9 +140,7 @@ func cssModulesProxyTemplate(hash string) string {
 }
 
 type CssBuildOptions struct {
-	// The path to build relative to `root`.
-	Path string
-
+	Path  string // The path to build relative to `root`.
 	Root  string
 	Debug bool
 }
@@ -157,8 +149,7 @@ type CssBuildOptions struct {
 //
 //export build
 func cssBuild(options CssBuildOptions) esbuild.BuildResult {
-	// minify := !options.Debug && types.Env == types.ProdEnv
-	minify := true
+	minify := !options.Debug && types.Env == types.ProdEnv
 
 	logLevel := esbuild.LogLevelSilent
 	if options.Debug {

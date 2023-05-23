@@ -4,7 +4,7 @@ go 1.20
 
 require (
 	github.com/evanw/esbuild v0.17.19
-	github.com/onsi/ginkgo/v2 v2.9.4
+	github.com/onsi/ginkgo/v2 v2.9.5
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sergi/go-diff v1.3.1
 )

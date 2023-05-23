@@ -1,4 +1,4 @@
-package testing
+package support
 
 import "github.com/h2non/gock"
 

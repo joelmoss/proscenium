@@ -1,20 +1,13 @@
-package css_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
-	. "joelmoss/proscenium/internal/testing"
-	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Css", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-	})
-
+var _ = Describe("Build(parseCss)", func() {
 	Describe("ParseCss", func() {
 		It("should pass through regular css", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css"))

@@ -1,4 +1,4 @@
-package testing
+package support
 
 import (
 	"joelmoss/proscenium/internal/builder"
@@ -27,7 +27,7 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 
 	options := builder.BuildOptions{
 		Path:    pathToBuild,
-		Root:    path.Join(path.Dir(filename), "../../test/internal"),
+		Root:    path.Join(path.Dir(filename), "internal"),
 		BaseUrl: "https://proscenium.test",
 		Debug:   restOpts.Debug,
 	}

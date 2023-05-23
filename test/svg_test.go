@@ -1,27 +1,14 @@
-package builder_test
+package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
-	"joelmoss/proscenium/internal/plugin"
-	. "joelmoss/proscenium/internal/testing"
-	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 	"regexp"
 
-	"github.com/h2non/gock"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Internal/Builder.Build/svg", func() {
-	BeforeEach(func() {
-		types.Env = types.TestEnv
-		importmap.Contents = &types.ImportMap{}
-		plugin.DiskvCache.EraseAll()
-	})
-	AfterEach(func() {
-		gock.Off()
-	})
-
+var _ = Describe("Build(svg)", func() {
 	svgContent := `
 		<svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504"></path></svg>
 	`
