@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.6.0)
+    proscenium (0.7.0)
       activesupport (>= 6.1.0, < 8.0)
       ffi (~> 1.15.5)
       nokogiri (~> 1.13)
@@ -109,8 +109,6 @@ GEM
       capybara (~> 3.0)
       ferrum (~> 0.13.0)
     date (3.3.3)
-    down (5.4.0)
-      addressable (~> 2.8)
     dry-initializer (3.1.1)
     erb (4.0.2)
       cgi (>= 0.3.3)
@@ -266,7 +264,6 @@ DEPENDENCIES
   capybara
   combustion
   cuprite
-  down
   dry-initializer
   gem1!
   launchy

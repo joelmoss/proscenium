@@ -27,7 +27,7 @@ Gem::Specification.new do |spec|
     'README.md',
     'LICENSE.txt']
   spec.bindir = 'bin'
-  spec.executables << 'esbuild'
+  spec.executables << 'proscenium'
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
