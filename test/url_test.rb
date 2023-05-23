@@ -9,7 +9,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
     Proscenium.reset_current_side_loaded
   end
 
-  test 'url: modules' do
+  test 'js' do
     get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
 
     assert_equal 'application/javascript', response.headers['Content-Type']
@@ -17,7 +17,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'url: modules sourcemap' do
+  test 'js sourcemap' do
     get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
 
     assert_equal 'application/javascript', response.headers['Content-Type']

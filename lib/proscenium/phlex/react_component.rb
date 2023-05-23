@@ -24,8 +24,7 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
 
   self.abstract_class = true
 
-  include Proscenium::CssModule
-  include Proscenium::Phlex::ResolveCssModules
+  include Proscenium::Phlex::ComponentConcerns::CssModules
 
   attr_writer :props, :lazy
 
