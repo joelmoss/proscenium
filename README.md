@@ -1,68 +1,64 @@
 # Proscenium - Modern Client-Side Tooling for Rails
 
 Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a
-"fast by default" internet. It compiles your JS, JSX and CSS in real time, and on demand, with no
-configuration at all!
+"fast by default" internet. It bundles your JS, JSX and CSS in real time, on demand, and with zero
+configuration.
 
 - Zero configuration.
-- NO JavaScript rumtime needed - just the browser!
-- Real-time compilation.
+- Fast real-time bundling, tree-shaking and minification.
+- NO JavaScript runtime - just the browser!
+- Deep integration with Rails.
 - No additional process or server - Just run Rails!
-- Serve assets from anywhere within your Rails root (/app, /config, /lib).
+- Serve assets from anywhere within your Rails root (/app, /config, /lib, etc.).
 - Automatically side load JS/CSS for your layouts and views.
-- Import JS(X) and CSS from node_modules, URL, local (relative, absolute).
-- Optional bundling of JS(X) and CSS.
-- Import Map support for JS and CSS.
+- Import JS(X), TS(X) and CSS from NPM, URL, and locally.
+- Support for JSX.
+- Server-side import map support.
 - CSS Modules.
-- CSS Custom Media Queries.
 - CSS mixins.
-- Minification.
+- Phlex and ViewComponent integration.
 
-## ⚠️ EXPERIMENTAL SOFTWARE ⚠️
+## ⚠️ WORK IN PROGRESS ⚠️
 
-While my goal is to use Proscenium in production, I strongly recommended that you **DO NOT** use
-this in production apps! Right now, this is a play thing, and should only be used for
-development/testing.
+While my goal is to use Proscenium in production, I recommended that you **DO NOT** use Proscenium in production just yet! It has only been run for local development, and requires several changes for optimal production use.
 
 ## Installation
 
-Add this line to your application's Gemfile, and you're good to go:
+Add this line to your Rails application's Gemfile, and you're good to go:
 
 ```ruby
 gem 'proscenium'
 ```
 
-## Frontend Code Anywhere
+Please note that Proscenium is designed solely for use with Rails, so will not work - at least out of the box - anywhere else.
 
-Proscenium believes that your frontend code is just as important as your backend code, and is not an
-afterthought - they should be first class citizens of your Rails app. So instead of throwing all
-your JS and CSS into a "app/assets" directory, put them wherever you want!
+## Client-Side Code Anywhere
 
-For example, if you have JS that is used by your `UsersController#index`, then put it in
-`app/views/users/index.js`. Or if you have some CSS that is used by your entire application, put it
-in `app/views/layouts/application.css`. Maybe you have a few JS utility functions, so put them in
-`lib/utils.js`.
+Proscenium believes that your frontend code is just as important as your backend code, and is not an afterthought - they should be first class citizens of your Rails app. So instead of having to throw all your JS and CSS into a "app/assets" directory, and then requiring a separate process to compile or bundle, just put them wherever you want within your app, and just run Rails!
 
-Simply create your JS(X) and CSS anywhere you want, and they will be served by your Rails app.
+For example, if you have some JS that is required by your `app/views/users/index.html.erb` view, just create a JS file alongside it at `app/views/users/index.js`. Or if you have some CSS that is used by your entire application, put it in `app/views/layouts/application.css` and load it alongside your layout. Maybe you have a few JS utility functions, so put them in `lib/utils.js`.
+
+Simply put your JS(X) and CSS anywhere you want, and they will be served by your Rails app from the location where you placed them.
 
 Using the examples above...
 
 - `app/views/users/index.js` => `https://yourapp.com/app/views/users/index.js`
 - `app/views/layouts/application.css` => `https://yourapp.com/app/views/layouts/application.css`
 - `lib/utils.js` => `https://yourapp.com/lib/utils.js`
+- `app/components/menu_component.jsx` => `https://yourapp.com/app/components/menu_component.jsx`
 - `config/properties.css` => `https://yourapp.com/config/properties.css`
 
 ## Importing
 
-Proscenium supports importing JS and CSS from `node_modules`, URL, and local (relative, absolute).
+Proscenium supports importing JS, JSX, TS and CSS from NPM, by URL, your local app, and even from Ruby Gems.
 
-Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases.
-But you can if you like. All other file types must be specified using their full file name and
-extension.
+Imported files are bundled together in real time. So no build step or pre-compilation is needed.
+
+Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases. But you can if you like. All other file types must be specified using their full file name and extension.
 
 ### URL Imports
 
-Any import beginning with `http://` or `https://` will be fetched from the URL provided:
+Any import beginning with `http://` or `https://` will be fetched from the URL provided. For example:
 
 ```js
 import React from 'https://esm.sh/react`
@@ -72,10 +68,11 @@ import React from 'https://esm.sh/react`
 @import 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css';
 ```
 
+URL imports are cached, so that each import is only fetched once per server restart.
+
 ### Import from NPM (`node_modules`)
 
-Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and
-will use your package manager of choice (eg, NPM, Yarn, pnpm):
+Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file:
 
 ```js
 import React from 'react`
@@ -83,8 +80,7 @@ import React from 'react`
 
 ### Local Imports
 
-And of course you can import your own code, using relative or absolute paths (file extension is
-optional):
+And of course you can import your own code, using relative or absolute paths (file extension is optional):
 
 ```js /app/views/layouts/application.js
 import utils from '/lib/utils'
@@ -94,13 +90,11 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
-## Import Map
+## Import Map [WIP]
 
-Import map for both JS and CSS is supported out of the box, and works with no regard to the browser
-version being used. This is because the import map is parsed and resolved by Proscenium on the
-server.
+[Import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for both JS and CSS is supported out of the box, and works with no regard to the browser being used. This is because the import map is parsed and resolved by Proscenium on the server. If you are not familiar with import maps, think of it as a way to define aliases.
 
-Just create `config/import_map.json`:
+Just create `config/import_map.json` and specify the imports you want to use. For example:
 
 ```json
 {
@@ -128,9 +122,7 @@ and for CSS...
 @import '@radix-ui/colors/blue.css';
 ```
 
-You can instead write your import map in Javascript instead of JSON. So instead of
-`config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This
-function accepts a single `environment` argument.
+You can also write your import map in Javascript instead of JSON. So instead of `config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This function accepts a single `environment` argument.
 
 ```js
 env => ({
@@ -138,18 +130,6 @@ env => ({
     react: env === 'development' ? 'https://esm.sh/react@18.2.0?dev' : 'https://esm.sh/react@18.2.0'
   }
 })
-```
-
-### Aliasing
-
-You can also use the import map to define aliases:
-
-```json
-{
-  "imports": {
-    "react": "preact/compact",
-  }
-}
 ```
 
 ## Side Loading
@@ -183,6 +163,8 @@ to `false`.
 
 ## CSS Modules
 
+Proscenium implements a subset of [CSS Modules](https://github.com/css-modules/css-modules). It supports the `:local` and `:global` keywords, but not the `composes` property. It is recommended that you use mixins instead of `composes`, as they work everywhere.
+
 Give any CSS file a `.module.css` extension, and Proscenium will load it as a CSS Module...
 
 ```css
@@ -191,7 +173,7 @@ Give any CSS file a `.module.css` extension, and Proscenium will load it as a CS
 }
 ```
 
-The above produces:
+The above input produces:
 
 ```css
 .header5564cdbb {
@@ -199,50 +181,107 @@ The above produces:
 }
 ```
 
-Importing a CSS file from JS will automatically append the stylesheet to the document's head. And
-the results of the import will be an object of CSS class to module names.
+Importing a CSS file from JS will automatically append the stylesheet to the document's head. And the results of the import will be an object of CSS class to module names.
 
 ```js
 import styles from './styles.module.css'
 // styles == { header: 'header5564cdbb' }
 ```
 
-It is important to note that the exported object of CSS module names is actually a Proxy object. So
-destructuring the object will not work. Instead, you must access the properties directly.
+It is important to note that the exported object of CSS module names is actually a Proxy object. So destructuring the object will not work. Instead, you must access the properties directly.
 
-Also, importing a CSS module from another CSS module will result in the same digest string for all
-classes.
+Also, importing a CSS module from another CSS module will result in the same digest string for all classes.
 
 ## CSS Mixins
 
-CSS mixins are supported using the `@mixin` at-rule. Simply define your mixins in `<root>/lib` in one or more files ending in `.mixin.css`, and using the `@define-mixin` at-rule...
+Proscenium provides functionality for including or "mixing in" onr or more CSS classes into another. This is similar to the `composes` property of CSS Modules, but works everywhere, and is not limited to CSS Modules.
+
+CSS mixins are supported using the `@define-mixin` and `@mixin` at-rules.
+
+A mixin is defined using the `@define-mixin` at-rule. Pass it a name, which should adhere to class name semantics, and declare your rules:
 
 ```css
-// /lib/text.mixin.css
+// /lib/mixins.css
 @define-mixin bigText {
   font-size: 50px;
 }
 ```
 
+Use a mixin using the `@mixin` at-rule. Pass it the name of the mixin you want to use, and the url where the mixin is declared. The url is used to resolve the mixin, and can be relative, absolute, a URL, or even from an NPM packacge.
+
 ```css
 // /app/views/layouts/application.css
+p {
+  @mixin bigText from url('/lib/mixins.css');
+  color: red;
+}
+```
+
+The above produce this output:
+
+```css
+p {
+  font-size: 50px;
+  color: red;
+}
+```
+
+Mixins can be declared in any CSS file. They do not need to be declared in the same file as where they are used. however, if you declare and use a mixin in the same file, you don't need to specify the URL of where the mixin is declared.
+
+```css
+@define-mixin bigText {
+  font-size: 50px;
+}
+
 p {
   @mixin bigText;
   color: red;
 }
 ```
 
-## Cache Busting
+CSS modules and Mixins works perfectly together. You can include a mixin in a CSS module.
 
-By default, all assets are not cached by the browser. But if in production, you populate the
-`REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and
-the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
+## Importing SVG from JS(X)
+
+Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX, the SVG source code will be rendered as a JSX component.
+
+*docs needed*
+
+## Environment Variables
+
+Import any environment variables from your Rails app into your JS(X) code.
+
+```js
+import RAILS_ENV from '@proscenium/env/RAILS_ENV'
+```
+
+*docs needed*
+
+## Importing i18n
+
+Basic support is provided for importing your Rails locale files.
+
+```js
+import translations from '@proscenium/i18n'
+```
+
+*docs needed*
+
+## Phlex Support
+
+*docs needed*
+
+## ViewComponent Support
+
+*docs needed*
+
+## Cache Busting [WIP]
+
+By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
 
 For example, if you set `REVISION=v1`, URL's will be appended with `?v1`: `/my/imported/file.js?v1`.
 
-It is assumed that the `REVISION` env var will be unique between deploys. If it isn't, then assets
-will continue to be cached as the same version between deploys. I recommend you assign a version
-number or to use the Git commit hash of the deploy. Just make sure it is unique for each deploy.
+It is assumed that the `REVISION` env var will be unique between deploys. If it isn't, then assets will continue to be cached as the same version between deploys. I recommend you assign a version number or to use the Git commit hash of the deploy. Just make sure it is unique for each deploy.
 
 You can set the `cache_query_string` config option directly to define any query string you wish:
 
@@ -250,8 +289,7 @@ You can set the `cache_query_string` config option directly to define any query 
 Rails.application.config.proscenium.cache_query_string = 'my-cache-busting-version-string'
 ```
 
-The cache is set with a `max-age` of 30 days. You can customise this with the `cache_max_age` config
-option:
+The cache is set with a `max-age` of 30 days. You can customise this with the `cache_max_age` config option:
 
 ```ruby
 Rails.application.config.proscenium.cache_max_age = 12.months.to_i
@@ -259,9 +297,9 @@ Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 
 ## Include Paths
 
-By default, Proscenium will serve files ending with any of these extension: `js,mjs,css,jsx`, and only from `config`, `app/views`, `lib` and `node_modules`.
+By default, Proscenium will serve files ending with any of these extension: `js,mjs,css,jsx`, and only from `config`, `app/views`, `lib` and `node_modules` directories.
 
-You can customise these paths with the `include_path` config option...
+However, you can customise these paths with the `include_path` config option...
 
 ```ruby
 Rails.application.config.proscenium.include_paths << 'app/components'
@@ -269,68 +307,11 @@ Rails.application.config.proscenium.include_paths << 'app/components'
 
 ## rjs is back!
 
-Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to render dynamic server rendered JS.
+Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to import server rendered javascript.
 
-## How It Works
+## Serving from Ruby Gem
 
-Proscenium provides a Rails middleware that proxies requests for your frontend code. By default, it will simply search for a file of the same name in your Rails root. For example, a request for '/app/views/layouts/application.js' or '/lib/hooks.js' will return that exact file relative to your Rails root.
-
-This allows your frontend code to become first class citizens of you Rails application.
-
-The logic of how assets are handled is as follows:
-
-- **fonts** (`.woff`, `.woff2`) are externalized
-- **SVG** (`.svg`)
-  - When imported from JSX (`.jsx`):
-    - is bundled and its contents rendered as a JSX component
-  - Else
-    - is not bundled
-- **URL's**'s are encoded as a local URL path, and externalized.
-- **Encoded URL's** are decoded, downloaded and cached.
-
-### Serving Assets by URL
-
-Proscenium's primary function is a Rails middleware that intercepts URL's beginning with
-`/proscenium`, and ending with any one of the supported file extensions (.js, .css, .jsx).
-
-#### Serving from local project
-
-`/[path]`
-
-The `path` should map to a path in your Rails project, starting at the root (`Rails.root`).
-
-For example, the URL `/app/views/layouts/application.js` will serve the file at
-`[Rails.root]/app/views/layouts/application.js`.
-
-#### Serving from NPM package
-
-`/proscenium/npm:[path]`
-
-If you have a package.json in your project, which includes dependencies, you can also serve these
-with Proscenium.
-
-For example, the URL `/proscenium/npm:react` will use your package dependencies to resolve `react`.
-
-#### Serving from Ruby Gem
-
-`/proscenium/gem:[path]`
-
-Serving assets from a Ruby Gem is also possible. However, any NPM dependencies will fail to resolve.
-This is because your package manager will not be aware of them. If your Gem has dependencies from
-NPM, then you should publish it as a package on NPM, and require it in your project.
-
-For example, the URL `/proscenium/gem:my_gem/lib/stuff.css` will serve the file at
-`[GEMS_PATH]/my_gem/lib/stuff.css`.
-
-#### Serving from a URL
-
-`/proscenium/url:[ENCODED_URL]`
-
-You can serve assets from any URL, such as a CDN. Simply use encode the URL.
-
-For example, to serve the canvas-confetti package from `https://esm.sh/canvas-confetti@1.6.0`,
-simply encode it, and append to `/proscenium/url:`. It will like
-`/proscenium/url:https%3A%2F%2Fesm.sh%2Fcanvas-confetti%401.6.0`.
+*docs needed*
 
 ## Development
 
