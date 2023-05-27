@@ -1,2 +1,2 @@
-import UNDEF from 'env:UNDEF'
-console.log(UNDEF)
+import UNDEF from "@proscenium/env/UNDEF";
+console.log(UNDEF);

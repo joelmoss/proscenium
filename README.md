@@ -21,7 +21,7 @@ configuration.
 
 ## ⚠️ WORK IN PROGRESS ⚠️
 
-While my goal is to use Proscenium in production, I recommended that you **DO NOT** use Proscenium in production just yet! It has only been run for local development, and requires several changes for optimal production use.
+While my goal is to use Proscenium in production, I recommended that you **DO NOT** use Proscenium in production just yet! It has only been run for local development, and requires several improvements for optimal production use.
 
 ## Installation
 
@@ -246,27 +246,24 @@ CSS modules and Mixins works perfectly together. You can include a mixin in a CS
 
 Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX, the SVG source code will be rendered as a JSX component.
 
-*docs needed*
-
 ## Environment Variables
 
-Import any environment variables from your Rails app into your JS(X) code.
+Import any environment variables into your JS(X) code.
 
 ```js
 import RAILS_ENV from '@proscenium/env/RAILS_ENV'
 ```
 
-*docs needed*
+You can only access environment variables that are explicitly named. It will export `undefined` if the env variable does not exist.
 
 ## Importing i18n
 
-Basic support is provided for importing your Rails locale files.
+Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
 
 ```js
 import translations from '@proscenium/i18n'
+// translations.en.*
 ```
-
-*docs needed*
 
 ## Phlex Support
 
@@ -276,7 +273,7 @@ import translations from '@proscenium/i18n'
 
 *docs needed*
 
-## Cache Busting [WIP]
+## Cache Busting [*COMING SOON*]
 
 By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
 

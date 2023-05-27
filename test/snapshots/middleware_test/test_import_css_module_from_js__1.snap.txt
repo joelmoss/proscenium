@@ -5,7 +5,10 @@ if (!existingStyle && !existingLink) {
   const e = document.createElement("style");
   e.id = "_330940eb";
   e.dataset.href = "/lib/styles.module.css";
-  e.appendChild(document.createTextNode(`.myClass330940eb{color:pink}`));
+  e.appendChild(document.createTextNode(`/* lib/styles.module.css */
+.myClass330940eb {
+  color: pink;
+}`));
   document.head.insertBefore(e, document.querySelector("style"));
 }
 var styles_module_default = new Proxy({}, {

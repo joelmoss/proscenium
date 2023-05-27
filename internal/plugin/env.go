@@ -13,14 +13,16 @@ import (
 //
 // Example:
 //
-//	import RAILS_ENV from 'env:RAILS_ENV';
+//	import RAILS_ENV from '@proscenium/env/RAILS_ENV';
 var Env = esbuild.Plugin{
 	Name: "Env",
 	Setup: func(build esbuild.PluginBuild) {
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^env:(.+)$`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium\/env\/(.+)$`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				paths := strings.Split(args.Path, "/")
+
 				return esbuild.OnResolveResult{
-					Path:      strings.Split(args.Path, ":")[1],
+					Path:      paths[len(paths)-1],
 					Namespace: "env",
 				}, nil
 			})
