@@ -2,16 +2,18 @@
   "name": "internal",
   "private": true,
   "dependencies": {
-    "@proscenium/component-manager": "^0.1.4",
+    "@external/three": "link:../external/three",
+    "@proscenium/component-manager": "^0.4.0",
     "@react-aria/button": "^3.6.3",
     "date-fns": "^2.29.3",
     "external-one-link": "link:../external/one",
     "gem1": "link:vendor/gem1",
     "internal-one-link": "link:packages/one",
     "internal-two": "file:packages/two",
-    "@external/three": "link:../external/three",
     "is-ip": "^5.0.0",
+    "lodash-es": "^4.17.21",
     "mypackage": "link:packages/mypackage",
+    "normalize.css": "^8.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }

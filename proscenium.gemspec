@@ -27,12 +27,11 @@ Gem::Specification.new do |spec|
     'README.md',
     'LICENSE.txt']
   spec.bindir = 'bin'
-  spec.executables << 'esbuild'
-  spec.executables << 'lightningcss'
+  spec.executables << 'proscenium'
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
-  spec.add_dependency 'concurrent-ruby', '~> 1.2.2'
+  spec.add_dependency 'ffi', '~> 1.15.5'
   spec.add_dependency 'nokogiri', '~> 1.13'
   spec.add_dependency 'oj', '~> 3.13'
   spec.add_dependency 'phlex', '~> 1.8.1'

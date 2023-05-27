@@ -20,7 +20,11 @@ module Proscenium
       new(path, extension_map).append
     end
 
-    # Forcefully side load the given `path` at `type`.
+    # Side load the given `path` at `type`, without first resolving the path. This still respects
+    # idempotency of `Proscenium::Current.loaded`.
+    #
+    # @param path [String]
+    # @param type [Symbol] :js or :css
     def self.append!(path, type)
       return if Proscenium::Current.loaded[type].include?(path)
 
@@ -29,7 +33,7 @@ module Proscenium
     end
 
     # @param path [Pathname, String] The path of the file to be side loaded.
-    # @param extensions [Array] File extensions to side load (default: DEFAULT_EXTENSIONS)
+    # @param extension_map [Hash] File extensions to side load.
     def initialize(path, extension_map = EXTENSION_MAP)
       @path = (path.is_a?(Pathname) ? path : Rails.root.join(path)).sub_ext('')
       @extension_map = extension_map
@@ -38,23 +42,23 @@ module Proscenium
     end
 
     def append
-      root, relative_path, path_to_load = Proscenium::Utils.path_pieces(path)
+      @extension_map.filter_map do |ext, type|
+        next unless (resolved_path = resolve_path(path.sub_ext(ext)))
 
-      @extension_map.map do |ext, type|
-        path_with_ext = "#{relative_path}#{ext}"
-        url_with_ext = "#{path_to_load}#{ext}"
-
-        # Make sure path is not already side loaded, and actually exists.
-        if !Proscenium::Current.loaded[type].include?(url_with_ext) &&
-           Pathname.new(root).join(path_with_ext).exist?
-          Proscenium::Current.loaded[type] << log(url_with_ext)
+        # Make sure path is not already side loaded.
+        unless Proscenium::Current.loaded[type].include?(resolved_path)
+          Proscenium::Current.loaded[type] << log(resolved_path)
         end
 
-        url_with_ext
+        resolved_path
       end
     end
 
     private
+
+    def resolve_path(path)
+      path.exist? ? Utils.resolve_path(path.to_s) : nil
+    end
 
     def log(value)
       Proscenium.logger.debug "Side loaded #{value}"

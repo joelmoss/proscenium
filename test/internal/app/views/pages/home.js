@@ -1,1 +1,1 @@
-console.log('app/views/home/index')
+console.log("app/views/home/index");

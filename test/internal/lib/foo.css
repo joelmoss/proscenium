@@ -1,7 +1,3 @@
-body {
+.body {
   color: red;
-
-  & h1 {
-    color: blue;
-  }
 }

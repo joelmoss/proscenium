@@ -13,16 +13,16 @@ path = 'lib/foo.js'
 
 Benchmark.ips do |x|
   x.report('proscenium esbuild') do
-    Proscenium::Esbuild.build_with_open3(path, root: root)
+    Proscenium::Esbuild.build(path, root: root)
+  end
+
+  x.report('proscenium golib') do
+    Proscenium::Esbuild::Golib.new(root: root).build(path)
   end
 
   x.report('esbuild-cli') do
     Open3.capture3(['/Users/joelmoss/dev/esbuild-ruby/bin/esbuild', path].join(' '))
   end
-
-  # x.report('esbuild build') do
-  #   Esbuild.build(entry_points: [path], write: false, abs_working_dir: root.to_s)
-  # end
 
   x.compare!
 end

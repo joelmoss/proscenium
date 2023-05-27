@@ -92,16 +92,6 @@ module Proscenium
         response.finish
       end
 
-      def build(cmd)
-        stdout, stderr, status = Open3.capture3(cmd)
-
-        if !status.success? || !stderr.empty?
-          raise self.class::CompileError, { file: @request.fullpath, detail: stderr }, caller
-        end
-
-        stdout
-      end
-
       def benchmark(type)
         super logging_message(type)
       end

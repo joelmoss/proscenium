@@ -1,9 +1,9 @@
 PATH
   remote: .
   specs:
-    proscenium (0.6.0)
+    proscenium (0.7.0)
       activesupport (>= 6.1.0, < 8.0)
-      concurrent-ruby (~> 1.2.2)
+      ffi (~> 1.15.5)
       nokogiri (~> 1.13)
       oj (~> 3.13)
       phlex (~> 1.8.1)
@@ -105,18 +105,27 @@ GEM
       thor (>= 0.14.6)
     concurrent-ruby (1.2.2)
     crass (1.0.6)
+    cuprite (0.14.3)
+      capybara (~> 3.0)
+      ferrum (~> 0.13.0)
     date (3.3.3)
-    down (5.4.0)
-      addressable (~> 2.8)
     dry-initializer (3.1.1)
     erb (4.0.2)
       cgi (>= 0.3.3)
     erubi (1.12.0)
+    ferrum (0.13)
+      addressable (~> 2.5)
+      concurrent-ruby (~> 1.1)
+      webrick (~> 1.7)
+      websocket-driver (>= 0.6, < 0.8)
+    ffi (1.15.5)
     globalid (1.1.0)
       activesupport (>= 5.0)
     i18n (1.12.0)
       concurrent-ruby (~> 1.0)
     json (2.6.3)
+    launchy (2.5.2)
+      addressable (~> 2.8)
     loofah (2.20.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -237,6 +246,7 @@ GEM
       activesupport (>= 5.0.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
+    webrick (1.8.1)
     websocket-driver (0.7.5)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
@@ -251,10 +261,12 @@ PLATFORMS
 
 DEPENDENCIES
   benchmark-ips
+  capybara
   combustion
-  down
+  cuprite
   dry-initializer
   gem1!
+  launchy
   maxitest
   minitest-focus
   minitest-heat

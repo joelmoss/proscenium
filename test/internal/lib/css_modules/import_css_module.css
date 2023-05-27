@@ -1,0 +1,5 @@
+@import './basic.module.css';
+
+.bar {
+  color: blue;
+}

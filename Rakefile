@@ -3,7 +3,6 @@
 require 'rake/testtask'
 require 'rake/clean'
 require 'rubocop/rake_task'
-require 'down'
 
 Rake::TestTask.new(:test) do |t|
   t.libs << 'test'
@@ -17,21 +16,21 @@ CLOBBER.include 'pkg'
 task default: %i[test rubocop]
 task release: %i[build push]
 
-LIGHTNINGCSS_VERSION = '1.19.0'
 PLATFORMS = {
-  'x86_64-linux' => {
-    deno: 'x86_64-unknown-linux-gnu',
-    npm: 'linux-x64-gnu'
-  },
-  'x86_64-darwin' => {
-    deno: 'x86_64-apple-darwin',
-    npm: 'darwin-x64'
-  },
-  'arm64-darwin' => {
-    deno: 'aarch64-apple-darwin',
-    npm: 'darwin-arm64'
-  }
+  'x86_64-darwin' => { goos: 'darwin', arch: 'amd64' },
+  'arm64-darwin' => { goos: 'darwin', arch: 'arm64' },
+  'arm-linux' => { goos: 'linux', arch: 'arm' },
+  'aarch64-linux' => { goos: 'linux', arch: 'arm64' },
+  'x86_64-linux' => { goos: 'linux', arch: 'amd64' }
+  # 'arm-windows' => { goos: 'windows', arch: 'arm' },
+  # 'x86_64-windows' => { goos: 'windows', arch: 'amd64' },
+  # 'aarch64-windows' => { goos: 'windows', arch: 'arm64' }
 }.freeze
+
+desc 'Compile for local os/arch'
+task 'compile:local' => 'clobber:bin' do
+  `go build -buildmode=c-shared -v -o bin/proscenium main.go`
+end
 
 desc 'Build Proscenium gems into the pkg directory.'
 task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
@@ -39,14 +38,12 @@ task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
 desc 'Push Proscenium gems up to the gem server.'
 task push: PLATFORMS.keys.map { |platform| "push:#{platform}" }
 
-# rubocop:disable Metrics/BlockLength
 PLATFORMS.each do |platform, values|
   base = FileUtils.pwd
   pkg_dir = File.join(base, 'pkg')
   gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
-  task "build:#{platform}" => ["compile:esbuild:#{platform}",
-                               "lightningcss:download:#{platform}"] do
+  task "build:#{platform}" => ["compile:#{platform}"] do
     sh 'gem', 'build', '-V', '--platform', platform do
       gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{platform}.gem", base).max_by do |f|
         File.mtime(f)
@@ -60,48 +57,23 @@ PLATFORMS.each do |platform, values|
     end
   end
 
-  desc "Compile esbuild for #{platform}"
-  task "compile:esbuild:#{platform}" => 'clobber:bin:esbuild' do
+  desc "Compile for #{platform}"
+  task "compile:#{platform}" => 'clobber:bin' do
     puts ''
-    sh 'deno', 'compile', '-o', 'bin/esbuild',
-       '-A', '--target', values[:deno], 'lib/proscenium/compilers/esbuild.js'
+    puts "---> Compiling for #{platform}"
+    sh %(GOOS=#{values[:goos]} GOARCH=#{values[:arch]} go build -v --buildmode=c-shared -o bin/proscenium.so main.go)
   end
 
   desc "Push built gem (#{platform})"
   task "push:#{platform}" do
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{platform}.gem"
   end
-
-  desc "Download lightningcss for #{platform}"
-  task "lightningcss:download:#{platform}" => 'clobber:bin:lightningcss' do
-    puts "Downloading lightningcss from NPM for #{platform}..."
-
-    v = LIGHTNINGCSS_VERSION
-    url = "lightningcss-cli-#{values[:npm]}/-/lightningcss-cli-#{values[:npm]}-#{v}.tgz"
-    file = Down.download("https://registry.npmjs.org/#{url}")
-
-    filename = "lightningcss-cli-#{values[:npm]}-#{v}.tgz"
-    FileUtils.mv file, "tmp/#{filename}"
-
-    FileUtils.cd 'tmp' do
-      sh 'tar', '-xzf', filename, 'package/lightningcss'
-    end
-
-    FileUtils.mv 'tmp/package/lightningcss', 'bin/lightningcss'
-    FileUtils.chmod '+x', 'bin/lightningcss'
-  end
 end
-# rubocop:enable Metrics/BlockLength
 
-task 'clobber:bin' => ['clobber:bin:esbuild', 'clobber:bin:lightningcss']
-
-desc 'Clobber esbuild binary'
-task 'clobber:bin:esbuild' do
-  FileUtils.rm 'bin/esbuild', force: true
-end
-desc 'Clobber lightningcss binary'
-task 'clobber:bin:lightningcss' do
-  FileUtils.rm 'bin/lightningcss', force: true
+desc 'Clobber bin'
+task 'clobber:bin' do
+  FileUtils.rm 'bin/proscenium.h', force: true
+  FileUtils.rm 'bin/proscenium.so', force: true
 end
 
 Rake::Task['clobber'].tap do |task|

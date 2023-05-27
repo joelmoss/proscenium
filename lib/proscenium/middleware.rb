@@ -9,10 +9,7 @@ module Proscenium
 
     autoload :Base
     autoload :Esbuild
-    autoload :Runtime
     autoload :Url
-    autoload :Npm
-    autoload :Gem
 
     def initialize(app)
       @app = app
@@ -28,12 +25,12 @@ module Proscenium
 
     private
 
-    # Look for the precompiled file in public/assets first, then fallback to the Proscenium
-    # middleware that matches the type of file requested.
     def attempt(request)
       return unless (type = find_type(request))
 
-      file_handler.attempt(request.env) || type.attempt(request)
+      # file_handler.attempt(request.env) || type.attempt(request)
+
+      type.attempt(request)
     end
 
     # Returns the type of file being requested using Proscenium::MIDDLEWARE_GLOB_TYPES.
@@ -41,12 +38,10 @@ module Proscenium
       path = Pathname.new(request.path)
 
       return Url if request.path.match?(glob_types[:url])
-      return Npm if request.path.match?(glob_types[:npm])
-      return Gem if request.path.match?(glob_types[:gem])
-      return Runtime if path.fnmatch?(glob_types[:runtime], File::FNM_EXTGLOB)
       return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
     end
 
+    # TODO: handle precompiled assets
     def file_handler
       ::ActionDispatch::FileHandler.new Rails.public_path.join('assets').to_s,
                                         headers: { 'X-Proscenium-Middleware' => 'precompiled' }

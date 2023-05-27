@@ -11,5 +11,6 @@ Bundler.require :default, ENV['RAILS_ENV'].to_sym
 Combustion.path = 'test/internal'
 Combustion.initialize! :action_controller, :action_view do
   config.consider_all_requests_local = false
+  config.proscenium.include_paths << 'app/components'
 end
 run Combustion::Application

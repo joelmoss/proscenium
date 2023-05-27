@@ -4,53 +4,25 @@ module Proscenium
   class Esbuild
     class CompileError < StandardError; end
 
+    extend ActiveSupport::Autoload
+
+    autoload :Golib
+
     def self.build(...)
       new(...).build
     end
 
-    def initialize(path, root:)
+    def initialize(path, root:, base_url:)
       @path = path
       @root = root
+      @base_url = base_url
     end
 
     def build
-      stdout, stderr, status = Open3.capture3(command)
-
-      raise CompileError, stderr if !status.success? || !stderr.empty?
-
-      stdout
+      Proscenium::Esbuild::Golib.new(root: @root, base_url: @base_url).build(@path)
     end
 
     private
-
-    def command
-      [
-        cli,
-        "--root #{@root}",
-        "--lightningcss-bin #{lightningcss_bin}",
-        cache_query_string,
-        css_mixin_paths,
-        @path
-      ].compact.join(' ')
-    end
-
-    def cli
-      if ENV['PROSCENIUM_TEST']
-        'deno run -q -A lib/proscenium/compilers/esbuild.js'
-      else
-        ::Gem.bin_path 'proscenium', 'esbuild'
-      end
-    end
-
-    def lightningcss_bin
-      ENV['PROSCENIUM_TEST'] ? 'bin/lightningcss' : ::Gem.bin_path('proscenium', 'lightningcss')
-    end
-
-    def css_mixin_paths
-      Proscenium.config.css_mixin_paths.map do |mpath|
-        "--css-mixin-path #{mpath}"
-      end.join ' '
-    end
 
     def cache_query_string
       q = Proscenium.config.cache_query_string

@@ -28,7 +28,7 @@ describe('import map', () => {
   })
 
   it('from json', async () => {
-    const result = await main('lib/import_map/simple.js', {
+    const result = await main('lib/import_map/bare_specifier.js', {
       root,
       lightningcssBin,
       importMap: 'config/import_maps/simple.json'

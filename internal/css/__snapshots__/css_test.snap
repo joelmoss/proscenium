@@ -1,0 +1,210 @@
+
+[TestParseCss/css_modules/path_is_not_a_css_module - 1]
+.title {
+    color: green;
+}
+
+---
+
+[TestParseCss/css_modules/should_rename_classes - 1]
+.title43c30152 {
+    color: green;
+}
+
+---
+
+[TestParseCss/css_modules/should_rename_nested_classes - 1]
+.title43c30152 {
+    color: green;
+    .subtitle43c30152 {
+        color: blue;
+    }
+}
+
+---
+
+[TestParseCss/css_modules/should_rename_compound_classes - 1]
+.title43c30152.subtitle43c30152 {
+    color: green;
+}
+
+---
+
+[TestParseCss/css_modules/global_function/should_not_rename_function_argument - 1]
+.title43c30152 {
+    color: blue;
+}
+.subtitle {
+    color: green;
+}
+.author43c30152 {
+    color: red;
+}
+
+---
+
+[TestParseCss/css_modules/global_function/nesting_in_function_body_should_be_renamed - 1]
+.subtitle {
+    color: green;
+    .foo43c30152 {
+        color: orange;
+    }
+}
+
+---
+
+[TestParseCss/css_modules/global_function/shorthand_with_argument/body_should_be_renamed - 1]
+ .subtitle {
+    color: green;
+    .foo {
+        color: orange;
+    
+}
+
+---
+
+[TestParseCss/css_modules/global_function/should_not_rename_argument - 1]
+.title43c30152 {
+    color: blue;
+}
+.subtitle {
+    color: green;
+}
+.author43c30152 {
+    color: red;
+}
+
+---
+
+[TestParseCss/css_modules/global_function/nested_classes_should_be_renamed - 1]
+.subtitle {
+    color: green;
+    .foo43c30152 {
+        color: orange;
+    }
+}
+
+---
+
+[TestParseCss/css_modules/global_shorthand_with_argument/should_not_rename_argument - 1]
+.title43c30152 {
+    color: blue;
+}
+ .subtitle 
+    color: green;
+}
+.author43c30152 {
+    color: red;
+}
+
+---
+
+[TestParseCss/css_modules/global_shorthand_with_argument/nested_classes_should_be_renamed - 1]
+ .subtitle 
+    color: green;
+    .foo43c30152 {
+        color: orange;
+    }
+}
+
+---
+
+[TestParseCss/css_modules/global_shorthand_without_argument/should_rename_all_children - 1]
+ 
+    .subtitle {
+        color: green;
+
+        .foo {
+            color: orange;
+        }
+    }
+    .bar {
+        color: blue;
+    }
+}
+.author43c30152 {
+    color: red;
+}
+
+---
+
+[TestParseCss/should_pass_through_regular_css - 1]
+body{}
+---
+
+[TestParseCss/mixins/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin foo;
+}
+
+---
+
+[TestParseCss/mixins/mixin_is_replaced_with_defined_mixin - 1]
+header {
+    link
+}
+
+---
+
+[TestParseCss/mixins/local/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin foo;
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_is_replaced_with_defined_mixin - 1]
+
+header {
+    font-size: 20px;
+    div { color: pink; }
+}
+
+---
+
+[TestParseCss/mixins/url/undefined_mixin_is_passed_through - 1]
+header {
+    @mixin unknown from url('/config/button.mixin.css');
+}
+
+---
+
+[TestParseCss/mixins/url/mixin_is_replaced_with_defined_mixin - 1]
+header {
+    @mixin large-button;
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_must_be_defined_at_root_level - 1]
+header {
+    @define-mixin large-button {
+        color: red;
+    }
+    div {
+        @mixin foo;
+    }
+}
+
+---
+
+[TestParseCss/mixins/local/mixin_not_defined_at_root_level_is_passed_through - 1]
+header {
+    @define-mixin large-button {
+        color: red;
+    }
+    div {
+        @mixin foo;
+    }
+}
+
+---
+
+[TestParseCss/mixins/local/dependencies_are_fully_parsed - 1]
+
+header {
+    font-size: 20px;
+    div { color: pink; }
+}
+
+---

@@ -2,7 +2,7 @@
 
 module Proscenium
   class Middleware
-    # Handles requests prefixed with "url:https://"; downloading, caching, and compiling them.
+    # Handles requests for URL encoded URL's.
     class Url < Esbuild
       private
 
@@ -10,11 +10,6 @@ module Proscenium
       #   until it's downloaded).
       def renderable?
         true
-      end
-
-      # @override [Esbuild]
-      def path_to_build
-        @path_to_build ||= CGI.unescape(@request.path)[1..]
       end
     end
   end

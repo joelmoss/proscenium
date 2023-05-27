@@ -1,0 +1,12 @@
+
+[TestUrlPlugin/import_URL - 1]
+// url:https://esm.sh/v109/email-regex@5.0.0/esnext/email-regex.js
+var e = "[^\\.\\s@:](?:[^\\s@:]*[^\\s@:\\.])?@[^\\.\\s@]+(?:\\.[^\\.\\s@]+)*";
+function s({ exact: n } = {}) {
+  return n ? new RegExp(`^${e}$`) : new RegExp(e, "g");
+}
+export {
+  s as default
+};
+
+---

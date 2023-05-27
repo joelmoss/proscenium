@@ -3,7 +3,19 @@
 module Proscenium::CssModule
   extend ActiveSupport::Autoload
 
-  autoload :Resolver
+  class StylesheetNotFound < StandardError
+    def initialize(pathname)
+      @pathname = pathname
+      super
+    end
+
+    def message
+      "Stylesheet is required, but does not exist: #{@pathname}"
+    end
+  end
+
+  autoload :ClassNamesResolver
+  autoload :Resolver # deprecated
 
   # Like `css_modules`, but will raise if the stylesheet cannot be found.
   #

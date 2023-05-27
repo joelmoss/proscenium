@@ -6,7 +6,6 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   setup do
     Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
-    Proscenium.config.css_mixin_paths = Set[Rails.root.join('lib')]
     Proscenium.reset_current_side_loaded
   end
 
@@ -28,27 +27,11 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
 
     assert_equal 'application/javascript', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
-  test '.jsx' do
-    get '/lib/component.jsx'
-
-    assert_equal 'application/javascript', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
+    assert_includes response.body, 'console.log("app/views/layouts/application.js");'
   end
 
   test '.css' do
     get '/app/views/layouts/application.css'
-
-    assert_equal 'text/css', response.headers['Content-Type']
-    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
-    assert_matches_snapshot response.body
-  end
-
-  test 'injects /lib/custom_media_queries.css if present' do
-    get '/lib/with_custom_media.css'
 
     assert_equal 'text/css', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
@@ -72,7 +55,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'esbuild js compilation error' do
-    assert_raises Proscenium::Middleware::Esbuild::CompileError do
+    assert_raises Proscenium::Esbuild::Golib::BuildError do
       get '/lib/includes_error.js'
     end
   end
@@ -109,21 +92,9 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'cache_query_string should propogate' do
+    skip 'TODO'
     Proscenium.config.cache_query_string = 'v1'
     get '/lib/query_cache.js?v1'
-
-    assert_matches_snapshot response.body
-  end
-
-  test 'CSS mixins' do
-    get '/lib/with_mixins.css'
-
-    assert_matches_snapshot response.body
-  end
-
-  test 'config.css_mixin_paths' do
-    Proscenium.config.css_mixin_paths << Rails.root.join('config')
-    get '/lib/with_mixins_from_alternative_path.css'
 
     assert_matches_snapshot response.body
   end

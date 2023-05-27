@@ -44,11 +44,13 @@ module Proscenium
       attr_accessor :path, :abstract_class
 
       def inherited(child)
-        child.path = if caller_locations(1, 1).first.label == 'inherited'
-                       Pathname.new caller_locations(2, 1).first.path
-                     else
-                       Pathname.new caller_locations(1, 1).first.path
-                     end
+        unless child.path
+          child.path = if caller_locations(1, 1).first.label == 'inherited'
+                         Pathname.new caller_locations(2, 1).first.path
+                       else
+                         Pathname.new caller_locations(1, 1).first.path
+                       end
+        end
 
         child.prepend Sideload if Rails.application.config.proscenium.side_load
 
