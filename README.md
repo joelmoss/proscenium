@@ -16,6 +16,7 @@ configuration.
 - Server-side import map support.
 - CSS Modules.
 - CSS mixins.
+- Source maps.
 - Phlex and ViewComponent integration.
 
 ## ⚠️ WORK IN PROGRESS ⚠️
