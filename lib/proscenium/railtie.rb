@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'rails'
+require 'proscenium/log_subscriber'
 
 ENV['RAILS_ENV'] = Rails.env
 

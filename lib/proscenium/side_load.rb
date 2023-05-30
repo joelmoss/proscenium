@@ -28,8 +28,13 @@ module Proscenium
     def self.append!(path, type)
       return if Proscenium::Current.loaded[type].include?(path)
 
-      Proscenium::Current.loaded[type] << path
-      Proscenium.logger.debug "Side loaded #{path}"
+      Proscenium::Current.loaded[type] << log(path)
+    end
+
+    def self.log(value)
+      ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
+
+      value
     end
 
     # @param path [Pathname, String] The path of the file to be side loaded.
@@ -56,13 +61,12 @@ module Proscenium
 
     private
 
-    def resolve_path(path)
-      path.exist? ? Utils.resolve_path(path.to_s) : nil
+    def log(...)
+      self.class.log(...)
     end
 
-    def log(value)
-      Proscenium.logger.debug "Side loaded #{value}"
-      value
+    def resolve_path(path)
+      path.exist? ? Utils.resolve_path(path.to_s) : nil
     end
   end
 end

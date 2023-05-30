@@ -14,10 +14,6 @@ module Proscenium
   autoload :Helper
   autoload :Esbuild
 
-  def self.logger
-    @logger ||= Rails.logger.tagged('Proscenium')
-  end
-
   def self.reset_current_side_loaded
     Current.reset
     Current.loaded = SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }

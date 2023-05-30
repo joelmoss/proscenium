@@ -20,7 +20,7 @@ module Proscenium
       end
 
       def attempt
-        benchmark :esbuild do
+        ActiveSupport::Notifications.instrument('build.proscenium', identifier: path_to_build) do
           render_response Proscenium::Esbuild.build(path_to_build, root: root,
                                                                    base_url: @request.base_url)
         end

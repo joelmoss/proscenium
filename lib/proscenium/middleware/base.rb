@@ -92,21 +92,6 @@ module Proscenium
         response.finish
       end
 
-      def benchmark(type)
-        super logging_message(type)
-      end
-
-      # rubocop:disable Style/FormatStringToken
-      def logging_message(type)
-        format '[Proscenium] Request (%s) %s for %s at %s',
-               type, @request.fullpath, @request.ip, Time.now.to_default_s
-      end
-      # rubocop:enable Style/FormatStringToken
-
-      def logger
-        Rails.logger
-      end
-
       def name
         @name ||= self.class.name.split('::').last.downcase
       end
