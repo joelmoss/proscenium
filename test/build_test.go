@@ -33,9 +33,9 @@ var _ = Describe("Build", func() {
 
 		Expect(Build("lib/component.jsx")).To(ContainCode(`
 			var import_jsx_runtime = __toESM(require_jsx_runtime());
-			var Component = /* @__PURE__ */ __name(() => {
+			var Component = () => {
 				return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Hello" });
-			}, "Component");
+			};
 			var component_default = Component;
 			export {
 				component_default as default
@@ -69,19 +69,14 @@ var _ = Describe("Build", func() {
 
 	It("tree shakes bare import", func() {
 		Expect(Build("lib/import_tree_shake.js")).To(EqualCode(`
-			var __defProp = Object.defineProperty;
-			var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
-
 			// packages/mypackage/treeshake.js
 			function one() {
 				console.log("one");
 			}
-			__name(one, "one");
 
 			// node_modules/.pnpm/lodash-es@4.17.21/node_modules/lodash-es/noop.js
 			function noop() {
 			}
-			__name(noop, "noop");
 			var noop_default = noop;
 
 			// lib/import_tree_shake.js

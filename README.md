@@ -62,7 +62,7 @@ Imports are assumed to be JS files, so there is no need to specify the file exte
 Any import beginning with `http://` or `https://` will be fetched from the URL provided. For example:
 
 ```js
-import React from 'https://esm.sh/react`
+import React from 'https://esm.sh/react'
 ```
 
 ```css
@@ -76,7 +76,7 @@ URL imports are cached, so that each import is only fetched once per server rest
 Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file:
 
 ```js
-import React from 'react`
+import React from 'react'
 ```
 
 ### Local Imports
