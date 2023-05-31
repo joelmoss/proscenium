@@ -53,24 +53,32 @@ module Proscenium
       options.include_paths = Set.new(APPLICATION_INCLUDE_PATHS) if options.include_paths.blank?
     end
 
-    initializer 'proscenium.side_load' do
-      Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
-    end
-
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
       app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.helpers' do |_app|
-      ActiveSupport.on_load(:action_view) do
-        ActionView::Base.include Proscenium::Helper
+    initializer 'proscenium.side_loading' do |app|
+      if app.config.proscenium.side_load
+        Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
 
-        if Rails.application.config.proscenium.side_load
+        ActiveSupport.on_load(:action_view) do
+          ActionView::Base.include Proscenium::SideLoad::Helper
+
           ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
           ActionView::PartialRenderer.prepend SideLoad::Monkey::PartialRenderer
         end
+
+        ActiveSupport.on_load(:action_controller) do
+          ActionController::Base.include Proscenium::SideLoad::EnsureLoaded
+        end
+      end
+    end
+
+    initializer 'proscenium.helper' do
+      ActiveSupport.on_load(:action_view) do
+        ActionView::Base.include Proscenium::Helper
       end
     end
   end

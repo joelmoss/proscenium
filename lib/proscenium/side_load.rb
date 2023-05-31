@@ -4,37 +4,43 @@ module Proscenium
   class SideLoad
     extend ActiveSupport::Autoload
 
+    NotIncludedError = Class.new(StandardError)
+
     autoload :Monkey
+    autoload :Helper
+    autoload :EnsureLoaded
 
     EXTENSIONS = %i[js css].freeze
     EXTENSION_MAP = { '.css' => :css, '.js' => :js }.freeze
 
     attr_reader :path
 
-    # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is a
-    # Set of 'js' and 'css' asset paths. This is idempotent, so side loading will never include
-    # duplicates.
-    #
-    # @return [Array] appended URL paths
-    def self.append(path, extension_map = EXTENSION_MAP)
-      new(path, extension_map).append
-    end
+    class << self
+      # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is a
+      # Set of 'js' and 'css' asset paths. This is idempotent, so side loading will never include
+      # duplicates.
+      #
+      # @return [Array] appended URL paths
+      def append(path, extension_map = EXTENSION_MAP)
+        new(path, extension_map).append
+      end
 
-    # Side load the given `path` at `type`, without first resolving the path. This still respects
-    # idempotency of `Proscenium::Current.loaded`.
-    #
-    # @param path [String]
-    # @param type [Symbol] :js or :css
-    def self.append!(path, type)
-      return if Proscenium::Current.loaded[type].include?(path)
+      # Side load the given `path` at `type`, without first resolving the path. This still respects
+      # idempotency of `Proscenium::Current.loaded`.
+      #
+      # @param path [String]
+      # @param type [Symbol] :js or :css
+      def append!(path, type)
+        return if Proscenium::Current.loaded[type].include?(path)
 
-      Proscenium::Current.loaded[type] << log(path)
-    end
+        Proscenium::Current.loaded[type] << log(path)
+      end
 
-    def self.log(value)
-      ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
+      def log(value)
+        ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
 
-      value
+        value
+      end
     end
 
     # @param path [Pathname, String] The path of the file to be side loaded.

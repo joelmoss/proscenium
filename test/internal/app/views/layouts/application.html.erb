@@ -3,9 +3,9 @@
   <head>
     <title>Proscenium Test App</title>
     <%= side_load_stylesheets %>
-    <%= side_load_javascripts defer: true, type: 'module' %>
   </head>
   <body>
     <%= yield %>
+    <%= side_load_javascripts defer: true, type: 'module' %>
   </body>
 </html>

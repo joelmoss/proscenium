@@ -15,21 +15,5 @@ module Proscenium
 
       super
     end
-
-    def side_load_stylesheets
-      return unless Proscenium::Current.loaded
-
-      Proscenium::Current.loaded[:css].map do |path|
-        stylesheet_link_tag(path)
-      end.join("\n").html_safe
-    end
-
-    def side_load_javascripts(**options)
-      return unless Proscenium::Current.loaded
-
-      Proscenium::Current.loaded[:js].map do |path|
-        javascript_include_tag(path, options)
-      end.join("\n").html_safe
-    end
   end
 end
