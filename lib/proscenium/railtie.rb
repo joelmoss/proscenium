@@ -10,7 +10,7 @@ module Proscenium
 
   MIDDLEWARE_GLOB_TYPES = {
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
-    url: %r{^/https?%3A%2F%2F.+\.(css|m?jsx?)(\.map)?$}
+    url: %r{^/https?%3A%2F%2F}
   }.freeze
 
   APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
