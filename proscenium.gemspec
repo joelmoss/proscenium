@@ -19,15 +19,12 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
 
   spec.files = Dir[
-    '{app,config,bin}/**/*',
     'lib/proscenium/**/*',
     'lib/tasks/**/*',
     'lib/proscenium.rb',
     'CODE_OF_CONDUCT.md',
     'README.md',
     'LICENSE.txt']
-  spec.bindir = 'bin'
-  spec.executables << 'proscenium'
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
