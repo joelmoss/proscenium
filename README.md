@@ -19,10 +19,6 @@ configuration.
 - Source maps.
 - Phlex and ViewComponent integration.
 
-## ⚠️ WORK IN PROGRESS ⚠️
-
-While my goal is to use Proscenium in production, I recommended that you **DO NOT** use Proscenium in production just yet! It has only been run for local development, and requires several improvements for optimal production use.
-
 ## Installation
 
 Add this line to your Rails application's Gemfile, and you're good to go:
