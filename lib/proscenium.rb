@@ -58,8 +58,8 @@ module Proscenium
         sroot = "#{matched_gem[1][:root]}/"
         relpath = path.delete_prefix(sroot)
 
-        if matched_gem[1][:package_name]
-          return Esbuild::Golib.resolve("#{matched_gem[1][:package_name]}/#{relpath}")
+        if (package_name = matched_gem[1][:package_name] || matched_gem[0])
+          return Esbuild::Golib.resolve("#{package_name}/#{relpath}")
         end
 
         # TODO: manually resolve the path without esbuild

@@ -91,16 +91,16 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		// KeepNames:         types.Env != types.ProdEnv,
-		Conditions:    []string{types.Env.String()},
+		Conditions:    []string{types.Env.String(), "proscenium"},
 		Write:         false,
 		Sourcemap:     sourcemap,
 		LegalComments: esbuild.LegalCommentsNone,
 		Metafile:      options.Metafile,
 		Plugins:       plugins,
 		Target:        esbuild.ES2022,
-		Supported:     map[string]bool{
+		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
-			// "nesting": false,
+			"nesting": false,
 		},
 
 		// TODO: Will using aliases instead of import be faster?

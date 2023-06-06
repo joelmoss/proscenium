@@ -169,7 +169,7 @@ func cssBuild(options CssBuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		// KeepNames:         types.Env != types.ProdEnv,
-		Conditions:    []string{types.Env.String()},
+		Conditions:    []string{types.Env.String(), "proscenium"},
 		Write:         false,
 		Sourcemap:     esbuild.SourceMapNone,
 		LegalComments: esbuild.LegalCommentsNone,

@@ -76,7 +76,7 @@ func Resolve(options Options) (string, error) {
 		EntryPoints:   []string{options.Path},
 		AbsWorkingDir: options.Root,
 		Format:        esbuild.FormatESModule,
-		Conditions:    []string{types.Env.String()},
+		Conditions:    []string{types.Env.String(), "proscenium"},
 		Write:         false,
 		Metafile:      true,
 
