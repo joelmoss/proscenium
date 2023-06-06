@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.7.0)
+    proscenium (0.8.0)
       activesupport (>= 6.1.0, < 8.0)
       ffi (~> 1.15.5)
       nokogiri (~> 1.13)
