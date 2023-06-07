@@ -44,10 +44,15 @@ var Svg = api.Plugin{
 					}
 				`, contents)
 
+				loader := api.LoaderJSX
+				if utils.PathIsTsx(args.Path) {
+					loader = api.LoaderTSX
+				}
+
 				return api.OnLoadResult{
 					Contents:   &contents,
 					ResolveDir: filepath.Dir(args.Path),
-					Loader:     api.LoaderJSX,
+					Loader:     loader,
 				}, nil
 			})
 	},

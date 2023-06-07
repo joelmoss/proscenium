@@ -239,9 +239,9 @@ p {
 
 CSS modules and Mixins works perfectly together. You can include a mixin in a CSS module.
 
-## Importing SVG from JS(X)
+## Importing SVG from JS(X) and TS(X)
 
-Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX, the SVG source code will be rendered as a JSX component.
+Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
 
 ## Environment Variables
 

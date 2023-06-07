@@ -65,6 +65,10 @@ func PathIsJsx(path string) bool {
 	return strings.HasSuffix(path, ".jsx")
 }
 
+func PathIsTsx(path string) bool {
+	return strings.HasSuffix(path, ".tsx")
+}
+
 func PathIsSvg(path string) bool {
 	return strings.HasSuffix(path, ".svg")
 }
@@ -78,7 +82,7 @@ func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
 }
 
 func IsSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement && PathIsSvg(path) && PathIsJsx(args.Importer)
+	return args.Kind == esbuild.ResolveJSImportStatement && PathIsSvg(path) && (PathIsJsx(args.Importer) || PathIsTsx(args.Importer))
 }
 
 func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {

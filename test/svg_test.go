@@ -22,6 +22,15 @@ var _ = Describe("Build(svg)", func() {
 		})
 	})
 
+	When("importing svg from tsx", func() {
+		It("bundles", func() {
+			result := Build("lib/svg/absolute.tsx")
+
+			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
+		})
+	})
+
 	When("importing relative svg from jsx", func() {
 		It("bundles", func() {
 			result := Build("lib/svg/relative.jsx")
