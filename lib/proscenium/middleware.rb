@@ -30,30 +30,23 @@ module Proscenium
 
       # file_handler.attempt(request.env) || type.attempt(request)
 
-      type.attempt(request)
+      type.attempt request
     end
 
-    # Returns the type of file being requested using Proscenium::MIDDLEWARE_GLOB_TYPES.
     def find_type(request)
-      path = Pathname.new(request.path)
+      return Url if request.path.match?(%r{^/https?%3A%2F%2F})
+      return Esbuild if Pathname.new(request.path).fnmatch?(path_glob, File::FNM_EXTGLOB)
+    end
 
-      return Url if request.path.match?(glob_types[:url])
-      return Esbuild if path.fnmatch?(application_glob_type, File::FNM_EXTGLOB)
+    def path_glob
+      paths = Rails.application.config.proscenium.include_paths.join(',')
+      "/{#{paths}}/**.{#{FILE_EXTENSIONS.join(',')}}"
     end
 
     # TODO: handle precompiled assets
-    def file_handler
-      ::ActionDispatch::FileHandler.new Rails.public_path.join('assets').to_s,
-                                        headers: { 'X-Proscenium-Middleware' => 'precompiled' }
-    end
-
-    def glob_types
-      @glob_types ||= Proscenium::MIDDLEWARE_GLOB_TYPES
-    end
-
-    def application_glob_type
-      paths = Rails.application.config.proscenium.include_paths.join(',')
-      "/{#{paths}}#{glob_types[:application]}"
-    end
+    # def file_handler
+    #   ::ActionDispatch::FileHandler.new Rails.public_path.join('assets').to_s,
+    #                                     headers: { 'X-Proscenium-Middleware' => 'precompiled' }
+    # end
   end
 end

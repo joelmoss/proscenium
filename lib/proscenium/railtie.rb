@@ -9,11 +9,6 @@ module Proscenium
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
 
-  MIDDLEWARE_GLOB_TYPES = {
-    application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
-    url: %r{^/https?%3A%2F%2F}
-  }.freeze
-
   APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
 
   class << self
