@@ -46,6 +46,35 @@ Using the examples above...
 - `app/components/menu_component.jsx` => `https://yourapp.com/app/components/menu_component.jsx`
 - `config/properties.css` => `https://yourapp.com/config/properties.css`
 
+## Side Loading
+
+Proscenium has built in support for automatically side loading JS, TS and CSS with your views and
+layouts.
+
+Just create a JS and/or CSS file with the same name as any view or layout, and make sure your
+layouts include `<%= side_load_stylesheets %>` and `<%= side_load_javascripts %>`. Something like
+this:
+
+```html
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello World</title>
+    <%= side_load_stylesheets %>
+  </head>
+  <body>
+    <%= yield %>
+    <%= side_load_javascripts defer: true, type: 'module' %>
+  </body>
+</html>
+```
+
+On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same
+name, and include them into your layout HTML. Partials are not side loaded.
+
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
+to `false`.
+
 ## Importing
 
 Proscenium supports importing JS, JSX, TS and CSS from NPM, by URL, your local app, and even from Ruby Gems.
@@ -130,36 +159,81 @@ env => ({
 })
 ```
 
-## Side Loading
+## Importing SVG from JS(X) and TS(X)
 
-Proscenium has built in support for automatically side loading JS, TS and CSS with your views and
-layouts.
+Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
 
-Just create a JS and/or CSS file with the same name as any view or layout, and make sure your
-layouts include `<%= side_load_stylesheets %>` and `<%= side_load_javascripts %>`. Something like
-this:
+## Environment Variables
 
-```html
-<!DOCTYPE html>
-<html>
-  <head>
-    <title>Hello World</title>
-    <%= side_load_stylesheets %>
-  </head>
-  <body>
-    <%= yield %>
-    <%= side_load_javascripts defer: true, type: 'module' %>
-  </body>
-</html>
+Import any environment variables into your JS(X) code.
+
+```js
+import RAILS_ENV from '@proscenium/env/RAILS_ENV'
 ```
 
-On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same
-name, and include them into your layout HTML. Partials are not side loaded.
+You can only access environment variables that are explicitly named. It will export `undefined` if the env variable does not exist.
 
-Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
-to `false`.
+## Importing i18n
 
-## CSS Modules
+Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
+
+```js
+import translations from '@proscenium/i18n'
+// translations.en.*
+```
+
+## Javascript
+
+By default, Proscenium's output will take advantage of all modern JS features. For example, `a !== void 0 && a !== null ? a : b` will become `a ?? b` when minifying (enabled by default in production), which makes use of syntax from the ES2020 version of JavaScript.
+
+### Tree Shaking
+
+Tree shaking is the term the JavaScript community uses for dead code elimination, a common compiler optimization that automatically removes unreachable code. Tree shaking is enabled by default in Proascenium.
+
+```javascript
+function one() {
+  console.log('one')
+}
+function two() {
+  console.log('two')
+}
+one()
+```
+
+The above code will be transformed to the following code, discarding `two()`, as it is never called.
+
+```javascript
+function one() {
+  console.log("one");
+}
+one();
+```
+
+### JavaScript Caveats
+
+There are a few important caveats as far as JavaScript is concerned. These are [detailed on the esbuild site](https://esbuild.github.io/content-types/#javascript-caveats).
+
+## CSS
+
+CSS is a first-class content type in Proscenium, which means it can bundle CSS files directly without needing to import your CSS from JavaScript code. You can `@import` other CSS files and reference image and font files with `url()` and Proscenium will bundle everything together.
+
+Note that by default, Proscenium's output will take advantage of all modern CSS features. For example, `color: rgba(255, 0, 0, 0.4)` will become `color: #f006` after minifying in production, which makes use of syntax from [CSS Color Module Level 4](https://drafts.csswg.org/css-color-4/#changes-from-3).
+
+The new CSS nesting syntax is supported, and transformed into non-nested CSS for older browsers.
+
+### Importing from JavaScript
+
+You can also import CSS from JavaScript. When you do this, Proscenium will automatically append each stylesheet to the document's head as a `<link>` element.
+
+```jsx
+import './button.css'
+
+export let Button = ({ text }) => {
+  return <div className="button">{text}</div>
+}
+```
+
+### CSS Modules
 
 Proscenium implements a subset of [CSS Modules](https://github.com/css-modules/css-modules). It supports the `:local` and `:global` keywords, but not the `composes` property. It is recommended that you use mixins instead of `composes`, as they work everywhere.
 
@@ -190,7 +264,7 @@ It is important to note that the exported object of CSS module names is actually
 
 Also, importing a CSS module from another CSS module will result in the same digest string for all classes.
 
-## CSS Mixins
+### CSS Mixins
 
 Proscenium provides functionality for including or "mixing in" onr or more CSS classes into another. This is similar to the `composes` property of CSS Modules, but works everywhere, and is not limited to CSS Modules.
 
@@ -239,27 +313,49 @@ p {
 
 CSS modules and Mixins works perfectly together. You can include a mixin in a CSS module.
 
-## Importing SVG from JS(X) and TS(X)
+### CSS Caveats
 
-Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
+There are a few important caveats as far as CSS is concerned. These are [detailed on the esbuild site](https://esbuild.github.io/content-types/#css-caveats).
 
-## Environment Variables
+## Typescript
 
-Import any environment variables into your JS(X) code.
+Typescript and TSX is supported out of the box, and has built-in support for parsing TypeScript syntax and discarding the type annotations. Just rename your files to `.ts` or `.tsx` and you're good to go.
 
-```js
-import RAILS_ENV from '@proscenium/env/RAILS_ENV'
+Please note that Proscenium does not do any type checking so you will still need to run `tsc -noEmit` in parallel with Proscenium to check types.
+
+### Typescript Caveats
+
+There are a few important caveats as far as Typescript is concerned. These are [detailed on the esbuild site](https://esbuild.github.io/content-types/#typescript-caveats).
+
+## JSX
+
+Using JSX syntax usually requires you to manually import the JSX library you are using. For example, if you are using React, by default you will need to import React into each JSX file like this:
+
+```javascript
+import * as React from 'react'
+render(<div/>)
 ```
 
-You can only access environment variables that are explicitly named. It will export `undefined` if the env variable does not exist.
+This is because the JSX transform turns JSX syntax into a call to `React.createElement` but it does not itself import anything, so the React variable is not automatically present.
 
-## Importing i18n
+Proscenium generates these import statements for you. Keep in mind that this also completely changes how the JSX transform works, so it may break your code if you are using a JSX library that is not React.
 
-Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
+In the [not too distant] future, you will be able to configure Proscenium to use a different JSX library, or to disable this auto-import completely.
 
-```js
-import translations from '@proscenium/i18n'
-// translations.en.*
+## JSON
+
+Importing .json files parses the JSON file into a JavaScript object, and exports the object as the default export. Using it looks something like this:
+
+```javascript
+import object from './example.json'
+console.log(object)
+```
+
+In addition to the default export, there are also named exports for each top-level property in the JSON object. Importing a named export directly means Proscenium can automatically remove unused parts of the JSON file from the bundle, leaving only the named exports that you actually used. For example, this code will only include the version field when bundled:
+
+```javascript
+import { version } from './package.json'
+console.log(version)
 ```
 
 ## Phlex Support
@@ -307,6 +403,12 @@ Proscenium brings back RJS! Any path ending in .rjs will be served from your Rai
 ## Serving from Ruby Gem
 
 *docs needed*
+
+## Thanks 🙏
+
+HUGE thanks go to [Evan Wallace](https://github.com/evanw) and his amazing [esbuild](https://esbuild.github.io/) project. Proscenium would not be possible without it, and it is esbuild that makes this so fast and efficient.
+
+Because Proscenium uses esbuild extensively, some of these docs are taken directly from the esbuild docs, with links back to the [esbuild site](https://esbuild.github.io/) where appropriate.
 
 ## Development
 
