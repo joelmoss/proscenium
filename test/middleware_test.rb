@@ -30,6 +30,22 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     assert_includes response.body, 'console.log("app/views/layouts/application.js");'
   end
 
+  test '.ts' do
+    get '/lib/foo.ts'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test '.tsx' do
+    get '/lib/foo.tsx'
+
+    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
   test '.css' do
     get '/app/views/layouts/application.css'
 
@@ -60,10 +76,10 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
     end
   end
 
-  test 'source map' do
+  test 'js source map' do
     get '/lib/foo.js.map'
 
-    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'application/json', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end
@@ -71,7 +87,31 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   test 'jsx source map' do
     get '/lib/component.jsx.map'
 
-    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'ts source map' do
+    get '/lib/foo.ts.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'tsx source map' do
+    get '/lib/foo.tsx.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
+    assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
+    assert_matches_snapshot response.body
+  end
+
+  test 'css source map' do
+    get '/lib/foo.css.map'
+
+    assert_equal 'application/json', response.headers['Content-Type']
     assert_equal 'esbuild', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end

@@ -1,1 +1,1 @@
-import foo from '/lib/foo'
+import foo from "/lib/foo2";

@@ -51,7 +51,7 @@ var _ = Describe("Build", func() {
 
 	It("should resolve extension-less imports", func() {
 		Expect(Build("lib/import_absolute_module_without_extension.js")).To(ContainCode(`
-			console.log("/lib/foo.js")
+			console.log("/lib/foo2.js")
 		`))
 	})
 

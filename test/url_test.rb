@@ -20,7 +20,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
   test 'js sourcemap' do
     get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
 
-    assert_equal 'application/javascript', response.headers['Content-Type']
+    assert_equal 'application/json', response.headers['Content-Type']
     assert_equal 'url', response.headers['X-Proscenium-Middleware']
     assert_matches_snapshot response.body
   end

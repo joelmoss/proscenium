@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../lib/foo.css"],
+  "sourcesContent": [".body {\ncolor: red;\n}\n"],
+  "mappings": ";AAAA;AACA;AAAA;",
+  "names": []
+}

@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'open3'
 require 'oj'
 
 module Proscenium
@@ -71,9 +70,13 @@ module Proscenium
       end
 
       def content_type
-        @content_type ||
-          ::Rack::Mime.mime_type(::File.extname(path_to_build), nil) ||
-          'application/javascript'
+        case ::File.extname(path_to_build)
+        when '.js', '.mjs', '.ts', '.tsx', '.jsx' then 'application/javascript'
+        when '.css' then 'text/css'
+        when '.map' then 'application/json'
+        else
+          ::Rack::Mime.mime_type(::File.extname(path_to_build), nil) || 'application/javascript'
+        end
       end
 
       def render_response(content)

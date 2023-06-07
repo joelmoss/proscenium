@@ -6,7 +6,8 @@ require 'proscenium/log_subscriber'
 ENV['RAILS_ENV'] = Rails.env
 
 module Proscenium
-  FILE_EXTENSIONS = ['js', 'mjs', 'jsx', 'css', 'js.map', 'mjs.map', 'jsx.map', 'css.map'].freeze
+  FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
+                     'ts.map', 'tsx.map', 'css.map'].freeze
 
   MIDDLEWARE_GLOB_TYPES = {
     application: "/**.{#{FILE_EXTENSIONS.join(',')}}",
