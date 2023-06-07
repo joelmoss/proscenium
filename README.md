@@ -1,18 +1,17 @@
-# Proscenium - Modern Client-Side Tooling for Rails
+# Proscenium - Modern client-side development for Rails
 
 Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a
 "fast by default" internet. It bundles your JS, JSX and CSS in real time, on demand, and with zero
 configuration.
 
-- Zero configuration.
 - Fast real-time bundling, tree-shaking and minification.
 - NO JavaScript runtime - just the browser!
 - Deep integration with Rails.
 - No additional process or server - Just run Rails!
+- Zero configuration.
 - Serve assets from anywhere within your Rails root (/app, /config, /lib, etc.).
 - Automatically side load JS/CSS for your layouts and views.
-- Import JS(X), TS(X) and CSS from NPM, URL, and locally.
-- Support for JSX.
+- Import JS(X), TS(X) and CSS from NPM, URLs, and locally.
 - Server-side import map support.
 - CSS Modules.
 - CSS mixins.
@@ -309,9 +308,25 @@ Proscenium brings back RJS! Any path ending in .rjs will be served from your Rai
 
 ## Development
 
-After checking out the repo, run `bin/setup` to install dependencies. Then, run `rake test` to run the tests. You can also run `bin/console` for an interactive prompt that will allow you to experiment.
+Before doing anything else, you will need compile a local version of the Go binary. This is because the Go binary is not checked into the repo. To compile the binary, run:
 
-To install this gem onto your local machine, run `bundle exec rake install`. To release a new version, update the version number in `version.rb`, and then run `bundle exec rake release`, which will create a git tag for the version, push git commits and the created tag, and push the `.gem` file to [rubygems.org](https://rubygems.org).
+```bash
+bundle exec rake compile:local
+```
+
+### Running tests
+
+We have tests for both Ruby and Go. To run the Ruby tests:
+
+```bash
+bundle exec rake test
+```
+
+To run the Go tests:
+
+```bash
+go test ./test
+```
 
 ### Running Go benchmarks
 
