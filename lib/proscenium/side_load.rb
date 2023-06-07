@@ -11,13 +11,19 @@ module Proscenium
     autoload :EnsureLoaded
 
     EXTENSIONS = %i[js css].freeze
-    EXTENSION_MAP = { '.css' => :css, '.js' => :js }.freeze
+    EXTENSION_MAP = {
+      '.css' => :css,
+      # '.tsx' => :js,
+      '.ts' => :js,
+      # '.jsx' => :js,
+      '.js' => :js
+    }.freeze
 
     attr_reader :path
 
     class << self
-      # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is a
-      # Set of 'js' and 'css' asset paths. This is idempotent, so side loading will never include
+      # Side load the given asset `path`, by appending it to `Proscenium::Current.loaded`, which is
+      # a Set of 'js' and 'css' asset paths. This is idempotent, so side loading will never include
       # duplicates.
       #
       # @return [Array] appended URL paths

@@ -7,7 +7,7 @@ module Proscenium
 
       out = []
       Proscenium::Current.loaded[:css].delete_if do |path|
-        out << stylesheet_link_tag(path)
+        out << stylesheet_link_tag(path, extname: false)
       end
       out.join("\n").html_safe
     end
@@ -17,7 +17,7 @@ module Proscenium
 
       out = []
       Proscenium::Current.loaded[:js].delete_if do |path|
-        out << javascript_include_tag(path, options)
+        out << javascript_include_tag(path, extname: false, **options)
       end
       out.join("\n").html_safe
     end

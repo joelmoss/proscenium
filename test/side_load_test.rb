@@ -66,4 +66,10 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_matches_snapshot response.body
   end
+
+  test 'Side load typescript' do
+    get '/typescript'
+
+    assert_matches_snapshot response.body
+  end
 end

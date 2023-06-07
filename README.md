@@ -5,13 +5,15 @@ Proscenium treats your client-side code as first class citizens of your Rails ap
 configuration.
 
 - Fast real-time bundling, tree-shaking and minification.
+- Real time bundling of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
 - NO JavaScript runtime - just the browser!
+- NO build step or pre-compilation.
+- NO additional process or server - Just run Rails!
 - Deep integration with Rails.
-- No additional process or server - Just run Rails!
 - Zero configuration.
 - Serve assets from anywhere within your Rails root (/app, /config, /lib, etc.).
-- Automatically side load JS/CSS for your layouts and views.
-- Import JS(X), TS(X) and CSS from NPM, URLs, and locally.
+- Automatically side load JS/TS/CSS for your layouts and views.
+- Import from NPM, URLs, and locally.
 - Server-side import map support.
 - CSS Modules.
 - CSS mixins.
@@ -130,7 +132,7 @@ env => ({
 
 ## Side Loading
 
-Proscenium has built in support for automatically side loading JS and CSS with your views and
+Proscenium has built in support for automatically side loading JS, TS and CSS with your views and
 layouts.
 
 Just create a JS and/or CSS file with the same name as any view or layout, and make sure your
@@ -151,7 +153,7 @@ this:
 </html>
 ```
 
-On each page request, Proscenium will check if your layout and view has a JS/CSS file of the same
+On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same
 name, and include them into your layout HTML. Partials are not side loaded.
 
 Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
