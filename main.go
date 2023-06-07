@@ -25,7 +25,6 @@ import (
 //   - baseUrl - base URL of the Rails app. eg. https://example.com
 //   - env - The environment (1 = development, 2 = test, 3 = production)
 //   - importMap - Path to the import map relative to `root`.
-//   - bundle
 //   - debug
 //
 //export build
@@ -35,7 +34,6 @@ func build(
 	baseUrl *C.char,
 	env C.uint,
 	importMap *C.char,
-	bundle bool,
 	debug bool,
 ) C.struct_Result {
 	types.Env = types.Environment(env)
