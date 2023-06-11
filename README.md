@@ -20,6 +20,13 @@ configuration.
 - Source maps.
 - Phlex and ViewComponent integration.
 
+## Getting Started
+
+Getting started obviously depends on whether you are adding Proscenium to an existing Rails app, or creating a new Rails app. So please choose the appropriate guide below:
+
+- [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
+- Getting Started with an existing Rails app *[Coming soon]*
+
 ## Installation
 
 Add this line to your Rails application's Gemfile, and you're good to go:
@@ -45,6 +52,16 @@ Using the examples above...
 - `lib/utils.js` => `https://yourapp.com/lib/utils.js`
 - `app/components/menu_component.jsx` => `https://yourapp.com/app/components/menu_component.jsx`
 - `config/properties.css` => `https://yourapp.com/config/properties.css`
+
+### Include Paths
+
+By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
+
+However, you can customise these paths with the `include_path` config option...
+
+```ruby
+Rails.application.config.proscenium.include_paths << 'app/components'
+```
 
 ## Side Loading
 
@@ -384,16 +401,6 @@ The cache is set with a `max-age` of 30 days. You can customise this with the `c
 
 ```ruby
 Rails.application.config.proscenium.cache_max_age = 12.months.to_i
-```
-
-## Include Paths
-
-By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
-
-However, you can customise these paths with the `include_path` config option...
-
-```ruby
-Rails.application.config.proscenium.include_paths << 'app/components'
 ```
 
 ## rjs is back!
