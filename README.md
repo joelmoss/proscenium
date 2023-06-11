@@ -388,7 +388,7 @@ Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 
 ## Include Paths
 
-By default, Proscenium will serve files ending with any of these extension: `js,mjs,css,jsx`, and only from `config`, `app/views`, `lib` and `node_modules` directories.
+By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
 
 However, you can customise these paths with the `include_path` config option...
 

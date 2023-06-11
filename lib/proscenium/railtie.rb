@@ -9,7 +9,7 @@ module Proscenium
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
 
-  APPLICATION_INCLUDE_PATHS = ['config', 'app/views', 'lib', 'node_modules'].freeze
+  APPLICATION_INCLUDE_PATHS = ['config', 'app/assets', 'app/views', 'lib', 'node_modules'].freeze
 
   class << self
     def config
