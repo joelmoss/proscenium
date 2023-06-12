@@ -182,13 +182,42 @@ Importing SVG from JS(X) will bundle the SVG source code. Additionally, if impor
 
 ## Environment Variables
 
-Import any environment variables into your JS(X) code.
+> Available in `>=0.10.0`
+
+You can access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace. Such identifiers will be replaced with constant experessions. For example:
 
 ```js
-import RAILS_ENV from '@proscenium/env/RAILS_ENV'
+console.log(proscenium.env.RAILS_ENV) // console.log("development")
+console.log(proscenium.env.RAILS_ENV === 'development') // console.log(true)
 ```
 
-You can only access environment variables that are explicitly named. It will export `undefined` if the env variable does not exist.
+In addition to this, Proscenium also provides a `process.env.NODE_ENV` variable, which is set to same value as `proscenium.env.RAILS_ENV`.
+
+Environment variables are particularly powerful in aiding [tree shaking](#tree-shaking).
+
+```js
+function start() {
+  console.log("start")
+}
+function doSomethingDangerous() {
+  console.log("resetDatabase")
+}
+
+proscenium.env.RAILS_ENV === "development" && doSomethingDangerous()
+
+start()
+```
+
+In development the above code will be transformed into the following code, discarding the definition, and call to`doSomethingDangerous()`.
+
+```js
+function start() {
+  console.log("start")
+}
+start()
+```
+
+Please note that for security reasons environment variables are not replaced in URL imports.
 
 ## Importing i18n
 

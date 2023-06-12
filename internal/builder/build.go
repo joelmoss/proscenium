@@ -9,6 +9,7 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
@@ -33,11 +34,28 @@ type BuildOptions struct {
 	Metafile bool
 }
 
+func envVars() map[string]string {
+	varStrings := os.Environ()
+	varMap := make(map[string]string, len(varStrings))
+
+	for _, e := range varStrings {
+		pair := strings.SplitN(e, "=", 2)
+		varMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
+
+		if pair[0] == "NODE_ENV" {
+			varMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
+		}
+	}
+
+	return varMap
+}
+
 // Build the given `path` in the `root`.
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
 	os.Setenv("RAILS_ENV", types.Env.String())
+	os.Setenv("NODE_ENV", types.Env.String())
 
 	isSourceMap := strings.HasSuffix(options.Path, ".map")
 
@@ -66,7 +84,6 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	plugins := []esbuild.Plugin{
 		plugin.I18n,
-		plugin.Env,
 		plugin.Rjs(options.BaseUrl),
 		plugin.Bundler,
 	}
@@ -74,7 +91,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	plugins = append(plugins, plugin.Url)
 	plugins = append(plugins, plugin.Css)
 
-	result := esbuild.Build(esbuild.BuildOptions{
+	buildOptions := esbuild.BuildOptions{
 		EntryPoints:       []string{options.Path},
 		AbsWorkingDir:     options.Root,
 		LogLevel:          logLevel,
@@ -87,17 +104,15 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
-		Define:            map[string]string{"process.env.NODE_ENV": fmt.Sprintf("'%s'", types.Env)},
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		// KeepNames:         types.Env != types.ProdEnv,
-		Conditions:    []string{types.Env.String(), "proscenium"},
-		Write:         false,
-		Sourcemap:     sourcemap,
-		LegalComments: esbuild.LegalCommentsNone,
-		Metafile:      options.Metafile,
-		Plugins:       plugins,
-		Target:        esbuild.ES2022,
+		Conditions:        []string{types.Env.String(), "proscenium"},
+		Write:             false,
+		Sourcemap:         sourcemap,
+		LegalComments:     esbuild.LegalCommentsNone,
+		Metafile:          options.Metafile,
+		Plugins:           plugins,
+		Target:            esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
 			"nesting": false,
@@ -110,7 +125,16 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
 		// uses CJS.
 		MainFields: []string{"module", "browser", "main"},
-	})
+	}
+
+	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
+		buildOptions.Define = make(map[string]string, 1)
+		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
+	} else {
+		buildOptions.Define = envVars()
+	}
+
+	result := esbuild.Build(buildOptions)
 
 	if options.Metafile {
 		os.WriteFile(path.Join(options.Root, "meta.json"), []byte(result.Metafile), 0644)

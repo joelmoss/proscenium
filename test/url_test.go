@@ -91,11 +91,25 @@ var _ = Describe("Build(url)", func() {
 	})
 
 	When("importing encoded URL with relative dependency", func() {
-
-		It("should resolve as URL ,encode and not bundle dependency", func() {
+		It("should resolve as URL, encode and not bundle dependency", func() {
 			MockURL("/dependency", `export default "dependency"`)
 			MockURL("/import-url-module.js", `
 				import dep from './dependency';
+				export default () => { return 'Hello World' + dep };
+			`)
+
+			result := Build("lib/import_encoded_url.js")
+
+			Expect(result).To(ContainCode(`return "Hello World" + dependency_default`))
+			Expect(result).To(ContainCode(`= "dependency";`))
+		})
+	})
+
+	When("importing encoded URL with absolute dependency", func() {
+		It("should resolve as URL, encode and not bundle dependency", func() {
+			MockURL("/dependency", `export default "dependency"`)
+			MockURL("/import-url-module.js", `
+				import dep from '/dependency';
 				export default () => { return 'Hello World' + dep };
 			`)
 

@@ -8,16 +8,18 @@ import (
 )
 
 var _ = Describe("Build(env)", func() {
-	It("exports requested env var as default", func() {
-		Expect(Build("lib/env/rails_env.js")).To(ContainCode(`
-			var RAILS_ENV_default = "test";
+	It("replaces with value", func() {
+		Expect(Build("lib/env.js")).To(ContainCode(`
+			console.log("testtest");
 		`))
 	})
 
-	When("env var is not set", func() {
-		It("exports undefined", func() {
-			Expect(Build("lib/env/undefined_env.js")).To(ContainCode(`
-				var UNDEF_default = void 0;
+	When("used in URL import", func() {
+		It("is left as-is", func() {
+			MockURL("/foo.js", `console.log(proscenium.env.RAILS_ENV);`)
+
+			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`
+				console.log(proscenium.env.RAILS_ENV);
 			`))
 		})
 	})
