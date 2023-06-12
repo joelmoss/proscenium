@@ -1,1 +1,1 @@
-<div class="componentManagedByProscenium component" data-component='{"path":"/view_component/second_react/component","props":{}}'><div>loading...</div></div>
+<div data-proscenium-component='{"path":"/app/components/view_component/second_react/component","props":{}}'><div>loading...</div></div>

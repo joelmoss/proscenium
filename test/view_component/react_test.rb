@@ -18,4 +18,25 @@ class ViewComponent::ReactTest < ViewComponent::TestCase
 
     assert_matches_snapshot result.to_html
   end
+
+  test 'data-proscenium-component attribute' do
+    render_inline ViewComponent::SecondReact::Component.new
+    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
+
+    assert_equal(
+      { 'path' => '/app/components/view_component/second_react/component', 'props' => {} },
+      data
+    )
+  end
+
+  test 'should pass through props' do
+    render_inline ViewComponent::SecondReact::Component.new(props: { name: 'Joel' })
+    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
+
+    assert_equal(
+      { 'path' => '/app/components/view_component/second_react/component',
+        'props' => { 'name' => 'Joel' } },
+      data
+    )
+  end
 end
