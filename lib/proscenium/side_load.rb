@@ -12,10 +12,11 @@ module Proscenium
 
     EXTENSIONS = %i[js css].freeze
     EXTENSION_MAP = {
+      '.module.css' => :css,
       '.css' => :css,
-      # '.tsx' => :js,
+      '.tsx' => :js,
       '.ts' => :js,
-      # '.jsx' => :js,
+      '.jsx' => :js,
       '.js' => :js
     }.freeze
 

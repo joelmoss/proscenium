@@ -72,4 +72,16 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
     assert_matches_snapshot response.body
   end
+
+  test 'Side load variant' do
+    get '/variant'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'Side load partial' do
+    get '/sideloadpartial'
+
+    assert_matches_snapshot response.body
+  end
 end
