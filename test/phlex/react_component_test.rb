@@ -27,21 +27,6 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     end
   end
 
-  test 'not side load unused component.module.css' do
-    render Phlex::React::One::Component.new
-
-    assert_equal({ js: Set[], css: Set[] }, Proscenium::Current.loaded)
-    assert_selector '[data-proscenium-component]'
-  end
-
-  test 'side load used component.module.css' do
-    render Phlex::React::Two::Component.new
-
-    assert_equal({ js: Set[], css: Set['/app/components/phlex/react/two/component.module.css'] },
-                 Proscenium::Current.loaded)
-    assert_selector '[data-proscenium-component]'
-  end
-
   test 'redefining template' do
     view = Class.new(Proscenium::Phlex::ReactComponent) do
       def template

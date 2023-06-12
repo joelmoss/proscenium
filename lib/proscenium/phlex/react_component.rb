@@ -10,18 +10,7 @@
 #
 # React components are not side loaded at all.
 #
-class Proscenium::Phlex::ReactComponent < Phlex::HTML
-  class << self
-    attr_accessor :path, :abstract_class
-
-    def inherited(child)
-      position = caller_locations(1, 1).first.label == 'inherited' ? 2 : 1
-      child.path = Pathname.new caller_locations(position, 1).first.path.sub(/\.rb$/, '')
-
-      super
-    end
-  end
-
+class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
 
   include Proscenium::Phlex::ComponentConcerns::CssModules
@@ -64,6 +53,6 @@ class Proscenium::Phlex::ReactComponent < Phlex::HTML
   end
 
   def virtual_path
-    path.to_s.delete_prefix(Rails.root.to_s)
+    path.to_s.delete_prefix(Rails.root.to_s).sub(/\.rb$/, '')
   end
 end

@@ -18,8 +18,8 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
                  }, Proscenium::Current.loaded)
   end
 
-  test '@ prefixed class name' do
-    render_inline ViewComponent::CssModule::Component.new(class_name: '@base')
+  test 'side load css module' do
+    render_inline ViewComponent::CssModule::Component.new
 
     assert_equal({
                    js: Set[],
@@ -27,10 +27,10 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
                  }, Proscenium::Current.loaded)
   end
 
-  test 'without @ prefixed class name' do
-    render_inline ViewComponent::CssModule::Component.new(class_name: 'base')
+  test 'compile css classes' do
+    result = render_inline ViewComponent::CssModule::Component.new
 
-    assert_equal({ js: Set[], css: Set[] }, Proscenium::Current.loaded)
+    assert_equal('<h1 class="base52672a36">Hello</h1>', result.to_html)
   end
 
   test 'css_module! helper raises on stylesheet not found' do
@@ -40,22 +40,14 @@ class ViewComponent::SideLoadTest < ViewComponent::TestCase
   end
 
   test 'css_module helper side load stylesheet' do
-    render_inline ViewComponent::CssModuleHelperTwoComponent.new
+    result = render_inline ViewComponent::CssModuleHelperTwoComponent.new
 
-    assert_equal(
-      { js: Set[],
-        css: Set['/app/components/view_component/css_module_helper_two_component.module.css'] },
-      Proscenium::Current.loaded
-    )
+    assert_equal('<h1 class="headera6157e6a">Hello</h1>', result.to_html)
   end
 
   test 'css_module as attribute value' do
-    render_inline ViewComponent::CssModuleHelperThree::Component.new
+    result = render_inline ViewComponent::CssModuleHelperThree::Component.new
 
-    assert_equal(
-      { js: Set[],
-        css: Set['/app/components/view_component/css_module_helper_three/component.module.css'] },
-      Proscenium::Current.loaded
-    )
+    assert_equal('<h1 class="header45dcbab9">Hello</h1>', result.to_html)
   end
 end
