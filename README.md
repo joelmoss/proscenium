@@ -56,6 +56,9 @@ Getting started obviously depends on whether you are adding Proscenium to an exi
 
 - [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app *[Coming soon]*
+  - Upgrading from Sprockets *[Coming soon]*
+  - Upgrading from Propshaft *[Coming soon]*
+  - Upgrading from Webpacker *[Coming soon]*
 
 ## Installation
 
@@ -95,12 +98,9 @@ Rails.application.config.proscenium.include_paths << 'app/components'
 
 ## Side Loading
 
-Proscenium has built in support for automatically side loading JS, TS and CSS with your views and
-layouts.
+Proscenium has built in support for automatically side loading JS, TS and CSS alongside your views and layouts.
 
-Just create a JS and/or CSS file with the same name as any view or layout, and make sure your
-layouts include `<%= side_load_stylesheets %>` and `<%= side_load_javascripts %>`. Something like
-this:
+Just create a JS and/or CSS file with the same name as any view or layout, and make sure your layouts include the `side_load_stylesheets` and `side_load_javascripts` helpers. Something like this:
 
 ```html
 <!DOCTYPE html>
@@ -116,11 +116,13 @@ this:
 </html>
 ```
 
-On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same
-name, and include them into your layout HTML. Partials are not side loaded.
+On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same name, and include them into your layout HTML.
 
-Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
-to `false`.
+As an example - and assuming you have inserted the `side_load_javascripts` helper into your layout - if you create`app/views/layouts/application.js` and `app/views/users/index.js`, then both will be included in the HTML for the `app/views/users/index.html.erb` view.
+
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load` to `false`.
+
+Note that partials are not side loaded.
 
 ## Importing
 
