@@ -4,21 +4,51 @@ Proscenium treats your client-side code as first class citizens of your Rails ap
 "fast by default" internet. It bundles your JS, JSX and CSS in real time, on demand, and with zero
 configuration.
 
-- Fast real-time bundling, tree-shaking and minification.
-- Real time bundling of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
-- NO JavaScript runtime - just the browser!
+- Fast real-time bundling, tree-shaking and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
+- NO JavaScript runtime needed - just the browser!
 - NO build step or pre-compilation.
 - NO additional process or server - Just run Rails!
 - Deep integration with Rails.
 - Zero configuration.
 - Serve assets from anywhere within your Rails root (/app, /config, /lib, etc.).
 - Automatically side load JS/TS/CSS for your layouts and views.
-- Import from NPM, URLs, and locally.
+- ESM importing from NPM, URLs, and locally.
 - Server-side import map support.
-- CSS Modules.
-- CSS mixins.
+- CSS Modules & mixins.
 - Source maps.
-- Phlex and ViewComponent integration.
+
+## Table of Contents
+
+- [Getting Started](#getting-started)
+- [Installation](#installation)
+- [Client-Side Code Anywhere](#client-side-code-anywhere)
+- [Side Loading](#side-loading)
+- [Importing](#importing)
+  - [URL Imports](#url-imports)
+  - [Local Imports](#local-imports)
+- [Import Map](#import-map)
+- [Source Maps](#source-maps)
+- [SVG](#svg)
+- [Environment Variables](#environment-variables)
+- [i18n](#i18n)
+- [JavaScript](#javascript)
+  - [Tree Shaking](#tree-shaking)
+  - [JavaScript Caveats](#javascript-caveats)
+- [CSS](#css)
+  - [Importing from JavaScript](#importing-from-javascript)
+  - [CSS Modules](#css-modules)
+  - [CSS Mixins](#css-mixins)
+  - [CSS Caveats](#css-caveats)
+- [Typescript](#typescript)
+  - [Typescript Caveats](#typescript-caveats)
+- [JSX](#jsx)
+- [JSON](#json)
+- [Phlex Support](#phlex-support)
+- [ViewComponent Support](#viewcomponent-support)
+- [Cache Busting](#cache-busting)
+- [rjs is back!](#rjs-is-back)
+- [Thanks](#thanks)
+- [Development](#development)
 
 ## Getting Started
 
@@ -134,7 +164,9 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
-## Import Map [WIP]
+## Import Map
+
+> **[WIP]**
 
 [Import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for both JS and CSS is supported out of the box, and works with no regard to the browser being used. This is because the import map is parsed and resolved by Proscenium on the server. If you are not familiar with import maps, think of it as a way to define aliases.
 
@@ -176,9 +208,21 @@ env => ({
 })
 ```
 
-## Importing SVG from JS(X) and TS(X)
+## Source Maps
 
-Importing SVG from JS(X) will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
+Source maps can make it easier to debug your code. They encode the information necessary to translate from a line/column offset in a generated output file back to a line/column offset in the corresponding original input file. This is useful if your generated code is sufficiently different from your original code (e.g. your original code is TypeScript or you enabled minification). This is also useful if you prefer looking at individual files in your browser's developer tools instead of one big bundled file.
+
+Source map output is supported for both JavaScript and CSS. Each file is appended with the link to the source map. For example:
+
+```js
+//# sourceMappingURL=/app/views/layouts/application.js.map
+```
+
+Your browsers dev tools should pick this up and automatically load the source map when and where needed.
+
+## SVG
+
+You can import SVG from JS(X), which will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
 
 ## Environment Variables
 
@@ -219,7 +263,7 @@ start()
 
 Please note that for security reasons environment variables are not replaced in URL imports.
 
-## Importing i18n
+## i18n
 
 Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
 
@@ -406,13 +450,15 @@ console.log(version)
 
 ## Phlex Support
 
-*docs needed*
+> *docs needed*
 
 ## ViewComponent Support
 
-*docs needed*
+> *docs needed*
 
-## Cache Busting [*COMING SOON*]
+## Cache Busting
+
+> *COMING SOON*
 
 By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
 
@@ -440,9 +486,9 @@ Proscenium brings back RJS! Any path ending in .rjs will be served from your Rai
 
 *docs needed*
 
-## Thanks 🙏
+## Thanks
 
-HUGE thanks go to [Evan Wallace](https://github.com/evanw) and his amazing [esbuild](https://esbuild.github.io/) project. Proscenium would not be possible without it, and it is esbuild that makes this so fast and efficient.
+HUGE thanks 🙏 go to [Evan Wallace](https://github.com/evanw) and his amazing [esbuild](https://esbuild.github.io/) project. Proscenium would not be possible without it, and it is esbuild that makes this so fast and efficient.
 
 Because Proscenium uses esbuild extensively, some of these docs are taken directly from the esbuild docs, with links back to the [esbuild site](https://esbuild.github.io/) where appropriate.
 
