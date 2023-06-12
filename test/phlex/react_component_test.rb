@@ -46,17 +46,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
 
     assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component', 'props' => {}, 'lazy' => true },
-      data
-    )
-  end
-
-  test 'should set lazy as false' do
-    render Phlex::BasicReactComponent.new(lazy: false)
-    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
-
-    assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component', 'props' => {}, 'lazy' => false },
+      { 'path' => '/app/components/phlex/basic_react_component', 'props' => {} },
       data
     )
   end
@@ -66,9 +56,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
 
     assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component',
-        'props' => { 'name' => 'Joel' },
-        'lazy' => true },
+      { 'path' => '/app/components/phlex/basic_react_component', 'props' => { 'name' => 'Joel' } },
       data
     )
   end

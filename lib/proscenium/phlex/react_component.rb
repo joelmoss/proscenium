@@ -5,23 +5,16 @@
 #
 # You can pass props to the component in the `:props` keyword argument.
 #
-# By default, the component is lazy loaded when intersecting using IntersectionObserver. Pass in
-# :lazy as false to disable this and render the component immediately.
-#
-# React components are not side loaded at all.
-#
 class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
 
   include Proscenium::Phlex::ComponentConcerns::CssModules
 
-  attr_writer :props, :lazy
+  attr_writer :props
 
   # @param props: [Hash]
-  # @param lazy: [Boolean] Lazy load the component using IntersectionObserver. Default: true.
-  def initialize(props: {}, lazy: true) # rubocop:disable Lint/MissingSuper
+  def initialize(props: {}) # rubocop:disable Lint/MissingSuper
     @props = props
-    @lazy = lazy
   end
 
   # @yield the given block to a `div` within the top level component div. If not given,
@@ -41,15 +34,8 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
     @props ||= {}
   end
 
-  def lazy
-    instance_variable_defined?(:@lazy) ? @lazy : (@lazy = false)
-  end
-
   def component_data
-    {
-      path: virtual_path, lazy: lazy,
-      props: props.deep_transform_keys { |k| k.to_s.camelize :lower }
-    }.to_json
+    { path: virtual_path, props: props.deep_transform_keys { |k| k.to_s.camelize :lower } }.to_json
   end
 
   def virtual_path

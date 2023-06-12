@@ -14,21 +14,19 @@
 class Proscenium::ViewComponent::ReactComponent < Proscenium::ViewComponent
   self.abstract_class = true
 
-  attr_accessor :props, :lazy
+  attr_accessor :props
 
   # @param props: [Hash]
-  # @param lazy: [Boolean] Lazy load the component using IntersectionObserver. Default: true.
   # @param [Block]
-  def initialize(props: {}, lazy: true)
+  def initialize(props: {})
     @props = props
-    @lazy = lazy
 
     super
   end
 
   def call
     tag.div class: ['componentManagedByProscenium', css_module(:component)],
-            data: { component: { path: virtual_path, props: props, lazy: lazy } } do
+            data: { component: { path: virtual_path, props: props } } do
       tag.div content || 'loading...'
     end
   end
