@@ -36,7 +36,7 @@ type BuildOptions struct {
 
 func envVars() map[string]string {
 	varStrings := os.Environ()
-	varMap := make(map[string]string, len(varStrings))
+	varMap := make(map[string]string, len(varStrings)+1)
 
 	for _, e := range varStrings {
 		pair := strings.SplitN(e, "=", 2)
@@ -46,6 +46,8 @@ func envVars() map[string]string {
 			varMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
 		}
 	}
+
+	varMap["proscenium.env"] = "undefined"
 
 	return varMap
 }
@@ -128,8 +130,9 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
-		buildOptions.Define = make(map[string]string, 1)
+		buildOptions.Define = make(map[string]string, 2)
 		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
+		buildOptions.Define["proscenium.env"] = "undefined"
 	} else {
 		buildOptions.Define = envVars()
 	}

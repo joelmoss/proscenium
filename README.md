@@ -237,7 +237,7 @@ console.log(proscenium.env.RAILS_ENV) // console.log("development")
 console.log(proscenium.env.RAILS_ENV === 'development') // console.log(true)
 ```
 
-In addition to this, Proscenium also provides a `process.env.NODE_ENV` variable, which is set to same value as `proscenium.env.RAILS_ENV`.
+In addition to this, Proscenium also provides a `process.env.NODE_ENV` variable, which is set to the same value as `proscenium.env.RAILS_ENV`. It is provided to support the community's existing tooling, which often relies on this variable.
 
 Environment variables are particularly powerful in aiding [tree shaking](#tree-shaking).
 
@@ -264,6 +264,20 @@ start()
 ```
 
 Please note that for security reasons environment variables are not replaced in URL imports.
+
+An undefined environment variable will be replaced with `undefined`.
+
+```js
+console.log(proscenium.env.UNKNOWN) // console.log((void 0).UNKNOWN)
+```
+
+This means that code that relies on this will not be tree shaken. You can work around this by using the [optional chaining operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining):
+
+```js
+if (typeof proscenium.env?.UNKNOWN !== "undefined") {
+  // do something if UNKNOWN is defined
+}
+```
 
 ## i18n
 
