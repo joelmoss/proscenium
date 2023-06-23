@@ -33,6 +33,7 @@ configuration.
 - [i18n](#i18n)
 - [JavaScript](#javascript)
   - [Tree Shaking](#tree-shaking)
+  - [Code Splitting](#code-splitting)
   - [JavaScript Caveats](#javascript-caveats)
 - [CSS](#css)
   - [Importing CSS from JavaScript](#importing-css-from-javascript)
@@ -379,6 +380,8 @@ one();
 ```
 
 ### Code Splitting
+
+> Available in `>=0.10.0`
 
 [Side loaded](#side-loading) assets are automatically code split. This means that if you have a file that is imported and used imported several times, and by different files, it will be split off into a separate file.
 
