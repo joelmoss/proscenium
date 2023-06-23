@@ -3,6 +3,17 @@
 require 'test_helper'
 
 class Proscenium::Esbuild::GolibTest < Minitest::Test
+  def test_build_multiple_files
+    result = Proscenium::Esbuild::Golib.new.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
+
+    assert_includes result, 'assets/lib/code_splitting/son$PBRCBJYT$.js.map;'
+    assert_includes result, 'assets/lib/code_splitting/son$PBRCBJYT$.js;'
+    assert_includes result, 'assets/lib/code_splitting/daughter$MTOCBJXF$.js.map;'
+    assert_includes result, 'assets/lib/code_splitting/daughter$MTOCBJXF$.js;'
+    assert_includes result, 'assets/_chunks/chunk-3NURZD3X.js.map;'
+    assert_includes result, 'assets/_chunks/chunk-3NURZD3X.js'
+  end
+
   def test_build_basic_js
     result = Proscenium::Esbuild::Golib.new.build('lib/foo.js')
 

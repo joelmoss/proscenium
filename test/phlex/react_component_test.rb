@@ -27,21 +27,6 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     end
   end
 
-  test 'not side load unused component.module.css' do
-    render Phlex::React::One::Component.new
-
-    assert_equal({ js: Set[], css: Set[] }, Proscenium::Current.loaded)
-    assert_selector '[data-proscenium-component]'
-  end
-
-  test 'side load used component.module.css' do
-    render Phlex::React::Two::Component.new
-
-    assert_equal({ js: Set[], css: Set['/app/components/phlex/react/two/component.module.css'] },
-                 Proscenium::Current.loaded)
-    assert_selector '[data-proscenium-component]'
-  end
-
   test 'redefining template' do
     view = Class.new(Proscenium::Phlex::ReactComponent) do
       def template
@@ -57,34 +42,18 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
   end
 
   test 'data-proscenium-component attribute' do
+    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component"]'
     render Phlex::BasicReactComponent.new
-    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
 
-    assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component', 'props' => {}, 'lazy' => true },
-      data
-    )
-  end
-
-  test 'should set lazy as false' do
-    render Phlex::BasicReactComponent.new(lazy: false)
-    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
-
-    assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component', 'props' => {}, 'lazy' => false },
-      data
-    )
+    assert_selector selector
+    assert_empty(JSON.parse(page.find(selector)['data-proscenium-component-props']))
   end
 
   test 'should pass through props' do
+    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component"]'
     render Phlex::BasicReactComponent.new(props: { name: 'Joel' })
-    data = JSON.parse(page.find('[data-proscenium-component]')['data-proscenium-component'])
 
-    assert_equal(
-      { 'path' => '/app/components/phlex/basic_react_component',
-        'props' => { 'name' => 'Joel' },
-        'lazy' => true },
-      data
-    )
+    assert_equal({ 'name' => 'Joel' },
+                 JSON.parse(page.find(selector)['data-proscenium-component-props']))
   end
 end

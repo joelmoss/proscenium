@@ -1,69 +1,67 @@
 # frozen_string_literal: true
 
 #
-# Renders a div for use with @proscenium/component-manager.
+# Renders a <div> for use with React components, with data attributes specifying the component path
+# and props.
+#
+# If a block is given, it will be yielded within the div, allowing for a custom "loading" UI. If no
+# block is given, then a "loading..." text will be rendered. It is intended that the component is
+# mounted to this div, and the loading UI will then be replaced with the component's rendered
+# output.
 #
 # You can pass props to the component in the `:props` keyword argument.
 #
-# By default, the component is lazy loaded when intersecting using IntersectionObserver. Pass in
-# :lazy as false to disable this and render the component immediately.
-#
-# React components are not side loaded at all.
-#
-class Proscenium::Phlex::ReactComponent < Phlex::HTML
-  class << self
-    attr_accessor :path, :abstract_class
-
-    def inherited(child)
-      position = caller_locations(1, 1).first.label == 'inherited' ? 2 : 1
-      child.path = Pathname.new caller_locations(position, 1).first.path.sub(/\.rb$/, '')
-
-      super
-    end
-  end
-
+class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
 
   include Proscenium::Phlex::ComponentConcerns::CssModules
 
-  attr_writer :props, :lazy
+  attr_writer :props
+
+  # The HTML tag to use as the wrapping element for the component. You can reassign this in your
+  # component class to use a different tag:
+  #
+  # @example
+  #   class MyComponent < Proscenium::Phlex::ReactComponent
+  #     self.root_tag = :span
+  #   end
+  #
+  # @return [Symbol]
+  class_attribute :root_tag, instance_predicate: false, default: :div
 
   # @param props: [Hash]
-  # @param lazy: [Boolean] Lazy load the component using IntersectionObserver. Default: true.
-  def initialize(props: {}, lazy: true) # rubocop:disable Lint/MissingSuper
+  def initialize(props: {}) # rubocop:disable Lint/MissingSuper
     @props = props
-    @lazy = lazy
   end
 
+  # Override this to provide your own loading UI.
+  #
+  # @example
+  #   def template(**attributes, &block)
+  #     super do
+  #       'Look at me! I am loading now...'
+  #     end
+  #   end
+  #
   # @yield the given block to a `div` within the top level component div. If not given,
   #   `<div>loading...</div>` will be rendered. Use this to display a loading UI while the component
   #   is loading and rendered.
   def template(**attributes, &block)
-    component_root(:div, **attributes, &block)
+    send root_tag, data: {
+      proscenium_component_path: virtual_path,
+      proscenium_component_props: props.deep_transform_keys { |k| k.to_s.camelize :lower }.to_json
+    }, **attributes do
+      block ? yield : 'loading...'
+    end
   end
 
   private
-
-  def component_root(element, **attributes, &block)
-    send element, data: { proscenium_component: component_data }, **attributes, &block
-  end
 
   def props
     @props ||= {}
   end
 
-  def lazy
-    instance_variable_defined?(:@lazy) ? @lazy : (@lazy = false)
-  end
-
-  def component_data
-    {
-      path: virtual_path, lazy: lazy,
-      props: props.deep_transform_keys { |k| k.to_s.camelize :lower }
-    }.to_json
-  end
-
   def virtual_path
-    path.to_s.delete_prefix(Rails.root.to_s)
+    path.to_s.delete_prefix(Rails.root.to_s).sub(/\.rb$/, '')
   end
 end

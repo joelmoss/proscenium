@@ -18,7 +18,6 @@ class Proscenium::SideLoad
           Proscenium::SideLoad.append "app/views/#{renderable.virtual_path}"
         elsif template.respond_to?(:virtual_path) &&
               template.respond_to?(:type) && template.type == :html
-          # Side load regular view template.
           Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
 
           # Try side loading the variant template
@@ -26,7 +25,6 @@ class Proscenium::SideLoad
             Proscenium::SideLoad.append "app/views/#{template.virtual_path}+#{template.variant}"
           end
 
-          # The variant template may not exist (above), so we try the regular non-variant path.
           Proscenium::SideLoad.append "app/views/#{template.virtual_path}"
         end
 
@@ -36,6 +34,16 @@ class Proscenium::SideLoad
 
     module PartialRenderer
       private
+
+      def render_partial_template(view, locals, template, layout, block)
+        if template.respond_to?(:virtual_path) &&
+           template.respond_to?(:type) && template.type == :html
+          Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
+          Proscenium::SideLoad.append "app/views/#{template.virtual_path}"
+        end
+
+        super
+      end
 
       def build_rendered_template(content, template)
         path = Rails.root.join('app', 'views', template.virtual_path)

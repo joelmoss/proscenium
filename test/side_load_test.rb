@@ -27,16 +27,6 @@ class SideLoadTest < ActionDispatch::IntegrationTest
                  }, Proscenium::Current.loaded)
   end
 
-  test '.append with different extensions' do
-    Proscenium::SideLoad.append 'app/views/layouts/application', { '.js' => :js }
-    Proscenium::SideLoad.append 'app/views/layouts/application', { '.css' => :css }
-
-    assert_equal({
-                   js: Set['/app/views/layouts/application.js'],
-                   css: Set['/app/views/layouts/application.css']
-                 }, Proscenium::Current.loaded)
-  end
-
   test '.append with extension argument' do
     Proscenium::SideLoad.append 'app/views/layouts/application', { '.js' => :js }
 
@@ -69,6 +59,18 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
   test 'Side load typescript' do
     get '/typescript'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'Side load variant' do
+    get '/variant'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'Side load partial' do
+    get '/sideloadpartial'
 
     assert_matches_snapshot response.body
   end

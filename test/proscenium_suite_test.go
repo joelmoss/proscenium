@@ -4,6 +4,9 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
+	"os"
+	"path"
+	"runtime"
 	"testing"
 
 	"github.com/h2non/gock"
@@ -15,6 +18,15 @@ func TestProscenium(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Proscenium Test Suite")
 }
+
+var _ = BeforeSuite(func() {
+	_, filename, _, _ := runtime.Caller(0)
+	assetPath := path.Join(path.Dir(filename), "internal", "public", "assets")
+	dir, _ := os.ReadDir(assetPath)
+	for _, d := range dir {
+		os.RemoveAll(path.Join(assetPath, d.Name()))
+	}
+})
 
 var _ = BeforeEach(func() {
 	types.Env = types.TestEnv

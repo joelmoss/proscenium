@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   root to: 'pages#home'
 
   get '/typescript', to: 'pages#typescript'
+  get '/sideloadpartial', to: 'pages#sideloadpartial'
+  get '/variant', to: 'pages#variant'
 
   get 'phlex/react/one', to: 'phlex/react#one'
   get 'phlex/basic', to: 'phlex#basic'
