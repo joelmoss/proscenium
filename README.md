@@ -416,6 +416,13 @@ If these files are side loaded, then `father.js` will be split off into a separa
 
 - Without code splitting, an import() expression becomes `Promise.resolve().then(() => require())` instead. This still preserves the asynchronous semantics of the expression but it means the imported code is included in the same bundle instead of being split off into a separate file.
 
+You can disable code splitting by setting the `code_splitting` configuration option to `false` in your application's `/config/application.rb`:
+
+```ruby
+config.proscenium.code_splitting = false
+```
+
+
 ### JavaScript Caveats
 
 There are a few important caveats as far as JavaScript is concerned. These are [detailed on the esbuild site](https://esbuild.github.io/content-types/#javascript-caveats).

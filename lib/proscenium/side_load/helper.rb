@@ -17,9 +17,9 @@ module Proscenium
 
       out = []
       paths = Proscenium::Current.loaded[:js]
-      public_path = Rails.public_path.to_s
 
-      if paths.size > 1
+      if Rails.application.config.proscenium.code_splitting && paths.size > 1
+        public_path = Rails.public_path.to_s
         paths_to_build = []
         paths.delete_if { |x| paths_to_build << x.delete_prefix('/') }
 
