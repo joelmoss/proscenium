@@ -2,6 +2,7 @@
 
 require_relative '../test_helper'
 
+# rubocop:disable Layout/LineLength
 class ViewComponent::ReactTest < ViewComponent::TestCase
   setup do
     Proscenium.reset_current_side_loaded
@@ -36,3 +37,4 @@ class ViewComponent::ReactTest < ViewComponent::TestCase
                  JSON.parse(page.find(selector)['data-proscenium-component-props']))
   end
 end
+# rubocop:enable Layout/LineLength

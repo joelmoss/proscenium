@@ -2,6 +2,7 @@
 
 require_relative '../test_helper'
 
+# rubocop:disable Layout/LineLength
 class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
   include Phlex::Testing::Rails::ViewHelper
 
@@ -57,3 +58,4 @@ class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
     end
   end
 end
+# rubocop:enable Layout/LineLength

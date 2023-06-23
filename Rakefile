@@ -85,7 +85,9 @@ PLATFORMS.each do |ruby_platform, go_platform|
 
     if go_platform.include?('darwin')
       goos, goarch = go_platform.split('/')
+      # rubocop:disable Metrics/LineLength
       sh %(GOOS=#{goos} GOARCH=#{goarch} CGO_ENABLED=1 go build -buildmode=c-shared -v -o #{ext_dir}/proscenium main.go)
+      # rubocop:enable Metrics/LineLength
     else
       sh %(xgo -buildmode=c-shared -dest="#{ext_dir}" -targets="#{go_platform}" .)
 

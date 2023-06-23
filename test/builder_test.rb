@@ -3,7 +3,7 @@
 require 'test_helper'
 
 class Proscenium::BuilderTest < Minitest::Test
-  def test_build_multiple_files
+  def test_build_multiple_files # rubocop:disable Minitest/MultipleAssertions
     result = Proscenium::Builder.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
 
     assert_includes result, 'assets/lib/code_splitting/son$PBRCBJYT$.js.map;'

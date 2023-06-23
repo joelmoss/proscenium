@@ -7,9 +7,17 @@ require:
 AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
+  Exclude:
+    - "test/internal/**/*"
 
 Layout/LineLength:
   Max: 100
+  Exclude:
+    - "test/**/*"
+Metrics/BlockLength:
+  Exclude:
+    - Rakefile
+    - proscenium.gemspec
 Metrics/MethodLength:
   Max: 20
 Metrics/AbcSize:
@@ -18,6 +26,9 @@ Metrics/CyclomaticComplexity:
   Max: 10
 Metrics/PerceivedComplexity:
   Max: 10
+Metrics/ClassLength:
+  Exclude:
+    - "test/**/*"
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:

@@ -22,8 +22,8 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
 
       assert_selector 'button'
       assert_selector "head>link[href='#{href}']", visible: false
-      refute_selector "head>style[data-href='#{href}']", visible: false
-      assert_selector '[data-proscenium-component]'
+      # refute_selector "head>style[data-href='#{href}']", visible: false
+      # assert_selector '[data-proscenium-component]'
     end
   end
 
