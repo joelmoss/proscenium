@@ -21,10 +21,10 @@ module Proscenium
 
       def attempt
         ActiveSupport::Notifications.instrument('build.proscenium', identifier: path_to_build) do
-          render_response Proscenium::Esbuild.build(path_to_build, root: root,
+          render_response Proscenium::Builder.build(path_to_build, root: root,
                                                                    base_url: @request.base_url)
         end
-      rescue Proscenium::Esbuild::CompileError => e
+      rescue Proscenium::Builder::CompileError => e
         raise self.class::CompileError, { file: @request.fullpath, detail: e.message }, caller
       end
     end

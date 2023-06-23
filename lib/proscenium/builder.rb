@@ -4,7 +4,9 @@ require 'ffi'
 require 'oj'
 
 module Proscenium
-  class Esbuild::Golib
+  class Builder
+    class CompileError < StandardError; end
+
     class Result < FFI::Struct
       layout :success, :bool,
              :response, :string
@@ -12,7 +14,7 @@ module Proscenium
 
     module Request
       extend FFI::Library
-      ffi_lib Pathname.new(__dir__).join('../ext/proscenium').to_s
+      ffi_lib Pathname.new(__dir__).join('ext/proscenium').to_s
 
       enum :environment, [:development, 1, :test, :production]
 
@@ -51,17 +53,17 @@ module Proscenium
       end
     end
 
+    def self.build(path, root: nil, base_url: nil)
+      new(root: root, base_url: base_url).build(path)
+    end
+
+    def self.resolve(path, root: nil)
+      new(root: root).resolve(path)
+    end
+
     def initialize(root: nil, base_url: nil)
       @root = root || Rails.root
       @base_url = base_url
-    end
-
-    def self.resolve(path)
-      new.resolve(path)
-    end
-
-    def self.build(path)
-      new.build(path)
     end
 
     def build(path)
@@ -80,6 +82,11 @@ module Proscenium
     end
 
     private
+
+    def cache_query_string
+      q = Proscenium.config.cache_query_string
+      q ? "--cache-query-string #{q}" : nil
+    end
 
     def import_map
       return unless (path = Rails.root&.join('config'))

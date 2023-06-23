@@ -71,7 +71,7 @@ class MiddlewareTest < ActionDispatch::IntegrationTest
   end
 
   test 'esbuild js compilation error' do
-    assert_raises Proscenium::Esbuild::Golib::BuildError do
+    assert_raises Proscenium::Builder::BuildError do
       get '/lib/includes_error.js'
     end
   end

@@ -21,7 +21,7 @@ class ResolvePathTest < ActiveSupport::TestCase
   end
 
   test 'unknown path' do
-    assert_raises Proscenium::Esbuild::Golib::ResolveError do
+    assert_raises Proscenium::Builder::ResolveError do
       Proscenium::Utils.resolve_path('unknown')
     end
   end

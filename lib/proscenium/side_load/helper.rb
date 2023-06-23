@@ -23,7 +23,7 @@ module Proscenium
         paths_to_build = []
         paths.delete_if { |x| paths_to_build << x.delete_prefix('/') }
 
-        result = Proscenium::Esbuild.build(paths_to_build.join(';'), root: Rails.root,
+        result = Proscenium::Builder.build(paths_to_build.join(';'), root: Rails.root,
                                                                      base_url: request.base_url)
         result.split(';').each do |x|
           next if x.include?('public/assets/_chunks/') || x.end_with?('.map')

@@ -52,7 +52,7 @@ class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
   end
 
   test 'should raise when path is given but stylesheet does not exist' do
-    assert_raises Proscenium::Esbuild::Golib::ResolveError do
+    assert_raises Proscenium::Builder::ResolveError do
       render Phlex::SideLoadCssModuleFromAttributesView.new('/unknown@my_class')
     end
   end

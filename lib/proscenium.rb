@@ -12,7 +12,7 @@ module Proscenium
   autoload :ViewComponent
   autoload :Phlex
   autoload :Helper
-  autoload :Esbuild
+  autoload :Builder
 
   def self.reset_current_side_loaded
     Current.reset
@@ -59,7 +59,7 @@ module Proscenium
         relpath = path.delete_prefix(sroot)
 
         if (package_name = matched_gem[1][:package_name] || matched_gem[0])
-          return Esbuild::Golib.resolve("#{package_name}/#{relpath}")
+          return Builder.resolve("#{package_name}/#{relpath}")
         end
 
         # TODO: manually resolve the path without esbuild
@@ -68,7 +68,7 @@ module Proscenium
 
       return path.delete_prefix(Rails.root.to_s) if path.starts_with?("#{Rails.root}/")
 
-      Esbuild::Golib.resolve(path)
+      Builder.resolve(path)
     end
 
     # Resolves CSS class `names` to CSS module names. Each name will be converted to a CSS module
