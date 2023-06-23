@@ -20,7 +20,8 @@ import (
 
 // Build the given `path` in the `root`.
 //
-//   - path - The path to build relative to `root`.
+//   - path - The path to build relative to `root`. Multiple paths can be given by separating them
+//     with a semi-colon.
 //   - root - The working directory.
 //   - baseUrl - base URL of the Rails app. eg. https://example.com
 //   - env - The environment (1 = development, 2 = test, 3 = production)
@@ -55,6 +56,15 @@ func build(
 		}
 
 		return C.struct_Result{C.int(0), C.CString(string(j))}
+	}
+
+	if strings.Contains(pathStr, ";") {
+		contents := []string{}
+		for _, v := range result.OutputFiles {
+			contents = append(contents, v.Path)
+		}
+
+		return C.struct_Result{C.int(1), C.CString(strings.Join(contents, ";"))}
 	}
 
 	contents := string(result.OutputFiles[0].Contents)

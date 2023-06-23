@@ -15,7 +15,8 @@ import (
 )
 
 type BuildOptions struct {
-	// The path to build relative to `root`.
+	// The path to build relative to `root`. Multiple paths can be given by separating them with a
+	// semi-colon.
 	Path string
 
 	// The working directory. Usually the Rails root.
@@ -34,24 +35,6 @@ type BuildOptions struct {
 	Metafile bool
 }
 
-func envVars() map[string]string {
-	varStrings := os.Environ()
-	varMap := make(map[string]string, len(varStrings)+1)
-
-	for _, e := range varStrings {
-		pair := strings.SplitN(e, "=", 2)
-		varMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
-
-		if pair[0] == "NODE_ENV" {
-			varMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
-		}
-	}
-
-	varMap["proscenium.env"] = "undefined"
-
-	return varMap
-}
-
 // Build the given `path` in the `root`.
 //
 //export build
@@ -59,7 +42,8 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	os.Setenv("RAILS_ENV", types.Env.String())
 	os.Setenv("NODE_ENV", types.Env.String())
 
-	isSourceMap := strings.HasSuffix(options.Path, ".map")
+	entrypoints := strings.Split(options.Path, ";")
+	hasMultipleEntrypoints := len(entrypoints) > 1
 
 	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
 	if err != nil {
@@ -79,27 +63,23 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if isSourceMap {
+	if hasMultipleEntrypoints {
+		sourcemap = esbuild.SourceMapLinked
+	} else if strings.HasSuffix(options.Path, ".map") {
 		options.Path = strings.TrimSuffix(options.Path, ".map")
+		entrypoints = []string{options.Path}
 		sourcemap = esbuild.SourceMapExternal
 	}
 
-	plugins := []esbuild.Plugin{
-		plugin.I18n,
-		plugin.Rjs(options.BaseUrl),
-		plugin.Bundler,
-	}
-	plugins = append(plugins, plugin.Svg)
-	plugins = append(plugins, plugin.Url)
-	plugins = append(plugins, plugin.Css)
-
 	buildOptions := esbuild.BuildOptions{
-		EntryPoints:       []string{options.Path},
+		EntryPoints:       entrypoints,
+		Splitting:         hasMultipleEntrypoints,
 		AbsWorkingDir:     options.Root,
 		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
+		ChunkNames:        "_chunks/[name]-[hash]",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
 		JSXDev:            types.Env != types.TestEnv && types.Env != types.ProdEnv,
@@ -109,11 +89,10 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		Conditions:        []string{types.Env.String(), "proscenium"},
-		Write:             false,
+		Write:             hasMultipleEntrypoints,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Metafile:          options.Metafile,
-		Plugins:           plugins,
 		Target:            esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
@@ -129,7 +108,20 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		MainFields: []string{"module", "browser", "main"},
 	}
 
-	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
+	plugins := []esbuild.Plugin{
+		plugin.I18n,
+		plugin.Rjs(options.BaseUrl),
+		plugin.Bundler,
+	}
+	plugins = append(plugins, plugin.Svg)
+	plugins = append(plugins, plugin.Url)
+	plugins = append(plugins, plugin.Css)
+	buildOptions.Plugins = plugins
+
+	if hasMultipleEntrypoints {
+		buildOptions.EntryNames = "[dir]/[name]$[hash]$"
+		buildOptions.Define = envVars()
+	} else if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
 		buildOptions.Define = make(map[string]string, 2)
 		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
 		buildOptions.Define["proscenium.env"] = "undefined"
@@ -144,4 +136,22 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	return result
+}
+
+func envVars() map[string]string {
+	varStrings := os.Environ()
+	varMap := make(map[string]string, len(varStrings)+1)
+
+	for _, e := range varStrings {
+		pair := strings.SplitN(e, "=", 2)
+		varMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
+
+		if pair[0] == "NODE_ENV" {
+			varMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
+		}
+	}
+
+	varMap["proscenium.env"] = "undefined"
+
+	return varMap
 }

@@ -21,6 +21,7 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   # The HTML tag to use as the wrapping element for the component. You can reassign this in your
   # component class to use a different tag:
   #
+  # @example
   #   class MyComponent < Proscenium::Phlex::ReactComponent
   #     self.root_tag = :span
   #   end
@@ -35,8 +36,7 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
 
   # Override this to provide your own loading UI.
   #
-  # Example:
-  #
+  # @example
   #   def template(**attributes, &block)
   #     super do
   #       'Look at me! I am loading now...'

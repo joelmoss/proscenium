@@ -23,10 +23,10 @@ configuration.
 - [Installation](#installation)
 - [Client-Side Code Anywhere](#client-side-code-anywhere)
 - [Side Loading](#side-loading)
-- [Importing](#importing)
+- [Importing](#importing-assets)
   - [URL Imports](#url-imports)
   - [Local Imports](#local-imports)
-- [Import Map](#import-map)
+- [Import Maps](#import-maps)
 - [Source Maps](#source-maps)
 - [SVG](#svg)
 - [Environment Variables](#environment-variables)
@@ -35,7 +35,7 @@ configuration.
   - [Tree Shaking](#tree-shaking)
   - [JavaScript Caveats](#javascript-caveats)
 - [CSS](#css)
-  - [Importing from JavaScript](#importing-from-javascript)
+  - [Importing CSS from JavaScript](#importing-css-from-javascript)
   - [CSS Modules](#css-modules)
   - [CSS Mixins](#css-mixins)
   - [CSS Caveats](#css-caveats)
@@ -47,6 +47,7 @@ configuration.
 - [ViewComponent Support](#viewcomponent-support)
 - [Cache Busting](#cache-busting)
 - [rjs is back!](#rjs-is-back)
+- [Included Paths](#included-paths)
 - [Thanks](#thanks)
 - [Development](#development)
 
@@ -86,23 +87,83 @@ Using the examples above...
 - `app/components/menu_component.jsx` => `https://yourapp.com/app/components/menu_component.jsx`
 - `config/properties.css` => `https://yourapp.com/config/properties.css`
 
-### Include Paths
-
-By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
-
-However, you can customise these paths with the `include_path` config option...
-
-```ruby
-Rails.application.config.proscenium.include_paths << 'app/components'
-```
-
 ## Side Loading
 
-Proscenium has built in support for automatically side loading JS, TS and CSS alongside your views and layouts.
+> Prior to **0.10.0**, only assets with the extension `.js`, `.ts` and `.css` were side loaded. From 0.10.0, all assets are side loaded, including `.jsx`, and `.tsx`. Also partials were not side loaded prior to 0.10.0.
 
-Just create a JS and/or CSS file with the same name as any view or layout, and make sure your layouts include the `side_load_stylesheets` and `side_load_javascripts` helpers. Something like this:
+Proscenium is best experienced when you side load your assets.
 
-```html
+### The Problem
+
+With Rails you would typically declaratively load your JavaScript and CSS assets using the `javascript_include_tag` and `stylesheet_link_tag` helpers.
+
+For example, you may have top-level "application" CSS located in a file at `/app/assets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/assets/application.js`.
+
+You would include those two files in your application layout, something like this:
+
+```erb
+<%# /app/views/layouts/application.html.erb %>
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Hello World</title>
+    <%= stylesheet_link_tag 'application' %> <!-- << Your app CSS -->
+  </head>
+  <body>
+    <%= yield %>
+    <%= javascript_include_tag 'application' %> <!-- << Your app JS -->
+  </body>
+</html>
+```
+
+Now, you may have some CSS and JavaScript that is only required by a specific view and partial, so you would load that in your view, something like this:
+
+```erb
+<%# /app/views/users/index.html.erb %>
+
+<%= stylesheet_link_tag 'users' %>
+<%= javascript_include_tag 'users' %>
+
+<%# needed by the `users/_user.html.erb` partial %>
+<%= javascript_include_tag '_user' %>
+
+<% render @users %>
+```
+
+The main problem is that you have to keep track of all these assets, and make sure each is loaded by all the views that require them, but also avoid loading them when not needed. This can be a real pain, especially when you have a lot of views.
+
+### The Solution
+
+When side loading your JavaScript, Typescript and CSS with Proscenium, they are automatically included alongside your views, partials, layouts, and components, and only when needed.
+
+Side loading works by looking for a JS/TS/CSS file with the same name as your view, partial, layout or component. For example, if you have a view at `app/views/users/index.html.erb`, then Proscenium will look for a JS/TS/CSS file at `app/views/users/index.js`, `app/views/users/index.ts` or `app/views/users/index.css`. If it finds one, it will include it in the HTML for that view.
+
+JSX is also supported for JavaScript and Typescript. Simply use the `.jsx` or `.tsx` extension instead of `.js` or `.ts`.
+
+### Usage
+
+Simply create a JS and/or CSS file with the same name as any view, partial or layout.
+
+Let's continue with our problem example above, where we have the following assets
+
+- `/app/assets/application.css`
+- `/app/assets/application.js`
+- `/app/assets/users.css`
+- `/app/assets/users.js`
+- `/app/assets/user.js`
+
+Your application layout is at `/app/views/layouts/application.hml.erb`, and the view that needs the users assets is at `/app/views/users/index.html.erb`, so move your assets JS and CSS alongside them:
+
+- `/app/views/layouts/application.css`
+- `/app/views/layouts/application.js`
+- `/app/views/users/index.css`
+- `/app/views/users/index.js`
+- `/app/views/users/_user.js` (partial)
+
+Now, in your layout and view, replace the `javascript_include_tag` and `stylesheet_link_tag` helpers with the `side_load_stylesheets` and `side_load_javascripts` helpers from Proscenium. Something like this:
+
+```erb
 <!DOCTYPE html>
 <html>
   <head>
@@ -116,17 +177,17 @@ Just create a JS and/or CSS file with the same name as any view or layout, and m
 </html>
 ```
 
-On each page request, Proscenium will check if your layout and view has a JS/TS/CSS file of the same name, and include them into your layout HTML.
+> NOTE that Proscenium is desiged to work with modern JavaAscript, and assumes [ESModules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) are used everywhere. This is why the `type` attribute is set to `module` in the example above. If you are not using ESModules, then you can omit the `type` attribute.
 
-As an example - and assuming you have inserted the `side_load_javascripts` helper into your layout - if you create`app/views/layouts/application.js` and `app/views/users/index.js`, then both will be included in the HTML for the `app/views/users/index.html.erb` view.
+On each page request, Proscenium will check if your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `side_load_stylesheets` and `side_load_javascripts` helpers.
 
-Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load` to `false`.
+Now you never have to remember to include your assets again. Just create them alongside your views, partials and layouts, and Proscenium will take care of the rest.
 
-Note that partials are not side loaded.
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load` to `false` in your `/config/application.rb`.
 
-## Importing
+## Importing Assets
 
-Proscenium supports importing JS, JSX, TS and CSS from NPM, by URL, your local app, and even from Ruby Gems.
+Proscenium supports importing JS, JSX, TS, TSX, CSS and SVG from NPM, by URL, your local app, and even from Ruby Gems.
 
 Imported files are bundled together in real time. So no build step or pre-compilation is needed.
 
@@ -166,11 +227,13 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
-## Import Map
+## Import Maps
 
 > **[WIP]**
 
-[Import map](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for both JS and CSS is supported out of the box, and works with no regard to the browser being used. This is because the import map is parsed and resolved by Proscenium on the server. If you are not familiar with import maps, think of it as a way to define aliases.
+[Import maps](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for both JS and CSS is supported out of the box, and works with no regard to the browser being used. This is because the import map is parsed and resolved by Proscenium on the server, instead of by the browser. This is faster, and also allows you to use import maps in browsers that do not support them yet.
+
+If you are not familiar with import maps, think of them as a way to define aliases.
 
 Just create `config/import_map.json` and specify the imports you want to use. For example:
 
@@ -200,7 +263,7 @@ and for CSS...
 @import '@radix-ui/colors/blue.css';
 ```
 
-You can also write your import map in Javascript instead of JSON. So instead of `config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This function accepts a single `environment` argument.
+You can also write your import map in JavaScript instead of JSON. So instead of `config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This function accepts a single `environment` argument.
 
 ```js
 env => ({
@@ -315,6 +378,41 @@ function one() {
 one();
 ```
 
+### Code Splitting
+
+[Side loaded](#side-loading) assets are automatically code split. This means that if you have a file that is imported and used imported several times, and by different files, it will be split off into a separate file.
+
+As an example:
+
+```js
+// /lib/son.js
+import father from "./father";
+
+father() + " and Son";
+```
+
+```js
+// /lib/daughter.js
+import father from "./father";
+
+father() + " and Daughter";
+```
+
+```js
+// /lib/father.js
+export default () => "Father";
+```
+
+Both `son.js` and `daughter.js` import `father.js`, so both son and daughter would usually include a copy of father, resulting in duplicated code and larger bundle sizes.
+
+If these files are side loaded, then `father.js` will be split off into a separate file or chunk, and only downloaded once.
+
+- Code shared between multiple entry points is split off into a separate shared file that both entry points import. That way if the user first browses to one page and then to another page, they don't have to download all of the JavaScript for the second page from scratch if the shared part has already been downloaded and cached by their browser.
+
+- Code referenced through an asynchronous `import()` expression will be split off into a separate file and only loaded when that expression is evaluated. This allows you to improve the initial download time of your app by only downloading the code you need at startup, and then lazily downloading additional code if needed later.
+
+- Without code splitting, an import() expression becomes `Promise.resolve().then(() => require())` instead. This still preserves the asynchronous semantics of the expression but it means the imported code is included in the same bundle instead of being split off into a separate file.
+
 ### JavaScript Caveats
 
 There are a few important caveats as far as JavaScript is concerned. These are [detailed on the esbuild site](https://esbuild.github.io/content-types/#javascript-caveats).
@@ -327,7 +425,7 @@ Note that by default, Proscenium's output will take advantage of all modern CSS 
 
 The new CSS nesting syntax is supported, and transformed into non-nested CSS for older browsers.
 
-### Importing from JavaScript
+### Importing CSS from JavaScript
 
 You can also import CSS from JavaScript. When you do this, Proscenium will automatically append each stylesheet to the document's head as a `<link>` element.
 
@@ -501,6 +599,16 @@ Proscenium brings back RJS! Any path ending in .rjs will be served from your Rai
 ## Serving from Ruby Gem
 
 *docs needed*
+
+## Included Paths
+
+By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
+
+However, you can customise these paths with the `include_path` config option...
+
+```ruby
+Rails.application.config.proscenium.include_paths << 'app/components'
+```
 
 ## Thanks
 

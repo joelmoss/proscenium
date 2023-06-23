@@ -17,7 +17,7 @@ module Proscenium
       enum :environment, [:development, 1, :test, :production]
 
       attach_function :build, [
-        :string,      # path or entry point
+        :string,      # path or entry point. multiple can be given by separating with a semi-colon
         :string,      # root
         :string,      # base URL of the Rails app. eg. https://example.com
         :environment, # Rails environment as a Symbol
