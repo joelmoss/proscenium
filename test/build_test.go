@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	. "joelmoss/proscenium/test/support"
+	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -144,3 +145,15 @@ var _ = Describe("Build", func() {
 		})
 	})
 })
+
+func BenchmarkBuild(b *testing.B) {
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		result := Build("lib/foo.js")
+
+		if len(result.Errors) > 0 {
+			panic("Build failed: " + result.Errors[0].Text)
+		}
+	}
+}

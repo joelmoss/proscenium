@@ -126,6 +126,8 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
 		buildOptions.Define["proscenium.env"] = "undefined"
 	} else {
+		// TODO: Passing all env vars to Define is slow. We should only pass the ones that are needed by
+		// requiring that they are declared first - perhaps as part of configuration.
 		buildOptions.Define = envVars()
 	}
 
@@ -138,20 +140,25 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	return result
 }
 
-func envVars() map[string]string {
-	varStrings := os.Environ()
-	varMap := make(map[string]string, len(varStrings)+1)
+// Maintains a cache of environment variables.
+var envVarMap = make(map[string]string, 2)
 
+func envVars() map[string]string {
+	if len(envVarMap) > 0 {
+		return envVarMap
+	}
+
+	varStrings := os.Environ()
 	for _, e := range varStrings {
 		pair := strings.SplitN(e, "=", 2)
-		varMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
+		envVarMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
 
 		if pair[0] == "NODE_ENV" {
-			varMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
+			envVarMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
 		}
 	}
 
-	varMap["proscenium.env"] = "undefined"
+	envVarMap["proscenium.env"] = "undefined"
 
-	return varMap
+	return envVarMap
 }
