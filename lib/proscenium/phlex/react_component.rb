@@ -43,16 +43,12 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   #     end
   #   end
   #
-  # @yield the given block to a `div` within the top level component div. If not given,
-  #   `<div>loading...</div>` will be rendered. Use this to display a loading UI while the component
-  #   is loading and rendered.
+  # @yield the given block to a `div` within the top level component div.
   def template(**attributes, &block)
     send root_tag, data: {
       proscenium_component_path: virtual_path,
       proscenium_component_props: props.deep_transform_keys { |k| k.to_s.camelize :lower }.to_json
-    }, **attributes do
-      block ? yield : 'loading...'
-    end
+    }, **attributes, &block
   end
 
   def virtual_path
