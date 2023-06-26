@@ -151,6 +151,11 @@ func envVars() map[string]string {
 	varStrings := os.Environ()
 	for _, e := range varStrings {
 		pair := strings.SplitN(e, "=", 2)
+
+		if len(pair) == 1 {
+			continue
+		}
+
 		envVarMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
 
 		if pair[0] == "NODE_ENV" {
