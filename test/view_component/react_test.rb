@@ -21,7 +21,7 @@ class ViewComponent::ReactTest < ViewComponent::TestCase
   end
 
   test 'data-proscenium-component attribute' do
-    selector = '[data-proscenium-component-path="/app/components/view_component/second_react/component"]'
+    selector = '[data-proscenium-component-path="/app/components/view_component/second_react/component.jsx"]'
     render_inline ViewComponent::SecondReact::Component.new
 
     assert_selector selector
@@ -29,7 +29,7 @@ class ViewComponent::ReactTest < ViewComponent::TestCase
   end
 
   test 'should pass through props' do
-    selector = '[data-proscenium-component-path="/app/components/view_component/second_react/component"]'
+    selector = '[data-proscenium-component-path="/app/components/view_component/second_react/component.jsx"]'
     render_inline ViewComponent::SecondReact::Component.new(props: { name: 'Joel' })
 
     assert_selector selector

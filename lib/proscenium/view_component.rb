@@ -10,10 +10,17 @@ class Proscenium::ViewComponent < ViewComponent::Base
   autoload :ReactComponent
 
   # Side loads the class, and its super classes that respond to `.path`. Assign the `abstract_class`
-  # class variable to any abstract class, and it will not be side loaded.
+  # class variable to any abstract class, and it will not be side loaded. Additionally, if the class
+  # responds to `side_load`, then that method is called.
   module Sideload
     def before_render
       klass = self.class
+
+      if !klass.abstract_class && respond_to?(:side_load, true)
+        side_load
+        klass = klass.superclass
+      end
+
       while !klass.abstract_class && klass.respond_to?(:path) && klass.path
         Proscenium::SideLoad.append klass.path
         klass = klass.superclass

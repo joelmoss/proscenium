@@ -33,10 +33,14 @@ class Proscenium::ViewComponent::ReactComponent < Proscenium::ViewComponent
 
   def call
     tag.send root_tag, data: {
-      proscenium_component_path: path.to_s.delete_prefix(Rails.root.to_s).sub(/\.rb$/, ''),
+      proscenium_component_path: virtual_path,
       proscenium_component_props: props.deep_transform_keys { |k| k.to_s.camelize :lower }.to_json
     } do
       tag.div content || 'loading...'
     end
+  end
+
+  def virtual_path
+    Proscenium::Utils.resolve_path path.sub_ext('.jsx').to_s
   end
 end

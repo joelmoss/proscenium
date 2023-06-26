@@ -55,13 +55,13 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
     end
   end
 
+  def virtual_path
+    Proscenium::Utils.resolve_path path.sub_ext('.jsx').to_s
+  end
+
   private
 
   def props
     @props ||= {}
-  end
-
-  def virtual_path
-    path.to_s.delete_prefix(Rails.root.to_s).sub(/\.rb$/, '')
   end
 end

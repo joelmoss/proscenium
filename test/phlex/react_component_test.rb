@@ -42,7 +42,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
   end
 
   test 'data-proscenium-component attribute' do
-    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component"]'
+    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component.jsx"]'
     render Phlex::BasicReactComponent.new
 
     assert_selector selector
@@ -50,7 +50,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
   end
 
   test 'should pass through props' do
-    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component"]'
+    selector = '[data-proscenium-component-path="/app/components/phlex/basic_react_component.jsx"]'
     render Phlex::BasicReactComponent.new(props: { name: 'Joel' })
 
     assert_equal({ 'name' => 'Joel' },
