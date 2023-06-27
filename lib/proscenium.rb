@@ -9,6 +9,7 @@ module Proscenium
   autoload :Middleware
   autoload :SideLoad
   autoload :CssModule
+  autoload :Componentable
   autoload :ViewComponent
   autoload :Phlex
   autoload :Helper

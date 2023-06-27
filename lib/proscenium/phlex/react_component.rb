@@ -14,25 +14,8 @@
 class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
 
+  include Proscenium::Componentable
   include Proscenium::Phlex::ComponentConcerns::CssModules
-
-  attr_writer :props
-
-  # The HTML tag to use as the wrapping element for the component. You can reassign this in your
-  # component class to use a different tag:
-  #
-  # @example
-  #   class MyComponent < Proscenium::Phlex::ReactComponent
-  #     self.root_tag = :span
-  #   end
-  #
-  # @return [Symbol]
-  class_attribute :root_tag, instance_predicate: false, default: :div
-
-  # @param props: [Hash]
-  def initialize(props: {}) # rubocop:disable Lint/MissingSuper
-    @props = props
-  end
 
   # Override this to provide your own loading UI.
   #
@@ -45,19 +28,6 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   #
   # @yield the given block to a `div` within the top level component div.
   def template(**attributes, &block)
-    send root_tag, data: {
-      proscenium_component_path: virtual_path,
-      proscenium_component_props: props.deep_transform_keys { |k| k.to_s.camelize :lower }.to_json
-    }, **attributes, &block
-  end
-
-  def virtual_path
-    Proscenium::Utils.resolve_path path.sub_ext('.jsx').to_s
-  end
-
-  private
-
-  def props
-    @props ||= {}
+    send root_tag, **{ data: data_attributes }.deep_merge(attributes), &block
   end
 end
