@@ -11,6 +11,7 @@ import (
 
 type BuildOpts struct {
 	ImportMap string
+	EnvVars   string
 	Debug     bool
 }
 
@@ -30,6 +31,10 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 		Root:    path.Join(path.Dir(filename), "internal"),
 		BaseUrl: "https://proscenium.test",
 		Debug:   restOpts.Debug,
+	}
+
+	if restOpts.EnvVars == "" {
+		options.EnvVars = "{\"RAILS_ENV\":\"test\"}"
 	}
 
 	if restOpts.ImportMap != "" {

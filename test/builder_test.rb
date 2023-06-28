@@ -3,6 +3,10 @@
 require 'test_helper'
 
 class Proscenium::BuilderTest < Minitest::Test
+  def setup
+    Proscenium.config.env_vars = Set.new
+  end
+
   def test_build_multiple_files # rubocop:disable Minitest/MultipleAssertions
     result = Proscenium::Builder.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
 
@@ -38,6 +42,20 @@ class Proscenium::BuilderTest < Minitest::Test
     result = Proscenium::Builder.build('lib/foo.css.map')
 
     assert_includes result, '"sourcesContent": [".body {\\ncolor: red;\\n}\\n"'
+  end
+
+  def test_env_vars
+    result = Proscenium::Builder.build('lib/env/env.js')
+
+    assert_includes result, 'console.log("testtest")'
+  end
+
+  def test_extra_env_vars
+    Proscenium.config.env_vars << 'USER_NAME'
+    ENV['USER_NAME'] = 'joelmoss'
+    result = Proscenium::Builder.build('lib/env/extra.js')
+
+    assert_includes result, 'console.log("joelmoss")'
   end
 
   def test_resolve

@@ -11,6 +11,9 @@ module Proscenium
 
   APPLICATION_INCLUDE_PATHS = ['config', 'app/assets', 'app/views', 'lib', 'node_modules'].freeze
 
+  # Environment variables that should always be passed to the builder.
+  DEFAULT_ENV_VARS = Set['RAILS_ENV', 'NODE_ENV'].freeze
+
   class << self
     def config
       @config ||= Railtie.config.proscenium
@@ -26,6 +29,11 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
+
+    # List of environment variable names that should be passed to the builder, which will then be
+    # passed to esbuild's `Define` option. Being explicit about which environment variables are
+    # defined means a faster build, as esbuild will have less to do.
+    config.proscenium.env_vars = Set.new
 
     # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
     #

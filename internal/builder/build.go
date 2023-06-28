@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path"
@@ -28,6 +29,9 @@ type BuildOptions struct {
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
 
+	// Environment variables as a JSON string.
+	EnvVars string
+
 	// Import map contents.
 	ImportMap []byte
 
@@ -39,9 +43,6 @@ type BuildOptions struct {
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
-	os.Setenv("RAILS_ENV", types.Env.String())
-	os.Setenv("NODE_ENV", types.Env.String())
-
 	entrypoints := strings.Split(options.Path, ";")
 	hasMultipleEntrypoints := len(entrypoints) > 1
 
@@ -119,16 +120,34 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	buildOptions.Plugins = plugins
 
 	if hasMultipleEntrypoints {
+		definitions, err := buildEnvVars(options.EnvVars)
+		if err != nil {
+			return esbuild.BuildResult{
+				Errors: []esbuild.Message{{
+					Text:   "Failed to parse environment variables",
+					Detail: err.Error(),
+				}},
+			}
+		}
+
+		buildOptions.Define = definitions
 		buildOptions.EntryNames = "[dir]/[name]$[hash]$"
-		buildOptions.Define = envVars()
 	} else if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
 		buildOptions.Define = make(map[string]string, 2)
 		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
 		buildOptions.Define["proscenium.env"] = "undefined"
 	} else {
-		// TODO: Passing all env vars to Define is slow. We should only pass the ones that are needed by
-		// requiring that they are declared first - perhaps as part of configuration.
-		buildOptions.Define = envVars()
+		definitions, err := buildEnvVars(options.EnvVars)
+		if err != nil {
+			return esbuild.BuildResult{
+				Errors: []esbuild.Message{{
+					Text:   "Failed to parse environment variables",
+					Detail: err.Error(),
+				}},
+			}
+		}
+
+		buildOptions.Define = definitions
 	}
 
 	result := esbuild.Build(buildOptions)
@@ -141,29 +160,37 @@ func Build(options BuildOptions) esbuild.BuildResult {
 }
 
 // Maintains a cache of environment variables.
-var envVarMap = make(map[string]string, 2)
+var envVarMap = make(map[string]string, 4)
 
-func envVars() map[string]string {
-	if len(envVarMap) > 0 {
-		return envVarMap
+// TODO: Passing all env vars to Define is slow. We should only pass the ones that are needed by
+// requiring that they are declared first - perhaps as part of configuration.
+func buildEnvVars(envVarsS string) (map[string]string, error) {
+	if types.Env != types.TestEnv && len(envVarMap) > 0 {
+		return envVarMap, nil
 	}
 
-	varStrings := os.Environ()
-	for _, e := range varStrings {
-		pair := strings.SplitN(e, "=", 2)
-
-		if len(pair) == 1 {
-			continue
+	if envVarsS != "" {
+		var varsJson map[string]string
+		err := json.Unmarshal([]byte(envVarsS), &varsJson)
+		if err != nil {
+			return nil, err
 		}
 
-		envVarMap["proscenium.env."+pair[0]] = fmt.Sprintf("'%s'", pair[1])
-
-		if pair[0] == "NODE_ENV" {
-			envVarMap["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", pair[1])
+		for key, value := range varsJson {
+			if key != "" || value != "" {
+				envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
+			}
 		}
+	} else {
+		// This ensures that we always have NODE_ENV and RAILS_ENV defined even the given env vars do
+		// not define them.
+		env := fmt.Sprintf("'%s'", types.Env)
+		envVarMap["proscenium.env.RAILS_ENV"] = env
+		envVarMap["proscenium.env.NODE_ENV"] = env
 	}
 
+	envVarMap["process.env.NODE_ENV"] = envVarMap["proscenium.env.RAILS_ENV"]
 	envVarMap["proscenium.env"] = "undefined"
 
-	return envVarMap
+	return envVarMap, nil
 }

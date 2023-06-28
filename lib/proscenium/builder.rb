@@ -24,6 +24,7 @@ module Proscenium
         :string,      # base URL of the Rails app. eg. https://example.com
         :environment, # Rails environment as a Symbol
         :string,      # path to import map, relative to root
+        :string,      # ENV variables as a JSON string
         :bool         # debugging enabled?
       ], Result.by_value
 
@@ -68,7 +69,7 @@ module Proscenium
 
     def build(path)
       result = Request.build(path, @root.to_s, @base_url, Rails.env.to_sym, import_map,
-                             Rails.env.development?)
+                             env_vars.to_json, Rails.env.development?)
       raise BuildError.new(path, result[:response]) unless result[:success]
 
       result[:response]
@@ -83,6 +84,13 @@ module Proscenium
 
     private
 
+    # Build the ENV variables as determined by `Proscenium.config.env_vars` and
+    # `Proscenium::DEFAULT_ENV_VARS` to pass to esbuild.
+    def env_vars
+      ENV['NODE_ENV'] = ENV.fetch('RAILS_ENV', nil)
+      ENV.slice(*Proscenium.config.env_vars + Proscenium::DEFAULT_ENV_VARS)
+    end
+
     def cache_query_string
       q = Proscenium.config.cache_query_string
       q ? "--cache-query-string #{q}" : nil
@@ -94,6 +102,7 @@ module Proscenium
       if (json = path.join('import_map.json')).exist?
         return json.relative_path_from(@root).to_s
       end
+
       if (js = path.join('import_map.js')).exist?
         return js.relative_path_from(@root).to_s
       end

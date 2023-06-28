@@ -7,7 +7,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"net/url"
-	"os"
 	"path"
 	"reflect"
 	"strings"
@@ -39,8 +38,6 @@ type Options struct {
 // Returns an absolute URL path. That is, one that has a leading slash and can be appended to the
 // app domain.
 func Resolve(options Options) (string, error) {
-	os.Setenv("RAILS_ENV", types.Env.String())
-
 	// Parse the import map - if any.
 	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
 	if err != nil {

@@ -294,12 +294,25 @@ You can import SVG from JS(X), which will bundle the SVG source code. Additional
 
 > Available in `>=0.10.0`
 
-You can access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace. Such identifiers will be replaced with constant experessions. For example:
+You can defined and access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace.
+
+For performance and security reasons you must declare the environment variable names that you wish to expose in your `config/application.rb` file.
+
+```ruby
+config.proscenium.env_vars = Set['API_KEY', 'SOME_SECRET_VARIABLE']
+config.proscenium.env_vars << 'ANOTHER_API_KEY'
+```
+
+This assumes that the environment variable of the same name has already been defined. If not, you will need to define it yourself either in your code using Ruby's `ENV` object, or in your shell.
+
+These declared environment variables will be replaced with constant expressions, allowing you to use this like this:
 
 ```js
 console.log(proscenium.env.RAILS_ENV) // console.log("development")
 console.log(proscenium.env.RAILS_ENV === 'development') // console.log(true)
 ```
+
+The `RAILS_ENV` and `NODE_ENV` environment variables will always automatically be declared for you.
 
 In addition to this, Proscenium also provides a `process.env.NODE_ENV` variable, which is set to the same value as `proscenium.env.RAILS_ENV`. It is provided to support the community's existing tooling, which often relies on this variable.
 
