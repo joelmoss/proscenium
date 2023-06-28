@@ -12,7 +12,7 @@
   <h1>Side Layout</h1>
   <h2>Side Partial</h2>
 </section>
-    <script src="/assets/app/views/layouts/application$LSDQMAIH$.js" defer="defer" type="module"></script>
+    <script src="/assets/app/views/layouts/application$6WIERJRH$.js" defer="defer" type="module"></script>
 <script src="/assets/app/views/pages/_side$V4GARDXT$.js" defer="defer" type="module"></script>
   </body>
 </html>
