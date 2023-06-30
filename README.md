@@ -294,7 +294,7 @@ You can import SVG from JS(X), which will bundle the SVG source code. Additional
 
 > Available in `>=0.10.0`
 
-You can defined and access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace.
+You can define and access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace.
 
 For performance and security reasons you must declare the environment variable names that you wish to expose in your `config/application.rb` file.
 
@@ -394,7 +394,15 @@ one();
 
 ### Code Splitting
 
-> Available in `>=0.10.0`
+> Available in `>=0.10.0`.
+
+> #### *Experimental!* 🧪
+>
+> Code splitting is currently experimentally and limited to side loaded code. It is disabled by default. You can enable code splitting by setting the `code_splitting` configuration option to `true` in your application's `/config/application.rb`:
+>
+> ```ruby
+> config.proscenium.code_splitting = true
+> ```
 
 [Side loaded](#side-loading) assets are automatically code split. This means that if you have a file that is imported and used imported several times, and by different files, it will be split off into a separate file.
 
@@ -428,13 +436,6 @@ If these files are side loaded, then `father.js` will be split off into a separa
 - Code referenced through an asynchronous `import()` expression will be split off into a separate file and only loaded when that expression is evaluated. This allows you to improve the initial download time of your app by only downloading the code you need at startup, and then lazily downloading additional code if needed later.
 
 - Without code splitting, an import() expression becomes `Promise.resolve().then(() => require())` instead. This still preserves the asynchronous semantics of the expression but it means the imported code is included in the same bundle instead of being split off into a separate file.
-
-You can disable code splitting by setting the `code_splitting` configuration option to `false` in your application's `/config/application.rb`:
-
-```ruby
-config.proscenium.code_splitting = false
-```
-
 
 ### JavaScript Caveats
 

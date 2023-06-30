@@ -7,7 +7,7 @@
   <body>
     <h1>Pages#typescript</h1>
 
-    <script src="/assets/app/views/layouts/application$6WIERJRH$.js" defer="defer" type="module"></script>
-<script src="/assets/app/views/pages/typescript$5ZVOFWQO$.js" defer="defer" type="module"></script>
+    <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
+<script src="/app/views/pages/typescript.ts" defer="defer" type="module"></script>
   </body>
 </html>

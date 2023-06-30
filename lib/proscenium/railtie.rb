@@ -25,7 +25,7 @@ module Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.side_load = true
-    config.proscenium.code_splitting = true
+    config.proscenium.code_splitting = false
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
