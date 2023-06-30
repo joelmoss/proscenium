@@ -56,7 +56,7 @@ module Proscenium::Phlex::Page
     super do
       yield if block_given?
 
-      side_load_javascripts defer: true, type: :module
+      side_load_javascripts type: :module
     end
   end
 end
