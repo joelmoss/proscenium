@@ -57,10 +57,10 @@ configuration.
 Getting started obviously depends on whether you are adding Proscenium to an existing Rails app, or creating a new Rails app. So please choose the appropriate guide below:
 
 - [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
-- Getting Started with an existing Rails app *[Coming soon]*
-  - Upgrading from Sprockets *[Coming soon]*
-  - Upgrading from Propshaft *[Coming soon]*
-  - Upgrading from Webpacker *[Coming soon]*
+- Getting Started with an existing Rails app
+  - [Migrate from Sprockets](docs/guides/migrate_from_sprockets.md)
+  - Migrate from Propshaft *[Coming soon]*
+  - Migrate from Webpacker *[Coming soon]*
 
 ## Installation
 

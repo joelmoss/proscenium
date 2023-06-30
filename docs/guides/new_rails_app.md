@@ -30,7 +30,7 @@ We need some code to play with, so lets create a new model, controller and view 
 rails g scaffold article title
 ```
 
-And finally start the Raisl server:
+And finally start the Rails server:
 
 ```bash
 rails server
