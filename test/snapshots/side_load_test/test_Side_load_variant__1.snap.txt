@@ -8,6 +8,6 @@
   </head>
   <body>
     hello from mobile variant 
-    <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
+    <script src="/app/views/layouts/application.js" type="module"></script>
   </body>
 </html>

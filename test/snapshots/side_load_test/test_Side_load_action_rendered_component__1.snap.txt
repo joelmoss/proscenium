@@ -7,7 +7,7 @@
   </head>
   <body>
     <div data-proscenium-component-path="/app/components/basic_react_component.jsx" data-proscenium-component-props="{}"><div>loading...</div></div>
-    <script src="/app/views/layouts/application.js" defer="defer" type="module"></script>
-<script src="/app/components/basic_react_component.jsx" defer="defer" type="module"></script>
+    <script src="/app/views/layouts/application.js" type="module"></script>
+<script src="/app/components/basic_react_component.jsx" type="module"></script>
   </body>
 </html>
