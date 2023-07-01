@@ -178,7 +178,7 @@ Now, in your layout and view, replace the `javascript_include_tag` and `styleshe
 </html>
 ```
 
-> NOTE that Proscenium is desiged to work with modern JavaAscript, and assumes [ESModules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) are used everywhere. This is why the `type` attribute is set to `module` in the example above. If you are not using ESModules, then you can omit the `type` attribute.
+> NOTE that Proscenium is designed to work with modern JavaScript, and assumes [ESModules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) are used everywhere. This is why the `type` attribute is set to `module` in the example above. If you are not using ESModules, then you can omit the `type` attribute.
 
 On each page request, Proscenium will check if your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `side_load_stylesheets` and `side_load_javascripts` helpers.
 
