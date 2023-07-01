@@ -24,7 +24,7 @@ type BeParsedToMatcher struct {
 }
 
 var cwd, _ = os.Getwd()
-var root string = path.Join(cwd, "internal")
+var root string = path.Join(cwd, "dummy")
 
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))

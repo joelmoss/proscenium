@@ -19,7 +19,7 @@ var _ = Describe("Build(import_map)", func() {
 
 	When("import map is JS", func() {
 		var cwd, _ = os.Getwd()
-		var root string = path.Join(cwd, "internal")
+		var root string = path.Join(cwd, "dummy")
 
 		It("should parse", func() {
 			result := builder.Build(builder.BuildOptions{

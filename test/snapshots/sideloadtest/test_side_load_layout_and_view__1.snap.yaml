@@ -1,0 +1,15 @@
+--- |
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>Proscenium Test App</title>
+      <link rel="stylesheet" href="/app/views/layouts/application.css" />
+  <link rel="stylesheet" href="/app/views/pages/home.css" />
+    </head>
+    <body>
+      <h1>Home#index</h1>
+
+      <script src="/app/views/layouts/application.js" type="module"></script>
+  <script src="/app/views/pages/home.js" type="module"></script>
+    </body>
+  </html>

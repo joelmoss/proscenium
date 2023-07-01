@@ -3,21 +3,8 @@
 ENV['RAILS_ENV'] = 'test'
 ENV['PROSCENIUM_TEST'] = 'test'
 
-$LOAD_PATH.unshift File.expand_path('../lib', __dir__)
-
-require 'proscenium'
-require 'maxitest/autorun'
-require 'minitest/heat'
-require 'combustion'
-require 'view_component/test_helpers'
-require 'view_component/test_case'
-
-Combustion.path = 'test/internal'
-Combustion.initialize! :action_controller, :action_view do
-  config.consider_all_requests_local = false
-  config.autoload_paths << "#{root}/app"
-  config.proscenium.include_paths << 'app/components'
-end
+require_relative '../test/dummy/config/environment'
+require 'rails/test_help'
 
 class ActiveSupport::TestCase
   def before_setup

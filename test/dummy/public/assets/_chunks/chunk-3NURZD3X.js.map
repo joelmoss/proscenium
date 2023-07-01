@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../lib/code_splitting/father.js"],
+  "sourcesContent": ["export default () => \"Father\";\n"],
+  "mappings": ";AAAA,IAAO,iBAAQ,MAAM;",
+  "names": []
+}

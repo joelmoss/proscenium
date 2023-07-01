@@ -1,0 +1,8 @@
+--- |
+  {
+    "version": 3,
+    "sources": ["../../../lib/foo.js"],
+    "sourcesContent": ["console.log('/lib/foo.js')\n"],
+    "mappings": ";AAAA,QAAQ,IAAI,aAAa;",
+    "names": []
+  }

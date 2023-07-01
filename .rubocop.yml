@@ -8,7 +8,7 @@ AllCops:
   TargetRubyVersion: 2.7
   NewCops: enable
   Exclude:
-    - "test/internal/**/*"
+    - "test/dummy/**/*"
 
 Layout/LineLength:
   Max: 100

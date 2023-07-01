@@ -11,7 +11,7 @@ import (
 
 var _ = Describe("Resolve", func() {
 	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "internal")
+	var root string = path.Join(cwd, "dummy")
 
 	resolve := func(path string, importMap ...string) (string, error) {
 		options := resolver.Options{

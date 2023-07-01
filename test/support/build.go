@@ -28,7 +28,7 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 
 	options := builder.BuildOptions{
 		Path:    pathToBuild,
-		Root:    path.Join(path.Dir(filename), "internal"),
+		Root:    path.Join(path.Dir(filename), "dummy"),
 		BaseUrl: "https://proscenium.test",
 		Debug:   restOpts.Debug,
 	}

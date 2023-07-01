@@ -1,0 +1,5 @@
+--- "<!DOCTYPE html>\n<html>\n  <head>\n    <title>Proscenium Test App</title>\n    <link
+  rel=\"stylesheet\" href=\"/app/views/layouts/application.css\" />\n<link rel=\"stylesheet\"
+  href=\"/app/views/pages/variant+mobile.css\" />\n<link rel=\"stylesheet\" href=\"/app/views/pages/variant.css\"
+  />\n  </head>\n  <body>\n    hello from mobile variant \n    <script src=\"/app/views/layouts/application.js\"
+  type=\"module\"></script>\n  </body>\n</html>\n"

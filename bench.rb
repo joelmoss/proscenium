@@ -8,7 +8,7 @@ require 'benchmark/ips'
 
 puts RUBY_DESCRIPTION
 
-root = Pathname.new(__dir__).join('test', 'internal')
+root = Pathname.new(__dir__).join('test', 'dummy')
 path = 'lib/foo.js'
 
 Benchmark.ips do |x|

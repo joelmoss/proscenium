@@ -2,12 +2,12 @@
 
 require 'test_helper'
 
-class Proscenium::BuilderTest < Minitest::Test
-  def setup
+class Proscenium::BuilderTest < ActiveSupport::TestCase
+  setup do
     Proscenium.config.env_vars = Set.new
   end
 
-  def test_build_multiple_files # rubocop:disable Minitest/MultipleAssertions
+  test 'build multiple files' do # rubocop:disable Minitest/MultipleAssertions
     result = Proscenium::Builder.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
 
     assert_includes result, 'assets/lib/code_splitting/son$PBRCBJYT$.js.map;'
@@ -18,39 +18,39 @@ class Proscenium::BuilderTest < Minitest::Test
     assert_includes result, 'assets/_chunks/chunk-3NURZD3X.js'
   end
 
-  def test_build_basic_js
+  test 'build basic js' do
     result = Proscenium::Builder.build('lib/foo.js')
 
     assert_includes result, 'console.log("/lib/foo.js");'
     assert_includes result, '//# sourceMappingURL=foo.js.map'
   end
 
-  def test_build_basic_css
+  test 'build basic css' do
     result = Proscenium::Builder.build('lib/foo.css')
 
     assert_includes result, ".body {\n  color: red;\n}"
     assert_includes result, '/*# sourceMappingURL=foo.css.map */'
   end
 
-  def test_build_source_map_js
+  test 'build source map js' do
     result = Proscenium::Builder.build('lib/foo.js.map')
 
     assert_includes result, "\"sourcesContent\": [\"console.log('/lib/foo.js')\\n\""
   end
 
-  def test_build_source_map_css
+  test 'build source map css' do
     result = Proscenium::Builder.build('lib/foo.css.map')
 
     assert_includes result, '"sourcesContent": [".body {\\ncolor: red;\\n}\\n"'
   end
 
-  def test_env_vars
+  test 'env vars' do
     result = Proscenium::Builder.build('lib/env/env.js')
 
     assert_includes result, 'console.log("testtest")'
   end
 
-  def test_extra_env_vars
+  test 'extra env vars' do
     Proscenium.config.env_vars << 'USER_NAME'
     ENV['USER_NAME'] = 'joelmoss'
     result = Proscenium::Builder.build('lib/env/extra.js')
@@ -58,13 +58,13 @@ class Proscenium::BuilderTest < Minitest::Test
     assert_includes result, 'console.log("joelmoss")'
   end
 
-  def test_resolve
+  test 'resolve' do
     result = Proscenium::Builder.resolve('is-ip')
 
     assert_equal '/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js', result
   end
 
-  def test_build_unknown_path
+  test 'build unknown path' do
     error = assert_raises Proscenium::Builder::BuildError do
       Proscenium::Builder.new.build('unknown.js')
     end

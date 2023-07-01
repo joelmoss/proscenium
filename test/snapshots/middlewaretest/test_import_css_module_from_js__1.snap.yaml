@@ -1,0 +1,27 @@
+--- |-
+  // lib/styles.module.css
+  var existingStyle = document.querySelector("#_330940eb");
+  var existingLink = document.querySelector('link[href="/lib/styles.module.css"]');
+  if (!existingStyle && !existingLink) {
+    const e = document.createElement("style");
+    e.id = "_330940eb";
+    e.dataset.href = "/lib/styles.module.css";
+    e.appendChild(document.createTextNode(`/* lib/styles.module.css */
+  .myClass330940eb {
+    color: pink;
+  }`));
+    document.head.insertBefore(e, document.querySelector("style"));
+  }
+  var styles_module_default = new Proxy({}, {
+    get(target, prop, receiver) {
+      if (prop in target || typeof prop === "symbol") {
+        return Reflect.get(target, prop, receiver);
+      } else {
+        return prop + "330940eb";
+      }
+    }
+  });
+
+  // lib/import_css_module.js
+  console.log(styles_module_default);
+  //# sourceMappingURL=import_css_module.js.map
