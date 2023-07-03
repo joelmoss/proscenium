@@ -12,7 +12,7 @@ module Proscenium
 
     def build(event)
       path = event.payload[:identifier]
-      path = path.start_with?(/https?%3A%2F%2F/) ? CGI.unescape(path) : path
+      path = CGI.unescape(path) if path.start_with?(/https?%3A%2F%2F/)
 
       info do
         message = +"[Proscenium] Building #{path}"

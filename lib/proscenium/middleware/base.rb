@@ -51,7 +51,7 @@ module Proscenium
       end
 
       def file_readable?
-        return unless (path = clean_path(sourcemap? ? real_path[0...-4] : real_path))
+        return false unless (path = clean_path(sourcemap? ? real_path[0...-4] : real_path))
 
         file_stat = File.stat(Pathname(root).join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError

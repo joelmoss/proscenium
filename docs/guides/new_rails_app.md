@@ -60,7 +60,7 @@ Your new Rails app already has a `app/views/layouts/application.html.erb` file, 
   <body>
     <%= yield %>
 
-    <%= side_load_javascripts, type: 'module' %>
+    <%= side_load_javascripts, type: 'module', defer: true %>
   </body>
 </html>
 ```

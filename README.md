@@ -173,7 +173,7 @@ Now, in your layout and view, replace the `javascript_include_tag` and `styleshe
   </head>
   <body>
     <%= yield %>
-    <%= side_load_javascripts type: 'module' %>
+    <%= side_load_javascripts type: 'module', defer: true %>
   </body>
 </html>
 ```
