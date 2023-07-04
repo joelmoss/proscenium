@@ -13,6 +13,12 @@ func (e Environment) String() string {
 	return [...]string{"development", "test", "production"}[e-1]
 }
 
+var Config struct {
+	Debug         bool
+	CodeSplitting bool
+	Environment   Environment
+}
+
 type ImportMapScopes map[string]string
 
 type ImportMap struct {
@@ -20,8 +26,6 @@ type ImportMap struct {
 	Scopes   map[string]ImportMapScopes
 	IsParsed bool
 }
-
-var Env Environment
 
 type PluginData = struct {
 	IsResolvingPath                bool

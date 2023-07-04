@@ -149,7 +149,7 @@ type CssBuildOptions struct {
 //
 //export build
 func cssBuild(options CssBuildOptions) esbuild.BuildResult {
-	minify := !options.Debug && types.Env == types.ProdEnv
+	minify := !options.Debug && types.Config.Environment == types.ProdEnv
 
 	logLevel := esbuild.LogLevelSilent
 	if options.Debug {
@@ -168,7 +168,7 @@ func cssBuild(options CssBuildOptions) esbuild.BuildResult {
 		MinifySyntax:      minify,
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		Conditions:        []string{types.Env.String(), "proscenium"},
+		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             false,
 		Sourcemap:         esbuild.SourceMapNone,
 		LegalComments:     esbuild.LegalCommentsNone,

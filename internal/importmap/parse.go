@@ -78,7 +78,7 @@ func parseContents(contents []byte, contentType ContentType) error {
 		}
 	} else if contentType == JavascriptType {
 		vm := goja.New()
-		v, runErr := vm.RunString("(" + string(contents) + ")('" + types.Env.String() + "')")
+		v, runErr := vm.RunString("(" + string(contents) + ")('" + types.Config.Environment.String() + "')")
 		if runErr != nil {
 			return runErr
 		}

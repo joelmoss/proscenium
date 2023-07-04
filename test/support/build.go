@@ -12,14 +12,13 @@ import (
 type BuildOpts struct {
 	ImportMap string
 	EnvVars   string
-	Debug     bool
 }
 
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	_, filename, _, _ := runtime.Caller(1)
 
 	// Ensure test environment.
-	types.Env = types.Environment(2)
+	types.Config.Environment = types.Environment(2)
 
 	restOpts := BuildOpts{}
 	if len(rest) > 0 {
@@ -30,7 +29,6 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 		Path:    pathToBuild,
 		Root:    path.Join(path.Dir(filename), "dummy"),
 		BaseUrl: "https://proscenium.test",
-		Debug:   restOpts.Debug,
 	}
 
 	if restOpts.EnvVars == "" {

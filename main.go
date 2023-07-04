@@ -24,22 +24,26 @@ import (
 //     with a semi-colon.
 //   - root - The working directory.
 //   - baseUrl - base URL of the Rails app. eg. https://example.com
-//   - env - The environment (1 = development, 2 = test, 3 = production)
 //   - importMap - Path to the import map relative to `root`.
 //   - envVars - JSON string of environment variables.
-//   - debug
+//   - env - The environment (1 = development, 2 = test, 3 = production)
+//   - codeSpitting?
+//   - debug?
 //
 //export build
 func build(
 	filepath *C.char,
 	root *C.char,
 	baseUrl *C.char,
-	env C.uint,
 	importMap *C.char,
 	envVars *C.char,
+	env C.uint,
+	codeSplitting bool,
 	debug bool,
 ) C.struct_Result {
-	types.Env = types.Environment(env)
+	types.Config.Environment = types.Environment(env)
+	types.Config.CodeSplitting = codeSplitting
+	types.Config.Debug = debug
 
 	pathStr := C.GoString(filepath)
 
@@ -49,7 +53,6 @@ func build(
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		EnvVars:       C.GoString(envVars),
-		Debug:         debug,
 	})
 
 	if len(result.Errors) != 0 {
@@ -99,8 +102,8 @@ func build(
 //   - importMap - Path to the import map relative to `root`.
 //
 //export resolve
-func resolve(path *C.char, root *C.char, env C.uint, importMap *C.char) C.struct_Result {
-	types.Env = types.Environment(env)
+func resolve(path *C.char, root *C.char, importMap *C.char, env C.uint) C.struct_Result {
+	types.Config.Environment = types.Environment(env)
 
 	resolvedPath, err := resolver.Resolve(resolver.Options{
 		Path:          C.GoString(path),

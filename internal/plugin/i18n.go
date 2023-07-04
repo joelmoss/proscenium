@@ -32,7 +32,7 @@ var I18n = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// Fetch map of all locale files in config/locales. This is cached in production, which
 				// means that any other environment will pick up new or deleted files without a restart.
-				if types.Env != types.ProdEnv || localeFiles == nil {
+				if types.Config.Environment != types.ProdEnv || localeFiles == nil {
 					matches, err := filepath.Glob(root + "/*.yml")
 					if err != nil {
 						return esbuild.OnLoadResult{}, err
@@ -44,7 +44,7 @@ var I18n = esbuild.Plugin{
 				// Fetch contents of the locale files. This is cached in production, which means that any
 				// other environment will pick up changes in the locale file contents without a restart.
 				// TODO: Use goroutines?
-				if types.Env != types.ProdEnv || jsonContents == nil {
+				if types.Config.Environment != types.ProdEnv || jsonContents == nil {
 					var contents = map[string]interface{}{}
 
 					for _, path := range *localeFiles {

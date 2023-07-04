@@ -13,7 +13,7 @@
     <h1>Side Layout</h1>
     <h2>Side Partial</h2>
   </section>
-      <script src="/app/views/layouts/application.js" type="module"></script>
-  <script src="/app/views/pages/_side.js" type="module"></script>
+      <script src="/app/views/layouts/application.js" type="module" defer="defer"></script>
+  <script src="/app/views/pages/_side.js" type="module" defer="defer"></script>
     </body>
   </html>

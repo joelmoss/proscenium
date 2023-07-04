@@ -35,11 +35,10 @@ type BuildOptions struct {
 	// Import map contents.
 	ImportMap []byte
 
-	Debug    bool
 	Metafile bool
 }
 
-// Build the given `path` in the `root`.
+// Build the given `options.Path` in the `options.Root`.
 //
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
@@ -56,10 +55,10 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	minify := !options.Debug && types.Env == types.ProdEnv
+	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
 
 	logLevel := esbuild.LogLevelSilent
-	if options.Debug {
+	if types.Config.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
 
@@ -83,13 +82,13 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		ChunkNames:        "_chunks/[name]-[hash]",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
-		JSXDev:            types.Env != types.TestEnv && types.Env != types.ProdEnv,
+		JSXDev:            types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		Conditions:        []string{types.Env.String(), "proscenium"},
+		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             hasMultipleEntrypoints,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
@@ -134,7 +133,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		buildOptions.EntryNames = "[dir]/[name]$[hash]$"
 	} else if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
 		buildOptions.Define = make(map[string]string, 2)
-		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Env.String())
+		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Config.Environment.String())
 		buildOptions.Define["proscenium.env"] = "undefined"
 	} else {
 		definitions, err := buildEnvVars(options.EnvVars)
@@ -165,7 +164,7 @@ var envVarMap = make(map[string]string, 4)
 // TODO: Passing all env vars to Define is slow. We should only pass the ones that are needed by
 // requiring that they are declared first - perhaps as part of configuration.
 func buildEnvVars(envVarsS string) (map[string]string, error) {
-	if types.Env != types.TestEnv && len(envVarMap) > 0 {
+	if types.Config.Environment != types.TestEnv && len(envVarMap) > 0 {
 		return envVarMap, nil
 	}
 
@@ -184,7 +183,7 @@ func buildEnvVars(envVarsS string) (map[string]string, error) {
 	} else {
 		// This ensures that we always have NODE_ENV and RAILS_ENV defined even the given env vars do
 		// not define them.
-		env := fmt.Sprintf("'%s'", types.Env)
+		env := fmt.Sprintf("'%s'", types.Config.Environment)
 		envVarMap["proscenium.env.RAILS_ENV"] = env
 		envVarMap["proscenium.env.NODE_ENV"] = env
 	}

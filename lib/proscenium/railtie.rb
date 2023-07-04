@@ -24,6 +24,7 @@ module Proscenium
     isolate_namespace Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
+    config.proscenium.debug = false
     config.proscenium.side_load = true
     config.proscenium.code_splitting = false
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
