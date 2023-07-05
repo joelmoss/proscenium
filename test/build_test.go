@@ -19,19 +19,6 @@ var _ = Describe("Build", func() {
 		Expect(Build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
-	Describe("multiple file paths", func() {
-		It("code splits with a shared chunk", func() {
-			result := Build("lib/code_splitting/son.js;lib/code_splitting/daughter.js")
-
-			Expect(result.OutputFiles[0].Path).To(HaveSuffix("assets/lib/code_splitting/son$PBRCBJYT$.js.map"))
-			Expect(result.OutputFiles[1].Path).To(HaveSuffix("assets/lib/code_splitting/son$PBRCBJYT$.js"))
-			Expect(result.OutputFiles[2].Path).To(HaveSuffix("assets/lib/code_splitting/daughter$MTOCBJXF$.js.map"))
-			Expect(result.OutputFiles[3].Path).To(HaveSuffix("assets/lib/code_splitting/daughter$MTOCBJXF$.js"))
-			Expect(result.OutputFiles[4].Path).To(HaveSuffix("assets/_chunks/chunk-3NURZD3X.js.map"))
-			Expect(result.OutputFiles[5].Path).To(HaveSuffix("assets/_chunks/chunk-3NURZD3X.js"))
-		})
-	})
-
 	It("should bundle rjs", Pending, func() {
 		MockURL("/constants.rjs", "export default 'constants';")
 

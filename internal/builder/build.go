@@ -70,13 +70,13 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	buildOptions := esbuild.BuildOptions{
 		EntryPoints:       entrypoints,
-		Splitting:         hasMultipleEntrypoints,
+		Splitting:         types.Config.CodeSplitting,
 		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
-		ChunkNames:        "_chunks/[name]-[hash]",
+		ChunkNames:        "_asset_chunks/[name]-[hash]",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
 		JSXDev:            types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
@@ -86,7 +86,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
-		Write:             hasMultipleEntrypoints,
+		Write:             types.Config.CodeSplitting,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Metafile:          options.Metafile,
@@ -96,7 +96,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 			"nesting": false,
 		},
 
-		// TODO: Will using aliases instead of import be faster?
+		// TODO: Will using aliases instead of import map be faster?
 		// Alias: map[string]string{"foo/sdf.js": "./lib/foo.js"},
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
@@ -115,20 +115,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	plugins = append(plugins, plugin.Css)
 	buildOptions.Plugins = plugins
 
-	if hasMultipleEntrypoints {
-		definitions, err := buildEnvVars(options.EnvVars)
-		if err != nil {
-			return esbuild.BuildResult{
-				Errors: []esbuild.Message{{
-					Text:   "Failed to parse environment variables",
-					Detail: err.Error(),
-				}},
-			}
-		}
-
-		buildOptions.Define = definitions
-		buildOptions.EntryNames = "[dir]/[name]$[hash]$"
-	} else if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
+	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
 		buildOptions.Define = make(map[string]string, 2)
 		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Config.Environment.String())
 		buildOptions.Define["proscenium.env"] = "undefined"
@@ -142,8 +129,11 @@ func Build(options BuildOptions) esbuild.BuildResult {
 				}},
 			}
 		}
-
 		buildOptions.Define = definitions
+
+		if hasMultipleEntrypoints {
+			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
+		}
 	}
 
 	result := esbuild.Build(buildOptions)
@@ -158,8 +148,6 @@ func Build(options BuildOptions) esbuild.BuildResult {
 // Maintains a cache of environment variables.
 var envVarMap = make(map[string]string, 4)
 
-// TODO: Passing all env vars to Define is slow. We should only pass the ones that are needed by
-// requiring that they are declared first - perhaps as part of configuration.
 func buildEnvVars(envVarsS string) (map[string]string, error) {
 	if types.Config.Environment != types.TestEnv && len(envVarMap) > 0 {
 		return envVarMap, nil

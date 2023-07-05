@@ -13,12 +13,17 @@ module Proscenium
 
     def initialize(app)
       @app = app
+
+      chunks_path = Rails.public_path.join('assets').to_s
+      headers = Rails.application.config.public_file_server.headers || {}
+      @chunk_handler = ::ActionDispatch::FileHandler.new(chunks_path, headers: headers)
     end
 
     def call(env)
       request = Rack::Request.new(env)
 
       return @app.call(env) if !request.get? && !request.head?
+      return @chunk_handler.attempt(request.env) if request.path.match?(%r{^/_asset_chunks/})
 
       attempt(request) || @app.call(env)
     end

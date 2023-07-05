@@ -26,5 +26,8 @@ module Dummy
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.autoload_paths << "#{root}/app"
+
+    # config.proscenium.code_splitting = true
+    # config.proscenium.debug = true
   end
 end

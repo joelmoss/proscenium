@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../lib/code_splitting/son.js"],
-  "sourcesContent": ["import father from \"./father\";\n\nfather() + \" and Son\";\n"],
-  "mappings": ";;;;;AAEA,eAAO,IAAI;",
-  "names": []
-}
