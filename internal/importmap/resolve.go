@@ -3,7 +3,9 @@ package importmap
 import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"log"
 	"path"
+	"strings"
 )
 
 // type Scope struct {
@@ -44,7 +46,10 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 
 	value, found := normalizedImports[specifier]
 	if found {
-		// log.Printf("[importMap] match! %v => %v", specifier, value)
+		if types.Config.Debug {
+			log.Printf("[proscenium] importmap match! `%v` => `%v`", specifier, value)
+		}
+
 		return value, true
 	}
 
@@ -52,15 +57,17 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 }
 
 // Returns the full and absolute file system path of the given `pathValue`. If the path is a bare
-// module, then it is returned as-is. Otherwise, it is resolved relative to the given `resolveDir`.
+// module or URL, it is returned as-is. Otherwise, it is resolved relative to the given
+// `resolveDir`.
+//
+// TODO: resolve indexes here, instead of passing to esbuild to resolve - the latter of which should
+// be slower.
 func normalize(pathValue string, resolveDir string) string {
-	if utils.IsBareModule(pathValue) || utils.IsUrl(pathValue) {
-		return pathValue
-	} else if path.IsAbs(pathValue) {
-		return path.Join(types.Config.RootPath, pathValue)
-	} else {
-		return path.Join(resolveDir, pathValue)
+	if !utils.IsBareModule(pathValue) && !utils.IsUrl(pathValue) && !path.IsAbs(pathValue) {
+		pathValue = path.Join(resolveDir, pathValue)
 	}
+
+	return strings.TrimPrefix(pathValue, types.Config.RootPath)
 }
 
 // func oldResolve(specifier string, imap *types.ImportMap, importer string) (string, bool) {

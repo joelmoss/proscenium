@@ -41,6 +41,7 @@ var _ = Describe("Build(import_map)", func() {
 		})
 	})
 
+	// import foo from 'foo'
 	When("specifier is bare", func() {
 		When("value starts with /", func() {
 			It("resolves", func() {
@@ -92,6 +93,34 @@ var _ = Describe("Build(import_map)", func() {
 
 				Expect(result).To(ContainCode(`
 					console.log("node_modules/mypackage");
+				`))
+			})
+		})
+
+		When("value is directory", func() {
+			It("resolves the value to index file", func() {
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
+						"imports": { "foo": "/lib/indexes" }
+					}`,
+				})
+
+				Expect(result).To(ContainCode(`
+					console.log("lib/indexes/index.js");
+				`))
+			})
+		})
+
+		When("value is file without extension", func() {
+			It("resolves the value to index file", func() {
+				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+					ImportMap: `{
+						"imports": { "foo": "/lib/foo2" }
+					}`,
+				})
+
+				Expect(result).To(ContainCode(`
+					console.log("/lib/foo2.js");
 				`))
 			})
 		})

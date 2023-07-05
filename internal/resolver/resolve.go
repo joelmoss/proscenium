@@ -18,7 +18,7 @@ type Options struct {
 	// The path to build relative to `root`.
 	Path string
 
-	// The absolute file system path fof the importing file.
+	// The absolute file system path of the file doing the importing.
 	Importer string
 
 	// Path to an import map (js or json), relative to the given root.

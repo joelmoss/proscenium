@@ -51,6 +51,8 @@ var Bundler = esbuild.Plugin{
 			result.External = r.External
 			result.Path = r.Path
 
+			// pp.Println("[1] resolveWithEsbuild", pathToResolve, args, result)
+
 			return result, true
 		}
 
@@ -160,7 +162,7 @@ var Bundler = esbuild.Plugin{
 					result.Path = resolvedImport
 
 					if path.IsAbs(result.Path) {
-						return result, nil
+						// return result, nil
 					} else if utils.IsUrl(result.Path) {
 						result.Path = "/" + url.QueryEscape(result.Path)
 						result.External = true
@@ -196,7 +198,7 @@ var Bundler = esbuild.Plugin{
 
 				// Absolute path - prepend the root to prepare for resolution.
 				if path.IsAbs(result.Path) && !shouldBeExternal {
-					result.Path = path.Join(root, args.Path)
+					result.Path = path.Join(root, result.Path)
 				}
 
 				// If we have reached here, then the path is relative or a bare specifier.
