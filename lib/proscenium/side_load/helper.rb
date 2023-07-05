@@ -2,12 +2,12 @@
 
 module Proscenium
   module SideLoad::Helper
-    def side_load_stylesheets
+    def side_load_stylesheets(**options)
       return unless Proscenium::Current.loaded
 
       out = []
       Proscenium::Current.loaded[:css].delete_if do |path|
-        out << stylesheet_link_tag(path, extname: false)
+        out << stylesheet_link_tag(path, extname: false, **options)
       end
       out.join("\n").html_safe
     end
