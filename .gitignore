@@ -28,7 +28,6 @@
 /spec/reports/
 /tmp/
 .DS_Store
-/bin/*
 meta.json
 *.h
 *.so
