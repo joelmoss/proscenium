@@ -155,7 +155,7 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				}
 
-				resolvedImport, importMapMatched := importmap.Resolve(args.Path, args.ResolveDir, root)
+				resolvedImport, importMapMatched := importmap.Resolve(args.Path, args.ResolveDir)
 				if importMapMatched {
 					result.Path = resolvedImport
 

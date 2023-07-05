@@ -1,6 +1,7 @@
 package importmap
 
 import (
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
 )
@@ -14,12 +15,11 @@ import (
 //
 //   - specifier: The specifier to resolve.
 //   - resolveDir: The path of the dir that is importing the specifier.
-//   - root
 //
 // Returns the resolved specifier, and a boolean indicating whether the resolution was successful.
 // It is important to note that the resolved specifier could be an absolute file system path, an
 // HTTP(S) URL, or a bare module specifier.
-func Resolve(specifier string, resolveDir string, root string) (string, bool) {
+func Resolve(specifier string, resolveDir string) (string, bool) {
 	if Contents == nil || len(Contents.Imports) == 0 {
 		return "", false
 	}
@@ -37,7 +37,7 @@ func Resolve(specifier string, resolveDir string, root string) (string, bool) {
 		}
 
 		// Normalize the value.
-		value = normalize(value, resolveDir, root)
+		value = normalize(value, resolveDir)
 
 		normalizedImports[key] = value
 	}
@@ -53,11 +53,11 @@ func Resolve(specifier string, resolveDir string, root string) (string, bool) {
 
 // Returns the full and absolute file system path of the given `pathValue`. If the path is a bare
 // module, then it is returned as-is. Otherwise, it is resolved relative to the given `resolveDir`.
-func normalize(pathValue string, resolveDir string, root string) string {
+func normalize(pathValue string, resolveDir string) string {
 	if utils.IsBareModule(pathValue) || utils.IsUrl(pathValue) {
 		return pathValue
 	} else if path.IsAbs(pathValue) {
-		return path.Join(root, pathValue)
+		return path.Join(types.Config.RootPath, pathValue)
 	} else {
 		return path.Join(resolveDir, pathValue)
 	}

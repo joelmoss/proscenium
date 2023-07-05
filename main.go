@@ -20,27 +20,30 @@ import (
 
 // Build the given `path` in the `root`.
 //
-//   - path - The path to build relative to `root`. Multiple paths can be given by separating them
-//     with a semi-colon.
-//   - root - The working directory.
-//   - baseUrl - base URL of the Rails app. eg. https://example.com
-//   - importMap - Path to the import map relative to `root`.
-//   - envVars - JSON string of environment variables.
-//   - env - The environment (1 = development, 2 = test, 3 = production)
-//   - codeSpitting?
-//   - debug?
+//	BuildOptions
+//	- path - The path to build relative to `root`. Multiple paths can be given by separating them
+//	  with a semi-colon.
+//	- baseUrl - base URL of the Rails app. eg. https://example.com
+//	- importMap - Path to the import map relative to `root`.
+//	- envVars - JSON string of environment variables.
+//	Config:
+//	- root - The working directory.
+//	- env - The environment (1 = development, 2 = test, 3 = production)
+//	- codeSpitting?
+//	- debug?
 //
 //export build
 func build(
 	filepath *C.char,
-	root *C.char,
 	baseUrl *C.char,
 	importMap *C.char,
 	envVars *C.char,
+	root *C.char,
 	env C.uint,
 	codeSplitting bool,
 	debug bool,
 ) C.struct_Result {
+	types.Config.RootPath = C.GoString(root)
 	types.Config.Environment = types.Environment(env)
 	types.Config.CodeSplitting = codeSplitting
 	types.Config.Debug = debug
@@ -49,7 +52,6 @@ func build(
 
 	result := builder.Build(builder.BuildOptions{
 		Path:          pathStr,
-		Root:          C.GoString(root),
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		EnvVars:       C.GoString(envVars),
@@ -96,18 +98,20 @@ func build(
 
 // Resolve the given `path` relative to the `root`.
 //
-//   - path - The path to build relative to `root`.
-//   - root - The working directory.
-//   - env - The environment (1 = development, 2 = test, 3 = production)
-//   - importMap - Path to the import map relative to `root`.
+//	ResolveOptions
+//	- path - The path to build relative to `root`.
+//	- importMap - Path to the import map relative to `root`.
+//	Config
+//	- root - The working directory.
+//	- env - The environment (1 = development, 2 = test, 3 = production)
 //
 //export resolve
-func resolve(path *C.char, root *C.char, importMap *C.char, env C.uint) C.struct_Result {
+func resolve(path *C.char, importMap *C.char, root *C.char, env C.uint) C.struct_Result {
 	types.Config.Environment = types.Environment(env)
+	types.Config.RootPath = C.GoString(root)
 
 	resolvedPath, err := resolver.Resolve(resolver.Options{
 		Path:          C.GoString(path),
-		Root:          C.GoString(root),
 		ImportMapPath: C.GoString(importMap),
 	})
 	if err != nil {

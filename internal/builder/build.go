@@ -20,9 +20,6 @@ type BuildOptions struct {
 	// semi-colon.
 	Path string
 
-	// The working directory. Usually the Rails root.
-	Root string
-
 	// Base URL of the Rails app. eg. https://example.com
 	BaseUrl string
 
@@ -45,7 +42,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	entrypoints := strings.Split(options.Path, ";")
 	hasMultipleEntrypoints := len(entrypoints) > 1
 
-	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
+	err := importmap.Parse(options.ImportMap, options.ImportMapPath)
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
@@ -74,7 +71,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	buildOptions := esbuild.BuildOptions{
 		EntryPoints:       entrypoints,
 		Splitting:         hasMultipleEntrypoints,
-		AbsWorkingDir:     options.Root,
+		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
@@ -152,7 +149,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	result := esbuild.Build(buildOptions)
 
 	if options.Metafile {
-		os.WriteFile(path.Join(options.Root, "meta.json"), []byte(result.Metafile), 0644)
+		os.WriteFile(path.Join(types.Config.RootPath, "meta.json"), []byte(result.Metafile), 0644)
 	}
 
 	return result

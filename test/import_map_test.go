@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"os"
 	"path"
@@ -19,12 +20,11 @@ var _ = Describe("Build(import_map)", func() {
 
 	When("import map is JS", func() {
 		var cwd, _ = os.Getwd()
-		var root string = path.Join(cwd, "dummy")
+		types.Config.RootPath = path.Join(cwd, "dummy")
 
 		It("should parse", func() {
 			result := builder.Build(builder.BuildOptions{
 				Path:          "lib/import_map/as_js.js",
-				Root:          root,
 				ImportMapPath: "config/import_maps/as.js",
 			})
 
@@ -34,7 +34,6 @@ var _ = Describe("Build(import_map)", func() {
 		It("produces error when invalid", func() {
 			result := builder.Build(builder.BuildOptions{
 				Path:          "lib/foo.js",
-				Root:          root,
 				ImportMapPath: "config/import_maps/invalid.js",
 			})
 

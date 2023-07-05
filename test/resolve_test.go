@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 
@@ -11,12 +12,11 @@ import (
 
 var _ = Describe("Resolve", func() {
 	var cwd, _ = os.Getwd()
-	var root string = path.Join(cwd, "dummy")
+	types.Config.RootPath = path.Join(cwd, "dummy")
 
 	resolve := func(path string, importMap ...string) (string, error) {
 		options := resolver.Options{
 			Path: path,
-			Root: root,
 		}
 
 		if len(importMap) > 0 {
@@ -48,7 +48,6 @@ var _ = Describe("Resolve", func() {
 			return resolver.Resolve(resolver.Options{
 				Path:     path,
 				Importer: importer,
-				Root:     root,
 			})
 		}
 

@@ -19,6 +19,7 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 
 	// Ensure test environment.
 	types.Config.Environment = types.Environment(2)
+	types.Config.RootPath = path.Join(path.Dir(filename), "dummy")
 
 	restOpts := BuildOpts{}
 	if len(rest) > 0 {
@@ -27,7 +28,6 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 
 	options := builder.BuildOptions{
 		Path:    pathToBuild,
-		Root:    path.Join(path.Dir(filename), "dummy"),
 		BaseUrl: "https://proscenium.test",
 	}
 

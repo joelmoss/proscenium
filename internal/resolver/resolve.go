@@ -21,9 +21,6 @@ type Options struct {
 	// The absolute file system path fof the importing file.
 	Importer string
 
-	// The working directory.
-	Root string
-
 	// Path to an import map (js or json), relative to the given root.
 	ImportMapPath string
 
@@ -39,16 +36,16 @@ type Options struct {
 // app domain.
 func Resolve(options Options) (string, error) {
 	// Parse the import map - if any.
-	err := importmap.Parse(options.ImportMap, options.ImportMapPath, options.Root)
+	err := importmap.Parse(options.ImportMap, options.ImportMapPath)
 	if err != nil {
 		return "", errors.New("Failed to parse import map: " + err.Error())
 	}
 
 	// Look for a match in the import map
-	resolvedImport, matched := importmap.Resolve(options.Path, options.Root, options.Root)
+	resolvedImport, matched := importmap.Resolve(options.Path, types.Config.RootPath)
 	if matched {
 		if path.IsAbs(resolvedImport) {
-			return strings.TrimPrefix(resolvedImport, options.Root), nil
+			return strings.TrimPrefix(resolvedImport, types.Config.RootPath), nil
 		} else if utils.IsUrl(resolvedImport) {
 			return "/" + url.QueryEscape(resolvedImport), nil
 		}
@@ -61,7 +58,7 @@ func Resolve(options Options) (string, error) {
 			return "", errors.New("relative paths are not supported when an importer not is given")
 		}
 
-		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), options.Path), options.Root), nil
+		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), options.Path), types.Config.RootPath), nil
 	}
 
 	// Absolute paths need no resolution.
@@ -71,7 +68,7 @@ func Resolve(options Options) (string, error) {
 
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:   []string{options.Path},
-		AbsWorkingDir: options.Root,
+		AbsWorkingDir: types.Config.RootPath,
 		Format:        esbuild.FormatESModule,
 		Conditions:    []string{types.Config.Environment.String(), "proscenium"},
 		Write:         false,

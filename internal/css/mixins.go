@@ -28,12 +28,10 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 	}
 
 	if uri != "" {
-
 		// Resolve the uri.
 		absPath, err := resolver.Resolve(resolver.Options{
 			Path:     uri,
 			Importer: p.filePath,
-			Root:     p.rootPath,
 		})
 		if err != nil {
 			return false

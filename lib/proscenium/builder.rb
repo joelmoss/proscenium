@@ -20,12 +20,12 @@ module Proscenium
 
       attach_function :build, [
         :string,      # path or entry point. multiple can be given by separating with a semi-colon
-        :string,      # root
         :string,      # base URL of the Rails app. eg. https://example.com
         :string,      # path to import map, relative to root
         :string,      # ENV variables as a JSON string
 
         # Config
+        :string,      # root
         :environment, # Rails environment as a Symbol
         :bool,        # code splitting enabled?
         :bool         # debugging enabled?
@@ -33,8 +33,10 @@ module Proscenium
 
       attach_function :resolve, [
         :string,      # path or entry point
-        :string,      # root
         :string,      # path to import map, relative to root
+
+        # Config
+        :string,      # root
         :environment  # Rails environment as a Symbol
       ], Result.by_value
     end
@@ -71,7 +73,8 @@ module Proscenium
     end
 
     def build(path)
-      result = Request.build(path, @root.to_s, @base_url, import_map, env_vars.to_json,
+      result = Request.build(path, @base_url, import_map, env_vars.to_json,
+                             @root.to_s,
                              Rails.env.to_sym,
                              Proscenium.config.code_splitting,
                              Proscenium.config.debug)
@@ -82,7 +85,7 @@ module Proscenium
     end
 
     def resolve(path)
-      result = Request.resolve(path, @root.to_s, import_map, Rails.env.to_sym)
+      result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym)
       raise ResolveError.new(path, result[:response]) unless result[:success]
 
       result[:response]

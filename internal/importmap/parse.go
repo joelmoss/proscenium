@@ -31,7 +31,7 @@ func (err SyntaxError) Error() string {
 	return err.Message
 }
 
-func Parse(importMap []byte, importMapPath string, root string) error {
+func Parse(importMap []byte, importMapPath string) error {
 	if Contents.IsParsed {
 		return nil
 	}
@@ -42,7 +42,7 @@ func Parse(importMap []byte, importMapPath string, root string) error {
 			return errors.New(reflect.TypeOf(err).String() + ": " + err.Error())
 		}
 	} else if len(importMapPath) > 0 {
-		err := parseFile(path.Join(root, importMapPath))
+		err := parseFile(path.Join(types.Config.RootPath, importMapPath))
 		if err != nil {
 			return err
 		}
