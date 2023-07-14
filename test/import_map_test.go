@@ -1,11 +1,7 @@
 package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
-	"os"
-	"path"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -19,12 +15,8 @@ var _ = Describe("Build(import_map)", func() {
 	})
 
 	When("import map is JS", func() {
-		var cwd, _ = os.Getwd()
-		types.Config.RootPath = path.Join(cwd, "dummy")
-
 		It("should parse", func() {
-			result := builder.Build(builder.BuildOptions{
-				Path:          "lib/import_map/as_js.js",
+			result := Build("lib/import_map/as_js.js", BuildOpts{
 				ImportMapPath: "config/import_maps/as.js",
 			})
 
@@ -32,8 +24,7 @@ var _ = Describe("Build(import_map)", func() {
 		})
 
 		It("produces error when invalid", func() {
-			result := builder.Build(builder.BuildOptions{
-				Path:          "lib/foo.js",
+			result := Build("lib/foo.js", BuildOpts{
 				ImportMapPath: "config/import_maps/invalid.js",
 			})
 
@@ -97,7 +88,7 @@ var _ = Describe("Build(import_map)", func() {
 			})
 		})
 
-		When("value is directory", func() {
+		When("value is directory containing an index file", func() {
 			It("resolves the value to index file", func() {
 				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
 					ImportMap: `{
@@ -111,20 +102,30 @@ var _ = Describe("Build(import_map)", func() {
 			})
 		})
 
-		When("value is file without extension", func() {
-			It("resolves the value to index file", func() {
-				result := Build("lib/import_map/bare_specifier.js", BuildOpts{
-					ImportMap: `{
-						"imports": { "foo": "/lib/foo2" }
-					}`,
-				})
-
-				Expect(result).To(ContainCode(`
-					console.log("/lib/foo2.js");
-				`))
+		It("resolves file without extension", func() {
+			result := Build("lib/import_map/bare_specifier.js", BuildOpts{
+				ImportMap: `{
+					"imports": { "foo": "/lib/foo2" }
+				}`,
 			})
+
+			Expect(result).To(ContainCode(`console.log("/lib/foo2.js");`))
 		})
 	})
+
+	// import four from 'one/two/three/four.js'
+	// When("specifier has trailing slash", func() {
+	// 	FIt("resolves", func() {
+	// 		result := Build("lib/import_map/path_prefix.js", BuildOpts{
+	// 			Debug: true,
+	// 			ImportMap: `{
+	// 				"imports": { "one/": "./src/one/" }
+	// 			}`,
+	// 		})
+
+	// 		Expect(result).To(ContainCode(`import four from "./src/one/two/three/four.js";`))
+	// 	})
+	// })
 
 	// It("path prefix", Pending, func() {
 	// 	// import four from 'one/two/three/four.js'

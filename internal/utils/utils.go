@@ -24,6 +24,10 @@ func ToString(a interface{}) (string, bool) {
 	return "", false
 }
 
+func HasExtension(name string) bool {
+	return path.Ext(name) != ""
+}
+
 func IsBareModule(name string) bool {
 	return !path.IsAbs(name) && !PathIsRelative(name)
 }

@@ -10,9 +10,10 @@ import (
 )
 
 type BuildOpts struct {
-	ImportMap string
-	EnvVars   string
-	Debug     bool
+	ImportMap     string
+	ImportMapPath string
+	EnvVars       string
+	Debug         bool
 }
 
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
@@ -40,6 +41,8 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 
 	if restOpts.ImportMap != "" {
 		options.ImportMap = []byte(restOpts.ImportMap)
+	} else if restOpts.ImportMapPath != "" {
+		options.ImportMapPath = restOpts.ImportMapPath
 	}
 
 	return builder.Build(options)

@@ -44,26 +44,31 @@ func Resolve(options Options) (string, error) {
 	// Look for a match in the import map
 	resolvedImport, matched := importmap.Resolve(options.Path, types.Config.RootPath)
 	if matched {
-		if path.IsAbs(resolvedImport) {
-			return strings.TrimPrefix(resolvedImport, types.Config.RootPath), nil
-		} else if utils.IsUrl(resolvedImport) {
+		if utils.IsUrl(resolvedImport) {
 			return "/" + url.QueryEscape(resolvedImport), nil
 		}
 
 		options.Path = resolvedImport
+	} else if path.IsAbs(options.Path) && utils.HasExtension(options.Path) {
+		return options.Path, nil
 	}
 
 	if utils.PathIsRelative(options.Path) {
 		if options.Importer == "" {
-			return "", errors.New("relative paths are not supported when an importer not is given")
+			return "", errors.New("relative paths are not supported when an importer is not given")
 		}
 
 		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), options.Path), types.Config.RootPath), nil
 	}
 
-	// Absolute paths need no resolution.
+	// Replace leading slash with `./` for absolute paths.
 	if path.IsAbs(options.Path) {
-		return options.Path, nil
+		options.Path = "." + options.Path
+	}
+
+	logLevel := esbuild.LogLevelSilent
+	if types.Config.Debug {
+		logLevel = esbuild.LogLevelDebug
 	}
 
 	result := esbuild.Build(esbuild.BuildOptions{
@@ -73,6 +78,8 @@ func Resolve(options Options) (string, error) {
 		Conditions:    []string{types.Config.Environment.String(), "proscenium"},
 		Write:         false,
 		Metafile:      true,
+		LogLevel:      logLevel,
+		LogLimit:      1,
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still

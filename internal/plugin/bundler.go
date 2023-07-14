@@ -159,15 +159,13 @@ var Bundler = esbuild.Plugin{
 
 				resolvedImport, importMapMatched := importmap.Resolve(args.Path, args.ResolveDir)
 				if importMapMatched {
-					result.Path = resolvedImport
-
-					if path.IsAbs(result.Path) {
-						// return result, nil
-					} else if utils.IsUrl(result.Path) {
-						result.Path = "/" + url.QueryEscape(result.Path)
+					if utils.IsUrl(resolvedImport) {
+						result.Path = "/" + url.QueryEscape(resolvedImport)
 						result.External = true
 						return result, nil
 					}
+
+					result.Path = resolvedImport
 				}
 
 				isCssImportedFromJs := false

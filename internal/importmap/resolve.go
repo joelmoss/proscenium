@@ -13,14 +13,14 @@ import (
 // 	value string
 // }
 
-// Resolves the `specifier` to a file system path, using the given `importMap` and `resolveDir`.
+// Resolves the given `specifier`.
 //
 //   - specifier: The specifier to resolve.
 //   - resolveDir: The path of the dir that is importing the specifier.
 //
 // Returns the resolved specifier, and a boolean indicating whether the resolution was successful.
-// It is important to note that the resolved specifier could be an absolute file system path, an
-// HTTP(S) URL, or a bare module specifier.
+// It is important to note that the resolved specifier could be an absolute URL path, an HTTP(S)
+// URL, or a bare module specifier.
 func Resolve(specifier string, resolveDir string) (string, bool) {
 	if Contents == nil || len(Contents.Imports) == 0 {
 		return "", false
@@ -56,18 +56,19 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 	return "", false
 }
 
-// Returns the full and absolute file system path of the given `pathValue`. If the path is a bare
-// module or URL, it is returned as-is. Otherwise, it is resolved relative to the given
+// Returns the absolute URL path of the given `pathValue`. If the path is a bare module, URL or
+// absolute path, it is returned as-is. Otherwise, it is resolved relative to the given
 // `resolveDir`.
 //
 // TODO: resolve indexes here, instead of passing to esbuild to resolve - the latter of which should
 // be slower.
 func normalize(pathValue string, resolveDir string) string {
-	if !utils.IsBareModule(pathValue) && !utils.IsUrl(pathValue) && !path.IsAbs(pathValue) {
-		pathValue = path.Join(resolveDir, pathValue)
+	if utils.IsBareModule(pathValue) || utils.IsUrl(pathValue) || path.IsAbs(pathValue) {
+		return pathValue
 	}
 
-	return strings.TrimPrefix(pathValue, types.Config.RootPath)
+	// Path is relative, so resolve it relative to the resolveDir, then strip the root from the start.
+	return strings.TrimPrefix(path.Join(resolveDir, pathValue), types.Config.RootPath)
 }
 
 // func oldResolve(specifier string, imap *types.ImportMap, importer string) (string, bool) {
