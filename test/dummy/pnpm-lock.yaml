@@ -1,12 +1,13 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 dependencies:
   '@external/three':
     specifier: link:../external/three
     version: link:../external/three
-  '@proscenium/component-manager':
-    specifier: ^0.4.0
-    version: 0.4.0(react-dom@18.2.0)(react@18.2.0)
   '@react-aria/button':
     specifier: ^3.6.3
     version: 3.6.3(react@18.2.0)
@@ -51,16 +52,6 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       regenerator-runtime: 0.13.11
-    dev: false
-
-  /@proscenium/component-manager@0.4.0(react-dom@18.2.0)(react@18.2.0):
-    resolution: {integrity: sha512-GD+CAo7CUs53UOH0GS3FKPIk+70Qwf4DL/39RKNDd0xebnMQd3C4bg2SqBV7VdeYDa+OAG3zN+EmLtV2SlsJPw==}
-    peerDependencies:
-      react: '>=18'
-      react-dom: '>=18'
-    dependencies:
-      react: 18.2.0
-      react-dom: 18.2.0(react@18.2.0)
     dev: false
 
   /@react-aria/button@3.6.3(react@18.2.0):
@@ -286,7 +277,6 @@ packages:
   file:packages/two:
     resolution: {directory: packages/two, type: directory}
     name: internal-two
-    version: 1.0.0
     dependencies:
       is-plain-obj: 4.1.0
     dev: false

@@ -3,7 +3,6 @@
   "private": true,
   "dependencies": {
     "@external/three": "link:../external/three",
-    "@proscenium/component-manager": "^0.4.0",
     "@react-aria/button": "^3.6.3",
     "date-fns": "^2.29.3",
     "external-one-link": "link:../external/one",
