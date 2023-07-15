@@ -17,7 +17,6 @@ module Proscenium
       info do
         message = +"[Proscenium] Building #{path}"
         message << " (Duration: #{event.duration.round(1)}ms | Allocations: #{event.allocations})"
-        message << "\n" if defined?(Rails.env) && Rails.env.development?
       end
     end
   end
