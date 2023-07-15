@@ -107,6 +107,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	plugins := []esbuild.Plugin{
 		plugin.I18n,
+		plugin.Libs,
 		plugin.Rjs(options.BaseUrl),
 		plugin.Bundler,
 	}
