@@ -113,30 +113,40 @@ var _ = Describe("Build(import_map)", func() {
 		})
 	})
 
-	// import four from 'one/two/three/four.js'
-	// When("specifier has trailing slash", func() {
-	// 	FIt("resolves", func() {
-	// 		result := Build("lib/import_map/path_prefix.js", BuildOpts{
-	// 			Debug: true,
-	// 			ImportMap: `{
-	// 				"imports": { "one/": "./src/one/" }
-	// 			}`,
-	// 		})
+	// import foo from "foo/one.js"
+	When("key and value have trailing slash", func() {
+		It("resolves", func() {
+			result := Build("lib/import_map/path_prefix.js", BuildOpts{
+				ImportMap: `{
+					"imports": { "foo/": "./nested/foo/" }
+				}`,
+			})
 
-	// 		Expect(result).To(ContainCode(`import four from "./src/one/two/three/four.js";`))
-	// 	})
-	// })
+			Expect(result).To(ContainCode(`console.log("/lib/import_map/nested/foo/one.js");`))
+		})
+	})
 
-	// It("path prefix", Pending, func() {
-	// 	// import four from 'one/two/three/four.js'
-	// 	result := Build("lib/import_map/path_prefix.js", `{
-	// 		"imports": { "one/": "./src/one/" }
-	// 	}`)
+	It("resolves to URL", func() {
+		result := Build("lib/import_map/to_url.js", BuildOpts{
+			ImportMap: `{
+				"imports": { "axios": "https://proscenium.test/axios.js" }
+			}`,
+		})
 
-	// 	Expect(result.OutputFiles[0].Contents).To(ContainCode(`
-	// 		import four from "./src/one/two/three/four.js";
-	// 	`))
-	// })
+		Expect(result).To(ContainCode(`
+			import axios from "/https%3A%2F%2Fproscenium.test%2Faxios.js";
+		`))
+	})
+
+	It("resolves to bare module", func() {
+		result := Build("lib/import_map/bare_modules.js", BuildOpts{
+			ImportMap: `{
+				"imports": { "my-package": "mypackage" }
+			}`,
+		})
+
+		Expect(result).To(ContainCode(`console.log("node_modules/mypackage");`))
+	})
 
 	// It("scopes", Pending, func() {
 	// 	result := Build("lib/import_map/scopes.js", `{
@@ -153,17 +163,4 @@ var _ = Describe("Build(import_map)", func() {
 	// 	Expect(result.OutputFiles[0].Contents).To(ContainCode(`import foo from "/lib/foo4.js";`))
 	// })
 
-	// It("path prefix multiple matches", Pending, func() {
-	// 	result := Build("lib/import_map/path_prefix.js", `{
-	// 		"imports": {
-	// 			"one/": "./one/",
-	// 			"one/two/three/": "./three/",
-	// 			"one/two/": "./two/"
-	// 		}
-	// 	}`)
-
-	// 	Expect(result.OutputFiles[0].Contents).To(ContainCode(`
-	// 		import four from "./three/four.js";
-	// 	`))
-	// })
 })

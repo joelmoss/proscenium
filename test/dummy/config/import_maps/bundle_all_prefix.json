@@ -1,6 +1,0 @@
-{
-  "imports": {
-    "isip": "bundle-all:is-ip",
-    "is-ip": "mypackage"
-  }
-}

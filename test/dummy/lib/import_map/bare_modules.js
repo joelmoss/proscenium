@@ -1,2 +1,2 @@
-import { isIP } from 'isip'
-isIP()
+import mypackage from "my-package";
+mypackage();

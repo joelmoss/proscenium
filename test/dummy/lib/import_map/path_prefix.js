@@ -1,2 +1,2 @@
-import four from 'one/two/three/four.js'
-four()
+import foo from "foo/one.js";
+foo();

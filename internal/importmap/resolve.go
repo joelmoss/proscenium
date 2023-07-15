@@ -5,6 +5,7 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"log"
 	"path"
+	"sort"
 	"strings"
 )
 
@@ -12,6 +13,12 @@ import (
 // 	key   string
 // 	value string
 // }
+
+type importEntry struct {
+	value                 string
+	keyHasTrailingSlash   bool
+	valueHasTrailingSlash bool
+}
 
 // Resolves the given `specifier`.
 //
@@ -26,11 +33,8 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 		return "", false
 	}
 
-	// Sort and normalize the "imports" of the import map.
-	// See https://html.spec.whatwg.org/multipage/webappapis.html#sorting-and-normalizing-a-module-specifier-map
-	// log.Printf("[importMap] Resolving %v in %v from %v import(s)", specifier, resolveDir, len(Contents.Imports))
-
-	normalizedImports := make(map[string]string)
+	resolveDir = strings.TrimPrefix(resolveDir, types.Config.RootPath)
+	normalizedImports := make(map[string]importEntry)
 
 	// Sort and normalize imports.
 	for key, value := range Contents.Imports {
@@ -38,37 +42,110 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 			continue
 		}
 
-		// Normalize the value.
-		value = normalize(value, resolveDir)
+		key = normalizeKey(key, resolveDir)
+		value = normalizeValue(value, resolveDir)
+		keyHasTrailingSlash := strings.HasSuffix(key, "/")
+		valueHasTrailingSlash := strings.HasSuffix(value, "/")
 
-		normalizedImports[key] = value
-	}
-
-	value, found := normalizedImports[specifier]
-	if found {
-		if types.Config.Debug {
-			log.Printf("[proscenium] importmap match! `%v` => `%v`", specifier, value)
+		if keyHasTrailingSlash && !valueHasTrailingSlash {
+			log.Printf("[proscenium] importmap key `%v` ends with '/', but value `%v` does not!",
+				specifier, value)
+			continue
 		}
 
-		return value, true
+		normalizedImports[key] = importEntry{value, keyHasTrailingSlash, valueHasTrailingSlash}
+	}
+
+	if types.Config.Debug {
+		log.Printf("[proscenium] importmap match? `%v` in `%v` from `%v`",
+			specifier, resolveDir, normalizedImports)
+	}
+
+	// Sort the keys of the normalized imports by longest first.
+	importKeys := make([]string, 0, len(normalizedImports))
+	for key := range normalizedImports {
+		importKeys = append(importKeys, key)
+	}
+	sort.Strings(importKeys)
+	sort.Slice(importKeys, func(i, j int) bool {
+		return len(importKeys[i]) > len(importKeys[j])
+	})
+
+	// Find the first entry in the normalized import map that matches the specifier.
+	matchedPath, found := func() (matchedPath string, success bool) {
+		for _, key := range importKeys {
+			entry := normalizedImports[key]
+
+			// Match if the key and value both have a trailing slash, and the specifier starts with the
+			// key.
+			if entry.keyHasTrailingSlash && entry.valueHasTrailingSlash {
+				trimmed, ok := strings.CutPrefix(specifier, key)
+				if ok {
+					return path.Join(entry.value, trimmed), true
+				}
+
+				continue
+			}
+
+			// Exact match: specifier == key
+			if key == specifier {
+				return entry.value, true
+			}
+		}
+
+		return "", false
+	}()
+
+	if found {
+		if types.Config.Debug {
+			log.Printf("[proscenium] importmap match! `%v` => `%v`", specifier, matchedPath)
+		}
+
+		return matchedPath, true
 	}
 
 	return "", false
 }
 
-// Returns the absolute URL path of the given `pathValue`. If the path is a bare module, URL or
-// absolute path, it is returned as-is. Otherwise, it is resolved relative to the given
-// `resolveDir`.
+func normalizeKey(key string, resolveDir string) string {
+	return key
+}
+
+// Returns the absolute URL path of the given `pathValue`. If the path is a relative path (ie.
+// starts with `./` or `../`) it is resolved relative to the given `resolveDir`.
 //
 // TODO: resolve indexes here, instead of passing to esbuild to resolve - the latter of which should
 // be slower.
-func normalize(pathValue string, resolveDir string) string {
-	if utils.IsBareModule(pathValue) || utils.IsUrl(pathValue) || path.IsAbs(pathValue) {
-		return pathValue
+func normalizeValue(pathValue string, resolveDir string) string {
+	hasTrailingSlash := strings.HasSuffix(pathValue, "/")
+
+	if utils.PathIsRelative(pathValue) {
+		newValue := path.Join(resolveDir, pathValue)
+
+		if hasTrailingSlash {
+			return newValue + "/"
+		}
+		return newValue
 	}
 
-	// Path is relative, so resolve it relative to the resolveDir, then strip the root from the start.
-	return strings.TrimPrefix(path.Join(resolveDir, pathValue), types.Config.RootPath)
+	return pathValue
+
+	// if utils.IsUrl(pathValue) {
+	// 	return pathValue
+	// }
+
+	// if utils.PathIsRelative(pathValue) || path.IsAbs(pathValue) {
+	// 	np := strings.TrimPrefix(path.Join(resolveDir, pathValue), types.Config.RootPath)
+	// 	pp.Println(np)
+	// 	return pathValue
+	// }
+
+	// if utils.IsBareModule(pathValue) || path.IsAbs(pathValue) {
+	// 	return pathValue
+	// }
+
+	// // Path is relative, so resolve it relative to the resolveDir, then strip the root from the start.
+	// return strings.TrimPrefix(path.Join(resolveDir, pathValue), types.Config.RootPath)
 }
 
 // func oldResolve(specifier string, imap *types.ImportMap, importer string) (string, bool) {
