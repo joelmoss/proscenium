@@ -12,7 +12,7 @@
 class Proscenium::ViewComponent::ReactComponent < Proscenium::ViewComponent
   self.abstract_class = true
 
-  include Proscenium::Componentable
+  include Proscenium::ReactComponentable
 
   def call
     tag.send root_tag, data: data_attributes do

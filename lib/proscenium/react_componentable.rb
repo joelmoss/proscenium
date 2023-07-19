@@ -1,7 +1,9 @@
 # frozen_string_literal: true
 
-module Proscenium::Componentable
+module Proscenium::ReactComponentable
   extend ActiveSupport::Concern
+
+  COMPONENT_MANAGER_PATH = Rails.root.join('lib', 'manager', 'index.rb').freeze
 
   included do
     # @return [Hash] the props to pass to the React component.
@@ -30,6 +32,13 @@ module Proscenium::Componentable
     super()
   end
 
+  def sideload?
+    # Side load the component manager.
+    Proscenium::SideLoad.append COMPONENT_MANAGER_PATH
+
+    true
+  end
+
   def virtual_path
     Proscenium::Utils.resolve_path path.sub_ext('.jsx').to_s
   end
@@ -38,7 +47,7 @@ module Proscenium::Componentable
 
   def data_attributes
     d = {
-      proscenium_component_path: virtual_path,
+      proscenium_component_path: Pathname.new(virtual_path).sub_ext('').to_s,
       proscenium_component_props: prepared_props
     }
 

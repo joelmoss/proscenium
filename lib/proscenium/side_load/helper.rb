@@ -24,14 +24,28 @@ module Proscenium
         paths.delete_if { |x| paths_to_build << x.delete_prefix('/') }
 
         result = Proscenium::Builder.build(paths_to_build.join(';'), base_url: request.base_url)
-        result.split(';').each do |x|
-          next if x.include?('public/assets/_asset_chunks/') || x.end_with?('.map')
 
-          out << javascript_include_tag(x.delete_prefix(public_path), extname: false, **options)
+        # Remove the react components from the results, so they are not side loaded. Instead they
+        # are lazy loaded by the component manager.
+
+        scripts = {}
+        result.split(';').each do |path|
+          path.delete_prefix! public_path
+
+          next if path.start_with?('/assets/_asset_chunks/') || path.end_with?('.map')
+
+          if path.start_with?('/assets/app/components/')
+            match = path.match(%r{/assets(/app/components/.+/component)\$[a-z0-9]{8}\$\.js$}i)[1]
+            scripts[match] = path
+          else
+            out << javascript_include_tag(path, extname: false, **options)
+          end
         end
+
+        out << javascript_tag("window.prosceniumComponents = #{scripts.to_json}")
       else
-        paths.delete_if do |x|
-          out << javascript_include_tag(x, extname: false, **options)
+        paths.delete_if do |path|
+          out << javascript_include_tag(path, extname: false, **options)
         end
       end
 

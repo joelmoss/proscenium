@@ -4,6 +4,8 @@ const elements = document.querySelectorAll("[data-proscenium-component-path]");
 elements.length > 0 && init();
 
 async function init() {
+  // const { Suspense, lazy, createElement } = await import("react");
+  // const { createRoot } = await import("react-dom/client");
   const { Suspense, lazy, createElement, createRoot } = await import("./react");
 
   Array.from(elements, (element) => {
@@ -20,6 +22,7 @@ async function init() {
       console.groupEnd();
     }
 
+    const mappedPath = window.prosceniumComponents[path];
     const root = createRoot(element);
 
     if (isLazy) {
@@ -30,7 +33,7 @@ async function init() {
 
             root.render(
               createElement(
-                lazy(() => import(path)),
+                lazy(() => import(mappedPath)),
                 props
               )
             );
@@ -42,7 +45,10 @@ async function init() {
     } else {
       root.render(
         createElement(
-          lazy(() => import(path)),
+          lazy(() => {
+            console.log(mappedPath);
+            return import(mappedPath);
+          }),
           props
         )
       );
