@@ -21,16 +21,13 @@ module Proscenium
 
     # Side loads the class, and its super classes that respond to `.path`. Assign the
     # `abstract_class` class variable to any abstract class, and it will not be side loaded.
-    # Additionally, if the class responds to `side_load`, then that method is called.
+    # Additionally, if the class instance responds to `sideload?`, and it returns false, it will not
+    # be side loaded.
     module Sideload
       def before_template
+        return super if respond_to?(:sideload?) && !sideload?
+
         klass = self.class
-
-        if !klass.abstract_class && respond_to?(:side_load, true)
-          side_load
-          klass = klass.superclass
-        end
-
         while !klass.abstract_class && klass.respond_to?(:path) && klass.path
           Proscenium::SideLoad.append klass.path
           klass = klass.superclass

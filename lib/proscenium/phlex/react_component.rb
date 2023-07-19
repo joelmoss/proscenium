@@ -13,6 +13,14 @@
 #
 class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
+  MANAGER_COMPONENT_PATH = Rails.root.join('app', 'components', 'manager', 'index.rb').freeze
+
+  def sideload?
+    # Side load the component manager.
+    Proscenium::SideLoad.append MANAGER_COMPONENT_PATH
+
+    false # don't side load the component
+  end
 
   include Proscenium::Componentable
   include Proscenium::Phlex::ComponentConcerns::CssModules
