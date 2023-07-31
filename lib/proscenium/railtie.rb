@@ -67,8 +67,6 @@ module Proscenium
 
     initializer 'proscenium.side_loading' do |app|
       if app.config.proscenium.side_load
-        Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
-
         ActiveSupport.on_load(:action_view) do
           ActionView::Base.include Proscenium::SideLoad::Helper
 

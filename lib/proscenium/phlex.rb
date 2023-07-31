@@ -5,7 +5,7 @@ require 'phlex-rails'
 module Proscenium
   class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
-    include Proscenium::CssModule
+    # include Proscenium::CssModule
 
     autoload :Page
     autoload :ReactComponent
@@ -29,7 +29,7 @@ module Proscenium
 
         klass = self.class
         while !klass.abstract_class && klass.respond_to?(:path) && klass.path
-          Proscenium::SideLoad.append klass.path
+          klass.respond_to?(:sideload) ? klass.sideload : Proscenium::Importer.sideload(klass.path)
           klass = klass.superclass
         end
 
@@ -53,6 +53,12 @@ module Proscenium
 
         super
       end
+    end
+
+    private
+
+    def path
+      self.class.path
     end
   end
 end

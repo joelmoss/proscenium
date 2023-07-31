@@ -7,6 +7,7 @@
     "date-fns": "^2.29.3",
     "external-one-link": "link:../external/one",
     "gem1": "link:vendor/gem1",
+    "gem2": "file:../external/gem2",
     "internal-one-link": "link:packages/one",
     "internal-two": "file:packages/two",
     "is-ip": "^5.0.0",

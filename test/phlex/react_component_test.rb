@@ -9,7 +9,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
   include Phlex::Testing::Capybara::ViewHelper
 
   setup do
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
   end
 
   class SystemTest < SystemTestCase

@@ -4,20 +4,19 @@ require 'test_helper'
 
 class Proscenium::BuilderTest < ActiveSupport::TestCase
   setup do
+    Proscenium::Importer.reset
     Proscenium.config.env_vars = Set.new
     Proscenium.config.code_splitting = false
   end
 
-  test 'build multiple files with code splitting' do # rubocop:disable Minitest/MultipleAssertions
+  test 'build multiple files with code splitting' do
     Proscenium.config.code_splitting = true
     result = Proscenium::Builder.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
 
-    assert_includes result, 'assets/lib/code_splitting/son$LAGMAD6O$.js.map;'
-    assert_includes result, 'assets/lib/code_splitting/son$LAGMAD6O$.js;'
-    assert_includes result, 'assets/lib/code_splitting/daughter$7JJ2HGHC$.js.map;'
-    assert_includes result, 'assets/lib/code_splitting/daughter$7JJ2HGHC$.js;'
-    assert_includes result, 'assets/_asset_chunks/chunk-646VT4MD.js.map;'
-    assert_includes result, 'assets/_asset_chunks/chunk-646VT4MD.js'
+    assert_equal([
+      'lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js',
+      'lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js'
+    ].join(';'), result)
   end
 
   test 'build basic js' do

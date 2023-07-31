@@ -6,7 +6,7 @@ class UrlPrefixTest < ActionDispatch::IntegrationTest
   setup do
     Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
   end
 
   test 'js' do

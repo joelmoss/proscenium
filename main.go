@@ -55,6 +55,7 @@ func build(
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		EnvVars:       C.GoString(envVars),
+		Metafile:      true,
 	})
 
 	if len(result.Errors) != 0 {
@@ -66,10 +67,23 @@ func build(
 		return C.struct_Result{C.int(0), C.CString(string(j))}
 	}
 
+	// Multiple paths were given, so return a mapping of inputs to outputs as a JSON encoded string.
 	if strings.Contains(pathStr, ";") {
 		contents := []string{}
-		for _, v := range result.OutputFiles {
-			contents = append(contents, v.Path)
+
+		var meta interface{}
+		err := json.Unmarshal([]byte(result.Metafile), &meta)
+		if err != nil {
+			return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
+		}
+
+		m := meta.(map[string]interface{})
+		for output, v := range m["outputs"].(map[string]interface{}) {
+			for k, input := range v.(map[string]interface{}) {
+				if k == "entryPoint" {
+					contents = append(contents, input.(string)+"::"+output)
+				}
+			}
 		}
 
 		return C.struct_Result{C.int(1), C.CString(strings.Join(contents, ";"))}

@@ -5,7 +5,7 @@ require_relative '../test_helper'
 # rubocop:disable Layout/LineLength
 class ViewComponent::ReactTest < ViewComponent::TestCase
   setup do
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
   end
 
   test 'shallow react component' do

@@ -61,7 +61,7 @@ module Proscenium
 
     def after_template
       super
-      self.class.side_load_cache&.each { |path| SideLoad.append! path, :css }
+      self.class.side_load_cache&.each { |path| Importer.import "#{path}.css" }
     end
   end
 end

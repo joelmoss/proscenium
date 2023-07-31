@@ -3,25 +3,24 @@
 module Proscenium
   module SideLoad::Helper
     def side_load_stylesheets(**options)
-      return unless Proscenium::Current.loaded
-
       out = []
-      Proscenium::Current.loaded[:css].delete_if do |path|
+      Proscenium::Importer.each_stylesheet(delete: true) do |path, _path_options|
         out << stylesheet_link_tag(path, extname: false, **options)
       end
       out.join("\n").html_safe
     end
 
-    def side_load_javascripts(**options) # rubocop:disable Metrics/AbcSize
-      return unless Proscenium::Current.loaded
-
+    def side_load_javascripts(**options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       out = []
-      paths = Proscenium::Current.loaded[:js]
 
-      if Rails.application.config.proscenium.code_splitting && paths.size > 1
-        public_path = Rails.public_path.to_s
+      if Rails.application.config.proscenium.code_splitting &&
+         Proscenium::Importer.multiple_js_imported?
+        imports = Proscenium::Importer.imported.dup
+
         paths_to_build = []
-        paths.delete_if { |x| paths_to_build << x.delete_prefix('/') }
+        Proscenium::Importer.each_javascript(delete: true) do |x, _|
+          paths_to_build << x.delete_prefix('/')
+        end
 
         result = Proscenium::Builder.build(paths_to_build.join(';'), base_url: request.base_url)
 
@@ -29,22 +28,25 @@ module Proscenium
         # are lazy loaded by the component manager.
 
         scripts = {}
-        result.split(';').each do |path|
-          path.delete_prefix! public_path
+        result.split(';').each do |x|
+          inpath, outpath = x.split('::')
+          inpath.prepend '/'
+          outpath.delete_prefix! 'public'
 
-          next if path.start_with?('/assets/_asset_chunks/') || path.end_with?('.map')
+          next unless imports.key?(inpath)
 
-          if path.start_with?('/assets/app/components/')
-            match = path.match(%r{/assets(/app/components/.+/component)\$[a-z0-9]{8}\$\.js$}i)[1]
-            scripts[match] = path
+          import = imports[inpath]
+          if import[:lazy]
+            import.delete :lazy
+            scripts[inpath] = import.merge(outpath: outpath)
           else
-            out << javascript_include_tag(path, extname: false, **options)
+            out << javascript_include_tag(outpath, extname: false, **options)
           end
         end
 
         out << javascript_tag("window.prosceniumComponents = #{scripts.to_json}")
       else
-        paths.delete_if do |path|
+        Proscenium::Importer.each_javascript(delete: true) do |path, _path_options|
           out << javascript_include_tag(path, extname: false, **options)
         end
       end

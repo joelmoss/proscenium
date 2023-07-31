@@ -4,6 +4,8 @@ Rails.application.routes.draw do
   get '/typescript', to: 'pages#typescript'
   get '/sideloadpartial', to: 'pages#sideloadpartial'
   get '/variant', to: 'pages#variant'
+  get '/vendored_gem', to: 'pages#vendored_gem'
+  get '/external_gem', to: 'pages#external_gem'
   get 'phlex/react/one', to: 'phlex/react#one'
   get 'phlex/basic', to: 'phlex#basic'
   get 'first_component', to: 'pages#first_component'

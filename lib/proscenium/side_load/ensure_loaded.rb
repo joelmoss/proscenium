@@ -5,14 +5,14 @@ class Proscenium::SideLoad
     def self.included(child)
       child.class_eval do
         append_after_action do
-          if request.format.html? && Proscenium::Current.loaded
-            if Proscenium::Current.loaded[:js].present?
+          if request.format.html? && Proscenium::Importer.imported?
+            if Proscenium::Importer.js_imported?
               raise NotIncludedError, 'There are javascripts to be side loaded, but they have ' \
                                       'not been included. Did you forget to add the ' \
                                       '`#side_load_javascripts` helper in your views?'
             end
 
-            if Proscenium::Current.loaded[:css].present?
+            if Proscenium::Importer.css_imported?
               raise NotIncludedError, 'There are stylesheets to be side loaded, but they have  ' \
                                       'notbeen included. Did you forget to add the ' \
                                       '`#side_load_stylesheets` helper in your views?'

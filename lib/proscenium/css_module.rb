@@ -33,10 +33,6 @@ module Proscenium::CssModule
 
   private
 
-  def path
-    self.class.path
-  end
-
   def cssm
     @cssm ||= Resolver.new(path)
   end

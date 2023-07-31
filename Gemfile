@@ -21,12 +21,13 @@ end
 group :test do
   gem 'capybara'
   gem 'cuprite'
+  gem 'dry-initializer'
+  gem 'fakefs', require: 'fakefs/safe'
+  gem 'gem1', path: './test/dummy/vendor/gem1'
+  gem 'gem2', path: './test/external/gem2'
   gem 'minitest-focus'
   gem 'minitest-snapshots'
   gem 'phlex-rails'
   gem 'phlex-testing-capybara'
   gem 'view_component'
-
-  gem 'dry-initializer'
-  gem 'gem1', path: './test/dummy/vendor/gem1'
 end

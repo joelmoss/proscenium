@@ -4,25 +4,22 @@ require 'view_component'
 
 class Proscenium::ViewComponent < ViewComponent::Base
   extend ActiveSupport::Autoload
-  include Proscenium::CssModule
+  # include Proscenium::CssModule
 
   autoload :TagBuilder
   autoload :ReactComponent
 
-  # Side loads the class, and its super classes that respond to `.path`. Assign the `abstract_class`
-  # class variable to any abstract class, and it will not be side loaded. Additionally, if the class
-  # responds to `side_load`, then that method is called.
+  # Side loads the class, and its super classes that respond to `.path`. Assign the
+  # `abstract_class` class variable to any abstract class, and it will not be side loaded.
+  # Additionally, if the class instance responds to `sideload?`, and it returns false, it will not
+  # be side loaded.
   module Sideload
     def before_render
+      return super if respond_to?(:sideload?) && !sideload?
+
       klass = self.class
-
-      if !klass.abstract_class && respond_to?(:side_load, true)
-        side_load
-        klass = klass.superclass
-      end
-
       while !klass.abstract_class && klass.respond_to?(:path) && klass.path
-        Proscenium::SideLoad.append klass.path
+        klass.respond_to?(:sideload) ? klass.sideload : Proscenium::Importer.sideload(klass.path)
         klass = klass.superclass
       end
 
@@ -52,6 +49,10 @@ class Proscenium::ViewComponent < ViewComponent::Base
   end
 
   private
+
+  def path
+    self.class.path
+  end
 
   # Overrides ActionView::Helpers::TagHelper::TagBuilder, allowing us to intercept the
   # `css_module` option from the HTML options argument of the `tag` and `content_tag` helpers, and

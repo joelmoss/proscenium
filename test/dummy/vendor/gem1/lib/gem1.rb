@@ -5,5 +5,5 @@ require_relative 'gem1/engine'
 
 module Gem1
   class Error < StandardError; end
-  # Your code goes here...
+  module Components; end
 end

@@ -14,6 +14,12 @@ PATH
     gem1 (0.1.0)
       rails (>= 7.0.4)
 
+PATH
+  remote: test/external/gem2
+  specs:
+    gem2 (0.1.0)
+      rails (>= 7.0.4)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -107,6 +113,7 @@ GEM
     erb (4.0.2)
       cgi (>= 0.3.3)
     erubi (1.12.0)
+    fakefs (2.5.0)
     ferrum (0.13)
       addressable (~> 2.5)
       concurrent-ruby (~> 1.1)
@@ -255,7 +262,9 @@ DEPENDENCIES
   capybara
   cuprite
   dry-initializer
+  fakefs
   gem1!
+  gem2!
   minitest-focus
   minitest-snapshots
   phlex-rails

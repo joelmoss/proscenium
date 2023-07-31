@@ -14,18 +14,18 @@ class Proscenium::SideLoad
            template.is_a?(ActionView::Template::Renderable) &&
            renderable.class < ::ViewComponent::Base && renderable.class.format == :html
           # Side load controller rendered ViewComponent
-          Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
-          Proscenium::SideLoad.append "app/views/#{renderable.virtual_path}"
+          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
+          Proscenium::Importer.sideload "app/views/#{renderable.virtual_path}"
         elsif template.respond_to?(:virtual_path) &&
               template.respond_to?(:type) && template.type == :html
-          Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
+          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
 
           # Try side loading the variant template
           if template.respond_to?(:variant) && template.variant
-            Proscenium::SideLoad.append "app/views/#{template.virtual_path}+#{template.variant}"
+            Proscenium::Importer.sideload "app/views/#{template.virtual_path}+#{template.variant}"
           end
 
-          Proscenium::SideLoad.append "app/views/#{template.virtual_path}"
+          Proscenium::Importer.sideload "app/views/#{template.virtual_path}"
         end
 
         super
@@ -38,8 +38,8 @@ class Proscenium::SideLoad
       def render_partial_template(view, locals, template, layout, block)
         if template.respond_to?(:virtual_path) &&
            template.respond_to?(:type) && template.type == :html
-          Proscenium::SideLoad.append "app/views/#{layout.virtual_path}" if layout
-          Proscenium::SideLoad.append "app/views/#{template.virtual_path}"
+          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
+          Proscenium::Importer.sideload "app/views/#{template.virtual_path}"
         end
 
         super

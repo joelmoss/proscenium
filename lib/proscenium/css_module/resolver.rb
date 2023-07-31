@@ -63,7 +63,7 @@ module Proscenium
     def side_load_css_module
       return if !@side_load || !Rails.application.config.proscenium.side_load
 
-      paths = SideLoad.append @path, { '.module.css' => :css }
+      paths = Importer.import "#{@path}.module.css"
 
       @side_loaded_paths = if paths.empty?
                              nil

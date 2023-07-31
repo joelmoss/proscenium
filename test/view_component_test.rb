@@ -6,7 +6,7 @@ class ViewComponentTest < ViewComponent::TestCase
   include Rails::Dom::Testing::Assertions::DomAssertions
 
   setup do
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
   end
 
   test 'with dry initializer' do

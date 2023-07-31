@@ -3,7 +3,7 @@
 module Proscenium::Phlex::ComponentConcerns
   module CssModules
     extend ActiveSupport::Concern
-    include Proscenium::CssModule
+    # include Proscenium::CssModule
     include Proscenium::Phlex::ResolveCssModules
   end
 end

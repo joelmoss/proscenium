@@ -7,7 +7,7 @@ class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
   include Phlex::Testing::Rails::ViewHelper
 
   setup do
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
     Phlex::SideLoadCssModuleFromAttributesView.side_load_cache = Set.new
   end
 
@@ -29,16 +29,16 @@ class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
     end
   end
 
+  focus
   test 'should side load css module when bare path is given' do
     result = render(Phlex::SideLoadCssModuleFromAttributesView.new('mypackage/foo@foo'))
 
     assert_equal('<div class="foo39337ba7">Hello</div>', result)
     assert_equal({
-                   js: Set[],
-                   css: Set['/app/components/phlex/side_load_css_module_from_attributes_view.module.css',
-                            '/packages/mypackage/foo.module.css']
+                   '/app/components/phlex/side_load_css_module_from_attributes_view.module.css' => { sideloaded: true },
+                   '/packages/mypackage/foo.module.css' => { sideloaded: true }
                  },
-                 Proscenium::Current.loaded)
+                 Proscenium::Importer.imported)
   end
 
   test 'should side load css module when absolute path is given' do
@@ -46,10 +46,9 @@ class Proscenium::Phlex::ResolveCssModuleTest < ActiveSupport::TestCase
 
     assert_equal('<div class="myClass330940eb">Hello</div>', result)
     assert_equal({
-                   js: Set[],
-                   css: Set['/app/components/phlex/side_load_css_module_from_attributes_view.module.css',
-                            '/lib/styles.module.css']
-                 }, Proscenium::Current.loaded)
+                   '/app/components/phlex/side_load_css_module_from_attributes_view.module.css' => { sideloaded: true },
+                   '/lib/styles.module.css' => { sideloaded: true }
+                 }, Proscenium::Importer.imported)
   end
 
   test 'should raise when path is given but stylesheet does not exist' do

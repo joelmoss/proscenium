@@ -1,2 +1,2 @@
 --- <div data-proscenium-component-path="/app/components/view_component/first_react_component.jsx"
-  data-proscenium-component-props="{}"><div>loading...</div></div>
+  data-proscenium-component-props="{}" data-proscenium-component-lazy="false"><div>loading...</div></div>

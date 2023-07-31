@@ -3,8 +3,6 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path"
 	"strings"
 
 	"joelmoss/proscenium/internal/importmap"
@@ -137,13 +135,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	result := esbuild.Build(buildOptions)
-
-	if options.Metafile {
-		os.WriteFile(path.Join(types.Config.RootPath, "meta.json"), []byte(result.Metafile), 0644)
-	}
-
-	return result
+	return esbuild.Build(buildOptions)
 }
 
 // Maintains a cache of environment variables.

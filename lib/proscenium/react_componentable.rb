@@ -3,8 +3,6 @@
 module Proscenium::ReactComponentable
   extend ActiveSupport::Concern
 
-  COMPONENT_MANAGER_PATH = Rails.root.join('lib', 'manager', 'index.rb').freeze
-
   included do
     # @return [Hash] the props to pass to the React component.
     attr_writer :props
@@ -23,6 +21,19 @@ module Proscenium::ReactComponentable
     #
     # @return [Boolean]
     class_attribute :forward_children, default: false
+
+    # Lazy load the component using IntersectionObserver?
+    #
+    # @return [Boolean]
+    class_attribute :lazy, default: false
+  end
+
+  class_methods do
+    def sideload
+      # Import the component manager.
+      Proscenium::Importer.import '/lib/manager/index.jsx'
+      Proscenium::Importer.sideload path, lazy: true
+    end
   end
 
   # @param props: [Hash]
@@ -30,13 +41,6 @@ module Proscenium::ReactComponentable
     @props = props
 
     super()
-  end
-
-  def sideload?
-    # Side load the component manager.
-    Proscenium::SideLoad.append COMPONENT_MANAGER_PATH
-
-    true
   end
 
   def virtual_path
@@ -47,8 +51,9 @@ module Proscenium::ReactComponentable
 
   def data_attributes
     d = {
-      proscenium_component_path: Pathname.new(virtual_path).sub_ext('').to_s,
-      proscenium_component_props: prepared_props
+      proscenium_component_path: Pathname.new(virtual_path).to_s,
+      proscenium_component_props: prepared_props,
+      proscenium_component_lazy: lazy
     }
 
     d[:proscenium_component_forward_children] = true if forward_children?

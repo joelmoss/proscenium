@@ -5,7 +5,7 @@ require 'test_helper'
 class ResolvePathTest < ActiveSupport::TestCase
   setup do
     Proscenium.config.side_load_gems = {}
-    Proscenium.reset_current_side_loaded
+    Proscenium::Importer.reset
   end
 
   test 'raise when path is not a string' do

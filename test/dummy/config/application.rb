@@ -27,8 +27,8 @@ module Dummy
 
     config.autoload_paths << "#{root}/app"
 
-    config.proscenium.code_splitting = true
-    config.proscenium.debug = true
+    # config.proscenium.code_splitting = true
+    # config.proscenium.debug = true
     config.proscenium.include_paths << 'app/components'
   end
 end

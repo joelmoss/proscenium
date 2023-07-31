@@ -3,27 +3,39 @@ const elements = document.querySelectorAll("[data-proscenium-component-path]");
 // Return now if there are no components.
 elements.length > 0 && init();
 
-async function init() {
-  // const { Suspense, lazy, createElement } = await import("react");
-  // const { createRoot } = await import("react-dom/client");
-  const { Suspense, lazy, createElement, createRoot } = await import("./react");
+function init() {
+  function mount(element, path, props) {
+    const react = import("./react");
+    const component = window.prosceniumComponents[path];
+    const Component = import(component.outpath);
+
+    Promise.all([react, Component]).then(([r, c]) => {
+      if (proscenium.env.RAILS_ENV === "development") {
+        console.log(`[proscenium/component-manager] 🔥 %o mounted!`, path);
+      }
+
+      r.createRoot(element).render(r.createElement(c.default, props));
+    });
+  }
 
   Array.from(elements, (element) => {
     const path = element.dataset.prosceniumComponentPath;
+    const isLazy = "prosceniumComponentLazy" in element.dataset;
     const { children, ...props } = JSON.parse(
       element.dataset.prosceniumComponentProps
     );
-    const isLazy = element.dataset.prosceniumComponentLazy;
 
     if (proscenium.env.RAILS_ENV === "development") {
-      console.groupCollapsed(`[proscenium/component-manager] Found %o`, path);
+      console.groupCollapsed(
+        isLazy
+          ? `[proscenium/component-manager] 💤 %o`
+          : `[proscenium/component-manager] ⚡️ %o`,
+        path
+      );
       console.log("element: %o", element);
       console.log("props: %o", props);
       console.groupEnd();
     }
-
-    const mappedPath = window.prosceniumComponents[path];
-    const root = createRoot(element);
 
     if (isLazy) {
       const observer = new IntersectionObserver((entries) => {
@@ -31,27 +43,14 @@ async function init() {
           if (entry.isIntersecting) {
             observer.unobserve(element);
 
-            root.render(
-              createElement(
-                lazy(() => import(mappedPath)),
-                props
-              )
-            );
+            mount(element, path, props);
           }
         });
       });
 
       observer.observe(element);
     } else {
-      root.render(
-        createElement(
-          lazy(() => {
-            console.log(mappedPath);
-            return import(mappedPath);
-          }),
-          props
-        )
-      );
+      mount(element, path, props);
     }
   });
 }

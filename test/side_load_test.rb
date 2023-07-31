@@ -5,44 +5,7 @@ require_relative 'test_helper'
 class SideLoadTest < ActionDispatch::IntegrationTest
   setup do
     Proscenium.config.cache_query_string = false
-    Proscenium.reset_current_side_loaded
-  end
-
-  test '.append' do
-    Proscenium::SideLoad.append 'app/views/layouts/application'
-
-    assert_equal({
-                   js: Set['/app/views/layouts/application.js'],
-                   css: Set['/app/views/layouts/application.css']
-                 }, Proscenium::Current.loaded)
-  end
-
-  test '.append duplicate path' do
-    Proscenium::SideLoad.append 'app/views/layouts/application'
-    Proscenium::SideLoad.append 'app/views/layouts/application'
-
-    assert_equal({
-                   js: Set['/app/views/layouts/application.js'],
-                   css: Set['/app/views/layouts/application.css']
-                 }, Proscenium::Current.loaded)
-  end
-
-  test '.append with extension argument' do
-    Proscenium::SideLoad.append 'app/views/layouts/application', { '.js' => :js }
-
-    assert_equal({
-                   js: Set['/app/views/layouts/application.js'],
-                   css: Set[]
-                 }, Proscenium::Current.loaded)
-  end
-
-  test '.append css module' do
-    Proscenium::SideLoad.append 'lib/styles', { '.module.css' => :css }
-
-    assert_equal({
-                   js: Set[],
-                   css: Set['/lib/styles.module.css']
-                 }, Proscenium::Current.loaded)
+    Proscenium::Importer.reset
   end
 
   test 'Side load layout and view' do
@@ -51,7 +14,7 @@ class SideLoadTest < ActionDispatch::IntegrationTest
     assert_matches_snapshot response.body
   end
 
-  test 'Side load action rendered component' do
+  test 'Side load action rendered view component' do
     get '/action_rendered_component'
 
     assert_matches_snapshot response.body
@@ -71,6 +34,18 @@ class SideLoadTest < ActionDispatch::IntegrationTest
 
   test 'Side load partial' do
     get '/sideloadpartial'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'Side load vendored gem' do
+    get '/vendored_gem'
+
+    assert_matches_snapshot response.body
+  end
+
+  test 'Side load external gem' do
+    get '/external_gem'
 
     assert_matches_snapshot response.body
   end

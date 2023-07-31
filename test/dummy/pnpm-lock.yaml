@@ -20,6 +20,9 @@ dependencies:
   gem1:
     specifier: link:vendor/gem1
     version: link:vendor/gem1
+  gem2:
+    specifier: file:../external/gem2
+    version: file:../external/gem2
   internal-one-link:
     specifier: link:packages/one
     version: link:packages/one
@@ -272,6 +275,11 @@ packages:
     engines: {node: '>=12'}
     dependencies:
       convert-hrtime: 5.0.0
+    dev: false
+
+  file:../external/gem2:
+    resolution: {directory: ../external/gem2, type: directory}
+    name: gem2
     dev: false
 
   file:packages/two:
