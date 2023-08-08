@@ -7,6 +7,8 @@ class Proscenium::SideLoad
       private
 
       def render_template(view, template, layout_name, locals)
+        return super unless Proscenium.config.side_load
+
         layout = find_layout(layout_name, locals.keys, [formats.first])
         renderable = template.instance_variable_get(:@renderable)
 
@@ -36,19 +38,13 @@ class Proscenium::SideLoad
       private
 
       def render_partial_template(view, locals, template, layout, block)
-        if template.respond_to?(:virtual_path) &&
+        if Proscenium.config.side_load && template.respond_to?(:virtual_path) &&
            template.respond_to?(:type) && template.type == :html
           Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
           Proscenium::Importer.sideload "app/views/#{template.virtual_path}"
         end
 
         super
-      end
-
-      def build_rendered_template(content, template)
-        path = Rails.root.join('app', 'views', template.virtual_path)
-        cssm = Proscenium::CssModule::Resolver.new(path)
-        super cssm.compile_class_names(content), template
       end
     end
   end

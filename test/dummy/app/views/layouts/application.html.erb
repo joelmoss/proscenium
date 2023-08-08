@@ -2,10 +2,10 @@
 <html>
   <head>
     <title>Proscenium Test App</title>
-    <%= side_load_stylesheets %>
+    <%# include_stylesheets %>
   </head>
   <body>
     <%= yield %>
-    <%= side_load_javascripts type: 'module', defer: true %>
+    <%# include_javascripts type: 'module', defer: true %>
   </body>
 </html>

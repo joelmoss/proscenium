@@ -32,7 +32,7 @@ module Proscenium::Phlex::Page
 
   def after_template
     super
-    @_buffer.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { side_load_stylesheets })
+    @_buffer.gsub!('<!-- [SIDE_LOAD_STYLESHEETS] -->', capture { include_stylesheets })
   end
 
   def page_title
@@ -56,7 +56,7 @@ module Proscenium::Phlex::Page
     super do
       yield if block_given?
 
-      side_load_javascripts type: :module, defer: true
+      include_javascripts type: :module, defer: true
     end
   end
 end

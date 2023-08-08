@@ -1,7 +1,6 @@
 Rails.application.routes.draw do
   # Tests
   root to: 'pages#home'
-  get '/typescript', to: 'pages#typescript'
   get '/sideloadpartial', to: 'pages#sideloadpartial'
   get '/variant', to: 'pages#variant'
   get '/vendored_gem', to: 'pages#vendored_gem'
@@ -11,7 +10,6 @@ Rails.application.routes.draw do
   get 'first_component', to: 'pages#first_component'
   get 'first_react_component', to: 'pages#first_react_component'
   get 'second_react_component', to: 'pages#second_react_component'
-  get 'action_rendered_component', to: 'pages#action_rendered_component'
 
   # Playground
   resources :articles

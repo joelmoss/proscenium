@@ -116,8 +116,8 @@ var _ = Describe("Build(parseCss)", func() {
 
 				It("relative mixin is resolved", func() {
 					Expect(`
-					header {
-						@mixin red from url('./mixins/colors.css');
+						header {
+							@mixin red from url('./mixins/colors.css');
 						}
 					`).To(BeParsedTo(`
 						header {

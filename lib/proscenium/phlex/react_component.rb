@@ -15,7 +15,6 @@ class Proscenium::Phlex::ReactComponent < Proscenium::Phlex
   self.abstract_class = true
 
   include Proscenium::ReactComponentable
-  include Proscenium::Phlex::ComponentConcerns::CssModules
 
   # Override this to provide your own loading UI.
   #

@@ -2,6 +2,6 @@
 
 class ViewComponent::CssModule::Component < Proscenium::ViewComponent
   def call
-    tag.h1 'Hello', class: :@base
+    tag.h1('Hello', class: [:foo, :@hello]) + tag.h2('World', class: '@world')
   end
 end

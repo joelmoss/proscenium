@@ -163,25 +163,25 @@ Your application layout is at `/app/views/layouts/application.hml.erb`, and the 
 - `/app/views/users/index.js`
 - `/app/views/users/_user.js` (partial)
 
-Now, in your layout and view, replace the `javascript_include_tag` and `stylesheet_link_tag` helpers with the `side_load_stylesheets` and `side_load_javascripts` helpers from Proscenium. Something like this:
+Now, in your layout and view, replace the `javascript_include_tag` and `stylesheet_link_tag` helpers with the `include_stylesheets` and `include_javascripts` helpers from Proscenium. Something like this:
 
 ```erb
 <!DOCTYPE html>
 <html>
   <head>
     <title>Hello World</title>
-    <%= side_load_stylesheets %>
+    <%= include_stylesheets %>
   </head>
   <body>
     <%= yield %>
-    <%= side_load_javascripts type: 'module', defer: true %>
+    <%= include_javascripts type: 'module', defer: true %>
   </body>
 </html>
 ```
 
 > NOTE that Proscenium is desiged to work with modern JavaAscript, and assumes [ESModules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) are used everywhere. This is why the `type` attribute is set to `module` in the example above. If you are not using ESModules, then you can omit the `type` attribute.
 
-On each page request, Proscenium will check if your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `side_load_stylesheets` and `side_load_javascripts` helpers.
+On each page request, Proscenium will check if your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `include_stylesheets` and `include_javascripts` helpers.
 
 Now you never have to remember to include your assets again. Just create them alongside your views, partials and layouts, and Proscenium will take care of the rest.
 
@@ -464,25 +464,44 @@ export let Button = ({ text }) => {
 
 ### CSS Modules
 
-Proscenium implements a subset of [CSS Modules](https://github.com/css-modules/css-modules). It supports the `:local` and `:global` keywords, but not the `composes` property. It is recommended that you use mixins instead of `composes`, as they work everywhere.
+Proscenium implements a subset of [CSS Modules](https://github.com/css-modules/css-modules). It supports the `:local` and `:global` keywords, but not the `composes` property. (it is recommended that you use mixins instead of `composes`, as they will work everywhere, even in plain CSS files.)
 
-Give any CSS file a `.module.css` extension, and Proscenium will load it as a CSS Module...
+Give any CSS file a `.module.css` extension, and Proscenium will treat it as a CSS Module, transforming all class names with a suffix unique to the file.
 
 ```css
-.header {
-  background-color: #00f;
+.title {
+  font-size: 20em;
 }
 ```
 
 The above input produces:
 
 ```css
-.header5564cdbb {
-  background-color: #00f;
+.title5564cdbb {
+  font-size: 20em;
 }
 ```
 
-Importing a CSS file from JS will automatically append the stylesheet to the document's head. And the results of the import will be an object of CSS class to module names.
+You now have a unique class name that you can use pretty much anywhere.
+
+#### In your Views
+
+You can reference CSS modules from your Rails views, partials, and layouts using the `css_module` helper. This helper accepts one or more class names, and will return the equivilent CSS module names - the class name with the unique suffix appended.
+
+Include your CSS module into your view with `stylesheet_link_tag`, or even better, automatically [sideload your view](#side-loading), then use the `css_module` helper as follows.
+
+```erb
+<div>
+  <h1 class="<%= css_module :title %>">Hello World</h1>
+  <p class="<%= css_module :body %>">
+    Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+  </p>
+</div>
+```
+
+#### In your JavaScript
+
+Importing a CSS module from JS will automatically append the stylesheet to the document's head. And the result of the import will be an object of CSS class to module names.
 
 ```js
 import styles from './styles.module.css'
@@ -617,7 +636,7 @@ The cache is set with a `max-age` of 30 days. You can customise this with the `c
 Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 ```
 
-## rjs is back!
+## rjs is back
 
 Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to import server rendered javascript.
 
@@ -671,7 +690,7 @@ go test ./internal/builder -bench=. -run="^$" -count=10 -benchmem
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/joelmoss/proscenium. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/joelmoss/proscenium/blob/master/CODE_OF_CONDUCT.md).
+Bug reports and pull requests are welcome on GitHub at <https://github.com/joelmoss/proscenium>. This project is intended to be a safe, welcoming space for collaboration, and contributors are expected to adhere to the [code of conduct](https://github.com/joelmoss/proscenium/blob/master/CODE_OF_CONDUCT.md).
 
 ## License
 

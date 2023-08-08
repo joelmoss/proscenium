@@ -14,26 +14,26 @@ module Proscenium::CssModule
     end
   end
 
-  autoload :ClassNamesResolver
-  autoload :Resolver # deprecated
+  autoload :Monkey
+  autoload :Transformer
 
   # Like `css_modules`, but will raise if the stylesheet cannot be found.
   #
   # @param name [Array, String]
-  def css_module!(names)
-    cssm.class_names!(names).join ' '
-  end
+  # def css_module!(names)
+  #   cssm.class_names!(names).join ' '
+  # end
 
   # Accepts one or more CSS class names, and transforms them into CSS module names.
   #
-  # @param name [Array, String]
-  def css_module(names)
-    cssm.class_names(names).join ' '
+  # @param name [String,Symbol,Array<String,Symbol>]
+  def css_module(*names)
+    cssm.class_names(*names, require_prefix: false).join ' '
   end
 
   private
 
   def cssm
-    @cssm ||= Resolver.new(path)
+    @cssm ||= Transformer.new(source_path)
   end
 end

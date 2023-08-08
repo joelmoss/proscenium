@@ -1,1 +1,1 @@
-console.log('/app/controllers/some.js')
+console.log('/db/some.js')

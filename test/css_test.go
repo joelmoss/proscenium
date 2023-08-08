@@ -15,10 +15,10 @@ var _ = Describe("Build(css)", func() {
 	})
 
 	Describe("css module", func() {
-		path := "app/components/phlex/side_load_css_module_view.module.css"
+		path := "lib/css_modules/basic.module.css"
 
 		It("should build", func() {
-			Expect(Build(path)).To(ContainCode(`.basebd9b41e5 { color: red; }`))
+			Expect(Build(path)).To(ContainCode(`.fooc3f452b4 { color: red; }`))
 		})
 	})
 

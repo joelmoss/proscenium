@@ -19,6 +19,7 @@ Metrics/BlockLength:
   Exclude:
     - Rakefile
     - proscenium.gemspec
+    - "test/**/*"
 Metrics/MethodLength:
   Max: 20
 Metrics/AbcSize:

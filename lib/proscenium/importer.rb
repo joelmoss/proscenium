@@ -23,12 +23,20 @@ module Proscenium
       #
       # @param filepath [String] Absolute path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
-      # @return [String] the imported file path.
+      # @return [String] the digest of the imported file path if a css module (*.module.css).
       def import(filepath, **options)
         self.imported ||= {}
-        self.imported[filepath] = { **options }
 
-        filepath
+        css_module = filepath.end_with?('.module.css')
+
+        unless self.imported.key?(filepath)
+          # ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
+
+          self.imported[filepath] = { **options }
+          self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+        end
+
+        css_module ? self.imported[filepath][:digest] : nil
       end
 
       # Sideloads JS and CSS assets for the given Ruby file.
@@ -56,7 +64,7 @@ module Proscenium
 
         import_if_exists = lambda do |x|
           if (fp = filepath.sub_ext(x)).exist?
-            import(Utils.resolve_path(fp.to_s), sideloaded: true, **options)
+            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
           end
         end
 

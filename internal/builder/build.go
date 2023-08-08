@@ -29,8 +29,6 @@ type BuildOptions struct {
 
 	// Import map contents.
 	ImportMap []byte
-
-	Metafile bool
 }
 
 // Build the given `options.Path` in the `options.Root`.
@@ -87,7 +85,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Write:             types.Config.CodeSplitting,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          options.Metafile,
+		Metafile:          hasMultipleEntrypoints,
 		Target:            esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.

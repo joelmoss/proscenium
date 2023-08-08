@@ -44,7 +44,7 @@ While you could of course use the `javascript_include_tag` and `stylesheet_link_
 
 [Side loading](/README.md#side-loading) is the process of automatically including your client side code alongside your Rails views. Let's see how this works:
 
-Your new Rails app already has a `app/views/layouts/application.html.erb` file, which is the default layout for your app. Open it up and look for the `stylesheet_link_tag` and `javascript_include_tag` helpers. You need to replace these helpers with the `side_load_stylesheets` and `side_load_javascripts` helpers provided by Proscenium, ending up with something like this:
+Your new Rails app already has a `app/views/layouts/application.html.erb` file, which is the default layout for your app. Open it up and look for the `stylesheet_link_tag` and `javascript_include_tag` helpers. You need to replace these helpers with the `include_stylesheets` and `include_javascripts` helpers provided by Proscenium, ending up with something like this:
 
 ```erb
 <!DOCTYPE html>
@@ -54,18 +54,18 @@ Your new Rails app already has a `app/views/layouts/application.html.erb` file, 
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= side_load_stylesheets %>
+    <%= include_stylesheets %>
   </head>
 
   <body>
     <%= yield %>
 
-    <%= side_load_javascripts, type: 'module', defer: true %>
+    <%= include_javascripts, type: 'module', defer: true %>
   </body>
 </html>
 ```
 
-You may have noticed that unlike the original Rails helpers that you just replaced, the `side_load_stylesheets` and `side_load_javascripts` helpers do not require that you specify the name of the file(s) to include - Proscenium will figure that out for you.
+You may have noticed that unlike the original Rails helpers that you just replaced, the `include_stylesheets` and `include_javascripts` helpers do not require that you specify the name of the file(s) to include - Proscenium will figure that out for you.
 
 ### Side load your application layout
 
