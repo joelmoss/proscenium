@@ -139,9 +139,6 @@ GEM
     method_source (1.0.0)
     mini_mime (1.1.2)
     minitest (5.18.1)
-    minitest-focus (1.4.0)
-      minitest (>= 4, < 6)
-    minitest-snapshots (1.0.0)
     net-imap (0.3.6)
       date
       net-protocol
@@ -223,8 +220,6 @@ GEM
       unicode-display_width (>= 2.4.0, < 3.0)
     rubocop-ast (1.29.0)
       parser (>= 3.2.1.0)
-    rubocop-minitest (0.31.0)
-      rubocop (>= 1.39, < 2.0)
     rubocop-packaging (0.5.2)
       rubocop (>= 1.33, < 2.0)
     rubocop-performance (1.18.0)
@@ -266,15 +261,12 @@ DEPENDENCIES
   fakefs
   gem1!
   gem2!
-  minitest-focus
-  minitest-snapshots
   phlex-rails
   phlex-testing-capybara
   proscenium!
   puma
   rails (~> 7.0)
   rubocop
-  rubocop-minitest
   rubocop-packaging
   rubocop-performance
   rubocop-rake
