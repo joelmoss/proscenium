@@ -5,14 +5,13 @@ describe Proscenium::Builder do
     Proscenium::Importer.reset
     Proscenium::Resolver.reset
     Proscenium.config.env_vars = Set.new
-    Proscenium.config.code_splitting = false
   end
 
   with '.build' do
     it 'builds multiple files' do
       expect(subject.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')).to be == %(
-      lib/code_splitting/son.js::public/assets/lib/code_splitting/son$7CNKRT3J$.js;
-      lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$P5YYU4WE$.js
+      lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
+      lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
     ).gsub(/[[:space:]]/, '')
     end
 

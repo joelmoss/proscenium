@@ -18,7 +18,7 @@ module Proscenium
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.debug = false
     config.proscenium.side_load = true
-    config.proscenium.code_splitting = false
+    config.proscenium.code_splitting = true
     config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
 
     # TODO: implement!
