@@ -11,7 +11,12 @@ function init() {
 
     Promise.all([react, Component]).then(([r, c]) => {
       if (proscenium.env.RAILS_ENV === "development") {
-        console.log(`[proscenium/component-manager] 🔥 %o mounted!`, path);
+        console.groupCollapsed(
+          `[proscenium/component-manager] 🔥 %o mounted!`,
+          path
+        );
+        console.log("props: %o", props);
+        console.groupEnd();
       }
 
       r.createRoot(element).render(r.createElement(c.default, props));

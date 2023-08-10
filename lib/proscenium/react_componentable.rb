@@ -30,16 +30,19 @@ module Proscenium
     end
 
     class_methods do
+      # Import only the component manager. The component itself is side loaded in the initializer,
+      # so that it can be lazy loaded based on the value of the `lazy` instance variable.
       def sideload
-        # Import the component manager.
         Importer.import '/lib/manager/index.jsx'
-        Importer.sideload source_path, lazy: true
       end
     end
 
     # @param props: [Hash]
-    def initialize(props: {})
+    def initialize(lazy: self.class.lazy, props: {})
+      self.lazy = lazy
       @props = props
+
+      Importer.sideload source_path, lazy: lazy
 
       super()
     end
@@ -52,15 +55,13 @@ module Proscenium
     private
 
     def data_attributes
-      d = {
+      {
         proscenium_component_path: Pathname.new(virtual_path).to_s,
         proscenium_component_props: prepared_props,
         proscenium_component_lazy: lazy
-      }
-
-      d[:proscenium_component_forward_children] = true if forward_children?
-
-      d
+      }.tap do |x|
+        x[:proscenium_component_forward_children] = true if forward_children?
+      end
     end
 
     def props

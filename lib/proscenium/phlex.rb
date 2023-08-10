@@ -21,10 +21,6 @@ module Proscenium
     define_output_helper :side_load_javascripts # deprecated
     define_output_helper :include_javascripts
 
-    # Side loads the class, and its super classes that respond to `.source_path`. Assign the
-    # `abstract_class` class variable to any abstract class, and it will not be side loaded.
-    # Additionally, if the class instance responds to `sideload?`, and it returns false, it will not
-    # be side loaded.
     module Sideload
       def before_template
         Proscenium::SideLoad.sideload_inheritance_chain self
