@@ -30,12 +30,11 @@ module Proscenium
     def include_javascripts(**options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       out = []
 
-      if Rails.application.config.proscenium.code_splitting &&
-         Importer.multiple_js_imported?
+      if Rails.application.config.proscenium.code_splitting && Importer.multiple_js_imported?
         imports = Importer.imported.dup
 
         paths_to_build = []
-        Proscenium::Importer.each_javascript(delete: true) do |x, _|
+        Importer.each_javascript(delete: true) do |x, _|
           paths_to_build << x.delete_prefix('/')
         end
 

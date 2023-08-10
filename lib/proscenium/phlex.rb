@@ -6,8 +6,8 @@ module Proscenium
   class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
 
-    autoload :CssModules
     autoload :Page
+    autoload :CssModules
     autoload :ReactComponent
 
     extend ::Phlex::Rails::HelperMacros
@@ -16,9 +16,9 @@ module Proscenium
     include Proscenium::SourcePath
     include CssModules
 
-    define_output_helper :side_load_stylesheets
+    define_output_helper :side_load_stylesheets # deprecated
     define_output_helper :include_stylesheets
-    define_output_helper :side_load_javascripts
+    define_output_helper :side_load_javascripts # deprecated
     define_output_helper :include_javascripts
 
     # Side loads the class, and its super classes that respond to `.source_path`. Assign the

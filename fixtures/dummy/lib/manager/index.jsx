@@ -1,6 +1,6 @@
 const elements = document.querySelectorAll("[data-proscenium-component-path]");
 
-// Return now if there are no components.
+// Initialize if there are components.
 elements.length > 0 && init();
 
 function init() {

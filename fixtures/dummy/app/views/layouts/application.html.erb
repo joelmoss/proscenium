@@ -2,10 +2,10 @@
 <html>
   <head>
     <title>Proscenium Test App</title>
-    <%# include_stylesheets %>
+    <%= include_stylesheets if Rails.env.development? %>
   </head>
   <body>
     <%= yield %>
-    <%# include_javascripts type: 'module', defer: true %>
+    <%= include_javascripts type: 'module', defer: true if Rails.env.development? %>
   </body>
 </html>

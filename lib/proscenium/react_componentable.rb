@@ -32,8 +32,8 @@ module Proscenium
     class_methods do
       def sideload
         # Import the component manager.
-        Proscenium::Importer.import '/lib/manager/index.jsx'
-        Proscenium::Importer.sideload source_path, lazy: true
+        Importer.import '/lib/manager/index.jsx'
+        Importer.sideload source_path, lazy: true
       end
     end
 
@@ -44,8 +44,9 @@ module Proscenium
       super()
     end
 
+    # The absolute URL path to the javascript component.
     def virtual_path
-      Resolver.resolve source_path.sub_ext('.jsx').to_s
+      @virtual_path ||= Resolver.resolve source_path.sub_ext('.jsx').to_s
     end
 
     private
