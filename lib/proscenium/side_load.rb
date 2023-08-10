@@ -4,8 +4,6 @@ module Proscenium
   class SideLoad
     extend ActiveSupport::Autoload
 
-    NotIncludedError = Class.new(StandardError)
-
     autoload :Monkey
 
     class << self
