@@ -673,7 +673,7 @@ bundle exec rake compile:local
 We have tests for both Ruby and Go. To run the Ruby tests:
 
 ```bash
-bundle exec rake test
+bundle exec sus
 ```
 
 To run the Go tests:
