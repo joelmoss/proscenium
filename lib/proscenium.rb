@@ -27,6 +27,14 @@ module Proscenium
   autoload :Importer
   autoload :Resolver
 
+  class Deprecator
+    def deprecation_warning(name, message, _caller_backtrace = nil)
+      msg = "`#{name}` is deprecated and will be removed in a near future release of Proscenium"
+      msg << " (#{message})" if message
+      Kernel.warn msg
+    end
+  end
+
   class PathResolutionFailed < StandardError
     def initialize(path)
       @path = path

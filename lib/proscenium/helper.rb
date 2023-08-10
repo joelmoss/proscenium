@@ -24,7 +24,8 @@ module Proscenium
       out.join("\n").html_safe
     end
     alias side_load_stylesheets include_stylesheets
-    deprecate :side_load_stylesheets
+    deprecate side_load_stylesheets: 'Use `include_stylesheets` instead.',
+              deprecator: Deprecator.new
 
     def include_javascripts(**options) # rubocop:disable Metrics/AbcSize, Metrics/MethodLength
       out = []
@@ -70,6 +71,7 @@ module Proscenium
       out.join("\n").html_safe
     end
     alias side_load_javascripts include_javascripts
-    deprecate :side_load_javascripts
+    deprecate side_load_javascripts: 'Use `include_javascripts` instead.',
+              deprecator: Deprecator.new
   end
 end
