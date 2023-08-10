@@ -21,7 +21,7 @@ func TestProscenium(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	_, filename, _, _ := runtime.Caller(0)
-	assetPath := path.Join(path.Dir(filename), "dummy", "public", "assets")
+	assetPath := path.Join(path.Dir(filename), "..", "fixtures", "dummy", "public", "assets")
 	dir, _ := os.ReadDir(assetPath)
 	for _, d := range dir {
 		os.RemoveAll(path.Join(assetPath, d.Name()))

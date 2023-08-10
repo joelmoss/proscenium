@@ -2,7 +2,7 @@
 
 module Benchmarks
   class Build
-    ROOT = Pathname.new(__dir__).join('../', 'test', 'dummy')
+    ROOT = Pathname.new(__dir__).join('../', 'fixtures', 'dummy')
 
     def initialize
       path = 'lib/foo.js'

@@ -1,4 +1,4 @@
 import isPlainObject from "is-plain-obj";
 
-console.log("test/dummy/packages/one");
+console.log("fixtures/dummy/packages/one");
 isPlainObject();

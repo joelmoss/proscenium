@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+# UNUSED?
+
 require 'test_helper'
 require 'capybara/cuprite'
 

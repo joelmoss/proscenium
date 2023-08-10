@@ -18,7 +18,7 @@ type BuildOpts struct {
 
 func BuildToString(pathToBuild string, rest ...BuildOpts) (bool, string) {
 	_, filename, _, _ := runtime.Caller(1)
-	types.Config.RootPath = path.Join(path.Dir(filename), "dummy")
+	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
 
 	restOpts := BuildOpts{}
 	if len(rest) > 0 {
@@ -30,7 +30,7 @@ func BuildToString(pathToBuild string, rest ...BuildOpts) (bool, string) {
 
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	_, filename, _, _ := runtime.Caller(1)
-	types.Config.RootPath = path.Join(path.Dir(filename), "dummy")
+	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
 
 	restOpts := BuildOpts{}
 	if len(rest) > 0 {

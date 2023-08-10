@@ -9,7 +9,7 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
   Exclude:
-    - "test/dummy/**/*"
+    - "fixtures/dummy/**/*"
 
 Layout/LineLength:
   Max: 100

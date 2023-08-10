@@ -7,4 +7,4 @@ require_relative 'sus/include'
 Bundler.require :default, :test
 
 require 'proscenium'
-require_relative '../test/dummy/config/environment'
+require_relative '../fixtures/dummy/config/environment'

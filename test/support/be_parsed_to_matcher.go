@@ -25,7 +25,7 @@ type BeParsedToMatcher struct {
 }
 
 var cwd, _ = os.Getwd()
-var root string = path.Join(cwd, "dummy")
+var root string = path.Join(cwd, "..", "fixtures", "dummy")
 
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
 	types.Config.RootPath = root

@@ -9,13 +9,13 @@ PATH
       railties (>= 6.1.0, < 8.0)
 
 PATH
-  remote: test/dummy/vendor/gem1
+  remote: fixtures/dummy/vendor/gem1
   specs:
     gem1 (0.1.0)
       rails (>= 7.0.4)
 
 PATH
-  remote: test/external/gem2
+  remote: fixtures/external/gem2
   specs:
     gem2 (0.1.0)
       rails (>= 7.0.4)
