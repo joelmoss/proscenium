@@ -9,6 +9,7 @@ AllCops:
   SuggestExtensions: false
   Exclude:
     - "fixtures/dummy/**/*"
+    - "fixtures/external/**/*"
 
 Layout/LineLength:
   Max: 100
