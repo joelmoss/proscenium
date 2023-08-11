@@ -5,7 +5,6 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
-gem 'nokogiri'
 gem 'puma'
 gem 'rails', '~> 7.0'
 gem 'sqlite3'
