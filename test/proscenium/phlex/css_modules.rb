@@ -61,4 +61,12 @@ describe Proscenium::Phlex::CssModules do
       render Phlex::SideLoadCssModuleFromAttributesView.new('/unknown@my_class')
     end.to raise_exception Proscenium::Builder::ResolveError
   end
+
+  with 'css_module helper' do
+    it 'replaces with CSS module name' do
+      render Phlex::CssModuleHelperComponent.new
+
+      expect(page.has_css?('h1.headerab5b1c05', text: 'Hello')).to be == true
+    end
+  end
 end

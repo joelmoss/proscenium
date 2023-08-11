@@ -14,7 +14,6 @@ module Proscenium::CssModule
     end
   end
 
-  autoload :Monkey
   autoload :Transformer
 
   # Like `css_modules`, but will raise if the stylesheet cannot be found.

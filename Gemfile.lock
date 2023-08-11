@@ -4,7 +4,7 @@ PATH
     proscenium (0.10.0)
       activesupport (>= 6.1.0, < 8.0)
       ffi (~> 1.15.5)
-      nokogiri (~> 1.13)
+      nokolexbor (~> 0.5.0)
       oj (~> 3.13)
       railties (>= 6.1.0, < 8.0)
 
@@ -154,6 +154,8 @@ GEM
       racc (~> 1.4)
     nokogiri (1.15.3-x86_64-linux)
       racc (~> 1.4)
+    nokolexbor (0.5.0-arm64-darwin)
+    nokolexbor (0.5.0-x86_64-linux)
     oj (3.15.1)
     parallel (1.23.0)
     parser (3.2.2.3)
@@ -264,6 +266,7 @@ DEPENDENCIES
   fakefs
   gem1!
   gem2!
+  nokogiri
   phlex-rails
   phlex-testing-capybara
   proscenium!

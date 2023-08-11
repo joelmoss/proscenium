@@ -2,10 +2,6 @@
 
 module Proscenium
   class SideLoad
-    extend ActiveSupport::Autoload
-
-    autoload :Monkey
-
     class << self
       # Side loads the class, and its super classes that respond to `.source_path`.
       #

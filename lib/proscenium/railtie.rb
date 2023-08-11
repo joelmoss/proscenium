@@ -25,9 +25,6 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
 
-    # Should rendered templates be parsed for CSS class names, and their values transformed?
-    config.proscenium.transform_class_names_in_rendered_templates = true
-
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
     # defined means a faster build, as esbuild will have less to do.
@@ -62,16 +59,10 @@ module Proscenium
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.side_loading' do
+    initializer 'proscenium.monkey_views' do
       ActiveSupport.on_load(:action_view) do
-        ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
-        ActionView::PartialRenderer.prepend SideLoad::Monkey::PartialRenderer
-      end
-    end
-
-    initializer 'proscenium.css_modules' do
-      ActiveSupport.on_load(:action_view) do
-        ActionView::PartialRenderer.prepend CssModule::Monkey::PartialRenderer
+        ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
+        ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
     end
 

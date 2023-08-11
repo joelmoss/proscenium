@@ -59,6 +59,8 @@ module Proscenium
       #
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
       def sideload(filepath, **options)
+        return unless Proscenium.config.side_load
+
         filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
         filepath = filepath.sub_ext('')
 

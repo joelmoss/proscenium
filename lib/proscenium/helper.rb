@@ -16,6 +16,14 @@ module Proscenium
       super
     end
 
+    # Accepts one or more CSS class names, and transforms them into CSS module names.
+    #
+    # @param name [String,Symbol,Array<String,Symbol>]
+    def css_module(*names)
+      path = Pathname.new(@current_template.identifier).sub_ext('')
+      CssModule::Transformer.new(path).class_names(*names, require_prefix: false).join ' '
+    end
+
     def include_stylesheets(**options)
       out = []
       Importer.each_stylesheet(delete: true) do |path, _path_options|

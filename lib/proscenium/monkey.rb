@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Proscenium::SideLoad
+module Proscenium
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
     module TemplateRenderer

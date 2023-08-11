@@ -15,6 +15,7 @@ module Proscenium
 
   autoload :SourcePath
   autoload :Utils
+  autoload :Monkey
   autoload :Middleware
   autoload :EnsureLoaded
   autoload :SideLoad

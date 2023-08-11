@@ -1,9 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
-  # CSS Modules in ViewComponents can be used with the `css_module` and `css_module!` helpers, or
-  # via the preferred way of passing a `@class` name. The rendered output of the component will be
-  # parsed for CSS module names, and replaced with the transformed CSS module name.
+  # CSS Modules in ViewComponents can be used with the `css_module` and `css_module!` helpers.
   #
   # ## `css_module` and `css_module!` helpers
   #
@@ -14,29 +12,14 @@ module Proscenium
   #   tag.div 'Hello World!', class: css_module(:title)
   #   # => <div class="title42099b4a">Hello World!</div>
   #
-  # ## `@class` module name
+  # This will also work with the `class` attribute passed to Rails `tag` and `content_tag` helpers,
+  # as well as with plain HTML/ERB.
   #
-  # Proscenium provides a convenient convention for using CSS modules in HTML without needing to
-  # call the `css_module` helper. Simply pass your CSS module names to the `class` attribute of any
-  # HTML element where each name is prefixed with `@`. Proscenium will automatically replace them
-  # with the transformed CSS module name.
-  #
-  #   tag.div 'Hello World!', class: :@title
+  #   tag.div 'Hello World!', css_module: :title
   #   # => <div class="title42099b4a">Hello World!</div>
-  #
-  # Both solutions will work with the `class` attribute passed to Rails `tag` and `content_tag`
-  # helpers, as well as with plain HTML/ERB.
-  #
-  #   <div class="@title">Hello World</div>
   #
   module ViewComponent::CssModules
     include Proscenium::CssModule
-
-    # Transforms class names to css modules in rendered output.
-    # @see Proscenium::CssModule::Resolver#transform_class_names!
-    def render_in(...)
-      cssm.transform_content! super(...)
-    end
 
     private
 
