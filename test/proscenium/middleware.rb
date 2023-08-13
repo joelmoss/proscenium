@@ -112,7 +112,7 @@ describe Proscenium::Middleware do
 
     expect(response.headers['Content-Type']).to be == 'text/css'
     expect(response.body.squish).to include %(
-      .myClass330940eb { color: pink; }
+      .myClass-330940eb { color: pink; }
       /*# sourceMappingURL=styles.module.css.map */
     ).squish
   end

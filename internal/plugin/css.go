@@ -132,7 +132,7 @@ func cssModulesProxyTemplate(hash string) string {
         if (prop in target || typeof prop === 'symbol') {
           return Reflect.get(target, prop, receiver);
         } else {
-          return prop + '` + hash + `';
+          return prop + '-` + hash + `';
         }
       }
     });

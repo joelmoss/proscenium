@@ -5,7 +5,7 @@ elements.length > 0 && init();
 
 function init() {
   function mount(element, path, props) {
-    const react = import("./react");
+    const react = import("@proscenium/react-manager/react");
     const component = window.prosceniumComponents[path];
     const Component = import(component.outpath);
 

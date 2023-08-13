@@ -33,7 +33,7 @@ module Proscenium
       # Import only the component manager. The component itself is side loaded in the initializer,
       # so that it can be lazy loaded based on the value of the `lazy` instance variable.
       def sideload
-        Importer.import '/lib/manager/index.jsx'
+        Importer.import Resolver.resolve('@proscenium/react-manager/index.jsx')
       end
     end
 
@@ -41,10 +41,6 @@ module Proscenium
     def initialize(lazy: self.class.lazy, props: {})
       self.lazy = lazy
       @props = props
-
-      Importer.sideload source_path, lazy: lazy
-
-      super()
     end
 
     # The absolute URL path to the javascript component.

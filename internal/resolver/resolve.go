@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"path"
 	"reflect"
+	"runtime"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
@@ -80,6 +81,7 @@ func Resolve(options Options) (string, error) {
 		Metafile:      true,
 		LogLevel:      logLevel,
 		LogLimit:      1,
+		Plugins:       []esbuild.Plugin{LibsPlugin},
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
@@ -98,4 +100,24 @@ func Resolve(options Options) (string, error) {
 	}
 
 	return "/" + reflect.ValueOf(metadata.Inputs).MapKeys()[0].String(), nil
+}
+
+var LibsPlugin = esbuild.Plugin{
+	Name: "libs",
+	Setup: func(build esbuild.PluginBuild) {
+		_, filename, _, _ := runtime.Caller(0)
+		libDir := path.Join(path.Dir(filename), "..", "..", "lib", "proscenium", "libs")
+
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/`},
+			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				filename := strings.TrimPrefix(args.Path, "@proscenium/")
+				if !utils.HasExtension(filename) {
+					filename = filename + ".js"
+				}
+
+				return esbuild.OnResolveResult{
+					Path: path.Join(libDir, filename),
+				}, nil
+			})
+	},
 }
