@@ -19,7 +19,16 @@ module Proscenium
     # false, then all names will be transformed to a CSS module name regardless of whether or not
     # they begin with '@'.
     #
+    #   class_names :@my_module_name, :my_class_name
+    #
     # Note that the generated digest is based on the resolved (URL) path, not the original path.
+    #
+    # You can also provide a path specifier and class name. The path will be the URL path to a
+    # stylesheet. The class name will be the name of the class to transform.
+    #
+    #   class_names "/lib/button@default"
+    #   class_names "mypackage/button@large"
+    #   class_names "@scoped/package/button@small"
     #
     # @param names [String,Symbol,Array<String,Symbol>]
     # @param require_prefix: [Boolean] whether or not to require the `@` prefix.

@@ -45,10 +45,57 @@ describe Proscenium::CssModule::Transformer do
       expect(names).to be == %w[title subtitlec3f452b4]
     end
 
-    it 'accepts local path' do
-      names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
+    it 'camelCases names' do
+      names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :my_title, :@sub_title)
 
-      expect(names).to be == %w[title6fd80271 subtitlec3f452b4]
+      expect(names).to be == %w[myTitle subTitlec3f452b4]
+    end
+
+    it 'imports stylesheet' do
+      Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
+
+      expect(Proscenium::Importer.imported).to be == {
+        '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
+      }
+    end
+
+    with 'local path' do
+      it 'transforms class names' do
+        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
+
+        expect(names).to be == %w[title6fd80271 subtitlec3f452b4]
+      end
+
+      it 'imports stylesheets' do
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
+
+        expect(Proscenium::Importer.imported).to be == {
+          '/lib/css_modules/basic2.module.css' => { digest: '6fd80271' },
+          '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
+        }
+      end
+    end
+
+    with 'npm package path' do
+      it 'transforms class names' do
+        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', 'mypackage/foo@foo')
+
+        expect(names).to be == %w[foo39337ba7]
+      end
+
+      it 'imports stylesheets' do
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', 'mypackage/foo@foo')
+
+        expect(Proscenium::Importer.imported).to be == {
+          '/packages/mypackage/foo.module.css' => { digest: '39337ba7' }
+        }
+      end
+    end
+
+    it 'should raise when path is given but stylesheet does not exist' do
+      expect do
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/unknown@user')
+      end.to raise_exception Proscenium::Builder::ResolveError
     end
   end
 end

@@ -1,18 +1,16 @@
 # Proscenium - Modern client-side development for Rails
 
-Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a
-"fast by default" internet. It bundles your JS, JSX and CSS in real time, on demand, and with zero
-configuration.
+Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a "fast by default" internet. It bundles your JavaScript and CSS in real time, on demand, and with zero configuration.
 
-- Fast real-time bundling, tree-shaking and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
+**The highlights:**
+
+- Fast real-time bundling, tree-shaking, code-splitting and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
 - NO JavaScript runtime needed - just the browser!
 - NO build step or pre-compilation.
 - NO additional process or server - Just run Rails!
 - Deep integration with Rails.
-- Zero configuration.
-- Serve assets from anywhere within your Rails root (/app, /config, /lib, etc.).
-- Automatically side load JS/TS/CSS for your layouts and views.
-- ESM importing from NPM, URLs, and locally.
+- Automatically side-load your layouts, views, and partials.
+- Import from NPM, URL's, and locally.
 - Server-side import map support.
 - CSS Modules & mixins.
 - Source maps.
@@ -54,7 +52,7 @@ configuration.
 
 ## Getting Started
 
-Getting started obviously depends on whether you are adding Proscenium to an existing Rails app, or creating a new Rails app. So please choose the appropriate guide below:
+Getting started obviously depends on whether you are adding Proscenium to an existing Rails app, or creating a new one. So choose the appropriate guide below:
 
 - [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app
@@ -91,7 +89,7 @@ Using the examples above...
 
 ## Side Loading
 
-> Prior to **0.10.0**, only assets with the extension `.js`, `.ts` and `.css` were side loaded. From 0.10.0, all assets are side loaded, including `.jsx`, and `.tsx`. Also partials were not side loaded prior to 0.10.0.
+> Prior to **0.10.0**, only assets with the extension `.js`, `.ts` and `.css` were side loaded. From 0.10.0, all assets are side loaded, including `.jsx`, `.tsx`, and `.module.css`. Also partials were not side loaded prior to 0.10.0.
 
 Proscenium is best experienced when you side load your assets.
 
@@ -101,7 +99,7 @@ With Rails you would typically declaratively load your JavaScript and CSS assets
 
 For example, you may have top-level "application" CSS located in a file at `/app/assets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/assets/application.js`.
 
-You would include those two files in your application layout, something like this:
+You would manually and declaratively include those two files in your application layout, something like this:
 
 ```erb
 <%# /app/views/layouts/application.html.erb %>
@@ -119,7 +117,7 @@ You would include those two files in your application layout, something like thi
 </html>
 ```
 
-Now, you may have some CSS and JavaScript that is only required by a specific view and partial, so you would load that in your view, something like this:
+Now, you may have some CSS and JavaScript that is only required by a specific view and partial, so you would load that in your view (or layout), something like this:
 
 ```erb
 <%# /app/views/users/index.html.erb %>
@@ -485,15 +483,36 @@ You now have a unique class name that you can use pretty much anywhere.
 
 You can reference CSS modules from your Rails views, partials, and layouts using the `css_module` helper. This helper accepts one or more class names, and will return the equivilent CSS module names - the class name with the unique suffix appended.
 
-Include your CSS module into your view with `stylesheet_link_tag`, or even better, automatically [sideload your view](#side-loading), then use the `css_module` helper as follows.
+With [side-loading](#side-loading) setup, you can use the `css_module` helper as follows.
 
 ```erb
 <div>
-  <h1 class="<%= css_module :title %>">Hello World</h1>
-  <p class="<%= css_module :body %>">
+  <h1 class="<%= css_module :hello_title %>">Hello World</h1>
+  <p class="<%= css_module :body, paragraph: %>">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
   </p>
 </div>
+```
+
+`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names. Each class name will be camelCased (`hello_title` becomes `helloTitle`). It also works without side-loading, and will pass through regular class names.
+
+```ruby
+css_module :my_class_name, :@my_module_name
+# => "myClassName myModuleNameABCD1234"
+```
+
+You can even reference a class from any CSS file by passing the URL path to the file, as a prefix to the class name. Doing so will automatically include the stylesheet into the page via the `include_stylesheets` helper.
+
+```ruby
+css_module '/app/components/button.css@big_button'
+# => "bigButton"
+```
+
+It also supports NPM packages (already installed in /node_modules):
+
+```ruby
+css_module 'mypackage/button@big_button'
+# => "bigButton"
 ```
 
 #### In your JavaScript
@@ -505,9 +524,9 @@ import styles from './styles.module.css'
 // styles == { header: 'header5564cdbb' }
 ```
 
-It is important to note that the exported object of CSS module names is actually a Proxy object. So destructuring the object will not work. Instead, you must access the properties directly.
+It is important to note that the exported object of CSS module names is actually a JavaScript [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) object. So destructuring the object will not work. Instead, you must access the properties directly.
 
-Also, importing a CSS module from another CSS module will result in the same digest string for all classes.
+Also, importing a CSS module into another CSS module will result in the same digest string for all classes.
 
 ### CSS Mixins
 
@@ -605,11 +624,112 @@ console.log(version)
 
 ## Phlex Support
 
-> *docs needed*
+[Phlex](https://www.phlex.fun/) is a framework for building fast, reusable, testable views in pure Ruby. Proscenium works perfectly with Phlex, with support for side-loading, CSS modules, and more. Simply write your Phlex classes and inherit from `Proscenium::Phlex`.
+
+```ruby
+class MyView < Proscenium::Phlex
+  def template
+    h1 { 'Hello World' }
+  end
+end
+```
+
+### Side-loading
+
+Any Phlex class that inherits `Proscenium::Phlex` will automatically be [side-loaded](#side-loading).
+
+### CSS Modules
+
+[CSS Modules](#css-modules) are fully supported in Phlex classes, with access to the [`css_module` helper](#in-your-views) if you need it. However, there is a better and more seemless way to reference CSS module classes in your Phlex classes.
+
+Within your Phlex classes, any class names that begin with `@` will be treated as a CSS module class.
+
+```ruby
+# /app/views/users/show_view.rb
+class Users::ShowView < Proscenium::Phlex
+  def template
+    h1 class: :@user_name do
+      @user.name
+    end
+  end
+end
+```
+
+```css
+/* /app/views/users/show_view.module.css */
+.userName {
+  color: red;
+  font-size: 50px;
+}
+```
+
+In the above `Users::ShowView` Phlex class, the `@user_name` class will be resolved to the `userName` class in the `users/show_view.module.css` file.
+
+CSS Module names will be camelized, so in this example `@user_name` will resolve to `userName`. The view above will be rendered something like this:
+
+```html
+<h1 class="userNameABCD1234"></h1>
+```
+
+You can of course continue to reference regular class names in your view, and they will be passed through as is. This will allow you to mix and match CSS modules and regular CSS classes in your views.
+
+```ruby
+# /app/views/users/show_view.rb
+class Users::ShowView < Proscenium::Phlex
+  def template
+    h1 class: :[@user_name, :title] do
+      @user.name
+    end
+  end
+end
+```
+
+```html
+<h1 class="userNameABCD1234 title">Joel Moss</h1>
+```
 
 ## ViewComponent Support
 
-> *docs needed*
+[ViewComponent](https://viewcomponent.org/) iA framework for creating reusable, testable & encapsulated view components, built to integrate seamlessly with Ruby on Rails. Proscenium works perfectly with ViewComponent, with support for side-loading, CSS modules, and more. Simply write your ViewComponent classes and inherit from `Proscenium::ViewComponent`.
+
+```ruby
+class MyView < Proscenium::ViewComponent
+  def call
+    tag.h1 'Hello World'
+  end
+end
+```
+
+### Side-loading
+
+Any ViewComponent class that inherits `Proscenium::ViewComponent` will automatically be [side-loaded](#side-loading).
+
+### CSS Modules
+
+[CSS Modules](#css-modules) are fully supported in ViewComponent classes, with access to the [`css_module` helper](#in-your-views) if you need it.
+
+```ruby
+# /app/components/user_component.rb
+class UserComponent < Proscenium::ViewComponent
+  def template
+    div.h1 @user.name, class: css_module(:user_name)
+  end
+end
+```
+
+```css
+/* # /app/components/user_component.module.css */
+.userName {
+  color: red;
+  font-size: 50px;
+}
+```
+
+CSS Module names are camelized, so in this example `user_name` will resolve to `userName`. The view above will be rendered something like this:
+
+```html
+<h1 class="userNameABCD1234">Joel Moss</h1>
+```
 
 ## Cache Busting
 
