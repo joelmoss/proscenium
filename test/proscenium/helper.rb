@@ -16,9 +16,9 @@ describe Proscenium::Helper do
     it 'transforms class names beginning with @' do
       render CssmHelperController.render :index
 
-      expect(page.has_css?('body.bodyead1b5bc')).to be == true
-      expect(page.has_css?('h2.viewba1ab2b7')).to be == true
-      expect(page.has_css?('div.partial7800dcdf.world')).to be == true
+      expect(page.has_css?('body.body-ead1b5bc')).to be == true
+      expect(page.has_css?('h2.view-ba1ab2b7')).to be == true
+      expect(page.has_css?('div.partial-7800dcdf.world')).to be == true
     end
   end
 end

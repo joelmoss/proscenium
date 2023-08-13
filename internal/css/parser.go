@@ -214,7 +214,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 				}
 
 				p.tokens.log(".%s is module", nextT.Value)
-				return "." + nextT.Value + p.pathHash, true
+				return "." + cssModuleClassName(nextT.Value, p.pathHash), true
 			}
 		}
 
@@ -242,7 +242,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 					panic("local() must contain a class name")
 				}
 
-				p.append("." + className + p.pathHash)
+				p.append("." + cssModuleClassName(className, p.pathHash))
 
 				untilV, _ = p.outputUntilTokenType(tokenizer.TokenOpenBrace, true)
 				if untilV == nil {
@@ -299,7 +299,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 					}
 
 					if containsClass && t.Type == tokenizer.TokenIdent {
-						tmpOutput += t.Value + p.pathHash
+						tmpOutput += cssModuleClassName(t.Value, p.pathHash)
 					} else {
 						tmpOutput += t.Value
 					}
@@ -361,4 +361,8 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 	}
 
 	return token.Render(), true
+}
+
+func cssModuleClassName(name string, hash string) string {
+	return name + "-" + hash
 }

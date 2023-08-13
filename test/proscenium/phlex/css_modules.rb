@@ -21,7 +21,7 @@ describe Proscenium::Phlex::CssModules do
   it 'should use css module name' do
     render Phlex::SideLoadCssModuleFromAttributesView.new(:@base)
 
-    expect(page.has_css?('div.base02dcd653', text: 'Hello')).to be == true
+    expect(page.has_css?('div.base-02dcd653', text: 'Hello')).to be == true
   end
 
   it 'should raise when css_module class is used but stylesheet does not exist' do
@@ -35,7 +35,7 @@ describe Proscenium::Phlex::CssModules do
   it 'should side load css module when bare path is given' do
     render Phlex::SideLoadCssModuleFromAttributesView.new('mypackage/foo@foo')
 
-    expect(page.has_css?('div.foo39337ba7', text: 'Hello')).to be == true
+    expect(page.has_css?('div.foo-39337ba7', text: 'Hello')).to be == true
     expect(Proscenium::Importer.imported).to be == {
       '/app/components/phlex/side_load_css_module_from_attributes_view.module.css' => {
         sideloaded: true, digest: '02dcd653'
@@ -47,7 +47,7 @@ describe Proscenium::Phlex::CssModules do
   it 'should side load css module when absolute path is given' do
     render Phlex::SideLoadCssModuleFromAttributesView.new('/lib/styles@my_class')
 
-    expect(page.has_css?('div.myClass330940eb', text: 'Hello')).to be == true
+    expect(page.has_css?('div.my_class-330940eb', text: 'Hello')).to be == true
     expect(Proscenium::Importer.imported).to be == {
       '/app/components/phlex/side_load_css_module_from_attributes_view.module.css' => {
         sideloaded: true, digest: '02dcd653'
@@ -66,7 +66,7 @@ describe Proscenium::Phlex::CssModules do
     it 'replaces with CSS module name' do
       render Phlex::CssModuleHelperComponent.new
 
-      expect(page.has_css?('h1.headerab5b1c05', text: 'Hello')).to be == true
+      expect(page.has_css?('h1.header-ab5b1c05', text: 'Hello')).to be == true
     end
   end
 end

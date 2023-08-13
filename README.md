@@ -472,7 +472,7 @@ Give any CSS file a `.module.css` extension, and Proscenium will treat it as a C
 The above input produces:
 
 ```css
-.title5564cdbb {
+.title-5564cdbb {
   font-size: 20em;
 }
 ```
@@ -494,25 +494,25 @@ With [side-loading](#side-loading) setup, you can use the `css_module` helper as
 </div>
 ```
 
-`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names. Each class name will be camelCased (`hello_title` becomes `helloTitle`). It also works without side-loading, and will pass through regular class names.
+`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names. It also works without side-loading, and will pass through regular class names.
 
 ```ruby
 css_module :my_class_name, :@my_module_name
-# => "myClassName myModuleNameABCD1234"
+# => "my_class_name my_module_name-ABCD1234"
 ```
 
 You can even reference a class from any CSS file by passing the URL path to the file, as a prefix to the class name. Doing so will automatically include the stylesheet into the page via the `include_stylesheets` helper.
 
 ```ruby
 css_module '/app/components/button.css@big_button'
-# => "bigButton"
+# => "big_button"
 ```
 
 It also supports NPM packages (already installed in /node_modules):
 
 ```ruby
 css_module 'mypackage/button@big_button'
-# => "bigButton"
+# => "big_button"
 ```
 
 #### In your JavaScript
@@ -521,7 +521,7 @@ Importing a CSS module from JS will automatically append the stylesheet to the d
 
 ```js
 import styles from './styles.module.css'
-// styles == { header: 'header5564cdbb' }
+// styles == { header: 'header-5564cdbb' }
 ```
 
 It is important to note that the exported object of CSS module names is actually a JavaScript [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) object. So destructuring the object will not work. Instead, you must access the properties directly.
@@ -665,10 +665,10 @@ end
 
 In the above `Users::ShowView` Phlex class, the `@user_name` class will be resolved to the `userName` class in the `users/show_view.module.css` file.
 
-CSS Module names will be camelized, so in this example `@user_name` will resolve to `userName`. The view above will be rendered something like this:
+The view above will be rendered something like this:
 
 ```html
-<h1 class="userNameABCD1234"></h1>
+<h1 class="user_name-ABCD1234"></h1>
 ```
 
 You can of course continue to reference regular class names in your view, and they will be passed through as is. This will allow you to mix and match CSS modules and regular CSS classes in your views.
@@ -685,7 +685,7 @@ end
 ```
 
 ```html
-<h1 class="userNameABCD1234 title">Joel Moss</h1>
+<h1 class="user_name-ABCD1234 title">Joel Moss</h1>
 ```
 
 ## ViewComponent Support
@@ -725,10 +725,10 @@ end
 }
 ```
 
-CSS Module names are camelized, so in this example `user_name` will resolve to `userName`. The view above will be rendered something like this:
+The view above will be rendered something like this:
 
 ```html
-<h1 class="userNameABCD1234">Joel Moss</h1>
+<h1 class="user_name-ABCD1234">Joel Moss</h1>
 ```
 
 ## Cache Busting

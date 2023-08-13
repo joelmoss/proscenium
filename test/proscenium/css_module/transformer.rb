@@ -24,13 +24,13 @@ describe Proscenium::CssModule::Transformer do
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      expect(names).to be == ['titlec3f452b4']
+      expect(names).to be == ['title-c3f452b4']
     end
 
     it 'transforms class names beginning with @ and underscore' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@_title)
 
-      expect(names).to be == ['_titlec3f452b4']
+      expect(names).to be == ['_title-c3f452b4']
     end
 
     it 'passes through regular class names' do
@@ -42,13 +42,7 @@ describe Proscenium::CssModule::Transformer do
     it 'accepts multiple names' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :title, :@subtitle)
 
-      expect(names).to be == %w[title subtitlec3f452b4]
-    end
-
-    it 'camelCases names' do
-      names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :my_title, :@sub_title)
-
-      expect(names).to be == %w[myTitle subTitlec3f452b4]
+      expect(names).to be == %w[title subtitle-c3f452b4]
     end
 
     it 'imports stylesheet' do
@@ -63,7 +57,7 @@ describe Proscenium::CssModule::Transformer do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
 
-        expect(names).to be == %w[title6fd80271 subtitlec3f452b4]
+        expect(names).to be == %w[title-6fd80271 subtitle-c3f452b4]
       end
 
       it 'imports stylesheets' do
@@ -80,7 +74,7 @@ describe Proscenium::CssModule::Transformer do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', 'mypackage/foo@foo')
 
-        expect(names).to be == %w[foo39337ba7]
+        expect(names).to be == %w[foo-39337ba7]
       end
 
       it 'imports stylesheets' do

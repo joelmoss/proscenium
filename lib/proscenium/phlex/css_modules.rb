@@ -35,9 +35,6 @@ module Proscenium
     #     end
     #   end
     #
-    # The given class name should be underscored, and the resulting CSS module name will be
-    # `camelCased` with a lower case first character.
-    #
     # @raise [Proscenium::CssModule::Resolver::NotFound] If a CSS module file is not found for the
     #   Phlex class file path.
     def process_attributes(**attributes)

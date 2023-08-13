@@ -239,7 +239,7 @@ var _ = Describe("Build(parseCss)", func() {
 					}
 					.title { @mixin red; }
 				`).To(BeParsedTo(`
-					.title43c30152 { color: red; }
+					.title-43c30152 { color: red; }
 				`, "/foo.module.css"))
 			})
 
@@ -247,7 +247,7 @@ var _ = Describe("Build(parseCss)", func() {
 				Expect(`
 					.title { color: green; }
 				`).To(BeParsedTo(`
-					.title43c30152 { color: green; }
+					.title-43c30152 { color: green; }
 				`, "/foo.module.css"))
 			})
 
@@ -258,9 +258,9 @@ var _ = Describe("Build(parseCss)", func() {
 						.subtitle { color: blue; }
 					}
 				`).To(BeParsedTo(`
-					.title43c30152 {
+					.title-43c30152 {
 						color: green;
-						.subtitle43c30152 { color: blue; }
+						.subtitle-43c30152 { color: blue; }
 					}
 				`, "/foo.module.css"))
 			})
@@ -269,7 +269,7 @@ var _ = Describe("Build(parseCss)", func() {
 				Expect(`
 					.title.subtitle { color: green; }
 				`).To(BeParsedTo(`
-					.title43c30152.subtitle43c30152 { color: green; }
+					.title-43c30152.subtitle-43c30152 { color: green; }
 				`, "/foo.module.css"))
 			})
 
@@ -279,8 +279,8 @@ var _ = Describe("Build(parseCss)", func() {
 						.title { color: red; }
 						:local(.subtitle) { color: green; }
 					`).To(BeParsedTo(`
-						.title43c30152 { color: red; }
-						.subtitle43c30152 { color: green; }
+						.title-43c30152 { color: red; }
+						.subtitle-43c30152 { color: green; }
 					`, "/foo.module.css"))
 				})
 
@@ -291,7 +291,7 @@ var _ = Describe("Build(parseCss)", func() {
 							.title { color: red; }
 						}
 					`).To(BeParsedTo(`
-						.subtitle43c30152 { color: green; }
+						.subtitle-43c30152 { color: green; }
 						.title { color: red; }
 					`, "/foo.module.css"))
 				})
@@ -308,9 +308,9 @@ var _ = Describe("Build(parseCss)", func() {
 						}
 					`).To(BeParsedTo(`
 						.subtitle {
-							.day43c30152 { color: orange; }
-							.month43c30152 { color: red; }
-							.year43c30152 { color: pink; }
+							.day-43c30152 { color: orange; }
+							.month-43c30152 { color: red; }
+							.year-43c30152 { color: pink; }
 							.foo { color: blue; }
 						}
 					`, "/foo.module.css"))
@@ -325,7 +325,7 @@ var _ = Describe("Build(parseCss)", func() {
 								.subtitle { color: green; }
 						}
 					`).To(BeParsedTo(`
-						.subtitle43c30152 { color: green; }
+						.subtitle-43c30152 { color: green; }
 					`, "/foo.module.css"))
 				})
 			})
@@ -337,9 +337,9 @@ var _ = Describe("Build(parseCss)", func() {
 						:global(.subtitle) { color: green; }
 						.author { color: red; }
 					`).To(BeParsedTo(`
-						.title43c30152 { color: blue; }
+						.title-43c30152 { color: blue; }
 						.subtitle { color: green; }
-						.author43c30152 {	color: red; }
+						.author-43c30152 {	color: red; }
 					`, "/foo.module.css"))
 				})
 
@@ -370,7 +370,7 @@ var _ = Describe("Build(parseCss)", func() {
 					`).To(BeParsedTo(`
 						.subtitle {
 							color: green;
-							.foo43c30152 { color: orange; }
+							.foo-43c30152 { color: orange; }
 						}
 					`, "/foo.module.css"))
 				})
@@ -384,9 +384,9 @@ var _ = Describe("Build(parseCss)", func() {
 							.subtitle { color: green; }
 						.author { color: red; }
 					`).To(BeParsedTo(`
-						.title43c30152 { color: blue; }
+						.title-43c30152 { color: blue; }
 						.subtitle { color: green; }
-						.author43c30152 { color: red; }
+						.author-43c30152 { color: red; }
 					`, "/foo.module.css"))
 				})
 
@@ -403,14 +403,14 @@ var _ = Describe("Build(parseCss)", func() {
 						}
 						.author { color: red; }
 					`).To(BeParsedTo(`
-						.title43c30152 { color: blue; }
+						.title-43c30152 { color: blue; }
 						.subtitle {
 							color: green;
 							.day { color: orange; }
 							.month { color: pink; }
 							.year { color: black; }
 						}
-						.author43c30152 {	color: red; }
+						.author-43c30152 {	color: red; }
 					`, "/foo.module.css"))
 				})
 
@@ -423,7 +423,7 @@ var _ = Describe("Build(parseCss)", func() {
 					`).To(BeParsedTo(`
 						.subtitle {
         			color: green;
-        			.foo43c30152 { color: orange; }
+        			.foo-43c30152 { color: orange; }
 						}
 					`, "/foo.module.css"))
 				})
@@ -446,7 +446,7 @@ var _ = Describe("Build(parseCss)", func() {
 							.foo { color: orange; }
 						}
 						.bar { color: blue; }
-						.author43c30152 { color: red; }
+						.author-43c30152 { color: red; }
 					`, "/foo.module.css"))
 				})
 

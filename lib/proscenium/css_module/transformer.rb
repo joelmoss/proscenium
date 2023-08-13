@@ -12,8 +12,7 @@ module Proscenium
     end
 
     # Transform each of the given class `names` to their respective CSS module name, which consist
-    # of the camelCased name (lower case first character), and suffixed with the digest of the
-    # resolved source path.
+    # of the name, and suffixed with the digest of the resolved source path.
     #
     # Any name beginning with '@' will be transformed to a CSS module name. If `require_prefix` is
     # false, then all names will be transformed to a CSS module name regardless of whether or not
@@ -72,9 +71,9 @@ module Proscenium
 
       sname = name.to_s
       if sname.start_with?('_')
-        "_#{sname[1..].camelize(:lower)}#{digest}"
+        "_#{sname[1..]}-#{digest}"
       else
-        "#{sname.camelize(:lower)}#{digest}"
+        "#{sname}-#{digest}"
       end
     end
   end

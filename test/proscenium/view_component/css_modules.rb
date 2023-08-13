@@ -14,7 +14,7 @@ describe Proscenium::ViewComponent::CssModules do
     it 'replaces with CSS module name' do
       render_inline ViewComponent::CssModuleHelperComponent.new
 
-      expect(page.has_css?('h1.header03d622d6', text: 'Hello')).to be == true
+      expect(page.has_css?('h1.header-03d622d6', text: 'Hello')).to be == true
     end
   end
 end
