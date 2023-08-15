@@ -26,8 +26,5 @@ module Dummy
     # config.eager_load_paths << Rails.root.join("extras")
 
     config.autoload_paths << "#{root}/app"
-
-    # config.proscenium.debug = true
-    config.proscenium.include_paths << 'app/components'
   end
 end

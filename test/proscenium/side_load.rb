@@ -14,38 +14,38 @@ describe Proscenium::SideLoad do
     end
 
     it 'does not side load layout and view' do
-      PagesController.render :home
+      BarePagesController.render :home
 
       expect(Proscenium::Importer.imported).to be(:nil?)
     end
 
     it 'does not side load partial' do
-      PagesController.render :sideloadpartial
+      BarePagesController.render :sideloadpartial
 
       expect(Proscenium::Importer.imported).to be(:nil?)
     end
 
     it 'does not side load vendored gem' do
-      PagesController.render :vendored_gem
+      BarePagesController.render :vendored_gem
 
       expect(Proscenium::Importer.imported).to be(:nil?)
     end
 
     it 'does not side loads external gem' do
-      PagesController.render :external_gem
+      BarePagesController.render :external_gem
 
       expect(Proscenium::Importer.imported).to be(:nil?)
     end
   end
 
   it 'side loads layout and view' do
-    PagesController.render :home
+    BarePagesController.render :home
 
     expect(Proscenium::Importer.imported).to be == {
-      '/app/views/layouts/application.js' => { sideloaded: true },
-      '/app/views/layouts/application.css' => { sideloaded: true },
-      '/app/views/pages/home.js' => { sideloaded: true },
-      '/app/views/pages/home.css' => { sideloaded: true }
+      '/app/views/layouts/bare.js' => { sideloaded: true },
+      '/app/views/layouts/bare.css' => { sideloaded: true },
+      '/app/views/bare_pages/home.js' => { sideloaded: true },
+      '/app/views/bare_pages/home.css' => { sideloaded: true }
     }
   end
 
@@ -56,11 +56,11 @@ describe Proscenium::SideLoad do
   end
 
   it 'side loads partial' do
-    PagesController.render :sideloadpartial
+    BarePagesController.render :sideloadpartial
 
     expect(Proscenium::Importer.imported).to be == {
-      '/app/views/layouts/application.js' => { sideloaded: true },
-      '/app/views/layouts/application.css' => { sideloaded: true },
+      '/app/views/layouts/bare.js' => { sideloaded: true },
+      '/app/views/layouts/bare.css' => { sideloaded: true },
       '/app/views/pages/_side.js' => { sideloaded: true },
       '/app/views/pages/_side.module.css' => { sideloaded: true, digest: '08ab1f89' },
       '/app/views/pages/_side_layout.css' => { sideloaded: true }
@@ -68,22 +68,22 @@ describe Proscenium::SideLoad do
   end
 
   it 'side loads vendored gem' do
-    PagesController.render :vendored_gem
+    BarePagesController.render :vendored_gem
 
     expect(Proscenium::Importer.imported).to be == {
-      '/app/views/layouts/application.js' => { sideloaded: true },
-      '/app/views/layouts/application.css' => { sideloaded: true },
+      '/app/views/layouts/bare.js' => { sideloaded: true },
+      '/app/views/layouts/bare.css' => { sideloaded: true },
       '/../../lib/proscenium/libs/react-manager/index.jsx' => {},
       '/vendor/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: false }
     }
   end
 
   it 'side loads external gem' do
-    PagesController.render :external_gem
+    BarePagesController.render :external_gem
 
     expect(Proscenium::Importer.imported).to be == {
-      '/app/views/layouts/application.js' => { sideloaded: true },
-      '/app/views/layouts/application.css' => { sideloaded: true },
+      '/app/views/layouts/bare.js' => { sideloaded: true },
+      '/app/views/layouts/bare.css' => { sideloaded: true },
       '/../../lib/proscenium/libs/react-manager/index.jsx' => {},
       '/node_modules/.pnpm/file+..+external+gem2/node_modules/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: false }
     }

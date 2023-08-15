@@ -18,7 +18,16 @@ module Proscenium
       # @return [Symbol]
       class_attribute :root_tag, instance_predicate: false, default: :div
 
-      # Should the template block be forwarded as children to the React component?
+      # By default, the template block (content) of the component will be server rendered as normal.
+      # However, when React hydrates and takes control of the component, it's content will be
+      # replaced by React with the JavaScript rendered content. Enabling this option will forward
+      # the server rendered content as the `children` prop passed to the React component.
+      #
+      # @example
+      #
+      #   const Component = ({ children }) => {
+      #     return <div dangerouslySetInnerHTML={{ __html: children }} />
+      #   }
       #
       # @return [Boolean]
       class_attribute :forward_children, default: false
