@@ -16,5 +16,15 @@ describe Proscenium::ViewComponent::CssModules do
 
       expect(page.has_css?('h1.header-03d622d6', text: 'Hello')).to be == true
     end
+
+    it 'side loads css module' do
+      render_inline ViewComponent::CssModuleHelperComponent.new
+
+      expect(Proscenium::Importer.imported).to be == {
+        '/app/components/view_component/css_module_helper_component.module.css' => {
+          sideloaded: true, digest: '03d622d6'
+        }
+      }
+    end
   end
 end

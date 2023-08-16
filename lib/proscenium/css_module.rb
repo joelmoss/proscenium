@@ -16,13 +16,6 @@ module Proscenium::CssModule
 
   autoload :Transformer
 
-  # Like `css_modules`, but will raise if the stylesheet cannot be found.
-  #
-  # @param name [Array, String]
-  # def css_module!(names)
-  #   cssm.class_names!(names).join ' '
-  # end
-
   # Accepts one or more CSS class names, and transforms them into CSS module names.
   #
   # @param name [String,Symbol,Array<String,Symbol>]

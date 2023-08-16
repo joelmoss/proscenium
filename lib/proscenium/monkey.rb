@@ -3,6 +3,23 @@
 module Proscenium
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
+    module TagBuilder
+      def tag_options(options, escape = true) # rubocop:disable Style/OptionalBooleanParameter
+        return if options.blank?
+
+        if (class_names = options.delete(:class) || options.delete('class'))
+          unless (source_path = @view_context.try(:source_path))
+            source_path = @view_context.instance_variable_get(:@current_template).identifier
+            source_path = Pathname.new(source_path).sub_ext('')
+          end
+
+          options[:class] = CssModule::Transformer.class_names(source_path, *class_names).join ' '
+        end
+
+        super(options, escape)
+      end
+    end
+
     module TemplateRenderer
       private
 
@@ -16,18 +33,18 @@ module Proscenium
            template.is_a?(ActionView::Template::Renderable) &&
            renderable.class < ::ViewComponent::Base && renderable.class.format == :html
           # Side load controller rendered ViewComponent
-          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
-          Proscenium::Importer.sideload "app/views/#{renderable.virtual_path}"
+          Importer.sideload "app/views/#{layout.virtual_path}" if layout
+          Importer.sideload "app/views/#{renderable.virtual_path}"
         elsif template.respond_to?(:virtual_path) &&
               template.respond_to?(:type) && template.type == :html
-          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
+          Importer.sideload "app/views/#{layout.virtual_path}" if layout
 
           # Try side loading the variant template
           if template.respond_to?(:variant) && template.variant
-            Proscenium::Importer.sideload "app/views/#{template.virtual_path}+#{template.variant}"
+            Importer.sideload "app/views/#{template.virtual_path}+#{template.variant}"
           end
 
-          Proscenium::Importer.sideload "app/views/#{template.virtual_path}"
+          Importer.sideload "app/views/#{template.virtual_path}"
         end
 
         super
@@ -40,8 +57,8 @@ module Proscenium
       def render_partial_template(view, locals, template, layout, block)
         if Proscenium.config.side_load && template.respond_to?(:virtual_path) &&
            template.respond_to?(:type) && template.type == :html
-          Proscenium::Importer.sideload "app/views/#{layout.virtual_path}" if layout
-          Proscenium::Importer.sideload "app/views/#{template.virtual_path}"
+          Importer.sideload "app/views/#{layout.virtual_path}" if layout
+          Importer.sideload "app/views/#{template.virtual_path}"
         end
 
         super

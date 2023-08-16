@@ -6,7 +6,6 @@ class Proscenium::ViewComponent < ViewComponent::Base
   extend ActiveSupport::Autoload
 
   autoload :Sideload
-  autoload :TagBuilder
   autoload :ReactComponent
   autoload :CssModules
 

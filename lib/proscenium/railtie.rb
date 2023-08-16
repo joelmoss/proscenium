@@ -63,6 +63,7 @@ module Proscenium
       ActiveSupport.on_load(:action_view) do
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
+        ActionView::Helpers::TagHelper::TagBuilder.prepend Monkey::TagBuilder
       end
     end
 
