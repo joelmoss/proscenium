@@ -57,6 +57,10 @@ module Proscenium
       @virtual_path ||= Resolver.resolve source_path.sub_ext('.jsx').to_s
     end
 
+    def props
+      @props ||= {}
+    end
+
     private
 
     def data_attributes
@@ -67,10 +71,6 @@ module Proscenium
       }.tap do |x|
         x[:proscenium_component_forward_children] = true if forward_children?
       end
-    end
-
-    def props
-      @props ||= {}
     end
 
     def prepared_props
