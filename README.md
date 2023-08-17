@@ -481,11 +481,7 @@ You now have a unique class name that you can use pretty much anywhere.
 
 #### In your Views
 
-You can reference CSS modules from your Rails views, partials, and layouts using the `css_module` helper, or by simply passing class names to `tag` helper.
-
-#### `css_module` Helper
-
-The `css_module` helper accepts one or more class names, and will return the equivilent CSS module names - the class name with the unique suffix appended.
+You can reference CSS modules from your Rails views, partials, and layouts using the `css_module` helper, which accepts one or more class names, and will return the equivilent CSS module names - the class name with the unique suffix appended.
 
 With [side-loading](#side-loading) setup, you can use the `css_module` helper as follows.
 
@@ -498,11 +494,11 @@ With [side-loading](#side-loading) setup, you can use the `css_module` helper as
 </div>
 ```
 
-`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names. It also works without side-loading, and will pass through regular class names.
+`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names.
 
 ```ruby
-css_module :my_class_name, :@my_module_name
-# => "my_class_name my_module_name-ABCD1234"
+css_module :my_module_name
+# => "my_module_name-ABCD1234"
 ```
 
 You can even reference a class from any CSS file by passing the URL path to the file, as a prefix to the class name. Doing so will automatically [side load](#side-loading) the stylesheet.
@@ -518,32 +514,6 @@ It also supports NPM packages (already installed in /node_modules):
 css_module 'mypackage/button@big_button'
 # => "big_button"
 ```
-
-#### `tag` Helper
-
-Rails provides a `tag` helper that can be used to generate HTML tags. It accepts any attributes, including the `class` attribute. Proscenium enhances this `tag` helper to accept CSS module class names. Any class name that begin begins with `@` will be treated as a CSS module class.
-
-```erb
-<!-- /app/views/users/show.html.erb -->
-<%= tag.h1 'Hello', class: [:foo, :@hello] %>
-```
-
-```css
-/* /app/views/users/show.module.css */
-.hello {
-  color: red;
-}
-```
-
-In the above `show.html.erb`, the `@hello` class name will be resolved to the `hello` CSS class in the `users/show.module.css` file.
-
-The view above will be rendered something like this:
-
-```html
-<h1 class="foo hello-ABCD1234">Hello</h1>
-```
-
-You can of course continue to reference regular class names, and they will be passed through as is. This will allow you to mix and match CSS modules and regular CSS classes in your views.
 
 #### In your JavaScript
 

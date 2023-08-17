@@ -3,23 +3,6 @@
 module Proscenium
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
-    module TagBuilder
-      def tag_options(options, escape = true) # rubocop:disable Style/OptionalBooleanParameter
-        return if options.blank?
-
-        if (class_names = options.delete(:class) || options.delete('class'))
-          unless (source_path = @view_context.try(:source_path))
-            source_path = @view_context.instance_variable_get(:@current_template).identifier
-            source_path = Pathname.new(source_path).sub_ext('')
-          end
-
-          options[:class] = CssModule::Transformer.class_names(source_path, *class_names).join ' '
-        end
-
-        super(options, escape)
-      end
-    end
-
     module TemplateRenderer
       private
 
