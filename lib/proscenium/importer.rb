@@ -23,10 +23,12 @@ module Proscenium
       #
       # @param filepath [String] Absolute path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
+      # @param resolve [String] description of the file to resolve and import.
       # @return [String] the digest of the imported file path if a css module (*.module.css).
-      def import(filepath, **options)
+      def import(filepath = nil, resolve: nil, **options)
         self.imported ||= {}
 
+        filepath = Resolver.resolve(resolve) if !filepath && resolve
         css_module = filepath.end_with?('.module.css')
 
         unless self.imported.key?(filepath)
@@ -39,7 +41,7 @@ module Proscenium
         css_module ? self.imported[filepath][:digest] : nil
       end
 
-      # Sideloads JS and CSS assets for the given Ruby file.
+      # Sideloads JS and CSS assets for the given Ruby filepath.
       #
       # Any files with the same base name and matching a supported extension will be sideloaded.
       # Only one JS and one CSS file will be sideloaded, with the first match used in the following

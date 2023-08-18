@@ -13,11 +13,6 @@ module Proscenium
 
     include ReactComponentable
 
-    def before_render
-      super
-      Importer.sideload source_path, lazy: lazy
-    end
-
     def call
       tag.send root_tag, data: data_attributes do
         tag.div content || 'loading...'

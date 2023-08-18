@@ -4,9 +4,21 @@ const elements = document.querySelectorAll("[data-proscenium-component-path]");
 elements.length > 0 && init();
 
 function init() {
+  /**
+   * Mounts component located at `path`, into the DOM `element`.
+   *
+   * The element at which the component is mounted must have the following data attributes:
+   *
+   * - `data-proscenium-component-path`: The URL path to the component's source file.
+   * - `data-proscenium-component-props`: JSON object of props to pass to the component.
+   * - `data-proscenium-component-lazy`: If present, will lazily load the component when in view
+   *   using IntersectionObserver.
+   * - `data-proscenium-component-forward-children`: If the element should forward its `innerHTML`
+   *   as the component's children prop.
+   */
   function mount(element, path, { children, ...props }) {
     const react = import("@proscenium/react-manager/react");
-    const Component = import(window.prosceniumComponents[path].outpath);
+    const Component = import(window.prosceniumLazyScripts[path].outpath);
 
     const forwardChildren =
       "prosceniumComponentForwardChildren" in element.dataset &&

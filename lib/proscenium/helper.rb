@@ -59,13 +59,14 @@ module Proscenium
 
           next unless imports.key?(inpath)
 
-          import = imports[inpath]
-          lazy = import.delete :lazy
-          scripts[inpath] = import.merge(outpath: outpath)
-          out << javascript_include_tag(outpath, extname: false, **options) unless lazy
+          if (import = imports[inpath]).delete(:lazy)
+            scripts[inpath] = import.merge(outpath: outpath)
+          else
+            out << javascript_include_tag(outpath, extname: false, **options)
+          end
         end
 
-        out << javascript_tag("window.prosceniumComponents = #{scripts.to_json}")
+        out << javascript_tag("window.prosceniumLazyScripts = #{scripts.to_json}")
       else
         Importer.each_javascript(delete: true) do |path, _path_options|
           out << javascript_include_tag(path, extname: false, **options)

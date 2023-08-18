@@ -15,11 +15,6 @@ module Proscenium
 
     include ReactComponentable
 
-    def before_template
-      super
-      Importer.sideload source_path, lazy: lazy
-    end
-
     # Override this to provide your own loading UI.
     #
     # @example
