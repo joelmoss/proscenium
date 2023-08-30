@@ -57,7 +57,7 @@ var Css = esbuild.Plugin{
 							const e = document.createElement('style');
 							e.id = '_` + hash + `';
 							e.dataset.href = '` + relativePath + `';
-							e.appendChild(document.createTextNode(` + fmt.Sprintf("`%s`", contents) + `));
+							e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
 							document.head.insertBefore(e, document.querySelector('style'));
 						}
 					`
