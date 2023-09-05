@@ -40,7 +40,8 @@ module Proscenium
 
     def find_type(request)
       return Url if request.path.match?(%r{^/https?%3A%2F%2F})
-      return Esbuild if Pathname.new(request.path).fnmatch?(path_glob, File::FNM_EXTGLOB)
+
+      Esbuild if Pathname.new(request.path).fnmatch?(path_glob, File::FNM_EXTGLOB)
     end
 
     def path_glob

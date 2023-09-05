@@ -87,6 +87,12 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		LegalComments:     esbuild.LegalCommentsNone,
 		Metafile:          hasMultipleEntrypoints,
 		Target:            esbuild.ES2022,
+
+		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
+		Loader: map[string]esbuild.Loader{
+			".module.css": esbuild.LoaderCSS,
+		},
+
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
 			"nesting": false,

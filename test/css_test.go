@@ -97,18 +97,18 @@ var _ = Describe("Build(css)", func() {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
-				e.appendChild(document.createTextNode(` + "`/* lib/styles.module.css */" + `
+				e.appendChild(document.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
 			.myClass-330940eb {
         color: pink;
       }` + "`" + `));
 				document.head.insertBefore(e, document.querySelector("style"));
 			}
-			var styles_module_default = new Proxy({}, {
+			var styles_default = new Proxy({}, {
 				get(target, prop, receiver) {
 					if (prop in target || typeof prop === "symbol") {
 						return Reflect.get(target, prop, receiver);
 					} else {
-						return prop + "330940eb";
+						return prop + "-330940eb";
 					}
 				}
 			});
