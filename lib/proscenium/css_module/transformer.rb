@@ -2,13 +2,16 @@
 
 module Proscenium
   class CssModule::Transformer
+    FILE_EXT = '.module.css'
+
     def self.class_names(path, *names)
       new(path).class_names(*names)
     end
 
     def initialize(source_path)
-      source_path = Pathname.new(source_path) unless source_path.is_a?(Pathname)
-      @source_path = source_path.sub_ext('.module.css')
+      @source_path = source_path
+      @source_path = Pathname.new(@source_path) unless @source_path.is_a?(Pathname)
+      @source_path = @source_path.sub_ext(FILE_EXT) unless @source_path.to_s.end_with?(FILE_EXT)
     end
 
     # Transform each of the given class `names` to their respective CSS module name, which consist
@@ -31,7 +34,6 @@ module Proscenium
     #
     # @param names [String,Symbol,Array<String,Symbol>]
     # @param require_prefix: [Boolean] whether or not to require the `@` prefix.
-    # @raise [CssModule::StylesheetNotFound] if the path to the stylesheet does not exist.
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
       names.map do |name|
@@ -50,7 +52,7 @@ module Proscenium
             path, name = name.split('@')
           end
 
-          class_name! name, path: "#{path}.module.css"
+          class_name! name, path: "#{path}#{FILE_EXT}"
         elsif name.start_with?('@')
           class_name! name[1..]
         else
@@ -59,14 +61,8 @@ module Proscenium
       end
     end
 
-    # @raise [CssModule::StylesheetNotFound] if the stylesheet does not exist.
     def class_name!(name, path: @source_path)
       resolved_path = Resolver.resolve(path.to_s)
-
-      unless Rails.root.join(resolved_path[1..]).exist?
-        raise CssModule::StylesheetNotFound, resolved_path
-      end
-
       digest = Importer.import(resolved_path)
 
       sname = name.to_s

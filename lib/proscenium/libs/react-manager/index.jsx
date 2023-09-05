@@ -17,6 +17,7 @@ function init() {
    *   as the component's children prop.
    */
   function mount(element, path, { children, ...props }) {
+    // const sim = new Promise((resolve) => setTimeout(resolve, 5000));
     const react = import("@proscenium/react-manager/react");
     const Component = import(window.prosceniumLazyScripts[path].outpath);
 
@@ -54,9 +55,7 @@ function init() {
 
     if (proscenium.env.RAILS_ENV === "development") {
       console.groupCollapsed(
-        isLazy
-          ? `[proscenium/react/manager] 💤 %o`
-          : `[proscenium/react/manager] ⚡️ %o`,
+        `[proscenium/react/manager] ${isLazy ? "💤" : "⚡️"} %o`,
         path
       );
       console.log("element: %o", element);

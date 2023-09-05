@@ -36,6 +36,8 @@ module Proscenium
       #
       # @return [Boolean]
       class_attribute :lazy, default: false
+
+      class_attribute :loader
     end
 
     class_methods do
@@ -48,14 +50,15 @@ module Proscenium
     end
 
     # @param props: [Hash]
-    def initialize(lazy: self.class.lazy, props: {})
+    def initialize(lazy: self.class.lazy, loader: self.class.loader, props: {})
       self.lazy = lazy
+      self.loader = loader
       @props = props
     end
 
     # The absolute URL path to the javascript component.
     def virtual_path
-      @virtual_path ||= Resolver.resolve source_path.sub_ext('.jsx').to_s
+      @virtual_path ||= Resolver.resolve self.class.source_path.sub_ext('.jsx').to_s
     end
 
     def props
@@ -82,6 +85,10 @@ module Proscenium
         # Reverses the effect of ActiveSupport::Inflector.camelize converting slashes into `::`.
         string.gsub '::', '/'
       end.to_json
+    end
+
+    def loader_component
+      render Loader::Component.new(loader, @html_class, data_attributes, tag: @html_tag)
     end
   end
 end

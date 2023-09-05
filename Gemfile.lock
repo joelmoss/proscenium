@@ -232,7 +232,7 @@ GEM
     ruby-progressbar (1.13.0)
     sqlite3 (1.6.3-arm64-darwin)
     sqlite3 (1.6.3-x86_64-linux)
-    sus (0.22.2)
+    sus (0.23.0)
     thor (1.2.2)
     timeout (0.4.0)
     tzinfo (2.0.6)
@@ -273,7 +273,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rake
   sqlite3
-  sus (= 0.22.2)
+  sus (~> 0.23.0)
   view_component (~> 3.5.0)
 
 BUNDLED WITH

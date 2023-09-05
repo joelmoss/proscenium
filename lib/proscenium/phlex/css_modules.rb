@@ -4,6 +4,10 @@ module Proscenium
   module Phlex::CssModules
     include Proscenium::CssModule
 
+    def self.included(base)
+      base.extend CssModule::Path
+    end
+
     # Resolve and side load any CSS modules in the "class" attributes, where a CSS module is a class
     # name beginning with a `@`. The class name is resolved to a CSS module name based on the file
     # system path of the Phlex class, and any CSS file is side loaded.

@@ -81,6 +81,16 @@ describe Proscenium::Phlex::ReactComponent do
     expect(Proscenium::Importer.imported['/../../lib/proscenium/libs/react-manager/index.jsx']).to be == {}
   end
 
+  # describe ':loader' do
+  #   it 'show loader until component loads' do
+  #     render Phlex::BasicReactComponent.new(loader: true)
+
+  #     pp page.native.to_html
+
+  #     expect(Proscenium::Importer.imported['/app/components/phlex/basic_react_component.jsx'][:lazy]).to be == true
+  #   end
+  # end
+
   describe 'lazy loading' do
     def after
       Phlex::BasicReactComponent.lazy = false # reset

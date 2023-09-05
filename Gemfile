@@ -26,6 +26,6 @@ group :test do
   gem 'gem2', path: './fixtures/external/gem2'
   gem 'phlex-rails'
   gem 'phlex-testing-capybara'
-  gem 'sus', '0.22.2'
+  gem 'sus', '~> 0.23.0'
   gem 'view_component', '~> 3.5.0'
 end

@@ -9,11 +9,7 @@ module Proscenium::SourcePath
 
   module ClassMethods
     def source_path
-      @source_path ||= Pathname.new const_source_location(name).first
+      @source_path ||= name.nil? ? nil : Pathname.new(const_source_location(name).first)
     end
-  end
-
-  def source_path
-    self.class.source_path
   end
 end

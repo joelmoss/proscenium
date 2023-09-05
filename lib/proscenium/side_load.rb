@@ -6,8 +6,8 @@ module Proscenium
       # Side loads the class, and its super classes that respond to `.source_path`.
       #
       # Assign the `abstract_class` class variable to any abstract class, and it will not be side
-      # loaded. Additionally, if the class instance responds to `sideload?`, and it returns false,
-      # it will not be side loaded.
+      # loaded. Additionally, if the class responds to `#sideload?`, and it returns false, it will
+      # not be side loaded.
       #
       # If the class responds to `.sideload`, it will be called instead of the regular side loading.
       # You can use this to customise what is side loaded.

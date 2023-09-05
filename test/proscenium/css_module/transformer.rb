@@ -13,14 +13,6 @@ describe Proscenium::CssModule::Transformer do
   end
 
   describe '#class_names' do
-    with 'unknown stylesheet' do
-      it 'raise StylesheetNotFound' do
-        expect do
-          Proscenium::CssModule::Transformer.class_names('/foo', :@title)
-        end.to raise_exception(Proscenium::CssModule::StylesheetNotFound)
-      end
-    end
-
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
