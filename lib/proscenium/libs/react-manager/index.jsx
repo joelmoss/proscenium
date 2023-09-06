@@ -17,7 +17,13 @@ function init() {
    *   as the component's children prop.
    */
   function mount(element, path, { children, ...props }) {
+    // For testing and simulation of slow connections.
     // const sim = new Promise((resolve) => setTimeout(resolve, 5000));
+
+    if (!(path in window.prosceniumLazyScripts)) {
+      throw `[proscenium/react/manager] Cannot load component ${path} (not found in prosceniumLazyScripts)`;
+    }
+
     const react = import("@proscenium/react-manager/react");
     const Component = import(window.prosceniumLazyScripts[path].outpath);
 
