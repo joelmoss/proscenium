@@ -21,7 +21,7 @@ module Proscenium
     # @see CssModule::Transformer#class_names
     # @param name [String,Symbol,Array<String,Symbol>]
     def css_module(*names)
-      path = Pathname.new(@current_template.identifier).sub_ext('')
+      path = Pathname.new(@lookup_context.find(@virtual_path).identifier).sub_ext('')
       CssModule::Transformer.new(path).class_names(*names, require_prefix: false).join ' '
     end
 
