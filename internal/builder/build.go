@@ -139,6 +139,8 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
+	buildOptions.Define["global"] = "window"
+
 	return esbuild.Build(buildOptions)
 }
 
