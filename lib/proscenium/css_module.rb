@@ -3,41 +3,19 @@
 module Proscenium::CssModule
   extend ActiveSupport::Autoload
 
-  class StylesheetNotFound < StandardError
-    def initialize(pathname)
-      @pathname = pathname
-      super
-    end
-
-    def message
-      "Stylesheet is required, but does not exist: #{@pathname}"
-    end
-  end
-
-  autoload :ClassNamesResolver
-  autoload :Resolver # deprecated
-
-  # Like `css_modules`, but will raise if the stylesheet cannot be found.
-  #
-  # @param name [Array, String]
-  def css_module!(names)
-    cssm.class_names!(names).join ' '
-  end
+  autoload :Path
+  autoload :Transformer
 
   # Accepts one or more CSS class names, and transforms them into CSS module names.
   #
-  # @param name [Array, String]
-  def css_module(names)
-    cssm.class_names(names).join ' '
+  # @param name [String,Symbol,Array<String,Symbol>]
+  def css_module(*names)
+    cssm.class_names(*names, require_prefix: false).join ' '
   end
 
   private
 
-  def path
-    self.class.path
-  end
-
   def cssm
-    @cssm ||= Resolver.new(path)
+    @cssm ||= Transformer.new(self.class.css_module_path)
   end
 end

@@ -3,8 +3,6 @@ package builder
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"path"
 	"strings"
 
 	"joelmoss/proscenium/internal/importmap"
@@ -31,8 +29,6 @@ type BuildOptions struct {
 
 	// Import map contents.
 	ImportMap []byte
-
-	Metafile bool
 }
 
 // Build the given `options.Path` in the `options.Root`.
@@ -89,8 +85,14 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Write:             types.Config.CodeSplitting,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          options.Metafile,
+		Metafile:          hasMultipleEntrypoints,
 		Target:            esbuild.ES2022,
+
+		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
+		Loader: map[string]esbuild.Loader{
+			".module.css": esbuild.LoaderCSS,
+		},
+
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
 			"nesting": false,
@@ -137,13 +139,9 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 	}
 
-	result := esbuild.Build(buildOptions)
+	buildOptions.Define["global"] = "window"
 
-	if options.Metafile {
-		os.WriteFile(path.Join(types.Config.RootPath, "meta.json"), []byte(result.Metafile), 0644)
-	}
-
-	return result
+	return esbuild.Build(buildOptions)
 }
 
 // Maintains a cache of environment variables.

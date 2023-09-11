@@ -1,23 +1,23 @@
 # Ignore the default SQLite database.
-/test/dummy/db/*.sqlite3
-/test/dummy/db/*.sqlite3-*
+/fixtures/dummy/db/*.sqlite3
+/fixtures/dummy/db/*.sqlite3-*
 
 # Ignore all logfiles and tempfiles.
-/test/dummy/log/*
-/test/dummy/tmp/*
-!/test/dummy/log/.keep
-!/test/dummy/tmp/.keep
+/fixtures/dummy/log/*
+/fixtures/dummy/tmp/*
+!/fixtures/dummy/log/.keep
+!/fixtures/dummy/tmp/.keep
 
 # Ignore pidfiles, but keep the directory.
-/test/dummy/tmp/pids/*
-!/test/dummy/tmp/pids/
-!/test/dummy/tmp/pids/.keep
+/fixtures/dummy/tmp/pids/*
+!/fixtures/dummy/tmp/pids/
+!/fixtures/dummy/tmp/pids/.keep
 
 # Ignore uploaded files in development.
-/test/dummy/storage/*
-!/test/dummy/storage/.keep
+/fixtures/dummy/storage/*
+!/fixtures/dummy/storage/.keep
 
-/test/dummy/public/assets
+/fixtures/dummy/public/assets
 
 /.bundle/
 /.yardoc

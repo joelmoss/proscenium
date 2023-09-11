@@ -1,5 +1,4 @@
 require:
-  - rubocop-minitest
   - rubocop-packaging
   - rubocop-performance
   - rubocop-rake
@@ -9,7 +8,8 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
   Exclude:
-    - "test/dummy/**/*"
+    - "fixtures/dummy/**/*"
+    - "fixtures/external/**/*"
 
 Layout/LineLength:
   Max: 100
@@ -19,6 +19,7 @@ Metrics/BlockLength:
   Exclude:
     - Rakefile
     - proscenium.gemspec
+    - "test/**/*"
 Metrics/MethodLength:
   Max: 20
 Metrics/AbcSize:

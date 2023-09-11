@@ -15,10 +15,10 @@ var _ = Describe("Build(css)", func() {
 	})
 
 	Describe("css module", func() {
-		path := "app/components/phlex/side_load_css_module_view.module.css"
+		path := "lib/css_modules/basic.module.css"
 
 		It("should build", func() {
-			Expect(Build(path)).To(ContainCode(`.basebd9b41e5 { color: red; }`))
+			Expect(Build(path)).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 		})
 	})
 
@@ -32,7 +32,7 @@ var _ = Describe("Build(css)", func() {
 		It("should bundle", func() {
 			Expect(Build("lib/css_modules/import_css_module.css")).To(ContainCode(`
 					/* lib/css_modules/basic.module.css */
-          .fooc3f452b4 { color: red; }
+          .foo-c3f452b4 { color: red; }
           /* lib/css_modules/import_css_module.css */
           .bar { color: blue; }
 				`))
@@ -43,8 +43,8 @@ var _ = Describe("Build(css)", func() {
 		It("should bundle with same digest", func() {
 			result := Build("lib/css_modules/import_css_module.module.css")
 
-			Expect(result).To(ContainCode(`.foo60bd820c { color: red; }`))
-			Expect(result).To(ContainCode(`.bar60bd820c { color: blue; }`))
+			Expect(result).To(ContainCode(`.foo-60bd820c { color: red; }`))
+			Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
 		})
 	})
 
@@ -97,18 +97,18 @@ var _ = Describe("Build(css)", func() {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
-				e.appendChild(document.createTextNode(` + "`/* lib/styles.module.css */" + `
-			.myClass330940eb {
+				e.appendChild(document.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
+			.myClass-330940eb {
         color: pink;
       }` + "`" + `));
 				document.head.insertBefore(e, document.querySelector("style"));
 			}
-			var styles_module_default = new Proxy({}, {
+			var styles_default = new Proxy({}, {
 				get(target, prop, receiver) {
 					if (prop in target || typeof prop === "symbol") {
 						return Reflect.get(target, prop, receiver);
 					} else {
-						return prop + "330940eb";
+						return prop + "-330940eb";
 					}
 				}
 			});
@@ -128,8 +128,8 @@ var _ = Describe("Build(css)", func() {
 			It("should bundle with same digest", func() {
 				result := Build(path)
 
-				Expect(result).To(ContainCode(`.foo60bd820c { color: red; }`))
-				Expect(result).To(ContainCode(`.bar60bd820c { color: blue; }`))
+				Expect(result).To(ContainCode(`.foo-60bd820c { color: red; }`))
+				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
 			})
 		})
 	})

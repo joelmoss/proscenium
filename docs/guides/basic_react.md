@@ -4,7 +4,7 @@ This guide will walk you through creating a simple [React](https://react.dev) co
 
 ## Prerequisites
 
-It is assumed that you have already [installed Proscenium](/README.md#installation) in your Rails app, and are [side loading your client assets](/README.md#side-loading) through the use of the `side_load_javascripts` helper.
+It is assumed that you have already [installed Proscenium](/README.md#installation) in your Rails app, and are [side loading your client assets](/README.md#side-loading) through the use of the `include_javascripts` helper.
 
 It also requires that you have a JavaScript package manager installed, such as [NPM](https://www.npmjs.com/), [Yarn](https://yarnpkg.com/) or [Pnpm](https://pnpm.io/). You could also import React from any good CDN. We will use NPM in this guide. Feel free to use the package manager of your choice.
 

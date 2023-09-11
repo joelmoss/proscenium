@@ -73,22 +73,26 @@ module Proscenium
     end
 
     def build(path)
-      result = Request.build(path, @base_url, import_map, env_vars.to_json,
-                             @root.to_s,
-                             Rails.env.to_sym,
-                             Proscenium.config.code_splitting,
-                             Proscenium.config.debug)
+      ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
+        result = Request.build(path, @base_url, import_map, env_vars.to_json,
+                               @root.to_s,
+                               Rails.env.to_sym,
+                               Proscenium.config.code_splitting,
+                               Proscenium.config.debug)
 
-      raise BuildError.new(path, result[:response]) unless result[:success]
+        raise BuildError.new(path, result[:response]) unless result[:success]
 
-      result[:response]
+        result[:response]
+      end
     end
 
     def resolve(path)
-      result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym)
-      raise ResolveError.new(path, result[:response]) unless result[:success]
+      ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
+        result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym)
+        raise ResolveError.new(path, result[:response]) unless result[:success]
 
-      result[:response]
+        result[:response]
+      end
     end
 
     private

@@ -18,7 +18,7 @@ func Resolve(pathToResolve string, rest ...ResolveOpts) (string, error) {
 
 	// Ensure test environment.
 	types.Config.Environment = types.Environment(2)
-	types.Config.RootPath = path.Join(path.Dir(filename), "dummy")
+	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
 
 	restOpts := ResolveOpts{}
 	if len(rest) > 0 {

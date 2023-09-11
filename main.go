@@ -9,13 +9,9 @@ struct Result {
 import "C"
 
 import (
-	"encoding/json"
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
-	"joelmoss/proscenium/internal/utils"
-	"path"
-	"strings"
 )
 
 // Build the given `path` in the `root`.
@@ -50,50 +46,18 @@ func build(
 
 	pathStr := C.GoString(filepath)
 
-	result := builder.Build(builder.BuildOptions{
+	success, result := builder.BuildToString(builder.BuildOptions{
 		Path:          pathStr,
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),
 		EnvVars:       C.GoString(envVars),
 	})
 
-	if len(result.Errors) != 0 {
-		j, err := json.Marshal(result.Errors[0])
-		if err != nil {
-			return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
-		}
-
-		return C.struct_Result{C.int(0), C.CString(string(j))}
-	}
-
-	if strings.Contains(pathStr, ";") {
-		contents := []string{}
-		for _, v := range result.OutputFiles {
-			contents = append(contents, v.Path)
-		}
-
-		return C.struct_Result{C.int(1), C.CString(strings.Join(contents, ";"))}
-	}
-
-	contents := string(result.OutputFiles[0].Contents)
-
-	isSourceMap := strings.HasSuffix(pathStr, ".map")
-	if isSourceMap {
-		return C.struct_Result{C.int(1), C.CString(contents)}
-	}
-
-	if utils.IsEncodedUrl(pathStr) {
-		contents += "//# sourceMappingURL=" + pathStr + ".map"
+	if success {
+		return C.struct_Result{C.int(1), C.CString(result)}
 	} else {
-		sourcemapUrl := path.Base(pathStr)
-		if utils.PathIsCss(result.OutputFiles[0].Path) {
-			contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
-		} else {
-			contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
-		}
+		return C.struct_Result{C.int(0), C.CString(result)}
 	}
-
-	return C.struct_Result{C.int(1), C.CString(contents)}
 }
 
 // Resolve the given `path` relative to the `root`.

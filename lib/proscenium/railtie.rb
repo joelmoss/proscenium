@@ -6,14 +6,6 @@ require 'proscenium/log_subscriber'
 ENV['RAILS_ENV'] = Rails.env
 
 module Proscenium
-  FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
-                     'ts.map', 'tsx.map', 'css.map'].freeze
-
-  APPLICATION_INCLUDE_PATHS = ['config', 'app/assets', 'app/views', 'lib', 'node_modules'].freeze
-
-  # Environment variables that should always be passed to the builder.
-  DEFAULT_ENV_VARS = Set['RAILS_ENV', 'NODE_ENV'].freeze
-
   class << self
     def config
       @config ||= Railtie.config.proscenium
@@ -26,10 +18,12 @@ module Proscenium
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.debug = false
     config.proscenium.side_load = true
-    config.proscenium.code_splitting = false
+    config.proscenium.code_splitting = true
+    config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
+
+    # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
-    config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
 
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
@@ -60,31 +54,25 @@ module Proscenium
     end
 
     initializer 'proscenium.middleware' do |app|
-      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
+      app.middleware.insert_after ActionDispatch::Static, Middleware
       app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.side_loading' do |app|
-      if app.config.proscenium.side_load
-        Proscenium::Current.loaded ||= SideLoad::EXTENSIONS.to_h { |e| [e, Set.new] }
-
-        ActiveSupport.on_load(:action_view) do
-          ActionView::Base.include Proscenium::SideLoad::Helper
-
-          ActionView::TemplateRenderer.prepend SideLoad::Monkey::TemplateRenderer
-          ActionView::PartialRenderer.prepend SideLoad::Monkey::PartialRenderer
-        end
-
-        ActiveSupport.on_load(:action_controller) do
-          ActionController::Base.include Proscenium::SideLoad::EnsureLoaded
-        end
+    initializer 'proscenium.monkey_views' do
+      ActiveSupport.on_load(:action_view) do
+        ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
+        ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
     end
 
     initializer 'proscenium.helper' do
       ActiveSupport.on_load(:action_view) do
-        ActionView::Base.include Proscenium::Helper
+        ActionView::Base.include Helper
+      end
+
+      ActiveSupport.on_load(:action_controller) do
+        ActionController::Base.include EnsureLoaded
       end
     end
   end
