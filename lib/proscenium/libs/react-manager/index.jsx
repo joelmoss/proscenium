@@ -31,27 +31,31 @@ function init() {
       "prosceniumComponentForwardChildren" in element.dataset &&
       element.innerHTML !== "";
 
-    Promise.all([react, Component]).then(([r, c]) => {
-      if (proscenium.env.RAILS_ENV === "development") {
-        console.groupCollapsed(
-          `[proscenium/react/manager] 🔥 %o mounted!`,
-          path
-        );
-        console.log("props: %o", props);
-        console.groupEnd();
-      }
+    Promise.all([react, Component])
+      .then(([r, c]) => {
+        if (proscenium.env.RAILS_ENV === "development") {
+          console.groupCollapsed(
+            `[proscenium/react/manager] 🔥 %o mounted!`,
+            path
+          );
+          console.log("props: %o", props);
+          console.groupEnd();
+        }
 
-      let component;
-      if (forwardChildren) {
-        component = r.createElement(c.default, props, element.innerHTML);
-      } else if (children) {
-        component = r.createElement(c.default, props, children);
-      } else {
-        component = r.createElement(c.default, props);
-      }
+        let component;
+        if (forwardChildren) {
+          component = r.createElement(c.default, props, element.innerHTML);
+        } else if (children) {
+          component = r.createElement(c.default, props, children);
+        } else {
+          component = r.createElement(c.default, props);
+        }
 
-      r.createRoot(element).render(component);
-    });
+        r.createRoot(element).render(component);
+      })
+      .catch((error) => {
+        console.error("[proscenium/react/manager] %o - %o", path, error);
+      });
   }
 
   Array.from(elements, (element) => {
