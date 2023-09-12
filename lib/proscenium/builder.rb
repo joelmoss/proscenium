@@ -37,7 +37,8 @@ module Proscenium
 
         # Config
         :string,      # root
-        :environment  # Rails environment as a Symbol
+        :environment, # Rails environment as a Symbol
+        :bool         # debugging enabled?
       ], Result.by_value
     end
 
@@ -88,7 +89,8 @@ module Proscenium
 
     def resolve(path)
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
-        result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym)
+        result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym,
+                                 Proscenium.config.debug)
         raise ResolveError.new(path, result[:response]) unless result[:success]
 
         result[:response]

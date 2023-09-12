@@ -68,11 +68,13 @@ func build(
 //	Config
 //	- root - The working directory.
 //	- env - The environment (1 = development, 2 = test, 3 = production)
+//	- debug?
 //
 //export resolve
-func resolve(path *C.char, importMap *C.char, root *C.char, env C.uint) C.struct_Result {
+func resolve(path *C.char, importMap *C.char, root *C.char, env C.uint, debug bool) C.struct_Result {
 	types.Config.Environment = types.Environment(env)
 	types.Config.RootPath = C.GoString(root)
+	types.Config.Debug = debug
 
 	resolvedPath, err := resolver.Resolve(resolver.Options{
 		Path:          C.GoString(path),
