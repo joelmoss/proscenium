@@ -11,7 +11,7 @@ module Proscenium
     #
     # @param path [String] Can be URL path, file system path, or bare specifier (ie. NPM package).
     # @return [String] URL path.
-    def self.resolve(path) # rubocop:disable Metrics/AbcSize
+    def self.resolve(path) # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
       self.resolved ||= {}
 
       self.resolved[path] ||= begin
@@ -19,7 +19,11 @@ module Proscenium
           raise ArgumentError, 'path must be an absolute file system or URL path'
         end
 
-        if (gem = Proscenium.config.side_load_gems.find { |_, x| path.start_with? "#{x[:root]}/" })
+        if path.start_with?('@proscenium/')
+          "/#{path}"
+        elsif (gem = Proscenium.config.side_load_gems.find do |_, x|
+                 path.start_with? "#{x[:root]}/"
+               end)
           unless (package_name = gem[1][:package_name] || gem[0])
             # TODO: manually resolve the path without esbuild
             raise PathResolutionFailed, path

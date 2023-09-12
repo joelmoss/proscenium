@@ -43,7 +43,7 @@ func BuildToString(options BuildOptions) (bool, string) {
 		for output, v := range m["outputs"].(map[string]interface{}) {
 			for k, input := range v.(map[string]interface{}) {
 				if k == "entryPoint" {
-					mapping[input.(string)] = output
+					mapping[strings.TrimPrefix(input.(string), "libs:")] = output
 				}
 			}
 		}

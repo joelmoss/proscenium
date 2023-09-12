@@ -131,6 +131,12 @@ describe Proscenium::Middleware do
     expect(response.body.squish).to include %(sources": ["url:https://ga.jspm.io/npm:is-fn@3.0.0/index.js"])
   end
 
+  it 'servces @proscenium/* runtime libs' do
+    get '/@proscenium/test.js'
+
+    expect(response.body).to include('console.log("/@proscenium/test.js")')
+  end
+
   with 'cache_query_string' do
     it 'should set cache header ' do
       Proscenium.config.cache_query_string = 'v1'

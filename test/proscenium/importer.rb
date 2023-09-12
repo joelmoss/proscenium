@@ -37,15 +37,13 @@ describe Proscenium::Importer do
 
       expect(subject.imported).to be == { '/app/views/layouts/application.js' => {} }
     end
+
+    it 'imports @proscenium/* runtime files' do
+      subject.import resolve: '@proscenium/react-manager/index.jsx'
+
+      expect(subject.imported).to be == { '/@proscenium/react-manager/index.jsx' => {} }
+    end
   end
-
-  # test '#imported?' do
-  #   refute Proscenium::Importer.imported?('/app/views/layouts/application.js')
-
-  #   Proscenium::Importer.import '/app/views/layouts/application.js'
-
-  #   assert Proscenium::Importer.imported?('/app/views/layouts/application.js')
-  # end
 
   with '.sideload' do
     with 'js and css' do

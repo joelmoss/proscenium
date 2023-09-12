@@ -34,12 +34,12 @@ module Proscenium
       private
 
       def real_path
-        @request.path
+        @real_path ||= @request.path
       end
 
       # @return [String] the path to the file without the leading slash which will be built.
       def path_to_build
-        @request.path[1..]
+        @path_to_build ||= @request.path[1..]
       end
 
       def sourcemap?

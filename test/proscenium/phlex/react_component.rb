@@ -78,7 +78,7 @@ describe Proscenium::Phlex::ReactComponent do
   it 'should import component manager' do
     render Phlex::BasicReactComponent.new
 
-    expect(Proscenium::Importer.imported['/../../lib/proscenium/libs/react-manager/index.jsx']).to be == {}
+    expect(Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx']).to be == {}
   end
 
   # describe ':loader' do

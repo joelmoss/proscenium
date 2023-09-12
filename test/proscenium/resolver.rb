@@ -41,6 +41,12 @@ describe Proscenium::Resolver do
       end
     end
 
+    with '@proscenium runtime', value: '@proscenium/react-manager/index.jsx' do
+      it 'resolves' do
+        expect(subject.resolve(value)).to be == '/@proscenium/react-manager/index.jsx'
+      end
+    end
+
     with 'side loaded gem', value: '/my/gem/root/lib/gem1/gem1.js' do
       it 'resolves' do
         Proscenium.config.side_load_gems['mygem'] = {

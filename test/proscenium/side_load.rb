@@ -73,7 +73,7 @@ describe Proscenium::SideLoad do
     expect(Proscenium::Importer.imported).to be == {
       '/app/views/layouts/bare.js' => { sideloaded: true },
       '/app/views/layouts/bare.css' => { sideloaded: true },
-      '/../../lib/proscenium/libs/react-manager/index.jsx' => {},
+      '/@proscenium/react-manager/index.jsx' => {},
       '/vendor/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
     }
   end
@@ -84,7 +84,7 @@ describe Proscenium::SideLoad do
     expect(Proscenium::Importer.imported).to be == {
       '/app/views/layouts/bare.js' => { sideloaded: true },
       '/app/views/layouts/bare.css' => { sideloaded: true },
-      '/../../lib/proscenium/libs/react-manager/index.jsx' => {},
+      '/@proscenium/react-manager/index.jsx' => {},
       '/node_modules/.pnpm/file+..+external+gem2/node_modules/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
     }
   end

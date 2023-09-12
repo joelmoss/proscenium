@@ -9,6 +9,7 @@ module Proscenium
 
     autoload :Base
     autoload :Esbuild
+    autoload :Runtime
     autoload :Url
 
     def initialize(app)
@@ -40,6 +41,7 @@ module Proscenium
 
     def find_type(request)
       return Url if request.path.match?(%r{^/https?%3A%2F%2F})
+      return Runtime if request.path.match?(%r{^/@proscenium/})
 
       Esbuild if Pathname.new(request.path).fnmatch?(path_glob, File::FNM_EXTGLOB)
     end
