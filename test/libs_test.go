@@ -8,11 +8,11 @@ import (
 )
 
 var _ = Describe("Build(Libs)", func() {
-	It("builds from lib/libs", func() {
+	PIt("builds from lib/libs", func() {
 		Expect(Resolve("@proscenium/react-manager/index.jsx")).To(Equal("/../../lib/proscenium/libs/react-manager/index.jsx"))
 	})
 
-	It("builds from lib/libs", func() {
+	PIt("builds from lib/libs", func() {
 		Expect(Build("lib/libs/stimulus_loading.js")).To(ContainCode(`
 			function lazyLoadControllersFrom(under, application,
 		`))

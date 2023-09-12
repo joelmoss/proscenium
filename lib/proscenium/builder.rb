@@ -25,7 +25,8 @@ module Proscenium
         :string,      # ENV variables as a JSON string
 
         # Config
-        :string,      # root
+        :string,      # Rails application root
+        :string,      # Proscenium gem root
         :environment, # Rails environment as a Symbol
         :bool,        # code splitting enabled?
         :bool         # debugging enabled?
@@ -36,7 +37,8 @@ module Proscenium
         :string,      # path to import map, relative to root
 
         # Config
-        :string,      # root
+        :string,      # Rails application root
+        :string,      # Proscenium gem root
         :environment, # Rails environment as a Symbol
         :bool         # debugging enabled?
       ], Result.by_value
@@ -73,10 +75,11 @@ module Proscenium
       @base_url = base_url
     end
 
-    def build(path)
+    def build(path) # rubocop:disable Metrics/AbcSize
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
         result = Request.build(path, @base_url, import_map, env_vars.to_json,
                                @root.to_s,
+                               Pathname.new(__dir__).join('..', '..').to_s,
                                Rails.env.to_sym,
                                Proscenium.config.code_splitting,
                                Proscenium.config.debug)
@@ -89,7 +92,9 @@ module Proscenium
 
     def resolve(path)
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
-        result = Request.resolve(path, import_map, @root.to_s, Rails.env.to_sym,
+        result = Request.resolve(path, import_map, @root.to_s,
+                                 Pathname.new(__dir__).join('..', '..').to_s,
+                                 Rails.env.to_sym,
                                  Proscenium.config.debug)
         raise ResolveError.new(path, result[:response]) unless result[:success]
 

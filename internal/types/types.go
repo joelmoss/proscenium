@@ -15,6 +15,7 @@ func (e Environment) String() string {
 
 var Config struct {
 	RootPath      string
+	GemPath       string
 	Debug         bool
 	CodeSplitting bool
 	Environment   Environment

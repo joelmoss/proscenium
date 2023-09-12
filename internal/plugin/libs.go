@@ -1,10 +1,10 @@
 package plugin
 
 import (
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
@@ -14,8 +14,7 @@ var Libs = esbuild.Plugin{
 	Name: "libs",
 	Setup: func(build esbuild.PluginBuild) {
 		root := build.InitialOptions.AbsWorkingDir
-		_, filename, _, _ := runtime.Caller(0)
-		libDir := path.Join(path.Dir(filename), "..", "..", "lib", "proscenium", "libs")
+		libDir := path.Join(types.Config.GemPath, "lib", "proscenium", "libs")
 
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {

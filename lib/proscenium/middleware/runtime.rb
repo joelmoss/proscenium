@@ -10,8 +10,8 @@ module Proscenium
                                                       '/lib/proscenium/libs')).to_s
       end
 
-      def root
-        @root ||= Proscenium::Railtie.root.to_s
+      def root_for_readable
+        Proscenium::Railtie.root
       end
     end
   end

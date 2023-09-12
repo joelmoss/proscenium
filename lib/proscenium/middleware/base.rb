@@ -53,20 +53,20 @@ module Proscenium
       def file_readable?
         return false unless (path = clean_path(sourcemap? ? real_path[0...-4] : real_path))
 
-        file_stat = File.stat(Pathname(root).join(path.delete_prefix('/').b).to_s)
+        file_stat = File.stat(root_for_readable.join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError
         false
       else
         file_stat.file? && file_stat.readable?
       end
 
+      def root_for_readable
+        Rails.root
+      end
+
       def clean_path(file)
         path = Rack::Utils.unescape_path file.chomp('/').delete_prefix('/')
         Rack::Utils.clean_path_info path if Rack::Utils.valid_path? path
-      end
-
-      def root
-        @root ||= Rails.root.to_s
       end
 
       def content_type

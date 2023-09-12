@@ -34,12 +34,14 @@ func build(
 	baseUrl *C.char,
 	importMap *C.char,
 	envVars *C.char,
-	root *C.char,
+	appRoot *C.char,
+	gemPath *C.char,
 	env C.uint,
 	codeSplitting bool,
 	debug bool,
 ) C.struct_Result {
-	types.Config.RootPath = C.GoString(root)
+	types.Config.RootPath = C.GoString(appRoot)
+	types.Config.GemPath = C.GoString(gemPath)
 	types.Config.Environment = types.Environment(env)
 	types.Config.CodeSplitting = codeSplitting
 	types.Config.Debug = debug
@@ -71,9 +73,12 @@ func build(
 //	- debug?
 //
 //export resolve
-func resolve(path *C.char, importMap *C.char, root *C.char, env C.uint, debug bool) C.struct_Result {
+func resolve(
+	path *C.char, importMap *C.char, appRoot *C.char, gemPath *C.char, env C.uint, debug bool,
+) C.struct_Result {
 	types.Config.Environment = types.Environment(env)
-	types.Config.RootPath = C.GoString(root)
+	types.Config.RootPath = C.GoString(appRoot)
+	types.Config.GemPath = C.GoString(gemPath)
 	types.Config.Debug = debug
 
 	resolvedPath, err := resolver.Resolve(resolver.Options{
