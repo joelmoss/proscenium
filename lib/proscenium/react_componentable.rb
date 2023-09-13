@@ -38,13 +38,14 @@ module Proscenium
       class_attribute :lazy, default: false
 
       class_attribute :loader
+
+      # @return [String] the URL path to the component manager.
+      class_attribute :manager, default: '/@proscenium/react-manager/index.jsx'
     end
 
     class_methods do
-      # Import only the component manager. The component itself is side loaded in the initializer,
-      # so that it can be lazy loaded based on the value of the `lazy` instance variable.
       def sideload
-        Importer.import resolve: '@proscenium/react-manager/index.jsx'
+        Importer.import manager
         Importer.sideload source_path, lazy: true
       end
     end
