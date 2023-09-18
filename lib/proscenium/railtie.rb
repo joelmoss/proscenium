@@ -19,7 +19,6 @@ module Proscenium
     config.proscenium.debug = false
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
-    config.proscenium.include_paths = Set.new(APPLICATION_INCLUDE_PATHS)
 
     # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
@@ -47,11 +46,6 @@ module Proscenium
     #     package_name: 'mygem'
     #   }
     config.proscenium.side_load_gems = {}
-
-    initializer 'proscenium.configuration' do |app|
-      options = app.config.proscenium
-      options.include_paths = Set.new(APPLICATION_INCLUDE_PATHS) if options.include_paths.blank?
-    end
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Middleware

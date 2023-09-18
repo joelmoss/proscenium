@@ -43,12 +43,11 @@ module Proscenium
       return Url if request.path.match?(%r{^/https?%3A%2F%2F})
       return Runtime if request.path.match?(%r{^/@proscenium/})
 
-      Esbuild if Pathname.new(request.path).fnmatch?(path_glob, File::FNM_EXTGLOB)
+      Esbuild if Pathname.new(request.path).fnmatch?(app_path_glob, File::FNM_EXTGLOB)
     end
 
-    def path_glob
-      paths = Rails.application.config.proscenium.include_paths.join(',')
-      "/{#{paths}}/**.{#{FILE_EXTENSIONS.join(',')}}"
+    def app_path_glob
+      "/{#{Proscenium::ALLOWED_DIRECTORIES.join(',')}}/**.{#{FILE_EXTENSIONS.join(',')}}"
     end
 
     # TODO: handle precompiled assets

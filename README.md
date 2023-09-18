@@ -757,19 +757,18 @@ Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 
 Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to import server rendered javascript.
 
-## Serving from Ruby Gem
-
-*docs needed*
 
 ## Included Paths
 
-By default, Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx`, and only from `app/assets`, `config`, `app/views`, `lib` and `node_modules` directories.
+Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories: `/app`, `/lib`, `/config`, `/node_modules`, `/vendor`.
 
-However, you can customise these paths with the `include_path` config option...
+So a file at `/app/views/users/index.js` will be served from `https://yourapp.com/app/views/users/index.js`.
 
-```ruby
-Rails.application.config.proscenium.include_paths << 'app/components'
-```
+You can continue to access any file in the `/public` directory as you normally would, but any file ending with a supported extension (`js,mjs,ts,css,jsx,tsx`) will be processed by Proscenium. For example, `/public/some/file.js` will be served from `https://yourapp.com/some/file.js`.
+
+## Serving from Ruby Gems and Rails Engines
+
+Proscenium can serve assets from Ruby Gems and Rails Engines.
 
 ## Thanks
 

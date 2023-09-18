@@ -23,7 +23,6 @@ describe Proscenium::Middleware do
   attr_reader :response
 
   def before
-    Proscenium.config.include_paths = Set.new(Proscenium::APPLICATION_INCLUDE_PATHS)
     Proscenium.config.cache_query_string = false
     Proscenium::Importer.reset
     Proscenium::Resolver.reset
@@ -45,9 +44,9 @@ describe Proscenium::Middleware do
   it_behaves_like SupportedExtension, { extension: 'css.map' }
 
   it_behaves_like IncludedPath, { path: 'config' }
-  it_behaves_like IncludedPath, { path: 'app/assets' }
   it_behaves_like IncludedPath, { path: 'app/views' }
   it_behaves_like IncludedPath, { path: 'lib' }
+  it_behaves_like IncludedPath, { path: 'vendor' }
   it_behaves_like IncludedPath, { path: 'node_modules' }
 
   it 'raises on compilation error' do
@@ -62,15 +61,6 @@ describe Proscenium::Middleware do
     it 'passes through' do
       get '/db/some.js'
       expect(response.body).to be == 'Hello, World!'
-    end
-  end
-
-  with 'include_paths << "db"' do
-    it 'works' do
-      Proscenium.config.include_paths << 'db'
-
-      get '/db/some.js'
-      expect(response.body).to include('console.log("/db/some.js")')
     end
   end
 
