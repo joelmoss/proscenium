@@ -20,6 +20,7 @@ module Proscenium
     define_output_helper :include_stylesheets
     define_output_helper :side_load_javascripts # deprecated
     define_output_helper :include_javascripts
+    define_output_helper :declare_lazy_scripts
 
     module Sideload
       def before_template
