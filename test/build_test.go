@@ -2,11 +2,16 @@ package proscenium_test
 
 import (
 	. "joelmoss/proscenium/test/support"
+	"os"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var cwd, _ = os.Getwd()
+var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
 
 var _ = Describe("Build", func() {
 	It("should fail on unknown entrypoint", func() {
@@ -66,6 +71,74 @@ var _ = Describe("Build", func() {
 		Expect(Build("lib/import_absolute_module.js")).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
+	})
+
+	Describe("vendored ruby gem", func() {
+		It("resolves entry point", func() {
+			result := Build("gem3/lib/gem3/gem3.js", BuildOpts{
+				Engines: map[string]string{
+					"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+				},
+			})
+
+			Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Expect(result).To(ContainCode(`h2 { color: blue; }`))
+			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`console.log("gem3")`))
+			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
+			Expect(result).To(ContainCode(`console.log("gem3/imported")`))
+		})
+
+		It("bundles", func() {
+			result := Build("lib/gems/gem3.js", BuildOpts{
+				Engines: map[string]string{
+					"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+				},
+			})
+
+			Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Expect(result).To(ContainCode(`h2 { color: blue; }`))
+			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`console.log("gem3")`))
+			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
+			Expect(result).To(ContainCode(`console.log("gem3/imported")`))
+		})
+	})
+
+	Describe("non-vendored ruby gem", func() {
+		It("resolves entry point", func() {
+			result := Build("gem4/lib/gem4/gem4", BuildOpts{
+				Engines: map[string]string{
+					"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
+				},
+			})
+
+			Expect(result).To(ContainCode(`e.id = "_401b6cac";`))
+			Expect(result).To(ContainCode(`.name-401b6cac`))
+			Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Expect(result).To(ContainCode(`h2 { color: blue; }`))
+			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`console.log("gem4")`))
+			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
+			Expect(result).To(ContainCode(`console.log("gem4/imported")`))
+		})
+
+		It("bundles", func() {
+			result := Build("lib/gems/gem4.js", BuildOpts{
+				Engines: map[string]string{
+					"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
+				},
+			})
+
+			Expect(result).To(ContainCode(`e.id = "_401b6cac";`))
+			Expect(result).To(ContainCode(`.name-401b6cac`))
+			Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Expect(result).To(ContainCode(`h2 { color: blue; }`))
+			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`console.log("gem4")`))
+			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
+			Expect(result).To(ContainCode(`console.log("gem4/imported")`))
+		})
 	})
 
 	It("tree shakes bare import", func() {

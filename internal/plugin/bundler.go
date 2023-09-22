@@ -6,6 +6,8 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"net/url"
 	"path"
+	"path/filepath"
+	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
@@ -15,6 +17,8 @@ type esbuildResolveResult struct {
 	SideEffects esbuild.SideEffects
 	External    bool
 }
+
+var pathSep = string(filepath.Separator)
 
 // Bundler plugin that bundles everything together.
 var Bundler = esbuild.Plugin{
@@ -139,15 +143,41 @@ var Bundler = esbuild.Plugin{
 					return esbuild.OnResolveResult{}, nil
 				}
 
+				isEngine := false
+				result := esbuild.OnResolveResult{}
+
 				// Pass through entry points.
 				if args.Kind == esbuild.ResolveEntryPoint {
-					return esbuild.OnResolveResult{}, nil
+					// Handle Ruby gems.
+					for key, value := range types.Config.Engines {
+						prefix := key + pathSep
+						if strings.HasPrefix(args.Path, prefix) {
+							result.Path = filepath.Join(value, strings.TrimPrefix(args.Path, prefix))
+							isEngine = true
+							break
+						}
+					}
+
+					if result.Path == "" {
+						return esbuild.OnResolveResult{}, nil
+					}
+				} else {
+					// Handle non-entrypoint Ruby gems.
+					for key, value := range types.Config.Engines {
+						prefix := pathSep + key + pathSep
+						if strings.HasPrefix(args.Path, prefix) {
+							result.Path = filepath.Join(value, strings.TrimPrefix(args.Path, prefix))
+							isEngine = true
+							break
+						}
+					}
 				}
 
 				// pp.Println("[3] filter(.*)", args)
 
-				// Build the result.
-				result := esbuild.OnResolveResult{Path: args.Path}
+				if result.Path == "" {
+					result.Path = args.Path
+				}
 
 				// Used to ensure that the result is marked as external no matter what. If this is true, it
 				// will override the result.External value.
@@ -191,11 +221,14 @@ var Bundler = esbuild.Plugin{
 				// Ensure external if importing SVG from CSS.
 				// TODO: Bundle SVG?
 				if utils.IsSvgImportedFromCss(result.Path, args) {
+					if isEngine {
+						result.Path = args.Path
+					}
 					ensureExternal()
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if path.IsAbs(result.Path) && !shouldBeExternal {
+				if !isEngine && path.IsAbs(result.Path) && !shouldBeExternal {
 					result.Path = path.Join(root, result.Path)
 				}
 
@@ -208,6 +241,13 @@ var Bundler = esbuild.Plugin{
 					// If the path should not be external, then we may still need to resolve it, as it may not
 					// be a fully qualified path.
 
+					if path.IsAbs(result.Path) && filepath.Ext(result.Path) != "" {
+						// If the path is absolute, then we can just return it as is. However, it must be a
+						// fully qualified path with a file extension. We can then return it as is. Othwerwise,
+						// we need to resolve it.
+						return result, nil
+					}
+
 					// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
 					// that can get expensive. Also, by not returning the path, we let esbuild handle
 					// resolving the path, which is faster and also ensures tree shaking works.
@@ -218,7 +258,19 @@ var Bundler = esbuild.Plugin{
 							result.Path = ""
 						}
 					} else {
-						// If we have reached this far, then path is a bare specifier. Use esbuild to resolve.
+						if utils.IsBareModule(result.Path) {
+							// If importer is a Rails engine, then change ResolveDir to the app root. This ensures
+							// that bare imports are resolved relative to the app root, and not the engine root.
+							// Which allows us to use the app's package.json and node_modules dir.
+							for _, value := range types.Config.Engines {
+								if strings.HasPrefix(args.Importer, value+pathSep) {
+									args.ResolveDir = root
+									break
+								}
+							}
+						}
+
+						// Unqualified path! - use esbuild to resolve.
 						resolveResult, ok := resolveWithEsbuild(result.Path, args)
 
 						result.Path = resolveResult.Path

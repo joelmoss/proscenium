@@ -14,9 +14,21 @@ PATH
       rails (>= 7.0.4)
 
 PATH
+  remote: fixtures/dummy/vendor/gem3
+  specs:
+    gem3 (0.1.0)
+      rails (>= 7.0.4)
+
+PATH
   remote: fixtures/external/gem2
   specs:
     gem2 (0.1.0)
+      rails (>= 7.0.4)
+
+PATH
+  remote: fixtures/external/gem4
+  specs:
+    gem4 (0.1.0)
       rails (>= 7.0.4)
 
 GEM
@@ -263,6 +275,8 @@ DEPENDENCIES
   fakefs
   gem1!
   gem2!
+  gem3!
+  gem4!
   phlex-rails
   phlex-testing-capybara
   proscenium!

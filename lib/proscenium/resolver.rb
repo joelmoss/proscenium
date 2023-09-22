@@ -11,7 +11,9 @@ module Proscenium
     #
     # @param path [String] Can be URL path, file system path, or bare specifier (ie. NPM package).
     # @return [String] URL path.
-    def self.resolve(path) # rubocop:disable Metrics/AbcSize, Metrics/PerceivedComplexity
+    #
+    # rubocop:disable Metrics/*
+    def self.resolve(path)
       self.resolved ||= {}
 
       self.resolved[path] ||= begin
@@ -21,15 +23,8 @@ module Proscenium
 
         if path.start_with?('@proscenium/')
           "/#{path}"
-        elsif (gem = Proscenium.config.side_load_gems.find do |_, x|
-                 path.start_with? "#{x[:root]}/"
-               end)
-          unless (package_name = gem[1][:package_name] || gem[0])
-            # TODO: manually resolve the path without esbuild
-            raise PathResolutionFailed, path
-          end
-
-          Builder.resolve "#{package_name}/#{path.delete_prefix("#{gem[1][:root]}/")}"
+        elsif (engine = Proscenium.config.engines.find { |e| path.start_with? "#{e.root}/" })
+          path.sub(/^#{engine.root}/, "/#{engine.engine_name}")
         elsif path.start_with?("#{Rails.root}/")
           path.delete_prefix Rails.root.to_s
         else
@@ -37,5 +32,6 @@ module Proscenium
         end
       end
     end
+    # rubocop:enable Metrics/*
   end
 end

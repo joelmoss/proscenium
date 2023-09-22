@@ -757,18 +757,35 @@ Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 
 Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to import server rendered javascript.
 
+## Resolution
 
-## Included Paths
-
-Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories: `/app`, `/lib`, `/config`, `/node_modules`, `/vendor`.
+Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories of your Rails application's root: `/app`, `/lib`, `/config`, `/node_modules`, `/vendor`.
 
 So a file at `/app/views/users/index.js` will be served from `https://yourapp.com/app/views/users/index.js`.
 
-You can continue to access any file in the `/public` directory as you normally would, but any file ending with a supported extension (`js,mjs,ts,css,jsx,tsx`) will be processed by Proscenium. For example, `/public/some/file.js` will be served from `https://yourapp.com/some/file.js`.
+You can continue to access any file in the `/public` directory as you normally would. Proscenium will not process files in the `/public` directory.
 
-## Serving from Ruby Gems and Rails Engines
+If requesting a file that exists in a root directory and the public directory, the file in the public directory will be served. For example, if you have a file at `/lib/foo.js` and `/public/lib/foo.js`, and you request `/lib/foo.js`, the file in the public directory (`/public/lib/foo.js`) will be served.
 
-Proscenium can serve assets from Ruby Gems and Rails Engines.
+### Assets from Rails Engines
+
+Proscenium can serve assets from Rails Engines that are installed in your Rails app.
+
+An engine that wants to expose its assets via Proscenium to the application must add Proscenium as a dependency, and add itself to the list of engines in the Proscenium config options `Proscenium.config.engines`.
+
+For example, we have a gem called `gem1` that has Proscenium as a dependency, and exposes a Rails engine. It has some assets that it wants to expose to the application. To do this, it adds itself to the list of engines in the Proscenium config `engines` option:
+
+```ruby
+class Gem1::Engine < ::Rails::Engine
+  config.proscenium.engines << self
+end
+```
+
+When this gem is installed in any Rails application, its assets will be available at the URL `/gem1/...`. For example, if the gem has a file `lib/styles.css`, it can be requested at `/gem1/lib/styles.css`.
+
+The same directories and file extensions are supported as for the application itself.
+
+It is important to note that the application takes precedence over the gem. So if the application has a file at `/public/gem1/lib/styles.css`, and the gem also has a file at `/lib/styles.css`, then the file in the application will be served. This is because both files would be accessible at the same URL: `/gem1/lib/styles.css`.
 
 ## Thanks
 

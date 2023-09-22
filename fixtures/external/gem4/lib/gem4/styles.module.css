@@ -1,0 +1,9 @@
+h1 {
+  @mixin red from url("./red.css");
+}
+h2 {
+  @mixin blue from url("/gem4/lib/gem4/blue.css");
+}
+.name {
+  font-size: 2em;
+}

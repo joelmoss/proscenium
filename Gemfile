@@ -24,6 +24,8 @@ group :test do
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'
   gem 'gem2', path: './fixtures/external/gem2'
+  gem 'gem3', path: './fixtures/dummy/vendor/gem3'
+  gem 'gem4', path: './fixtures/external/gem4'
   gem 'phlex-rails'
   gem 'phlex-testing-capybara'
   gem 'sus', '~> 0.23.0'

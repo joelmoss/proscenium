@@ -74,7 +74,7 @@ describe Proscenium::SideLoad do
       '/app/views/layouts/bare.js' => { sideloaded: true },
       '/app/views/layouts/bare.css' => { sideloaded: true },
       '/@proscenium/react-manager/index.jsx' => {},
-      '/vendor/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
+      '/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
     }
   end
 
@@ -85,7 +85,7 @@ describe Proscenium::SideLoad do
       '/app/views/layouts/bare.js' => { sideloaded: true },
       '/app/views/layouts/bare.css' => { sideloaded: true },
       '/@proscenium/react-manager/index.jsx' => {},
-      '/node_modules/.pnpm/file+..+external+gem2/node_modules/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
+      '/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
     }
   end
 end

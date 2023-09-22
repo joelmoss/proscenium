@@ -9,6 +9,7 @@ struct Result {
 import "C"
 
 import (
+	"encoding/json"
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
@@ -38,6 +39,7 @@ func build(
 	gemPath *C.char,
 	env C.uint,
 	codeSplitting bool,
+	engines *C.char,
 	debug bool,
 ) C.struct_Result {
 	types.Config.RootPath = C.GoString(appRoot)
@@ -45,6 +47,14 @@ func build(
 	types.Config.Environment = types.Environment(env)
 	types.Config.CodeSplitting = codeSplitting
 	types.Config.Debug = debug
+
+	var enginesMap map[string]string
+	err := json.Unmarshal([]byte(C.GoString(engines)), &enginesMap)
+	if err == nil {
+		types.Config.Engines = enginesMap
+	} else {
+		return C.struct_Result{C.int(0), C.CString(err.Error())}
+	}
 
 	pathStr := C.GoString(filepath)
 

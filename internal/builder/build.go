@@ -107,16 +107,13 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		MainFields: []string{"module", "browser", "main"},
 	}
 
-	plugins := []esbuild.Plugin{
+	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.I18n,
 		plugin.Libs,
 		plugin.Rjs(options.BaseUrl),
 		plugin.Bundler,
+		plugin.Svg, plugin.Url, plugin.Css,
 	}
-	plugins = append(plugins, plugin.Svg)
-	plugins = append(plugins, plugin.Url)
-	plugins = append(plugins, plugin.Css)
-	buildOptions.Plugins = plugins
 
 	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
 		buildOptions.Define = make(map[string]string, 2)

@@ -24,13 +24,19 @@ var Css = esbuild.Plugin{
 					pluginData = args.PluginData.(types.PluginData)
 				}
 
-				relativePath := strings.TrimPrefix(args.Path, root)
+				urlPath := strings.TrimPrefix(args.Path, root)
+				for k, v := range types.Config.Engines {
+					if strings.HasPrefix(args.Path, v+pathSep) {
+						urlPath = pathSep + k + strings.TrimPrefix(args.Path, v)
+						break
+					}
+				}
 
 				hash := ""
 				if pluginData.CssModuleHash != "" {
 					hash = pluginData.CssModuleHash
 				} else {
-					hash = utils.ToDigest(relativePath)
+					hash = utils.ToDigest(urlPath)
 				}
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
@@ -38,7 +44,7 @@ var Css = esbuild.Plugin{
 				// module, it exports a plain object of class names.
 				if pluginData.ImportedFromJs {
 					cssResult := cssBuild(CssBuildOptions{
-						Path: relativePath[1:],
+						Path: urlPath[1:],
 						Root: root,
 					})
 
@@ -52,11 +58,11 @@ var Css = esbuild.Plugin{
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
 					contents = `
 						const existingStyle = document.querySelector('#_` + hash + `');
-						const existingLink = document.querySelector('link[href="` + relativePath + `"]');
+						const existingLink = document.querySelector('link[href="` + urlPath + `"]');
 						if (!existingStyle && !existingLink) {
 							const e = document.createElement('style');
 							e.id = '_` + hash + `';
-							e.dataset.href = '` + relativePath + `';
+							e.dataset.href = '` + urlPath + `';
 							e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
 							document.head.insertBefore(e, document.querySelector('style'));
 						}
@@ -102,13 +108,19 @@ var cssOnly = esbuild.Plugin{
 					pluginData = args.PluginData.(types.PluginData)
 				}
 
-				relativePath := strings.TrimPrefix(args.Path, root)
+				urlPath := strings.TrimPrefix(args.Path, root)
+				for k, v := range types.Config.Engines {
+					if strings.HasPrefix(args.Path, v+pathSep) {
+						urlPath = pathSep + k + strings.TrimPrefix(args.Path, v)
+						break
+					}
+				}
 
 				hash := ""
 				if pluginData.CssModuleHash != "" {
 					hash = pluginData.CssModuleHash
 				} else {
-					hash = utils.ToDigest(relativePath)
+					hash = utils.ToDigest(urlPath)
 				}
 
 				contents, err := css.ParseCssFile(args.Path, root, hash)

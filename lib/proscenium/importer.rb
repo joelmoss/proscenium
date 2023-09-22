@@ -21,7 +21,7 @@ module Proscenium
     class << self
       # Import the given `filepath`. This is idempotent - it will never include duplicates.
       #
-      # @param filepath [String] Absolute path (relative to Rails root) of the file to import.
+      # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
       # @param resolve [String] description of the file to resolve and import.
       # @return [String] the digest of the imported file path if a css module (*.module.css).

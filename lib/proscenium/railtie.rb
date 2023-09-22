@@ -29,28 +29,22 @@ module Proscenium
     # defined means a faster build, as esbuild will have less to do.
     config.proscenium.env_vars = Set.new
 
-    # A hash of gems that can be side loaded. Assets from gems listed here can be side loaded.
+    # Rails engines to expose and allow Proscenium to serve their assets.
     #
-    # Because side loading uses URL paths, any gem dependencies that side load assets will fail,
-    # because the URL path will be relative to the application's root, and not the gem's root. By
-    # specifying a list of gems that can be side loaded, Proscenium will be able to resolve the URL
-    # path to the gem's root, and side load the asset.
-    #
-    # Side loading gems rely on NPM and a package.json file in the gem root. This ensures that any
-    # dependencies are resolved correctly. This is required even if your gem has no package
-    # dependencies.
+    # A Rails engine that has assets, can add Proscenium as a gem dependency, and then add itself
+    # to this list. Proscenium will then serve the engine's assets at the URL path beginning with
+    # the engine name.
     #
     # Example:
-    #   config.proscenium.side_load_gems['mygem'] = {
-    #     root: gem_root,
-    #     package_name: 'mygem'
-    #   }
-    config.proscenium.side_load_gems = {}
+    #   class Gem1::Engine < ::Rails::Engine
+    #     config.proscenium.engines << self
+    #   end
+    config.proscenium.engines = Set.new
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Middleware
-      app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
-      app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     initializer 'proscenium.monkey_views' do

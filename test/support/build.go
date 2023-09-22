@@ -13,6 +13,7 @@ type BuildOpts struct {
 	ImportMap     string
 	ImportMapPath string
 	EnvVars       string
+	Engines       map[string]string
 	Debug         bool
 }
 
@@ -50,6 +51,7 @@ func buildOptions(pathToBuild string, restOpts BuildOpts) builder.BuildOptions {
 	}
 
 	types.Config.Debug = restOpts.Debug
+	types.Config.Engines = restOpts.Engines
 
 	if restOpts.EnvVars == "" {
 		options.EnvVars = "{\"RAILS_ENV\":\"test\"}"

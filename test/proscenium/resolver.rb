@@ -46,16 +46,5 @@ describe Proscenium::Resolver do
         expect(subject.resolve(value)).to be == '/@proscenium/react-manager/index.jsx'
       end
     end
-
-    with 'side loaded gem', value: '/my/gem/root/lib/gem1/gem1.js' do
-      it 'resolves' do
-        Proscenium.config.side_load_gems['mygem'] = {
-          root: '/my/gem/root',
-          package_name: 'gem1'
-        }
-
-        expect(subject.resolve(value)).to be == '/vendor/gem1/lib/gem1/gem1.js'
-      end
-    end
   end
 end

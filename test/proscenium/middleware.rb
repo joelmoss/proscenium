@@ -64,6 +64,38 @@ describe Proscenium::Middleware do
     end
   end
 
+  with 'vendored engine with package.json' do
+    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+      get '/gem1/lib/gem1/gem1.js'
+
+      expect(response.body).to include 'console.log("gem1");'
+    end
+  end
+
+  with 'vendored engine without package.json' do
+    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+      get '/gem3/lib/gem3/gem3.js'
+
+      expect(response.body).to include 'console.log("gem3");'
+    end
+  end
+
+  with 'un-vendored engine with package.json' do
+    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+      get '/gem2/lib/gem2/gem2.js'
+
+      expect(response.body).to include 'console.log("gem2");'
+    end
+  end
+
+  with 'un-vendored engine without package.json' do
+    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+      get '/gem4/lib/gem4/gem4.js'
+
+      expect(response.body).to include 'console.log("gem4");'
+    end
+  end
+
   it 'serves javascript' do
     get '/lib/foo.js'
 
@@ -121,7 +153,7 @@ describe Proscenium::Middleware do
     expect(response.body.squish).to include %(sources": ["url:https://ga.jspm.io/npm:is-fn@3.0.0/index.js"])
   end
 
-  it 'servces @proscenium/* runtime libs' do
+  it 'serves @proscenium/* runtime libs' do
     get '/@proscenium/test.js'
 
     expect(response.body).to include('console.log("/@proscenium/test.js")')

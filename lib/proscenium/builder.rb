@@ -29,6 +29,7 @@ module Proscenium
         :string,      # Proscenium gem root
         :environment, # Rails environment as a Symbol
         :bool,        # code splitting enabled?
+        :string,      # engine names and paths as a JSON string
         :bool         # debugging enabled?
       ], Result.by_value
 
@@ -82,6 +83,7 @@ module Proscenium
                                Pathname.new(__dir__).join('..', '..').to_s,
                                Rails.env.to_sym,
                                Proscenium.config.code_splitting,
+                               engines.to_json,
                                Proscenium.config.debug)
 
         raise BuildError.new(path, result[:response]) unless result[:success]
@@ -114,6 +116,10 @@ module Proscenium
     def cache_query_string
       q = Proscenium.config.cache_query_string
       q ? "--cache-query-string #{q}" : nil
+    end
+
+    def engines
+      Proscenium.config.engines.to_h { |e| [e.engine_name, e.root.to_s] }
     end
 
     def import_map

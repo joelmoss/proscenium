@@ -8,7 +8,7 @@ module Proscenium
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
 
-  ALLOWED_DIRECTORIES = %w[app lib config vendor node_modules].freeze
+  ALLOWED_DIRECTORIES = 'app,lib,config,vendor,node_modules'
 
   # Environment variables that should always be passed to the builder.
   DEFAULT_ENV_VARS = Set['RAILS_ENV', 'NODE_ENV'].freeze
