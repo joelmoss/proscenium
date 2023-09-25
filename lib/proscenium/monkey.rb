@@ -3,6 +3,14 @@
 module Proscenium
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
+    module DebugView
+      def initialize(assigns)
+        paths = [RESCUES_TEMPLATE_PATH, Rails.root.join('lib', 'templates').to_s]
+        lookup_context = ActionView::LookupContext.new(paths)
+        super(lookup_context, assigns, nil)
+      end
+    end
+
     module TemplateRenderer
       private
 

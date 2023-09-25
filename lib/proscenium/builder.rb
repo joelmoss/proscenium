@@ -46,12 +46,17 @@ module Proscenium
     end
 
     class BuildError < StandardError
-      attr_reader :error, :path
+      attr_reader :error
 
-      def initialize(path, error)
-        error = Oj.load(error, mode: :strict).deep_transform_keys(&:underscore)
+      def initialize(error)
+        @error = Oj.load(error, mode: :strict).deep_transform_keys(&:underscore)
 
-        super "Failed to build '#{path}' -- #{error['text']}"
+        msg = @error['text']
+        if (location = @error['location'])
+          msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
+        end
+
+        super msg
       end
     end
 
@@ -86,7 +91,7 @@ module Proscenium
                                engines.to_json,
                                Proscenium.config.debug)
 
-        raise BuildError.new(path, result[:response]) unless result[:success]
+        raise BuildError, result[:response] unless result[:success]
 
         result[:response]
       end

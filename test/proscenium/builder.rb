@@ -10,9 +10,9 @@ describe Proscenium::Builder do
   with '.build' do
     it 'builds multiple files' do
       expect(subject.build('lib/code_splitting/son.js;lib/code_splitting/daughter.js')).to be == %(
-      lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
-      lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
-    ).gsub(/[[:space:]]/, '')
+        lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
+        lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
+      ).gsub(/[[:space:]]/, '')
     end
 
     it 'replaces NODE_ENV and RAILS_ENV' do
@@ -33,7 +33,7 @@ describe Proscenium::Builder do
         expect do
           subject.build('unknown.js')
         end.to raise_exception(Proscenium::Builder::BuildError,
-                               message: be == "Failed to build 'unknown.js' -- Could not resolve \"unknown.js\"")
+                               message: be == 'Could not resolve "unknown.js"')
       end
     end
   end

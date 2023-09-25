@@ -41,13 +41,17 @@ module Proscenium
     #   end
     config.proscenium.engines = Set.new
 
+    config.action_dispatch.rescue_templates = {
+      'Proscenium::Builder::BuildError' => 'build_error'
+    }
+
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Middleware
       # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
       # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.monkey_views' do
+    initializer 'proscenium.monkey_patches' do
       ActiveSupport.on_load(:action_view) do
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
@@ -63,5 +67,15 @@ module Proscenium
         ActionController::Base.include EnsureLoaded
       end
     end
+  end
+end
+
+# Monkey path ActionDispatch::DebugView to use our custom error template on BuildError exceptions.
+class ActionDispatch::DebugView
+  def initialize(assigns)
+    paths = [RESCUES_TEMPLATE_PATH,
+             Proscenium::Railtie.root.join('lib', 'proscenium', 'templates').to_s]
+    lookup_context = ActionView::LookupContext.new(paths)
+    super(lookup_context, assigns, nil)
   end
 end

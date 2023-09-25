@@ -20,9 +20,9 @@ module Proscenium
       end
 
       def attempt
-        render_response Proscenium::Builder.build(path_to_build, root: Rails.root.to_s,
-                                                                 base_url: @request.base_url)
-      rescue Proscenium::Builder::CompileError => e
+        render_response Builder.build(path_to_build, root: Rails.root.to_s,
+                                                     base_url: @request.base_url)
+      rescue Builder::CompileError => e
         raise self.class::CompileError, { file: @request.fullpath, detail: e.message }, caller
       end
     end
