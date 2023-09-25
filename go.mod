@@ -1,10 +1,10 @@
 module joelmoss/proscenium
 
-go 1.20
+go 1.21
 
 require (
-	github.com/evanw/esbuild v0.19.2
-	github.com/onsi/ginkgo/v2 v2.12.0
+	github.com/evanw/esbuild v0.19.3
+	github.com/onsi/ginkgo/v2 v2.12.1
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sergi/go-diff v1.3.1
 )
@@ -16,10 +16,8 @@ require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/google/btree v1.1.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
-	github.com/google/pprof v0.0.0-20230901174712-0191c66da455 // indirect
+	github.com/google/pprof v0.0.0-20230912144702-c363fe2c2ed8 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.16 // indirect
 	github.com/stretchr/testify v1.8.4 // indirect
 	golang.org/x/net v0.15.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
@@ -28,10 +26,9 @@ require (
 require (
 	4d63.com/collapsewhitespace v0.0.0-20190109064012-23971e8e1f30
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/dop251/goja v0.0.0-20230828202809-3dbe69dd2b8e
+	github.com/dop251/goja v0.0.0-20230919151941-fc55792775de
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
-	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/onsi/gomega v1.27.10
