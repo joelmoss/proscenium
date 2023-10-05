@@ -19,7 +19,7 @@ module Proscenium::CssModule
   #
   # @param name [String,Symbol,Array<String,Symbol>]
   def css_module(*names)
-    cssm.class_names(*names, require_prefix: false).join ' '
+    cssm.class_names(*names, require_prefix: false).map { |name, _| name }.join(' ')
   end
 
   private

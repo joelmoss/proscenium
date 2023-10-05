@@ -16,13 +16,13 @@ describe Proscenium::CssModule::Transformer do
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      expect(names).to be == ['title-c3f452b4']
+      expect(names).to be == [['title-c3f452b4', '/lib/css_modules/basic.module.css']]
     end
 
     it 'transforms class names beginning with @ and underscore' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@_title)
 
-      expect(names).to be == ['_title-c3f452b4']
+      expect(names).to be == [['_title-c3f452b4', '/lib/css_modules/basic.module.css']]
     end
 
     it 'passes through regular class names' do
@@ -32,9 +32,10 @@ describe Proscenium::CssModule::Transformer do
     end
 
     it 'accepts multiple names' do
-      names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :title, :@subtitle)
+      names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                             :title, :@subtitle)
 
-      expect(names).to be == %w[title subtitle-c3f452b4]
+      expect(names).to be == ['title', ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']]
     end
 
     it 'imports stylesheet' do
@@ -48,9 +49,11 @@ describe Proscenium::CssModule::Transformer do
     with 'local path' do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
-                                                               '/lib/css_modules/basic2@title', :@subtitle)
+                                                               '/lib/css_modules/basic2@title',
+                                                               :@subtitle)
 
-        expect(names).to be == %w[title-6fd80271 subtitle-c3f452b4]
+        expect(names).to be == [['title-6fd80271', '/lib/css_modules/basic2.module.css'],
+                                ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']]
       end
 
       it 'imports stylesheets' do
@@ -69,7 +72,7 @@ describe Proscenium::CssModule::Transformer do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                'mypackage/foo@foo')
 
-        expect(names).to be == %w[foo-39337ba7]
+        expect(names).to be == [['foo-39337ba7', '/packages/mypackage/foo.module.css']]
       end
 
       it 'imports stylesheets' do
@@ -86,7 +89,7 @@ describe Proscenium::CssModule::Transformer do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                '/gem2/lib/gem2/styles@foo')
 
-        expect(names).to be == %w[foo-a074d644]
+        expect(names).to be == [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']]
       end
 
       it 'imports stylesheets' do
@@ -119,19 +122,19 @@ describe Proscenium::CssModule::Transformer do
       it 'should transform local path' do
         names = transformer.class_names('/lib/css_modules/basic2@title')
 
-        expect(names).to be == ['title-6fd80271']
+        expect(names).to be == [['title-6fd80271', '/lib/css_modules/basic2.module.css']]
       end
 
       it 'should transform npm path' do
         names = transformer.class_names('mypackage/foo@foo')
 
-        expect(names).to be == ['foo-39337ba7']
+        expect(names).to be == [['foo-39337ba7', '/packages/mypackage/foo.module.css']]
       end
 
       it 'should transform gem path' do
         names = transformer.class_names('/gem2/lib/gem2/styles@foo')
 
-        expect(names).to be == ['foo-a074d644']
+        expect(names).to be == [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']]
       end
     end
   end

@@ -22,7 +22,9 @@ module Proscenium
     # @param name [String,Symbol,Array<String,Symbol>]
     def css_module(*names)
       path = Pathname.new(@lookup_context.find(@virtual_path).identifier).sub_ext('')
-      CssModule::Transformer.new(path).class_names(*names, require_prefix: false).join ' '
+      CssModule::Transformer.new(path).class_names(*names, require_prefix: false).map do |name, _|
+        name
+      end.join(' ')
     end
 
     def include_stylesheets(**options)

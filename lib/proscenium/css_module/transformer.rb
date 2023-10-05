@@ -69,12 +69,14 @@ module Proscenium
       resolved_path = Resolver.resolve(path.to_s)
       digest = Importer.import(resolved_path)
 
-      sname = name.to_s
-      if sname.start_with?('_')
-        "_#{sname[1..]}-#{digest}"
-      else
-        "#{sname}-#{digest}"
-      end
+      transformed_name = name.to_s
+      transformed_name = if transformed_name.start_with?('_')
+                           "_#{transformed_name[1..]}-#{digest}"
+                         else
+                           "#{transformed_name}-#{digest}"
+                         end
+
+      [transformed_name, resolved_path]
     end
   end
 end
