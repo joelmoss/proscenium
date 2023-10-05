@@ -6,7 +6,6 @@ module Proscenium
   class Phlex < ::Phlex::HTML
     extend ActiveSupport::Autoload
 
-    autoload :Page
     autoload :CssModules
     autoload :ReactComponent
 

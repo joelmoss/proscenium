@@ -6,6 +6,28 @@ module Proscenium
 
     def self.included(base)
       base.extend CssModule::Path
+      base.extend ClassMethods
+    end
+
+    module ClassMethods
+      # Set of CSS module paths that have been resolved after being transformed from 'class' HTML
+      # attributes. See #process_attributes. This is here because Phlex caches attributes. Which
+      # means while the CSS class names will be transformed, any resolved paths will be lost in
+      # subsequent requests.
+      attr_accessor :resolved_css_module_paths
+    end
+
+    def before_template
+      self.class.resolved_css_module_paths ||= Concurrent::Set.new
+      super
+    end
+
+    def after_template
+      self.class.resolved_css_module_paths.each do |path|
+        Proscenium::Importer.import path
+      end
+
+      super
     end
 
     # Resolve and side load any CSS modules in the "class" attributes, where a CSS module is a class
@@ -44,7 +66,11 @@ module Proscenium
     def process_attributes(**attributes)
       if attributes.key?(:class) && (attributes[:class] = tokens(attributes[:class])).include?('@')
         names = attributes[:class].is_a?(Array) ? attributes[:class] : attributes[:class].split
-        attributes[:class] = cssm.class_names(*names)
+
+        attributes[:class] = cssm.class_names(*names).map do |name, path|
+          self.class.resolved_css_module_paths << path if path
+          name
+        end
       end
 
       attributes
