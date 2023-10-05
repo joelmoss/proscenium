@@ -44,11 +44,9 @@ module Proscenium
             # Scoped bare specifier (eg. "@scoped/package/lib/button@default").
             _, path, name = name.split('@')
             path = "@#{path}"
-          elsif name.start_with?('/')
-            # Local path with leading slash.
-            path, name = name[1..].split('@')
           else
-            # Bare specifier (eg. "mypackage/lib/button@default").
+            # Local path (eg. /some/path/to/button@default") or bare specifier (eg.
+            # "mypackage/lib/button@default").
             path, name = name.split('@')
           end
 

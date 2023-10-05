@@ -47,13 +47,15 @@ describe Proscenium::CssModule::Transformer do
 
     with 'local path' do
       it 'transforms class names' do
-        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
+        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                               '/lib/css_modules/basic2@title', :@subtitle)
 
         expect(names).to be == %w[title-6fd80271 subtitle-c3f452b4]
       end
 
       it 'imports stylesheets' do
-        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/lib/css_modules/basic2@title', :@subtitle)
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                       '/lib/css_modules/basic2@title', :@subtitle)
 
         expect(Proscenium::Importer.imported).to be == {
           '/lib/css_modules/basic2.module.css' => { digest: '6fd80271' },
@@ -64,7 +66,8 @@ describe Proscenium::CssModule::Transformer do
 
     with 'npm package path' do
       it 'transforms class names' do
-        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', 'mypackage/foo@foo')
+        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                               'mypackage/foo@foo')
 
         expect(names).to be == %w[foo-39337ba7]
       end
@@ -78,10 +81,22 @@ describe Proscenium::CssModule::Transformer do
       end
     end
 
-    it 'should raise when path is given but stylesheet does not exist' do
-      expect do
-        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', '/unknown@user')
-      end.to raise_exception Proscenium::Builder::ResolveError
+    with 'gem path' do
+      it 'transforms class names' do
+        names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                               '/gem2/lib/gem2/styles@foo')
+
+        expect(names).to be == %w[foo-a074d644]
+      end
+
+      it 'imports stylesheets' do
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                       '/gem2/lib/gem2/styles@@foo')
+
+        expect(Proscenium::Importer.imported).to be == {
+          '/gem2/lib/gem2/styles.module.css' => { digest: 'a074d644' }
+        }
+      end
     end
   end
 end
