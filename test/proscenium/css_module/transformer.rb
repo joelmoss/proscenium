@@ -99,4 +99,40 @@ describe Proscenium::CssModule::Transformer do
       end
     end
   end
+
+  describe '.class_names' do
+    with 'given path is nil' do
+      let(:transformer) { Proscenium::CssModule::Transformer.new(nil) }
+
+      it 'should raise when transforming class with leading @' do
+        expect do
+          transformer.class_names(:@title)
+        end.to raise_exception Proscenium::CssModule::TransformError
+      end
+
+      it 'should transform regular class' do
+        names = transformer.class_names(:title)
+
+        expect(names).to be == ['title']
+      end
+
+      it 'should transform local path' do
+        names = transformer.class_names('/lib/css_modules/basic2@title')
+
+        expect(names).to be == ['title-6fd80271']
+      end
+
+      it 'should transform npm path' do
+        names = transformer.class_names('mypackage/foo@foo')
+
+        expect(names).to be == ['foo-39337ba7']
+      end
+
+      it 'should transform gem path' do
+        names = transformer.class_names('/gem2/lib/gem2/styles@foo')
+
+        expect(names).to be == ['foo-a074d644']
+      end
+    end
+  end
 end

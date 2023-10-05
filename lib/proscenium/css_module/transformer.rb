@@ -9,7 +9,8 @@ module Proscenium
     end
 
     def initialize(source_path)
-      @source_path = source_path
+      return unless (@source_path = source_path)
+
       @source_path = Pathname.new(@source_path) unless @source_path.is_a?(Pathname)
       @source_path = @source_path.sub_ext(FILE_EXT) unless @source_path.to_s.end_with?(FILE_EXT)
     end
@@ -37,6 +38,7 @@ module Proscenium
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
       names.map do |name|
+        original_name = name.dup
         name = name.to_s if name.is_a?(Symbol)
 
         if name.include?('/')
@@ -50,16 +52,20 @@ module Proscenium
             path, name = name.split('@')
           end
 
-          class_name! name, path: "#{path}#{FILE_EXT}"
+          class_name! name, original_name, path: "#{path}#{FILE_EXT}"
         elsif name.start_with?('@')
-          class_name! name[1..]
+          class_name! name[1..], original_name
         else
-          require_prefix ? name : class_name!(name)
+          require_prefix ? name : class_name!(name, original_name)
         end
       end
     end
 
-    def class_name!(name, path: @source_path)
+    def class_name!(name, original_name, path: @source_path)
+      unless path
+        raise Proscenium::CssModule::TransformError.new(original_name, 'CSS module path not given')
+      end
+
       resolved_path = Resolver.resolve(path.to_s)
       digest = Importer.import(resolved_path)
 
