@@ -29,5 +29,5 @@ group :test do
   gem 'phlex-rails'
   gem 'phlex-testing-capybara'
   gem 'sus', '~> 0.23.0'
-  gem 'view_component', '~> 3.5.0'
+  gem 'view_component', '~> 3.6.0'
 end
