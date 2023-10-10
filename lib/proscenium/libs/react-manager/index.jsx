@@ -1,7 +1,16 @@
-const elements = document.querySelectorAll("[data-proscenium-component-path]");
+window.Proscenium = window.Proscenium || { lazyScripts: {} };
 
-// Initialize only if there are components.
-elements.length > 0 && init();
+const element = document.querySelector("#prosceniumLazyScripts");
+if (element) {
+  const scripts = JSON.parse(element.text);
+  window.Proscenium.lazyScripts = {
+    ...window.Proscenium.lazyScripts,
+    ...scripts,
+  };
+}
+
+const elements = document.querySelectorAll("[data-proscenium-component-path]");
+elements.length > 0 && init(elements);
 
 function init() {
   /**
@@ -20,12 +29,12 @@ function init() {
     // For testing and simulation of slow connections.
     // const sim = new Promise((resolve) => setTimeout(resolve, 5000));
 
-    if (!(path in window.prosceniumLazyScripts)) {
-      throw `[proscenium/react/manager] Cannot load component ${path} (not found in prosceniumLazyScripts)`;
+    if (!window.Proscenium.lazyScripts[path]) {
+      throw `[proscenium/react/manager] Cannot load component ${path} (not found in Proscenium.lazyScripts)`;
     }
 
     const react = import("@proscenium/react-manager/react");
-    const Component = import(window.prosceniumLazyScripts[path].outpath);
+    const Component = import(window.Proscenium.lazyScripts[path].outpath);
 
     const forwardChildren =
       "prosceniumComponentForwardChildren" in element.dataset &&

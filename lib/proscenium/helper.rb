@@ -77,10 +77,14 @@ module Proscenium
 
         if extract_lazy_scripts
           content_for :proscenium_lazy_scripts do
-            javascript_tag "window.prosceniumLazyScripts = #{scripts.to_json}"
+            tag.script type: 'application/json', id: 'prosceniumLazyScripts' do
+              raw scripts.to_json
+            end
           end
         else
-          out << javascript_tag("window.prosceniumLazyScripts = #{scripts.to_json}")
+          out << tag.script(type: 'application/json', id: 'prosceniumLazyScripts') do
+            raw scripts.to_json
+          end
         end
       else
         Importer.each_javascript(delete: true) do |path, _|
