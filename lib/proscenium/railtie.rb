@@ -45,6 +45,11 @@ module Proscenium
       'Proscenium::Builder::BuildError' => 'build_error'
     }
 
+    initializer 'proscenium.debugging' do
+      ActionDispatch::DebugView::RESCUES_TEMPLATE_PATHS << root.join('lib', 'proscenium',
+                                                                     'templates').to_s
+    end
+
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Middleware
       # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
@@ -67,15 +72,5 @@ module Proscenium
         ActionController::Base.include EnsureLoaded
       end
     end
-  end
-end
-
-# Monkey path ActionDispatch::DebugView to use our custom error template on BuildError exceptions.
-class ActionDispatch::DebugView
-  def initialize(assigns)
-    paths = [RESCUES_TEMPLATE_PATH,
-             Proscenium::Railtie.root.join('lib', 'proscenium', 'templates').to_s]
-    lookup_context = ActionView::LookupContext.new(paths)
-    super(lookup_context, assigns, nil)
   end
 end
