@@ -46,8 +46,10 @@ module Proscenium
     }
 
     initializer 'proscenium.debugging' do
-      ActionDispatch::DebugView::RESCUES_TEMPLATE_PATHS << root.join('lib', 'proscenium',
-                                                                     'templates').to_s
+      if Rails.gem_version >= Gem::Version.new('7.1.0')
+        tpl_path = root.join('lib', 'proscenium', 'templates').to_s
+        ActionDispatch::DebugView::RESCUES_TEMPLATE_PATHS << tpl_path
+      end
     end
 
     initializer 'proscenium.middleware' do |app|
@@ -71,6 +73,17 @@ module Proscenium
       ActiveSupport.on_load(:action_controller) do
         ActionController::Base.include EnsureLoaded
       end
+    end
+  end
+end
+
+if Rails.gem_version < Gem::Version.new('7.1.0')
+  class ActionDispatch::DebugView
+    def initialize(assigns)
+      tpl_path = Proscenium::Railtie.root.join('lib', 'proscenium', 'templates').to_s
+      paths = [RESCUES_TEMPLATE_PATH, tpl_path]
+      lookup_context = ActionView::LookupContext.new(paths)
+      super(lookup_context, assigns, nil)
     end
   end
 end
