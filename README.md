@@ -227,6 +227,16 @@ import utils from '/lib/utils'
 import constants from './constants'
 ```
 
+```css /app/views/layouts/application.css
+@import '/lib/reset';
+```
+
+```css /lib/reset.css
+body {
+  /* some styles... */
+}
+```
+
 ## Import Maps
 
 > **[WIP]**
