@@ -1,9 +1,9 @@
 @layer proscenium-ui-component {
   :root {
-    --puiBreadcrumbs--seperator-color: var(--gray5);
-    --puiBreadcrumbs--current-color: var(--purple7);
-    --puiBreadcrumbs--link-color: var(--gray8);
-    --puiBreadcrumbs--link-hover-color: var(--purple6);
+    --puiBreadcrumbs--seperator-color: var(--stone-5);
+    --puiBreadcrumbs--current-color: var(--red-7);
+    --puiBreadcrumbs--link-color: var(--stone-8);
+    --puiBreadcrumbs--link-hover-color: var(--red-6);
     --puiBreadcrumbs--seperator: url("/proscenium/icons/angle-right-regular.svg");
   }
 
@@ -25,6 +25,8 @@
 
     li {
       text-transform: uppercase;
+      display: flex;
+      align-items: center;
 
       @media (max-width: 767px) {
         &:not(:last-child) {
@@ -69,10 +71,16 @@
         font-weight: 300;
         color: var(--puiBreadcrumbs--link-color);
         display: inline-block;
+        text-decoration: none;
 
         &:hover {
           color: var(--puiBreadcrumbs--link-hover-color);
         }
+      }
+
+      svg {
+        height: 1em;
+        width: 1em;
       }
     }
   }
