@@ -39,6 +39,9 @@ module Proscenium
     #   end
     config.proscenium.engines = Set.new
 
+    # Add Proscenium as an engine so that UI components can be rendered.
+    config.proscenium.engines << self
+
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'
     }
@@ -47,6 +50,10 @@ module Proscenium
       ActiveSupport.on_load(:action_view) do
         include Proscenium::Helper
       end
+    end
+
+    initializer 'proscenium.ui' do
+      Rails.autoloaders.main.inflector.inflect('ui' => 'UI')
     end
 
     initializer 'proscenium.debugging' do
@@ -73,6 +80,16 @@ module Proscenium
       ActiveSupport.on_load(:action_view) do
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
+      end
+    end
+
+    initializer 'proscenium.public_path' do |app|
+      if app.config.public_file_server.enabled
+        headers = app.config.public_file_server.headers || {}
+        index = app.config.public_file_server.index_name || 'index'
+
+        app.middleware.insert_after(ActionDispatch::Static, ActionDispatch::Static,
+                                    root.join('public').to_s, index: index, headers: headers)
       end
     end
   end
