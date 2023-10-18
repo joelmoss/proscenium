@@ -79,14 +79,25 @@ module Proscenium
       def each_stylesheet(delete: false)
         return if imported.blank?
 
-        blk = proc { |key, options| key.end_with?(*CSS_EXTENSIONS) && yield(key, options) }
+        blk = proc do |key, options|
+          if key.end_with?(*CSS_EXTENSIONS)
+            yield(key, options)
+            true
+          end
+        end
+
         delete ? imported.delete_if(&blk) : imported.each(&blk)
       end
 
       def each_javascript(delete: false)
         return if imported.blank?
 
-        blk = proc { |key, options| key.end_with?(*JS_EXTENSIONS) && yield(key, options) }
+        blk = proc do |key, options|
+          if key.end_with?(*JS_EXTENSIONS)
+            yield(key, options)
+            true
+          end
+        end
         delete ? imported.delete_if(&blk) : imported.each(&blk)
       end
 

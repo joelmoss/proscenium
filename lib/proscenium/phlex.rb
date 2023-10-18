@@ -8,18 +8,10 @@ module Proscenium
 
     autoload :CssModules
     autoload :ReactComponent
+    autoload :AssetInclusions
 
-    extend ::Phlex::Rails::HelperMacros
-    include ::Phlex::Rails::Helpers::JavaScriptIncludeTag
-    include ::Phlex::Rails::Helpers::StyleSheetLinkTag
     include Proscenium::SourcePath
     include CssModules
-
-    define_output_helper :side_load_stylesheets # deprecated
-    define_output_helper :include_stylesheets
-    define_output_helper :side_load_javascripts # deprecated
-    define_output_helper :include_javascripts
-    define_output_helper :declare_lazy_scripts
 
     module Sideload
       def before_template

@@ -644,6 +644,27 @@ class MyView < Proscenium::Phlex
 end
 ```
 
+In your layouts, include `Proscenium::Phlex::AssetInclusions`, and call the `include_assets` helper.
+
+```ruby
+class ApplicationLayout < Proscenium::Phlex
+  include Proscenium::Phlex::AssetInclusions
+
+  def template(&)
+    doctype
+    html do
+      head do
+        title { 'My Awesome App' }
+        include_assets
+      end
+      body(&)
+    end
+  end
+end
+```
+
+You can specifically include CCS and JS assets using the `include_stylesheets` and `include_javascripts` helpers, allowing you to control where they are included in the HTML.
+
 ### Side-loading
 
 Any Phlex class that inherits `Proscenium::Phlex` will automatically be [side-loaded](#side-loading).
