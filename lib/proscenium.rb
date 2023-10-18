@@ -27,6 +27,7 @@ module Proscenium
   autoload :Builder
   autoload :Importer
   autoload :Resolver
+  autoload :UI
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
