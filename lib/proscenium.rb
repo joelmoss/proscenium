@@ -56,6 +56,14 @@ module Proscenium
     def cache
       @cache ||= config.cache || ActiveSupport::Cache::NullStore.new
     end
+
+    def ui_path
+      Railtie.root.join('lib', 'proscenium', 'ui')
+    end
+
+    def root
+      Railtie.root
+    end
   end
 end
 

@@ -18,7 +18,7 @@ describe Proscenium::UI::Breadcrumbs::Component do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/lib/proscenium/ui/breadcrumbs/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/breadcrumbs/component.module.css']
   end
 
   with '@hide_breadcrumbs = true' do
@@ -30,7 +30,7 @@ describe Proscenium::UI::Breadcrumbs::Component do
 
   it 'shows home element by default' do
     expect(view.find('ol li:first-child a')['href']).to be == '/'
-    expect(view.find('ol li:first-child a').text).to be == 'Home'
+    expect(view.has_selector?('ol li:first-child a>svg')).to be_truthy
   end
 
   with "home_path: '/foo'" do

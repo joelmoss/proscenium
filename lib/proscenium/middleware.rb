@@ -45,17 +45,26 @@ module Proscenium
       return Runtime if request.path.match?(%r{^/@proscenium/})
       return Esbuild if Pathname.new(request.path).fnmatch?(app_path_glob, File::FNM_EXTGLOB)
 
-      Engines if Pathname.new(request.path).fnmatch?(engines_path_glob, File::FNM_EXTGLOB)
+      pathname = Pathname.new(request.path)
+      Engines if pathname.fnmatch?(ui_path_glob, File::FNM_EXTGLOB) ||
+                 pathname.fnmatch?(engines_path_glob, File::FNM_EXTGLOB)
     end
 
     def app_path_glob
-      "/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{FILE_EXTENSIONS.join(',')}}"
+      "/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{file_extensions}}"
     end
 
     def engines_path_glob
       names = Proscenium.config.engines.map(&:engine_name)
+      "/{#{names.join(',')}}/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{file_extensions}}"
+    end
 
-      "/{#{names.join(',')}}/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{FILE_EXTENSIONS.join(',')}}"
+    def ui_path_glob
+      "/proscenium/ui/**.{#{file_extensions}}"
+    end
+
+    def file_extensions
+      @file_extensions ||= FILE_EXTENSIONS.join(',')
     end
 
     # TODO: handle precompiled assets

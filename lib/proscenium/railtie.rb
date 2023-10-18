@@ -39,9 +39,6 @@ module Proscenium
     #   end
     config.proscenium.engines = Set.new
 
-    # Add Proscenium as an engine so that UI components can be rendered.
-    config.proscenium.engines << self
-
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'
     }
