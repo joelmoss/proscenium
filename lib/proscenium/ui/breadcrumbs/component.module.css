@@ -1,9 +1,9 @@
 @layer proscenium-ui-component {
   :root {
     --puiBreadcrumbs--seperator-color: var(--stone-5);
-    --puiBreadcrumbs--current-color: var(--red-7);
-    --puiBreadcrumbs--link-color: var(--stone-8);
-    --puiBreadcrumbs--link-hover-color: var(--red-6);
+    --puiBreadcrumbs--current-color: var(--foreground);
+    --puiBreadcrumbs--link-color: var(--link-color);
+    --puiBreadcrumbs--link-hover-color: var(--link-hover-color);
     --puiBreadcrumbs--seperator: url("/proscenium/icons/angle-right-regular.svg");
   }
 
@@ -13,14 +13,11 @@
 
     ol {
       list-style: none;
-      margin: 12px 10px 10px;
       padding: 0;
       display: flex;
       align-items: baseline;
-
-      @media (min-width: 769px) {
-        margin: 12px 0 10px 0;
-      }
+      display: flex;
+      align-items: center;
     }
 
     li {
@@ -42,7 +39,7 @@
         -webkit-mask: var(--puiBreadcrumbs--seperator) no-repeat center center;
         mask: var(--puiBreadcrumbs--seperator) no-repeat center center;
         vertical-align: sub;
-        margin: 0 0.6em;
+        margin: 0 0.5rem;
         background-color: var(--puiBreadcrumbs--seperator-color);
       }
 
@@ -52,7 +49,6 @@
         text-transform: none;
 
         @media (min-width: 769px) {
-          font-weight: 700;
           font-size: 1.1em;
         }
       }
@@ -61,14 +57,9 @@
         color: var(--puiBreadcrumbs--current-color);
         font-weight: 500;
         text-transform: none;
-
-        @media (min-width: 769px) {
-          font-weight: 700;
-        }
       }
 
       a {
-        font-weight: 300;
         color: var(--puiBreadcrumbs--link-color);
         display: inline-block;
         text-decoration: none;
