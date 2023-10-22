@@ -57,7 +57,7 @@ var _ = Describe("BuildToString", func() {
 				},
 			})
 
-			Expect(code).To(Equal("gem4/lib/gem4/gem4.js::public/assets/gem4/lib/gem4/gem4$ET73VGHR$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$HN63QPLG$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
+			Expect(code).To(Equal("gem4/lib/gem4/gem4.js::public/assets/gem4/lib/gem4/gem4$RPK2UED4$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$XVLAO5FO$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
 		})
 	})
 })

@@ -97,11 +97,13 @@ var _ = Describe("Build(css)", func() {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";
+				e.dataset.prosceniumStyle = true;
 				e.appendChild(document.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
 			.myClass-330940eb {
         color: pink;
       }` + "`" + `));
-				document.head.insertBefore(e, document.querySelector("style"));
+				const pStyleEle = document.head.querySelector("[data-proscenium-style]");
+				pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
 			}
 			var styles_default = new Proxy({}, {
 				get(target, prop, receiver) {

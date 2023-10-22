@@ -63,8 +63,10 @@ var Css = esbuild.Plugin{
 							const e = document.createElement('style');
 							e.id = '_` + hash + `';
 							e.dataset.href = '` + urlPath + `';
+							e.dataset.prosceniumStyle = true;
 							e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
-							document.head.insertBefore(e, document.querySelector('style'));
+							const pStyleEle = document.head.querySelector('[data-proscenium-style]');
+							pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
 						}
 					`
 
