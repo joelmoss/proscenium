@@ -89,6 +89,25 @@ var Bundler = esbuild.Plugin{
 					External: true,
 				}, nil
 			})
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
+			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				// pp.Println("[1a] filter(^https://)", args)
+
+				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
+				// namespace.
+				if utils.IsSvgImportedFromJsx(args.Path, args) {
+					return esbuild.OnResolveResult{
+						Path:      args.Path,
+						Namespace: "svgFromJsx",
+					}, nil
+				}
+
+				// URL's are external.
+				return esbuild.OnResolveResult{
+					Path:     "/" + url.QueryEscape(args.Path),
+					External: true,
+				}, nil
+			})
 
 		// Intercept URL encoded paths starting with "https%3A%2F%2F" and "http%3A%2F%2F", decode them
 		// back to the original URL, and tag them with the url namespace.
@@ -143,6 +162,7 @@ var Bundler = esbuild.Plugin{
 					return esbuild.OnResolveResult{}, nil
 				}
 
+				unbundled := false
 				isEngine := false
 				result := esbuild.OnResolveResult{}
 
@@ -187,7 +207,12 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				}
 
-				resolvedImport, importMapMatched := importmap.Resolve(args.Path, args.ResolveDir)
+				if strings.HasPrefix(result.Path, "unbundle:") {
+					result.Path = strings.TrimPrefix(result.Path, "unbundle:")
+					unbundled = true
+				}
+
+				resolvedImport, importMapMatched := importmap.Resolve(result.Path, args.ResolveDir)
 				if importMapMatched {
 					if utils.IsUrl(resolvedImport) {
 						result.Path = "/" + url.QueryEscape(resolvedImport)
@@ -196,6 +221,11 @@ var Bundler = esbuild.Plugin{
 					}
 
 					result.Path = resolvedImport
+
+					if strings.HasPrefix(result.Path, "unbundle:") {
+						result.Path = strings.TrimPrefix(result.Path, "unbundle:")
+						unbundled = true
+					}
 				}
 
 				isCssImportedFromJs := false
@@ -245,6 +275,11 @@ var Bundler = esbuild.Plugin{
 						// If the path is absolute, then we can just return it as is. However, it must be a
 						// fully qualified path with a file extension. We can then return it as is. Othwerwise,
 						// we need to resolve it.
+						if unbundled {
+							result.Path = strings.TrimPrefix(result.Path, root)
+							result.External = true
+						}
+
 						return result, nil
 					}
 
@@ -253,6 +288,8 @@ var Bundler = esbuild.Plugin{
 					// resolving the path, which is faster and also ensures tree shaking works.
 					if utils.PathIsRelative(result.Path) {
 						if isCssImportedFromJs || result.Namespace == "svgFromJsx" || result.Namespace == "cssModuleFromCssmodule" {
+							result.Path = path.Join(args.ResolveDir, result.Path)
+						} else if unbundled {
 							result.Path = path.Join(args.ResolveDir, result.Path)
 						} else {
 							result.Path = ""
@@ -281,6 +318,11 @@ var Bundler = esbuild.Plugin{
 							return result, nil
 						}
 					}
+				}
+
+				if unbundled {
+					result.Path = strings.TrimPrefix(result.Path, root)
+					result.External = true
 				}
 
 				return result, nil

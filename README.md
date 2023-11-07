@@ -46,7 +46,8 @@ Proscenium treats your client-side code as first class citizens of your Rails ap
 - [ViewComponent Support](#viewcomponent-support)
 - [Cache Busting](#cache-busting)
 - [rjs is back!](#rjs-is-back)
-- [Included Paths](#included-paths)
+- [Resolution](#resolution)
+  - [Assets from Rails Engines](#assets-from-rails-engines)
 - [Thanks](#thanks)
 - [Development](#development)
 
@@ -235,6 +236,32 @@ import constants from './constants'
 body {
   /* some styles... */
 }
+```
+
+### Unbundling
+
+Sometimes you don't want to bundle an import. For example, you want to ensure that only one instance of React is loaded. In this cases, you can use the `unbundle` prefix
+
+```js
+import React from 'unbundle:react'
+```
+
+This only works any bare and local imports.
+
+You can also use the `unbundle` prefix in your import map, which ensures that all imports of a particular path is always unbundled:
+
+```json
+{
+  "imports": {
+    "react": "unbundle:react"
+  }
+}
+```
+
+Then just import as normal:
+
+```js
+import React from 'react'
 ```
 
 ## Import Maps

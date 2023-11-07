@@ -73,6 +73,25 @@ var _ = Describe("Build", func() {
 		`))
 	})
 
+	Describe("unbundle:* imports", func() {
+		It("should unbundle imports", func() {
+			Expect(Build("lib/unbundle/local_modules.js", BuildOpts{
+				ImportMap: `{
+					"imports": {
+						"/lib/foo3.js": "unbundle:/lib/foo3.js",
+						"react-dom": "unbundle:react-dom"
+					}
+				}`,
+			})).To(ContainCode(`
+				import "/lib/unbundle/foo1.js";
+				import "/lib/unbundle/foo2.js";
+				import "/lib/foo3.js";
+				import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
+				import { createPortal } from "/node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/index.js";
+			`))
+		})
+	})
+
 	Describe("vendored ruby gem", func() {
 		It("resolves entry point", func() {
 			result := Build("gem3/lib/gem3/gem3.js", BuildOpts{
