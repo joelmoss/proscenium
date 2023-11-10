@@ -54,8 +54,8 @@ module Proscenium
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Middleware
-      # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
-      # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
+      app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
+      app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     initializer 'proscenium.monkey_patches' do
