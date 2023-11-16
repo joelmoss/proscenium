@@ -552,6 +552,13 @@ css_module 'mypackage/button@big_button'
 # => "big_button"
 ```
 
+`css_module` also accepts a `path` keyword argument, which allows you to specify the path to the CSS
+file. Note that this will use the given path for all class names passed to that instance of `css_module`.
+
+```ruby
+css_module :my_module_name, path: Rails.root.join('app/components/button.css')
+```
+
 #### In your JavaScript
 
 Importing a CSS module from JS will automatically append the stylesheet to the document's head. And the result of the import will be an object of CSS class to module names.
