@@ -3,6 +3,7 @@ package utils
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"joelmoss/proscenium/internal/types"
 	"path"
 	"regexp"
 	"strings"
@@ -48,8 +49,15 @@ func PathIsRelative(name string) bool {
 }
 
 func ToDigest(s string) string {
+	path := ""
+
+	if types.Config.Environment == types.DevEnv {
+		re := regexp.MustCompile(`[/.]`)
+		path = "__" + re.ReplaceAllLiteralString(strings.TrimPrefix(s, "/"), "-")
+	}
+
 	hash := sha1.Sum([]byte(s))
-	return hex.EncodeToString(hash[:])[0:8]
+	return hex.EncodeToString(hash[:])[0:8] + path
 }
 
 func pathIsJs(path string) bool {

@@ -69,11 +69,13 @@ module Proscenium
       resolved_path = Resolver.resolve(path.to_s)
       digest = Importer.import(resolved_path)
 
+      transformed_path = ''
+      transformed_path = "__#{resolved_path[1..].gsub(%r{[/\.]}, '-')}" if Rails.env.development?
       transformed_name = name.to_s
       transformed_name = if transformed_name.start_with?('_')
-                           "_#{transformed_name[1..]}-#{digest}"
+                           "_#{transformed_name[1..]}-#{digest}#{transformed_path}"
                          else
-                           "#{transformed_name}-#{digest}"
+                           "#{transformed_name}-#{digest}#{transformed_path}"
                          end
 
       [transformed_name, resolved_path]
