@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.12.0)
+    proscenium (0.13.0)
       activesupport (>= 6.1.0, < 8.0)
       ffi (~> 1.16.3)
       oj (~> 3.13)
