@@ -58,13 +58,6 @@ module Proscenium
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.monkey_patches' do
-      ActiveSupport.on_load(:action_view) do
-        ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
-        ActionView::PartialRenderer.prepend Monkey::PartialRenderer
-      end
-    end
-
     initializer 'proscenium.helper' do
       ActiveSupport.on_load(:action_view) do
         ActionView::Base.include Helper
@@ -72,6 +65,14 @@ module Proscenium
 
       ActiveSupport.on_load(:action_controller) do
         ActionController::Base.include EnsureLoaded
+        ActionController::Base.include SideLoad::Controller
+      end
+    end
+
+    initializer 'proscenium.monkey_patches' do
+      ActiveSupport.on_load(:action_view) do
+        ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
+        ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
     end
   end

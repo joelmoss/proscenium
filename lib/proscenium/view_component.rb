@@ -14,11 +14,13 @@ class Proscenium::ViewComponent < ViewComponent::Base
 
   module Sideload
     def before_render
-      Proscenium::SideLoad.sideload_inheritance_chain self
+      Proscenium::SideLoad.sideload_inheritance_chain self, controller.sideload_assets_options
 
       super
     end
   end
+
+  class_attribute :sideload_assets_options
 
   class << self
     attr_accessor :abstract_class
@@ -27,6 +29,10 @@ class Proscenium::ViewComponent < ViewComponent::Base
       child.prepend Sideload
 
       super
+    end
+
+    def sideload_assets(value)
+      self.sideload_assets_options = value
     end
   end
 end

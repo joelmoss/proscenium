@@ -1,18 +1,70 @@
 window.Proscenium = window.Proscenium || { lazyScripts: {} };
+const pathAttribute = "data-proscenium-component-path";
 
+// Find lazyscripts JSON already in the DOM.
 const element = document.querySelector("#prosceniumLazyScripts");
 if (element) {
-  const scripts = JSON.parse(element.text);
   window.Proscenium.lazyScripts = {
     ...window.Proscenium.lazyScripts,
-    ...scripts,
+    ...JSON.parse(element.text),
   };
 }
 
-const elements = document.querySelectorAll("[data-proscenium-component-path]");
+// Find components already in the DOM.
+const elements = document.querySelectorAll(`[${pathAttribute}]`);
 elements.length > 0 && init(elements);
 
-function init() {
+new MutationObserver((mutationsList) => {
+  for (const { addedNodes } of mutationsList) {
+    for (const ele of addedNodes) {
+      if (ele.tagName === "SCRIPT" && ele.id === "prosceniumLazyScripts") {
+        window.Proscenium.lazyScripts = {
+          ...window.Proscenium.lazyScripts,
+          ...JSON.parse(ele.text),
+        };
+      } else if (ele.matches(`[${pathAttribute}]`)) {
+        init([ele]);
+      }
+    }
+  }
+}).observe(document, {
+  subtree: true,
+  childList: true,
+});
+
+function init(elements) {
+  Array.from(elements, (element) => {
+    const path = element.dataset.prosceniumComponentPath;
+    const isLazy = "prosceniumComponentLazy" in element.dataset;
+    const props = JSON.parse(element.dataset.prosceniumComponentProps);
+
+    if (proscenium.env.RAILS_ENV === "development") {
+      console.groupCollapsed(
+        `[proscenium/react/manager] ${isLazy ? "💤" : "⚡️"} %o`,
+        path
+      );
+      console.log("element: %o", element);
+      console.log("props: %o", props);
+      console.groupEnd();
+    }
+
+    if (isLazy) {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            observer.unobserve(element);
+
+            mount(element, path, props);
+          }
+        });
+      });
+
+      observer.observe(element);
+    } else {
+      mount(element, path, props);
+    }
+  });
+
   /**
    * Mounts component located at `path`, into the DOM `element`.
    *
@@ -66,36 +118,4 @@ function init() {
         console.error("[proscenium/react/manager] %o - %o", path, error);
       });
   }
-
-  Array.from(elements, (element) => {
-    const path = element.dataset.prosceniumComponentPath;
-    const isLazy = "prosceniumComponentLazy" in element.dataset;
-    const props = JSON.parse(element.dataset.prosceniumComponentProps);
-
-    if (proscenium.env.RAILS_ENV === "development") {
-      console.groupCollapsed(
-        `[proscenium/react/manager] ${isLazy ? "💤" : "⚡️"} %o`,
-        path
-      );
-      console.log("element: %o", element);
-      console.log("props: %o", props);
-      console.groupEnd();
-    }
-
-    if (isLazy) {
-      const observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            observer.unobserve(element);
-
-            mount(element, path, props);
-          }
-        });
-      });
-
-      observer.observe(element);
-    } else {
-      mount(element, path, props);
-    }
-  });
 }

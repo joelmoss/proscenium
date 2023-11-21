@@ -3,42 +3,49 @@
 module Proscenium
   # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
-    module DebugView
-      def initialize(assigns)
-        paths = [RESCUES_TEMPLATE_PATH, Rails.root.join('lib', 'templates').to_s]
-        lookup_context = ActionView::LookupContext.new(paths)
-        super(lookup_context, assigns, nil)
-      end
-    end
-
     module TemplateRenderer
       private
 
-      def render_template(view, template, layout_name, locals)
-        return super unless Proscenium.config.side_load
+      def render_template(view, template, layout_name, locals) # rubocop:disable Metrics/*
+        result = super
+        return result if !view.controller || !Proscenium.config.side_load
 
-        layout = find_layout(layout_name, locals.keys, [formats.first])
         renderable = template.instance_variable_get(:@renderable)
 
-        if Object.const_defined?(:ViewComponent) &&
-           template.is_a?(ActionView::Template::Renderable) &&
-           renderable.class < ::ViewComponent::Base && renderable.class.format == :html
-          # Side load controller rendered ViewComponent
-          Importer.sideload "app/views/#{layout.virtual_path}" if layout
-          Importer.sideload "app/views/#{renderable.virtual_path}"
-        elsif template.respond_to?(:virtual_path) &&
-              template.respond_to?(:type) && template.type == :html
-          Importer.sideload "app/views/#{layout.virtual_path}" if layout
+        to_sideload = if Object.const_defined?(:ViewComponent) &&
+                         template.is_a?(ActionView::Template::Renderable) &&
+                         renderable.class < ::ViewComponent::Base &&
+                         renderable.class.format == :html
+                        renderable
+                      elsif template.respond_to?(:virtual_path) &&
+                            template.respond_to?(:type) && template.type == :html
+                        template
+                      end
 
-          # Try side loading the variant template
-          if template.respond_to?(:variant) && template.variant
-            Importer.sideload "app/views/#{template.virtual_path}+#{template.variant}"
-          end
-
-          Importer.sideload "app/views/#{template.virtual_path}"
+        if to_sideload
+          options = view.controller.sideload_assets_options
+          layout = find_layout(layout_name, locals.keys, [formats.first])
+          sideload_template_assets layout, options if layout
+          sideload_template_assets to_sideload, options
         end
 
-        super
+        result
+      end
+
+      def sideload_template_assets(tpl, options)
+        options = {} if options.nil?
+        options = { js: options, css: options } unless options.is_a?(Hash)
+
+        if tpl.instance_variable_defined?(:@sideload_assets_options)
+          tpl_options = tpl.instance_variable_get(:@sideload_assets_options)
+          options = if tpl_options.is_a?(Hash)
+                      options.deep_merge tpl_options
+                    else
+                      { js: tpl_options, css: tpl_options }
+                    end
+        end
+
+        Importer.sideload "app/views/#{tpl.virtual_path}", **options
       end
     end
 
@@ -46,13 +53,34 @@ module Proscenium
       private
 
       def render_partial_template(view, locals, template, layout, block)
-        if Proscenium.config.side_load && template.respond_to?(:virtual_path) &&
+        result = super
+
+        return result if !view.controller || !Proscenium.config.side_load
+
+        if template.respond_to?(:virtual_path) &&
            template.respond_to?(:type) && template.type == :html
-          Importer.sideload "app/views/#{layout.virtual_path}" if layout
-          Importer.sideload "app/views/#{template.virtual_path}"
+          options = view.controller.sideload_assets_options
+          sideload_template_assets layout, options if layout
+          sideload_template_assets template, options
         end
 
-        super
+        result
+      end
+
+      def sideload_template_assets(tpl, options)
+        options = {} if options.nil?
+        options = { js: options, css: options } unless options.is_a?(Hash)
+
+        if tpl.instance_variable_defined?(:@sideload_assets_options)
+          tpl_options = tpl.instance_variable_get(:@sideload_assets_options)
+          options = if tpl_options.is_a?(Hash)
+                      options.deep_merge tpl_options
+                    else
+                      { js: tpl_options, css: tpl_options }
+                    end
+        end
+
+        Importer.sideload "app/views/#{tpl.virtual_path}", **options
       end
     end
   end

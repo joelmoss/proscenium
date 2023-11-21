@@ -71,10 +71,10 @@ describe Proscenium::SideLoad do
     BarePagesController.render :vendored_gem
 
     expect(Proscenium::Importer.imported).to be == {
+      '/@proscenium/react-manager/index.jsx' => { js: { type: :module } },
+      '/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: true },
       '/app/views/layouts/bare.js' => { sideloaded: true },
-      '/app/views/layouts/bare.css' => { sideloaded: true },
-      '/@proscenium/react-manager/index.jsx' => {},
-      '/gem1/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
+      '/app/views/layouts/bare.css' => { sideloaded: true }
     }
   end
 
@@ -82,10 +82,10 @@ describe Proscenium::SideLoad do
     BarePagesController.render :external_gem
 
     expect(Proscenium::Importer.imported).to be == {
+      '/@proscenium/react-manager/index.jsx' => { js: { type: :module } },
+      '/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true },
       '/app/views/layouts/bare.js' => { sideloaded: true },
-      '/app/views/layouts/bare.css' => { sideloaded: true },
-      '/@proscenium/react-manager/index.jsx' => {},
-      '/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true }
+      '/app/views/layouts/bare.css' => { sideloaded: true }
     }
   end
 end

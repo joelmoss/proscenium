@@ -1,0 +1,6 @@
+<% sideload_assets params[:sideload_view_assets] %>
+<%= include_assets %>
+<h1>Hello</h1>
+
+<%= render 'pages/side' %>
+<%= render partial: 'pages/side', layout: 'pages/side_layout' %>

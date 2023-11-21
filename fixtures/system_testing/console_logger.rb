@@ -50,7 +50,7 @@ module SystemTesting
       def message
         case method
         when 'Runtime.exceptionThrown'
-          body.dig 'params', 'exceptionDetails', 'exception', 'description'
+          body.dig 'params', 'exceptionDetails', 'exception', 'value'
         when 'Log.entryAdded'
           body.dig 'params', 'entry', 'text'
         else

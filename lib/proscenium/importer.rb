@@ -72,8 +72,8 @@ module Proscenium
           end
         end
 
-        JS_EXTENSIONS.find(&import_if_exists)
-        CSS_EXTENSIONS.find(&import_if_exists)
+        JS_EXTENSIONS.find(&import_if_exists) unless options[:js] == false
+        CSS_EXTENSIONS.find(&import_if_exists) unless options[:css] == false
       end
 
       def each_stylesheet(delete: false)
