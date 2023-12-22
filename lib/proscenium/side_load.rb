@@ -9,7 +9,8 @@ module Proscenium
           child.extend ClassMethods
 
           append_after_action :capture_and_replace_proscenium_stylesheets,
-                              :capture_and_replace_proscenium_javascripts
+                              :capture_and_replace_proscenium_javascripts,
+                              if: -> { request.format.html? && !response.redirect? }
         end
       end
 
