@@ -21,28 +21,31 @@ module Proscenium
                             template.respond_to?(:type) && template.type == :html
                         template
                       end
-
         if to_sideload
           options = view.controller.sideload_assets_options
           layout = find_layout(layout_name, locals.keys, [formats.first])
-          sideload_template_assets layout, options if layout
-          sideload_template_assets to_sideload, options
+          sideload_template_assets layout, view.controller, options if layout
+          sideload_template_assets to_sideload, view.controller, options
         end
 
         result
       end
 
-      def sideload_template_assets(tpl, options)
+      def sideload_template_assets(tpl, controller, options)
         options = {} if options.nil?
         options = { js: options, css: options } unless options.is_a?(Hash)
 
         if tpl.instance_variable_defined?(:@sideload_assets_options)
           tpl_options = tpl.instance_variable_get(:@sideload_assets_options)
-          options = if tpl_options.is_a?(Hash)
-                      options.deep_merge tpl_options
+          options = case tpl_options
+                    when Hash then options.deep_merge(tpl_options)
                     else
                       { js: tpl_options, css: tpl_options }
                     end
+        end
+
+        %i[css js].each do |k|
+          options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
         Importer.sideload "app/views/#{tpl.virtual_path}", **options
@@ -78,6 +81,10 @@ module Proscenium
                     else
                       { js: tpl_options, css: tpl_options }
                     end
+        end
+
+        %i[css js].each do |k|
+          options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
         Importer.sideload "app/views/#{tpl.virtual_path}", **options

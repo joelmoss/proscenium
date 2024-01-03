@@ -80,6 +80,17 @@ describe Proscenium::Helper do
       end
     end
 
+    with 'proc in controller' do
+      it 'does not include assets' do
+        BarePagesController.sideload_assets proc { request.xhr? }
+        visit '/'
+
+        expect(page.html).to include '<head></head>'
+      ensure
+        BarePagesController.sideload_assets nil
+      end
+    end
+
     with 'css: false in controller' do
       it 'does not includes stylesheets' do
         BarePagesController.sideload_assets css: false

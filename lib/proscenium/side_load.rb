@@ -21,6 +21,8 @@ module Proscenium
       end
 
       def capture_and_replace_proscenium_stylesheets
+        return if response_body.first.blank?
+
         out = []
         Importer.each_stylesheet(delete: true) do |path, path_opts|
           opts = path_opts[:css].is_a?(Hash) ? path_opts[:css] : {}
@@ -31,6 +33,8 @@ module Proscenium
       end
 
       def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/*
+        return if response_body.first.blank?
+
         lazy_script = ''
 
         unless Rails.application.config.proscenium.code_splitting &&
@@ -109,6 +113,10 @@ module Proscenium
                     else
                       { js: tpl_options, css: tpl_options }
                     end
+        end
+
+        %i[css js].each do |k|
+          options[k] = obj.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
         klass = obj.class

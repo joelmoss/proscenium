@@ -79,7 +79,7 @@ describe Proscenium::Phlex::ReactComponent do
     render Phlex::BasicReactComponent.new
 
     expect(Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx']).to be == {
-      js: { type: :module }
+      js: { type: 'module' }
     }
   end
 
