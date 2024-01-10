@@ -14,7 +14,7 @@ module Benchmarks
         # Calculating -------------------------------------
         #     proscenium build      1.380k (± 1.1%) i/s -      6.900k in   5.000274s
         x.report('proscenium build') do
-          Proscenium::Builder.new(root: ROOT).build(path)
+          Proscenium::Builder.new(root: ROOT).build_to_string(path)
         end
       end
     end

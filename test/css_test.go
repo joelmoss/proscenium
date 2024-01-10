@@ -40,10 +40,10 @@ var _ = Describe("Build(css)", func() {
 	})
 
 	When("importing css module from css module", func() {
-		It("should bundle with same digest", func() {
+		It("should bundle with different digest", func() {
 			result := Build("lib/css_modules/import_css_module.module.css")
 
-			Expect(result).To(ContainCode(`.foo-60bd820c { color: red; }`))
+			Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 			Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
 		})
 	})
@@ -89,6 +89,12 @@ var _ = Describe("Build(css)", func() {
 		})
 	})
 
+	// FIt("handles ?", func() {
+	// 	Expect(BuildToPath("lib/css_mod_import/tab_a.module.css;lib/css_mod_import/tab_b.module.css")).To(ContainCode(`
+	// 		a { color: red; font-size: 20px; }
+	// 	`))
+	// })
+
 	When("importing css module from js", func() {
 		var expectedCode = `
 			var existingStyle = document.querySelector("#_330940eb");
@@ -127,10 +133,10 @@ var _ = Describe("Build(css)", func() {
 		When("importing css module from css module", func() {
 			path := "lib/css_modules/import_css_module.js"
 
-			It("should bundle with same digest", func() {
+			It("should bundle with different digest", func() {
 				result := Build(path)
 
-				Expect(result).To(ContainCode(`.foo-60bd820c { color: red; }`))
+				Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
 			})
 		})

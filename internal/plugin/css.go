@@ -32,12 +32,7 @@ var Css = esbuild.Plugin{
 					}
 				}
 
-				hash := ""
-				if pluginData.CssModuleHash != "" {
-					hash = pluginData.CssModuleHash
-				} else {
-					hash = utils.ToDigest(urlPath)
-				}
+				hash := utils.ToDigest(urlPath)
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
 				// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
@@ -89,7 +84,7 @@ var Css = esbuild.Plugin{
 				return esbuild.OnLoadResult{
 					Contents:   &contents,
 					Loader:     esbuild.LoaderCSS,
-					PluginData: types.PluginData{CssModuleHash: hash},
+					PluginData: types.PluginData{},
 				}, nil
 			})
 	},
@@ -105,11 +100,6 @@ var cssOnly = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// pp.Println("[cssOnly] filter(.css$)", args)
 
-				var pluginData types.PluginData
-				if args.PluginData != nil {
-					pluginData = args.PluginData.(types.PluginData)
-				}
-
 				urlPath := strings.TrimPrefix(args.Path, root)
 				for k, v := range types.Config.Engines {
 					if strings.HasPrefix(args.Path, v+pathSep) {
@@ -118,12 +108,7 @@ var cssOnly = esbuild.Plugin{
 					}
 				}
 
-				hash := ""
-				if pluginData.CssModuleHash != "" {
-					hash = pluginData.CssModuleHash
-				} else {
-					hash = utils.ToDigest(urlPath)
-				}
+				hash := utils.ToDigest(urlPath)
 
 				contents, err := css.ParseCssFile(args.Path, root, hash)
 				if err != nil {
@@ -133,7 +118,7 @@ var cssOnly = esbuild.Plugin{
 				return esbuild.OnLoadResult{
 					Contents:   &contents,
 					Loader:     esbuild.LoaderCSS,
-					PluginData: types.PluginData{CssModuleHash: hash},
+					PluginData: types.PluginData{},
 				}, nil
 			})
 	},

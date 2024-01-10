@@ -234,14 +234,6 @@ var Bundler = esbuild.Plugin{
 					// the css plugin to return the CSS as a JS object of class names (css module).
 					isCssImportedFromJs = true
 					result.PluginData = types.PluginData{ImportedFromJs: true}
-				} else if utils.IsCssModuleImportedFromCssModule(result.Path, args) {
-					pd := types.PluginData{CssModuleImportedFromCssModule: true}
-					if args.PluginData != nil {
-						pd.CssModuleHash = args.PluginData.(types.PluginData).CssModuleHash
-					}
-
-					result.PluginData = pd
-					result.Namespace = "cssModuleFromCssmodule"
 				} else if utils.IsSvgImportedFromJsx(result.Path, args) {
 					// We're importing an SVG file from JSX. Assigning the `svgFromJsx` namespace tells
 					// the svg plugin to return the SVG as a JSX component.
@@ -287,7 +279,7 @@ var Bundler = esbuild.Plugin{
 					// that can get expensive. Also, by not returning the path, we let esbuild handle
 					// resolving the path, which is faster and also ensures tree shaking works.
 					if utils.PathIsRelative(result.Path) {
-						if isCssImportedFromJs || result.Namespace == "svgFromJsx" || result.Namespace == "cssModuleFromCssmodule" {
+						if isCssImportedFromJs || result.Namespace == "svgFromJsx" {
 							result.Path = path.Join(args.ResolveDir, result.Path)
 						} else if unbundled {
 							result.Path = path.Join(args.ResolveDir, result.Path)

@@ -29,6 +29,18 @@ func BuildToString(pathToBuild string, rest ...BuildOpts) (bool, string) {
 	return builder.BuildToString(buildOptions(pathToBuild, restOpts))
 }
 
+func BuildToPath(pathToBuild string, rest ...BuildOpts) (bool, string) {
+	_, filename, _, _ := runtime.Caller(1)
+	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
+
+	restOpts := BuildOpts{}
+	if len(rest) > 0 {
+		restOpts = rest[0]
+	}
+
+	return builder.BuildToPath(buildOptions(pathToBuild, restOpts))
+}
+
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	_, filename, _, _ := runtime.Caller(1)
 	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")

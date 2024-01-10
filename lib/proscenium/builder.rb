@@ -18,19 +18,34 @@ module Proscenium
 
       enum :environment, [:development, 1, :test, :production]
 
-      attach_function :build, [
-        :string,      # path or entry point. multiple can be given by separating with a semi-colon
-        :string,      # base URL of the Rails app. eg. https://example.com
-        :string,      # path to import map, relative to root
+      attach_function :build_to_string, [
+        :string,      # Path or entry point.
+        :string,      # Base URL of the Rails app. eg. https://example.com
+        :string,      # Path to import map, relative to root
         :string,      # ENV variables as a JSON string
 
         # Config
         :string,      # Rails application root
         :string,      # Proscenium gem root
         :environment, # Rails environment as a Symbol
-        :bool,        # code splitting enabled?
-        :string,      # engine names and paths as a JSON string
-        :bool         # debugging enabled?
+        :bool,        # Code splitting enabled?
+        :string,      # Engine names and paths as a JSON string
+        :bool         # Debugging enabled?
+      ], Result.by_value
+
+      attach_function :build_to_path, [
+        :string,      # Path or entry point. Multiple can be given by separating with a semi-colon
+        :string,      # Base URL of the Rails app. eg. https://example.com
+        :string,      # Path to import map, relative to root
+        :string,      # ENV variables as a JSON string
+
+        # Config
+        :string,      # Rails application root
+        :string,      # Proscenium gem root
+        :environment, # Rails environment as a Symbol
+        :bool,        # Code splitting enabled?
+        :string,      # Engine names and paths as a JSON string
+        :bool         # Debugging enabled?
       ], Result.by_value
 
       attach_function :resolve, [
@@ -68,8 +83,12 @@ module Proscenium
       end
     end
 
-    def self.build(path, root: nil, base_url: nil)
-      new(root: root, base_url: base_url).build(path)
+    def self.build_to_path(path, root: nil, base_url: nil)
+      new(root: root, base_url: base_url).build_to_path(path)
+    end
+
+    def self.build_to_string(path, root: nil, base_url: nil)
+      new(root: root, base_url: base_url).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
@@ -81,15 +100,31 @@ module Proscenium
       @base_url = base_url
     end
 
-    def build(path) # rubocop:disable Metrics/AbcSize
-      ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
-        result = Request.build(path, @base_url, import_map, env_vars.to_json,
-                               @root.to_s,
-                               Pathname.new(__dir__).join('..', '..').to_s,
-                               Rails.env.to_sym,
-                               Proscenium.config.code_splitting,
-                               engines.to_json,
-                               Proscenium.config.debug)
+    def build_to_path(path) # rubocop:disable Metrics/AbcSize
+      ActiveSupport::Notifications.instrument('build_to_path.proscenium', identifier: path) do
+        result = Request.build_to_path(path, @base_url, import_map, env_vars.to_json,
+                                       @root.to_s,
+                                       Pathname.new(__dir__).join('..', '..').to_s,
+                                       Rails.env.to_sym,
+                                       Proscenium.config.code_splitting,
+                                       engines.to_json,
+                                       Proscenium.config.debug)
+
+        raise BuildError, result[:response] unless result[:success]
+
+        result[:response]
+      end
+    end
+
+    def build_to_string(path) # rubocop:disable Metrics/AbcSize
+      ActiveSupport::Notifications.instrument('build_to_string.proscenium', identifier: path) do
+        result = Request.build_to_string(path, @base_url, import_map, env_vars.to_json,
+                                         @root.to_s,
+                                         Pathname.new(__dir__).join('..', '..').to_s,
+                                         Rails.env.to_sym,
+                                         Proscenium.config.code_splitting,
+                                         engines.to_json,
+                                         Proscenium.config.debug)
 
         raise BuildError, result[:response] unless result[:success]
 

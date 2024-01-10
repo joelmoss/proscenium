@@ -31,10 +31,8 @@ type ImportMap struct {
 }
 
 type PluginData = struct {
-	IsResolvingPath                bool
-	ImportedFromJs                 bool
-	CssModuleImportedFromCssModule bool
-	CssModuleHash                  string
+	IsResolvingPath bool
+	ImportedFromJs  bool
 }
 
 // The maximum size of an HTTP response body to cache.

@@ -73,6 +73,12 @@ var _ = Describe("Build", func() {
 		`))
 	})
 
+	PIt("should build dynamic path", func() {
+		Expect(Build("lib/import_dynamic.js")).To(ContainCode(`
+			console.log("/lib/foo4.js")
+		`))
+	})
+
 	Describe("unbundle:* imports", func() {
 		It("should unbundle imports", func() {
 			Expect(Build("lib/unbundle/local_modules.js", BuildOpts{

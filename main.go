@@ -18,8 +18,7 @@ import (
 // Build the given `path` in the `root`.
 //
 //	BuildOptions
-//	- path - The path to build relative to `root`. Multiple paths can be given by separating them
-//	  with a semi-colon.
+//	- path - The path to build relative to `root`.
 //	- baseUrl - base URL of the Rails app. eg. https://example.com
 //	- importMap - Path to the import map relative to `root`.
 //	- envVars - JSON string of environment variables.
@@ -29,8 +28,8 @@ import (
 //	- codeSpitting?
 //	- debug?
 //
-//export build
-func build(
+//export build_to_string
+func build_to_string(
 	filepath *C.char,
 	baseUrl *C.char,
 	importMap *C.char,
@@ -59,6 +58,63 @@ func build(
 	pathStr := C.GoString(filepath)
 
 	success, result := builder.BuildToString(builder.BuildOptions{
+		Path:          pathStr,
+		BaseUrl:       C.GoString(baseUrl),
+		ImportMapPath: C.GoString(importMap),
+		EnvVars:       C.GoString(envVars),
+	})
+
+	if success {
+		return C.struct_Result{C.int(1), C.CString(result)}
+	} else {
+		return C.struct_Result{C.int(0), C.CString(result)}
+	}
+}
+
+// Build the given `path` in the `root`.
+//
+//	BuildOptions
+//	- path - The path to build relative to `root`. Multiple paths can be given by separating them
+//	  with a semi-colon.
+//	- baseUrl - base URL of the Rails app. eg. https://example.com
+//	- importMap - Path to the import map relative to `root`.
+//	- envVars - JSON string of environment variables.
+//	Config:
+//	- root - The working directory.
+//	- env - The environment (1 = development, 2 = test, 3 = production)
+//	- codeSpitting?
+//	- debug?
+//
+//export build_to_path
+func build_to_path(
+	filepath *C.char,
+	baseUrl *C.char,
+	importMap *C.char,
+	envVars *C.char,
+	appRoot *C.char,
+	gemPath *C.char,
+	env C.uint,
+	codeSplitting bool,
+	engines *C.char,
+	debug bool,
+) C.struct_Result {
+	types.Config.RootPath = C.GoString(appRoot)
+	types.Config.GemPath = C.GoString(gemPath)
+	types.Config.Environment = types.Environment(env)
+	types.Config.CodeSplitting = codeSplitting
+	types.Config.Debug = debug
+
+	var enginesMap map[string]string
+	err := json.Unmarshal([]byte(C.GoString(engines)), &enginesMap)
+	if err == nil {
+		types.Config.Engines = enginesMap
+	} else {
+		return C.struct_Result{C.int(0), C.CString(err.Error())}
+	}
+
+	pathStr := C.GoString(filepath)
+
+	success, result := builder.BuildToPath(builder.BuildOptions{
 		Path:          pathStr,
 		BaseUrl:       C.GoString(baseUrl),
 		ImportMapPath: C.GoString(importMap),

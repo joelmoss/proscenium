@@ -85,10 +85,6 @@ func PathIsSvg(path string) bool {
 	return strings.HasSuffix(path, ".svg")
 }
 
-func IsCssModuleImportedFromCssModule(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveCSSImportRule && PathIsCssModule(path) && PathIsCssModule(args.Importer)
-}
-
 func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
 	return args.Kind == esbuild.ResolveJSImportStatement && PathIsCss(path) && pathIsJs(args.Importer)
 }

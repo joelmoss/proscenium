@@ -13,6 +13,13 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
+type Output uint8
+
+const (
+	OutputToString Output = iota + 1
+	OutputToPath
+)
+
 type BuildOptions struct {
 	// The path to build relative to `root`. Multiple paths can be given by separating them with a
 	// semi-colon.
@@ -29,6 +36,8 @@ type BuildOptions struct {
 
 	// Import map contents.
 	ImportMap []byte
+
+	Output Output
 }
 
 // Build the given `options.Path` in the `options.Root`.
@@ -36,7 +45,11 @@ type BuildOptions struct {
 //export build
 func Build(options BuildOptions) esbuild.BuildResult {
 	entrypoints := strings.Split(options.Path, ";")
-	hasMultipleEntrypoints := len(entrypoints) > 1
+
+	// default to outputting to a string
+	if options.Output < 1 {
+		options.Output = OutputToString
+	}
 
 	err := importmap.Parse(options.ImportMap, options.ImportMapPath)
 	if err != nil {
@@ -56,7 +69,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if hasMultipleEntrypoints {
+	if options.Output == OutputToPath {
 		sourcemap = esbuild.SourceMapLinked
 	} else if strings.HasSuffix(options.Path, ".map") {
 		options.Path = strings.TrimSuffix(options.Path, ".map")
@@ -85,7 +98,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Write:             types.Config.CodeSplitting,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          hasMultipleEntrypoints,
+		Metafile:          options.Output == OutputToPath,
 		Target:            esbuild.ES2022,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
@@ -131,7 +144,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		}
 		buildOptions.Define = definitions
 
-		if hasMultipleEntrypoints {
+		if options.Output == OutputToPath {
 			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
 		}
 	}

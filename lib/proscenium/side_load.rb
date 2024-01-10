@@ -20,35 +20,36 @@ module Proscenium
         end
       end
 
-      def capture_and_replace_proscenium_stylesheets
-        return if response_body.first.blank?
+      def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/AbcSize
+        return if response_body.first.blank? || !Proscenium::Importer.css_imported?
+
+        imports = Proscenium::Importer.imported.dup
+        paths_to_build = []
+        Proscenium::Importer.each_stylesheet(delete: true) do |x, _|
+          paths_to_build << x.delete_prefix('/')
+        end
+
+        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'),
+                                                   base_url: helpers.request.base_url)
 
         out = []
-        Importer.each_stylesheet(delete: true) do |path, path_opts|
-          opts = path_opts[:css].is_a?(Hash) ? path_opts[:css] : {}
-          out << helpers.stylesheet_link_tag(path, extname: false, **opts)
+        result.split(';').each do |x|
+          inpath, outpath = x.split('::')
+          inpath.prepend '/'
+          outpath.delete_prefix! 'public'
+
+          next unless imports.key?(inpath)
+
+          import = imports[inpath]
+          opts = import[:css].is_a?(Hash) ? import[:css] : {}
+          out << helpers.stylesheet_link_tag(outpath, extname: false, **opts)
         end
 
         response_body.first.gsub! '<!-- [PROSCENIUM_STYLESHEETS] -->', out.join.html_safe
       end
 
-      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/*
-        return if response_body.first.blank?
-
-        lazy_script = ''
-
-        unless Rails.application.config.proscenium.code_splitting &&
-               Proscenium::Importer.multiple_js_imported?
-          out = []
-          Proscenium::Importer.each_javascript(delete: true) do |path, path_opts|
-            opts = path_opts[:js].is_a?(Hash) ? path_opts[:js] : {}
-            out << helpers.javascript_include_tag(path, extname: false, **opts)
-          end
-
-          response_body.first.gsub! '<!-- [PROSCENIUM_JAVASCRIPTS] -->', out.join.html_safe
-          response_body.first.gsub! '<!-- [PROSCENIUM_LAZY_SCRIPTS] -->', lazy_script
-          return
-        end
+      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+        return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
         imports = Proscenium::Importer.imported.dup
         paths_to_build = []
@@ -56,8 +57,8 @@ module Proscenium
           paths_to_build << x.delete_prefix('/')
         end
 
-        result = Proscenium::Builder.build(paths_to_build.join(';'),
-                                           base_url: helpers.request.base_url)
+        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'),
+                                                   base_url: helpers.request.base_url)
 
         # Remove the react components from the results, so they are not side loaded. Instead they
         # are lazy loaded by the component manager.
@@ -81,6 +82,7 @@ module Proscenium
 
         response_body.first.gsub! '<!-- [PROSCENIUM_JAVASCRIPTS] -->', out.join.html_safe
 
+        lazy_script = ''
         if scripts.present?
           lazy_script = helpers.content_tag 'script', type: 'application/json',
                                                       id: 'prosceniumLazyScripts' do

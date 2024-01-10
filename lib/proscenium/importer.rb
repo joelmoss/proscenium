@@ -109,10 +109,6 @@ module Proscenium
         imported&.keys&.any? { |x| x.end_with?(*JS_EXTENSIONS) }
       end
 
-      def multiple_js_imported?
-        imported&.keys&.many? { |x| x.end_with?(*JS_EXTENSIONS) }
-      end
-
       def imported?(filepath = nil)
         filepath ? imported&.key?(filepath) : !imported.blank?
       end

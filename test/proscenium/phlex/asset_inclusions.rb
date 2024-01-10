@@ -19,8 +19,8 @@ describe Proscenium::Phlex::AssetInclusions do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/app/views/phlex/include_assets.css">' \
-          '<script src="/app/views/phlex/include_assets.js"></script>' \
+          '<link rel="stylesheet" href="/assets/app/views/phlex/include_assets$7T5XNBBO$.css">' \
+          '<script src="/assets/app/views/phlex/include_assets$HZZYNYOW$.js"></script>' \
           '</head>'
         )
       end
