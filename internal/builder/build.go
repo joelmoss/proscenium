@@ -95,7 +95,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Bundle:            true,
 		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
-		Write:             types.Config.CodeSplitting,
+		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Metafile:          options.Output == OutputToPath,

@@ -58,8 +58,8 @@ Getting started obviously depends on whether you are adding Proscenium to an exi
 - [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app
   - [Migrate from Sprockets](docs/guides/migrate_from_sprockets.md)
-  - Migrate from Propshaft *[Coming soon]*
-  - Migrate from Webpacker *[Coming soon]*
+  - Migrate from Propshaft _[Coming soon]_
+  - Migrate from Webpacker _[Coming soon]_
 - [Render a React component with Proscenium](docs/guides/basic_react.md)
 
 ## Installation
@@ -162,29 +162,34 @@ Your application layout is at `/app/views/layouts/application.hml.erb`, and the 
 - `/app/views/users/index.js`
 - `/app/views/users/_user.js` (partial)
 
-Now, in your layout and view, replace the `javascript_include_tag` and `stylesheet_link_tag` helpers with the `include_stylesheets` and `include_javascripts` helpers from Proscenium. Something like this:
+Now, in your layout and view, replace the `javascript_include_tag` and `stylesheet_link_tag` helpers with the `include_asset` helper from Proscenium. Something like this:
 
 ```erb
 <!DOCTYPE html>
 <html>
   <head>
     <title>Hello World</title>
-    <%= include_stylesheets %>
+    <%= include_assets # <-- %>
   </head>
   <body>
     <%= yield %>
-    <%= include_javascripts type: 'module', defer: true %>
   </body>
 </html>
 ```
 
-> NOTE that Proscenium is desiged to work with modern JavaAscript, and assumes [ESModules](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules) are used everywhere. This is why the `type` attribute is set to `module` in the example above. If you are not using ESModules, then you can omit the `type` attribute.
+On each page request, Proscenium will check if any of your views, layouts and partials have a
+JS/TS/CSS file of the same name, and then include them wherever your placed the `include_assets`
+helper.
 
-On each page request, Proscenium will check if your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `include_stylesheets` and `include_javascripts` helpers.
+Now you never have to remember to include your assets again. Just create them alongside your views,
+partials and layouts, and Proscenium will take care of the rest.
 
-Now you never have to remember to include your assets again. Just create them alongside your views, partials and layouts, and Proscenium will take care of the rest.
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
+to `false` in your `/config/application.rb`.
 
-Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load` to `false` in your `/config/application.rb`.
+There are also `include_stylesheets` and `include_javascripts` helpers to allow you to control where
+the CSS and JS assets are included in the HTML. These helpers should be used instead of
+`include_assets` if you want to control exactly where the assets are included.
 
 ## Importing Assets
 
@@ -199,11 +204,11 @@ Imports are assumed to be JS files, so there is no need to specify the file exte
 Any import beginning with `http://` or `https://` will be fetched from the URL provided. For example:
 
 ```js
-import React from 'https://esm.sh/react'
+import React from "https://esm.sh/react";
 ```
 
 ```css
-@import 'https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css';
+@import "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css";
 ```
 
 URL imports are cached, so that each import is only fetched once per server restart.
@@ -213,7 +218,7 @@ URL imports are cached, so that each import is only fetched once per server rest
 Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file:
 
 ```js
-import React from 'react'
+import React from "react";
 ```
 
 ### Local Imports
@@ -221,15 +226,15 @@ import React from 'react'
 And of course you can import your own code, using relative or absolute paths (file extension is optional):
 
 ```js /app/views/layouts/application.js
-import utils from '/lib/utils'
+import utils from "/lib/utils";
 ```
 
 ```js /lib/utils.js
-import constants from './constants'
+import constants from "./constants";
 ```
 
 ```css /app/views/layouts/application.css
-@import '/lib/reset';
+@import "/lib/reset";
 ```
 
 ```css /lib/reset.css
@@ -243,7 +248,7 @@ body {
 Sometimes you don't want to bundle an import. For example, you want to ensure that only one instance of React is loaded. In this cases, you can use the `unbundle` prefix
 
 ```js
-import React from 'unbundle:react'
+import React from "unbundle:react";
 ```
 
 This only works any bare and local imports.
@@ -261,7 +266,7 @@ You can also use the `unbundle` prefix in your import map, which ensures that al
 Then just import as normal:
 
 ```js
-import React from 'react'
+import React from "react";
 ```
 
 ## Import Maps
@@ -280,7 +285,7 @@ Just create `config/import_map.json` and specify the imports you want to use. Fo
     "react": "https://esm.sh/react@18.2.0",
     "start": "/lib/start.js",
     "common": "/lib/common.css",
-    "@radix-ui/colors/": "https://esm.sh/@radix-ui/colors@0.1.8/",
+    "@radix-ui/colors/": "https://esm.sh/@radix-ui/colors@0.1.8/"
   }
 }
 ```
@@ -288,26 +293,29 @@ Just create `config/import_map.json` and specify the imports you want to use. Fo
 Using the above import map, we can do...
 
 ```js
-import { useCallback } from 'react'
-import startHere from 'start'
-import styles from 'common'
+import { useCallback } from "react";
+import startHere from "start";
+import styles from "common";
 ```
 
 and for CSS...
 
 ```css
-@import 'common';
-@import '@radix-ui/colors/blue.css';
+@import "common";
+@import "@radix-ui/colors/blue.css";
 ```
 
 You can also write your import map in JavaScript instead of JSON. So instead of `config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This function accepts a single `environment` argument.
 
 ```js
-env => ({
+(env) => ({
   imports: {
-    react: env === 'development' ? 'https://esm.sh/react@18.2.0?dev' : 'https://esm.sh/react@18.2.0'
-  }
-})
+    react:
+      env === "development"
+        ? "https://esm.sh/react@18.2.0?dev"
+        : "https://esm.sh/react@18.2.0",
+  },
+});
 ```
 
 ## Source Maps
@@ -344,8 +352,8 @@ This assumes that the environment variable of the same name has already been def
 These declared environment variables will be replaced with constant expressions, allowing you to use this like this:
 
 ```js
-console.log(proscenium.env.RAILS_ENV) // console.log("development")
-console.log(proscenium.env.RAILS_ENV === 'development') // console.log(true)
+console.log(proscenium.env.RAILS_ENV); // console.log("development")
+console.log(proscenium.env.RAILS_ENV === "development"); // console.log(true)
 ```
 
 The `RAILS_ENV` and `NODE_ENV` environment variables will always automatically be declared for you.
@@ -356,24 +364,24 @@ Environment variables are particularly powerful in aiding [tree shaking](#tree-s
 
 ```js
 function start() {
-  console.log("start")
+  console.log("start");
 }
 function doSomethingDangerous() {
-  console.log("resetDatabase")
+  console.log("resetDatabase");
 }
 
-proscenium.env.RAILS_ENV === "development" && doSomethingDangerous()
+proscenium.env.RAILS_ENV === "development" && doSomethingDangerous();
 
-start()
+start();
 ```
 
 In development the above code will be transformed into the following code, discarding the definition, and call to`doSomethingDangerous()`.
 
 ```js
 function start() {
-  console.log("start")
+  console.log("start");
 }
-start()
+start();
 ```
 
 Please note that for security reasons environment variables are not replaced in URL imports.
@@ -381,7 +389,7 @@ Please note that for security reasons environment variables are not replaced in 
 An undefined environment variable will be replaced with `undefined`.
 
 ```js
-console.log(proscenium.env.UNKNOWN) // console.log((void 0).UNKNOWN)
+console.log(proscenium.env.UNKNOWN); // console.log((void 0).UNKNOWN)
 ```
 
 This means that code that relies on this will not be tree shaken. You can work around this by using the [optional chaining operator](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Optional_chaining):
@@ -397,7 +405,7 @@ if (typeof proscenium.env?.UNKNOWN !== "undefined") {
 Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
 
 ```js
-import translations from '@proscenium/i18n'
+import translations from "@proscenium/i18n";
 // translations.en.*
 ```
 
@@ -411,12 +419,12 @@ Tree shaking is the term the JavaScript community uses for dead code elimination
 
 ```javascript
 function one() {
-  console.log('one')
+  console.log("one");
 }
 function two() {
-  console.log('two')
+  console.log("two");
 }
-one()
+one();
 ```
 
 The above code will be transformed to the following code, discarding `two()`, as it is never called.
@@ -466,6 +474,7 @@ If these files are side loaded, then `father.js` will be split off into a separa
 - Without code splitting, an import() expression becomes `Promise.resolve().then(() => require())` instead. This still preserves the asynchronous semantics of the expression but it means the imported code is included in the same bundle instead of being split off into a separate file.
 
 Code splitting is enabled by default. You can disable it by setting the `code_splitting` configuration option to `false` in your application's `/config/application.rb`:
+
 ```ruby
 config.proscenium.code_splitting = false
 ```
@@ -487,11 +496,11 @@ The new CSS nesting syntax is supported, and transformed into non-nested CSS for
 You can also import CSS from JavaScript. When you do this, Proscenium will automatically append each stylesheet to the document's head as a `<link>` element.
 
 ```jsx
-import './button.css'
+import "./button.css";
 
 export let Button = ({ text }) => {
-  return <div className="button">{text}</div>
-}
+  return <div className="button">{text}</div>;
+};
 ```
 
 ### CSS Modules
@@ -564,7 +573,7 @@ css_module :my_module_name, path: Rails.root.join('app/components/button.css')
 Importing a CSS module from JS will automatically append the stylesheet to the document's head. And the result of the import will be an object of CSS class to module names.
 
 ```js
-import styles from './styles.module.css'
+import styles from "./styles.module.css";
 // styles == { header: 'header-5564cdbb' }
 ```
 
@@ -592,7 +601,7 @@ Use a mixin using the `@mixin` at-rule. Pass it the name of the mixin you want t
 ```css
 // /app/views/layouts/application.css
 p {
-  @mixin bigText from url('/lib/mixins.css');
+  @mixin bigText from url("/lib/mixins.css");
   color: red;
 }
 ```
@@ -640,8 +649,8 @@ There are a few important caveats as far as Typescript is concerned. These are [
 Using JSX syntax usually requires you to manually import the JSX library you are using. For example, if you are using React, by default you will need to import React into each JSX file like this:
 
 ```javascript
-import * as React from 'react'
-render(<div/>)
+import * as React from "react";
+render(<div />);
 ```
 
 This is because the JSX transform turns JSX syntax into a call to `React.createElement` but it does not itself import anything, so the React variable is not automatically present.
@@ -655,15 +664,15 @@ In the [not too distant] future, you will be able to configure Proscenium to use
 Importing .json files parses the JSON file into a JavaScript object, and exports the object as the default export. Using it looks something like this:
 
 ```javascript
-import object from './example.json'
-console.log(object)
+import object from "./example.json";
+console.log(object);
 ```
 
 In addition to the default export, there are also named exports for each top-level property in the JSON object. Importing a named export directly means Proscenium can automatically remove unused parts of the JSON file from the bundle, leaving only the named exports that you actually used. For example, this code will only include the version field when bundled:
 
 ```javascript
-import { version } from './package.json'
-console.log(version)
+import { version } from "./package.json";
+console.log(version);
 ```
 
 ## Phlex Support
@@ -682,14 +691,14 @@ In your layouts, include `Proscenium::Phlex::AssetInclusions`, and call the `inc
 
 ```ruby
 class ApplicationLayout < Proscenium::Phlex
-  include Proscenium::Phlex::AssetInclusions
+  include Proscenium::Phlex::AssetInclusions # <--
 
   def template(&)
     doctype
     html do
       head do
         title { 'My Awesome App' }
-        include_assets
+        include_assets # <--
       end
       body(&)
     end
@@ -798,7 +807,7 @@ The view above will be rendered something like this:
 
 ## Cache Busting
 
-> *COMING SOON*
+> _COMING SOON_
 
 By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
 
