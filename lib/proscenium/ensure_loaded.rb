@@ -11,13 +11,13 @@ module Proscenium
             if Importer.js_imported?
               raise NotIncludedError, 'There are side loaded javascripts to be included, but ' \
                                       'they have not been included in the page. Did you forget ' \
-                                      'to add the `#include_javascripts` helper in your views?'
+                                      'to add the `#include_assets` helper in your views?'
             end
 
             if Importer.css_imported?
               raise NotIncludedError, 'There are side loaded stylesheets to be included, but ' \
                                       'they have not been included in the page. Did you forget ' \
-                                      'to add the `#include_stylesheets` helper in your views?'
+                                      'to add the `#include_assets` helper in your views?'
             end
           end
         end

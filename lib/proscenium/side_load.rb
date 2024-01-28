@@ -22,6 +22,7 @@ module Proscenium
 
       def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/AbcSize
         return if response_body.first.blank? || !Proscenium::Importer.css_imported?
+        return unless response_body.first.include? '<!-- [PROSCENIUM_STYLESHEETS] -->'
 
         imports = Proscenium::Importer.imported.dup
         paths_to_build = []
@@ -48,7 +49,7 @@ module Proscenium
         response_body.first.gsub! '<!-- [PROSCENIUM_STYLESHEETS] -->', out.join.html_safe
       end
 
-      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/AbcSize,Metrics/MethodLength
+      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/PerceivedComplexity
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
         imports = Proscenium::Importer.imported.dup
@@ -60,27 +61,28 @@ module Proscenium
         result = Proscenium::Builder.build_to_path(paths_to_build.join(';'),
                                                    base_url: helpers.request.base_url)
 
-        # Remove the react components from the results, so they are not side loaded. Instead they
-        # are lazy loaded by the component manager.
+        if response_body.first.include? '<!-- [PROSCENIUM_JAVASCRIPTS] -->'
+          out = []
+          scripts = {}
+          result.split(';').each do |x|
+            inpath, outpath = x.split('::')
+            inpath.prepend '/'
+            outpath.delete_prefix! 'public'
 
-        out = []
-        scripts = {}
-        result.split(';').each do |x|
-          inpath, outpath = x.split('::')
-          inpath.prepend '/'
-          outpath.delete_prefix! 'public'
+            next unless imports.key?(inpath)
 
-          next unless imports.key?(inpath)
-
-          if (import = imports[inpath]).delete(:lazy)
-            scripts[inpath] = import.merge(outpath: outpath)
-          else
-            opts = import[:js].is_a?(Hash) ? import[:js] : {}
-            out << helpers.javascript_include_tag(outpath, extname: false, **opts)
+            if (import = imports[inpath]).delete(:lazy)
+              scripts[inpath] = import.merge(outpath: outpath)
+            else
+              opts = import[:js].is_a?(Hash) ? import[:js] : {}
+              out << helpers.javascript_include_tag(outpath, extname: false, **opts)
+            end
           end
+
+          response_body.first.gsub! '<!-- [PROSCENIUM_JAVASCRIPTS] -->', out.join.html_safe
         end
 
-        response_body.first.gsub! '<!-- [PROSCENIUM_JAVASCRIPTS] -->', out.join.html_safe
+        return unless response_body.first.include? '<!-- [PROSCENIUM_LAZY_SCRIPTS] -->'
 
         lazy_script = ''
         if scripts.present?
