@@ -45,6 +45,12 @@ module Proscenium
       'Proscenium::Builder::BuildError' => 'build_error'
     }
 
+    config.after_initialize do |_app|
+      ActiveSupport.on_load(:action_view) do
+        include Proscenium::Helper
+      end
+    end
+
     initializer 'proscenium.debugging' do
       if Rails.gem_version >= Gem::Version.new('7.1.0')
         tpl_path = root.join('lib', 'proscenium', 'templates').to_s
@@ -58,11 +64,7 @@ module Proscenium
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
-    initializer 'proscenium.helper' do
-      ActiveSupport.on_load(:action_view) do
-        ActionView::Base.include Helper
-      end
-
+    initializer 'proscenium.sideloading' do
       ActiveSupport.on_load(:action_controller) do
         ActionController::Base.include EnsureLoaded
         ActionController::Base.include SideLoad::Controller

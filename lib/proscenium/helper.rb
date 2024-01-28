@@ -11,15 +11,14 @@ module Proscenium
       end
     end
 
+    # Overriden to allow regular use of javascript_include_tag and stylesheet_link_tag, while still
+    # building with Proscenium. It's important to note that `include_assets` will not call this, as
+    # those asset paths all begin with a slash, which the Rails asset helpers do not pass through to
+    # here.
     def compute_asset_path(path, options = {})
       if %i[javascript stylesheet].include?(options[:type])
-        result = "/#{path}"
-
-        if (qs = Proscenium.config.cache_query_string)
-          result << "?#{qs}"
-        end
-
-        return result
+        result = Proscenium::Builder.build_to_path(path, base_url: request.base_url)
+        return result.split('::').last.delete_prefix 'public'
       end
 
       super
