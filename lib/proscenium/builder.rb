@@ -101,26 +101,30 @@ module Proscenium
     end
 
     def build_to_path(path) # rubocop:disable Metrics/AbcSize
-      ActiveSupport::Notifications.instrument('build_to_path.proscenium', identifier: path) do
-        result = Request.build_to_path(path, @base_url, import_map, env_vars.to_json,
-                                       @root.to_s,
-                                       Pathname.new(__dir__).join('..', '..').to_s,
-                                       Rails.env.to_sym,
-                                       Proscenium.config.code_splitting,
-                                       engines.to_json,
-                                       Proscenium.config.debug)
+      ActiveSupport::Notifications.instrument('build_to_path.proscenium',
+                                              identifier: path,
+                                              cached: Proscenium.cache.exist?(path)) do
+        Proscenium.cache.fetch path do
+          result = Request.build_to_path(path, @base_url, import_map, env_vars.to_json,
+                                         @root.to_s,
+                                         gem_root,
+                                         Rails.env.to_sym,
+                                         Proscenium.config.code_splitting,
+                                         engines.to_json,
+                                         Proscenium.config.debug)
 
-        raise BuildError, result[:response] unless result[:success]
+          raise BuildError, result[:response] unless result[:success]
 
-        result[:response]
+          result[:response]
+        end
       end
     end
 
-    def build_to_string(path) # rubocop:disable Metrics/AbcSize
+    def build_to_string(path)
       ActiveSupport::Notifications.instrument('build_to_string.proscenium', identifier: path) do
         result = Request.build_to_string(path, @base_url, import_map, env_vars.to_json,
                                          @root.to_s,
-                                         Pathname.new(__dir__).join('..', '..').to_s,
+                                         gem_root,
                                          Rails.env.to_sym,
                                          Proscenium.config.code_splitting,
                                          engines.to_json,
@@ -135,7 +139,7 @@ module Proscenium
     def resolve(path)
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         result = Request.resolve(path, import_map, @root.to_s,
-                                 Pathname.new(__dir__).join('..', '..').to_s,
+                                 gem_root,
                                  Rails.env.to_sym,
                                  Proscenium.config.debug)
         raise ResolveError.new(path, result[:response]) unless result[:success]
@@ -174,6 +178,10 @@ module Proscenium
       end
 
       nil
+    end
+
+    def gem_root
+      Pathname.new(__dir__).join('..', '..').to_s
     end
   end
 end

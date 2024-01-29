@@ -6,12 +6,6 @@ require 'proscenium/log_subscriber'
 ENV['RAILS_ENV'] = Rails.env
 
 module Proscenium
-  class << self
-    def config
-      @config ||= Railtie.config.proscenium
-    end
-  end
-
   class Railtie < ::Rails::Engine
     isolate_namespace Proscenium
 
@@ -19,6 +13,14 @@ module Proscenium
     config.proscenium.debug = false
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
+
+    # Cache asset paths when building to path. Enabled by default in production.
+    # @see Proscenium::Builder#build_to_path
+    config.proscenium.cache = if Rails.env.local?
+                                ActiveSupport::Cache::NullStore.new
+                              else
+                                ActiveSupport::Cache::MemoryStore.new
+                              end
 
     # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)

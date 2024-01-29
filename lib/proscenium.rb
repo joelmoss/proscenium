@@ -46,6 +46,16 @@ module Proscenium
       "Path #{@path.inspect} cannot be resolved"
     end
   end
+
+  class << self
+    def config
+      @config ||= Railtie.config.proscenium
+    end
+
+    def cache
+      @cache ||= config.cache || ActiveSupport::Cache::NullStore.new
+    end
+  end
 end
 
 require 'proscenium/railtie'
