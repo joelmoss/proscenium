@@ -139,7 +139,7 @@ describe Proscenium::Phlex::ReactComponent do
 
         expect(page.has_button?('Click One!', wait: false)).to be == false
 
-        page.driver.scroll_to(0, 1000)
+        page.driver.scroll_to(0, 2000)
 
         expect(page.has_button?('Click One!')).to be == true
       end
