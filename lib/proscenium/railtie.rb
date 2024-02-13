@@ -16,11 +16,7 @@ module Proscenium
 
     # Cache asset paths when building to path. Enabled by default in production.
     # @see Proscenium::Builder#build_to_path
-    config.proscenium.cache = if Rails.env.local?
-                                ActiveSupport::Cache::NullStore.new
-                              else
-                                ActiveSupport::Cache::MemoryStore.new
-                              end
+    config.proscenium.cache = ActiveSupport::Cache::MemoryStore.new if Rails.env.production?
 
     # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
