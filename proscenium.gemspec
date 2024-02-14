@@ -31,4 +31,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ffi', '~> 1.16.3'
   spec.add_dependency 'oj', '~> 3.13'
   spec.add_dependency 'railties', ['>= 6.1.0', '< 8.0']
+  spec.add_dependency 'ruby-next', '~> 1.0.1'
 end

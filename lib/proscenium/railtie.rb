@@ -2,7 +2,6 @@
 
 require 'rails'
 require 'proscenium/log_subscriber'
-require 'proscenium/css_module/rewriter'
 
 ENV['RAILS_ENV'] = Rails.env
 
