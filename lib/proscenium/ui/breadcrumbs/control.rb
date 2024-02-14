@@ -74,13 +74,14 @@ module Proscenium::UI::Breadcrumbs
       end
     end
 
-    def breadcrumbs_for_title
-      @breadcrumbs_for_title ||= begin
-        names = computed_breadcrumbs.map(&:name)
-        out = [names.pop]
-        out << names.join(': ') unless names.empty?
-        strip_tags out.join(' - ')
-      end
+    # @param primary [Boolean] whether to return only the primary breadcrumb.
+    def breadcrumbs_for_title(primary: false)
+      names = computed_breadcrumbs.map(&:name)
+      return names.pop if primary
+
+      out = [names.pop]
+      out << names.join(': ') unless names.empty?
+      strip_tags out.join(' - ')
     end
 
     private
