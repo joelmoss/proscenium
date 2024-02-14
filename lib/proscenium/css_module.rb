@@ -11,7 +11,22 @@ module Proscenium::CssModule
       msg = "Failed to transform CSS module `#{name}`"
       msg << ' - ' << additional_msg if additional_msg
 
-      super msg
+      super(msg)
+    end
+  end
+
+  class Name
+    def initialize(name, transform)
+      @name = name
+      @transform = transform
+    end
+
+    def to_s
+      @transform
+    end
+
+    def to_sym
+      @name
     end
   end
 
