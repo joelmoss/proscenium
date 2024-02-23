@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'ruby-next/language/runtime'
+require 'ruby-next/language'
 require 'proscenium/core_ext/object/css_module_ivars'
 
 module Proscenium
@@ -20,4 +20,9 @@ module Proscenium
   end
 end
 
-RubyNext::Language.rewriters << Proscenium::CssModule::Rewriter
+RubyNext::Language.send :include_patterns=, []
+RubyNext::Language.include_patterns << "#{Rails.root.join('app', 'components')}/*.rb"
+RubyNext::Language.include_patterns << "#{Rails.root.join('app', 'views')}/*.rb"
+RubyNext::Language.rewriters = [Proscenium::CssModule::Rewriter]
+
+require 'ruby-next/language/runtime'

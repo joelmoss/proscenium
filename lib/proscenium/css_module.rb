@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'proscenium/css_module/rewriter'
-
 module Proscenium::CssModule
   extend ActiveSupport::Autoload
 
