@@ -30,8 +30,8 @@ describe Proscenium::Helper do
     it 'includes side loaded stylesheets' do
       visit '/'
 
-      expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css">'
-      expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/bare_pages/home$7TUB27RG$.css">'
+      expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" data-original-href="/app/views/layouts/bare.css">'
+      expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/bare_pages/home$7TUB27RG$.css" data-original-href="/app/views/bare_pages/home.css">'
     end
   end
 
@@ -54,10 +54,10 @@ describe Proscenium::Helper do
 
       expect(page.html).to include(
         '<head>' \
-        '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css">' \
-        '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css">' \
-        '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css">' \
-        '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css">' \
+        '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css" data-original-href="/app/views/pages/_side.module.css">' \
+        '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css" data-original-href="/app/views/pages/_side_layout.css">' \
+        '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" data-original-href="/app/views/layouts/bare.css">' \
+        '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css" data-original-href="/app/views/bare_pages/include_assets.css">' \
         '<script src="/assets/app/views/pages/_side$V4GARDXT$.js"></script>' \
         '<script src="/assets/app/views/layouts/bare$3VKYLDSX$.js"></script>' \
         '<script src="/assets/app/views/bare_pages/include_assets$CNRUTFVD$.js"></script>' \
@@ -107,8 +107,8 @@ describe Proscenium::Helper do
         BarePagesController.sideload_assets css: { class: :foo }
         visit '/'
 
-        expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" class="foo">'
-        expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/bare_pages/home$7TUB27RG$.css" class="foo">'
+        expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" class="foo" data-original-href="/app/views/layouts/bare.css">'
+        expect(page.html).to include '<link rel="stylesheet" href="/assets/app/views/bare_pages/home$7TUB27RG$.css" class="foo" data-original-href="/app/views/bare_pages/home.css">'
       ensure
         BarePagesController.sideload_assets nil
       end
@@ -144,7 +144,7 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css" data-original-href="/app/views/bare_pages/include_assets.css">' \
           '<script src="/assets/app/views/bare_pages/include_assets$CNRUTFVD$.js"></script>' \
           "\n</head>"
         )
@@ -160,7 +160,7 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css" data-original-href="/app/views/pages/_side.module.css">' \
           '<script src="/assets/app/views/pages/_side$V4GARDXT$.js"></script>' \
           "\n</head>"
         )
@@ -175,9 +175,9 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css" data-original-href="/app/views/pages/_side.module.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css" data-original-href="/app/views/pages/_side_layout.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" data-original-href="/app/views/layouts/bare.css">' \
           '<script src="/assets/app/views/pages/_side$V4GARDXT$.js"></script>' \
           '<script src="/assets/app/views/layouts/bare$3VKYLDSX$.js"></script>' \
           "\n</head>"
@@ -191,9 +191,9 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css" data-original-href="/app/views/pages/_side.module.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css" data-original-href="/app/views/pages/_side_layout.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css" data-original-href="/app/views/bare_pages/include_assets.css">' \
           '<script src="/assets/app/views/pages/_side$V4GARDXT$.js"></script>' \
           '<script src="/assets/app/views/bare_pages/include_assets$CNRUTFVD$.js"></script>' \
           "\n</head>"
@@ -207,9 +207,9 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side_layout$K6XSAKOZ$.css" data-original-href="/app/views/pages/_side_layout.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" data-original-href="/app/views/layouts/bare.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css" data-original-href="/app/views/bare_pages/include_assets.css">' \
           '<script src="/assets/app/views/layouts/bare$3VKYLDSX$.js"></script>' \
           '<script src="/assets/app/views/bare_pages/include_assets$CNRUTFVD$.js"></script>' \
           "\n</head>"
@@ -223,9 +223,9 @@ describe Proscenium::Helper do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css">' \
-          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/pages/_side.module$MJ3DIFXX$.css" data-original-href="/app/views/pages/_side.module.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/layouts/bare$2KHIH3MU$.css" data-original-href="/app/views/layouts/bare.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/bare_pages/include_assets$VQXNR2SE$.css" data-original-href="/app/views/bare_pages/include_assets.css">' \
           '<script src="/assets/app/views/pages/_side$V4GARDXT$.js"></script>' \
           '<script src="/assets/app/views/layouts/bare$3VKYLDSX$.js"></script>' \
           '<script src="/assets/app/views/bare_pages/include_assets$CNRUTFVD$.js"></script>' \

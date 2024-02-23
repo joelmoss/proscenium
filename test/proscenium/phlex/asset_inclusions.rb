@@ -19,7 +19,7 @@ describe Proscenium::Phlex::AssetInclusions do
 
         expect(page.html).to include(
           '<head>' \
-          '<link rel="stylesheet" href="/assets/app/views/phlex/include_assets$7T5XNBBO$.css">' \
+          '<link rel="stylesheet" href="/assets/app/views/phlex/include_assets$7T5XNBBO$.css" data-original-href="/app/views/phlex/include_assets.css">' \
           '<script src="/assets/app/views/phlex/include_assets$HZZYNYOW$.js"></script>' \
           '</head>'
         )

@@ -99,7 +99,8 @@ var _ = Describe("Build(css)", func() {
 		var expectedCode = `
 			var existingStyle = document.querySelector("#_330940eb");
 			var existingLink = document.querySelector('link[href="/lib/styles.module.css"]');
-			if (!existingStyle && !existingLink) {
+			var existingOriginalLink = document.querySelector('link[data-original-href="/lib/styles.module.css"]');
+			if (!existingStyle && !existingLink && !existingOriginalLink) {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = "/lib/styles.module.css";

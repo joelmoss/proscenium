@@ -54,7 +54,8 @@ var Css = esbuild.Plugin{
 					contents = `
 						const existingStyle = document.querySelector('#_` + hash + `');
 						const existingLink = document.querySelector('link[href="` + urlPath + `"]');
-						if (!existingStyle && !existingLink) {
+						const existingOriginalLink = document.querySelector('link[data-original-href="` + urlPath + `"]');
+						if (!existingStyle && !existingLink && !existingOriginalLink) {
 							const e = document.createElement('style');
 							e.id = '_` + hash + `';
 							e.dataset.href = '` + urlPath + `';

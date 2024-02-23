@@ -20,7 +20,7 @@ module Proscenium
         end
       end
 
-      def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/AbcSize
+      def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/*
         return if response_body.first.blank? || !Proscenium::Importer.css_imported?
         return unless response_body.first.include? '<!-- [PROSCENIUM_STYLESHEETS] -->'
 
@@ -43,13 +43,15 @@ module Proscenium
 
           import = imports[inpath]
           opts = import[:css].is_a?(Hash) ? import[:css] : {}
+          opts[:data] ||= {}
+          opts[:data][:original_href] = inpath
           out << helpers.stylesheet_link_tag(outpath, extname: false, **opts)
         end
 
         response_body.first.gsub! '<!-- [PROSCENIUM_STYLESHEETS] -->', out.join.html_safe
       end
 
-      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/AbcSize,Metrics/MethodLength,Metrics/PerceivedComplexity
+      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/*
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
         imports = Proscenium::Importer.imported.dup
