@@ -71,7 +71,7 @@ module Proscenium
           msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
         end
 
-        super msg
+        super(msg)
       end
     end
 
@@ -79,7 +79,7 @@ module Proscenium
       attr_reader :error_msg, :path
 
       def initialize(path, error_msg)
-        super "Failed to resolve '#{path}' -- #{error_msg}"
+        super("Failed to resolve '#{path}' -- #{error_msg}")
       end
     end
 

@@ -17,6 +17,8 @@ module Dummy
   class Application < Rails::Application
     config.load_defaults Rails::VERSION::STRING.to_f
 
+    config.hosts << 'proscenium.test'
+
     # Configuration for the application, engines, and railties goes here.
     #
     # These settings can be overridden in specific environments using the files
@@ -25,6 +27,8 @@ module Dummy
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    config.autoload_paths << "#{root}/app"
+    config.autoload_paths << "#{root}/app/views"
+    config.autoload_paths << "#{root}/app/components"
+    config.autoload_paths << "#{root}/app/views/layouts"
   end
 end

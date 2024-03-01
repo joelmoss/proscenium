@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Gem3
   class Engine < ::Rails::Engine
     # isolate_namespace Gem3

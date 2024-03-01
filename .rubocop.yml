@@ -8,7 +8,8 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
   Exclude:
-    - "fixtures/dummy/**/*"
+    - "fixtures/dummy/node_modules/**/*"
+    - "fixtures/dummy/vendor/**/*"
     - "fixtures/external/**/*"
 
 Layout/LineLength:

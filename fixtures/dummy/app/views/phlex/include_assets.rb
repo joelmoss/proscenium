@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Views::Phlex::IncludeAssets < Proscenium::Phlex
   sideload_assets true
 
