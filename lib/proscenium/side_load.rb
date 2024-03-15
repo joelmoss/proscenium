@@ -21,6 +21,7 @@ module Proscenium
       end
 
       def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/*
+        return if response_body.nil?
         return if response_body.first.blank? || !Proscenium::Importer.css_imported?
         return unless response_body.first.include? '<!-- [PROSCENIUM_STYLESHEETS] -->'
 
@@ -52,6 +53,7 @@ module Proscenium
       end
 
       def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/*
+        return if response_body.nil?
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
         imports = Proscenium::Importer.imported.dup
