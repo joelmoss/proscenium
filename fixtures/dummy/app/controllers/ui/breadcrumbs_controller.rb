@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class UI::BreadcrumbsController < ApplicationController
+class UI::BreadcrumbsController < UIController
   include Proscenium::UI::Breadcrumbs::Control
 
   def index

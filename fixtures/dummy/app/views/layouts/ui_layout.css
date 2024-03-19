@@ -1,0 +1,6 @@
+@import "open-props/style";
+/* @import "open-props/normalize"; */
+
+:root {
+  font-size: calc(1rem + 0.25vw);
+}

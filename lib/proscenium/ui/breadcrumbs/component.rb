@@ -12,7 +12,8 @@ module Proscenium::UI
 
     # HTML class name for the wrapping div element. Assigning this will override the default.
     # Defaults to `:@base`.
-    option :class_name, Types::String | Types::Symbol | Types::Nominal::Nil, default: -> { :@base }
+    option :class, Types::String | Types::Symbol | Types::Nominal::Nil, as: :class_name,
+                                                                        default: -> { :@base }
 
     def template
       div class: class_name do
