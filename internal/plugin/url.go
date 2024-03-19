@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"joelmoss/proscenium/internal/utils"
+	"mime"
 	"net/http"
 	"os"
 
@@ -28,18 +29,18 @@ var Url = esbuild.Plugin{
 		root := build.InitialOptions.AbsWorkingDir
 
 		// When a URL is loaded, we want to actually download the content from the internet.
-		// FIXME: Note that CSS is not parsed with our custom parser (ie. no CSS module, mixin support).
+		// Note that CSS is not parsed with our custom parser (ie. no CSS module, mixin support).
 		build.OnLoad(esbuild.OnLoadOptions{Filter: ".*", Namespace: "url"},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				// pp.Println("[5] namespace(url)", args)
 
-				contents, err := DownloadURL(args.Path, true)
+				contents, contentType, err := DownloadURL(args.Path, true)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
 
 				loader := esbuild.LoaderJS
-				if utils.PathIsCss(args.Path) {
+				if utils.PathIsCss(args.Path) || contentType == "text/css" {
 					loader = esbuild.LoaderCSS
 				} else if utils.PathIsSvg(args.Path) {
 					loader = esbuild.LoaderText
@@ -54,17 +55,23 @@ var Url = esbuild.Plugin{
 	},
 }
 
-func DownloadURL(url string, shouldCache bool) (string, error) {
+func DownloadURL(url string, shouldCache bool) (string, string, error) {
 	if shouldCache {
-		cached, ok := cache.Get(url)
+		cachedContent, ok := cache.Get(url)
 		if ok {
-			return string(cached), nil
+			cachedMediaType, ok := cache.Get(fmt.Sprint("contentType|", url))
+			if ok {
+				return string(cachedContent), string(cachedMediaType), nil
+			} else {
+				return string(cachedContent), "", nil
+			}
 		}
 	}
 
 	result, err := http.Get(url)
 	if err != nil {
-		return "", err
+		errMsg := fmt.Sprintf("Fetch of %v failed: %v", url, err.Error())
+		return "", "", errors.New(errMsg)
 	}
 
 	defer result.Body.Close()
@@ -73,18 +80,24 @@ func DownloadURL(url string, shouldCache bool) (string, error) {
 
 	if result.StatusCode > 299 {
 		err := fmt.Sprintf("Fetch of %v failed with status code: %d", url, result.StatusCode)
-		return "", errors.New(err)
+		return "", "", errors.New(err)
 	}
 
 	bytes, err := io.ReadAll(r)
 	if err != nil {
 		errMsg := fmt.Sprintf("Fetch of %v failed: %v", url, err.Error())
-		return "", errors.New(errMsg)
+		return "", "", errors.New(errMsg)
+	}
+
+	contentType := result.Header.Get("Content-Type")
+	mediaType, _, err := mime.ParseMediaType(contentType)
+	if err == nil && shouldCache {
+		cache.Set(fmt.Sprint("contentType|", url), []byte(mediaType))
 	}
 
 	if shouldCache {
 		cache.Set(url, bytes)
 	}
 
-	return string(bytes), nil
+	return string(bytes), mediaType, nil
 }

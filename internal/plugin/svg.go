@@ -17,16 +17,16 @@ var Svg = api.Plugin{
 			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
 				// pp.Println("[svg] namespace(svgFromJsx)", args)
 
-				contents, err := func() (string, error) {
+				contents, _, err := func() (string, string, error) {
 					if utils.IsUrl(args.Path) {
 						return DownloadURL(args.Path, true)
 					} else {
 						bytes, err := os.ReadFile(args.Path)
 						if err != nil {
-							return "", err
+							return "", "", err
 						}
 
-						return string(bytes), nil
+						return string(bytes), "", nil
 					}
 				}()
 

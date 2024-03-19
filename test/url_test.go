@@ -25,6 +25,13 @@ var _ = Describe("Build(url)", func() {
 			Expect(result).To(ContainCode(`body { color: red; }`))
 		})
 
+		It("bundles css without file extension", func() {
+			gock.New("https://proscenium.test").Get("/foo").Reply(200).SetHeader("Content-Type", "text/css").BodyString("body { color: red; }")
+
+			result := Build("https%3A%2F%2Fproscenium.test%2Ffoo")
+			Expect(result).To(ContainCode(`body { color: red; }`))
+		})
+
 		It("should cache", func() {
 			MockURL("/foo.css", "body { color: red; }")
 			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.css")).To(ContainCode(`body { color: red; }`))
