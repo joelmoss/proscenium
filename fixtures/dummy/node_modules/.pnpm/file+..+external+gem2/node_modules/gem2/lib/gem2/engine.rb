@@ -1,9 +1,9 @@
 module Gem2
   class Engine < ::Rails::Engine
     # isolate_namespace Gem2
+    engine_name 'gem2'
 
-    # Include the gem
-    config.proscenium.side_load_gems['gem2'] = { root: root }
+    config.proscenium.engines << self
 
     initializer 'gem2.autoload' do
       # ActiveSupport::Dependencies.autoload_paths << "#{root}/app"

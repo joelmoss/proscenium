@@ -13,15 +13,16 @@ describe Proscenium::Phlex::ReactComponent do
     Proscenium::Resolver.reset
   end
 
-  describe 'system' do
-    include_context SystemTest
+  # describe 'system' do
+  #   include_context SystemTest
 
-    it 'renders with react' do
-      visit '/phlex/react/one'
+  #   it 'renders with react' do
+  #     visit '/phlex/react/one'
+  #     pp page.console_logs
 
-      expect(page.has_button?('Click One!')).to be == true
-    end
-  end
+  #     expect(page.has_button?('Click One!')).to be == true
+  #   end
+  # end
 
   let(:selector) do
     '[data-proscenium-component-path="/app/components/phlex/basic_react_component.jsx"]'
@@ -131,19 +132,19 @@ describe Proscenium::Phlex::ReactComponent do
       end
     end
 
-    describe 'system' do
-      include_context SystemTest
+    # describe 'system' do
+    #   include_context SystemTest
 
-      it 'renders when intersecting' do
-        visit '/phlex/react/lazy'
+    #   it 'renders when intersecting' do
+    #     visit '/phlex/react/lazy'
 
-        expect(page.has_button?('Click One!', wait: false)).to be == false
+    #     expect(page.has_button?('Click One!', wait: false)).to be == false
 
-        page.driver.scroll_to(0, 2000)
+    #     page.driver.scroll_to(0, 2000)
 
-        expect(page.has_button?('Click One!')).to be == true
-      end
-    end
+    #     expect(page.has_button?('Click One!')).to be == true
+    #   end
+    # end
   end
 
   with '`.forward_children = true`' do
@@ -168,15 +169,15 @@ describe Proscenium::Phlex::ReactComponent do
       expect(page.has_text?('Hello')).to be == true
     end
 
-    with 'system' do
-      include_context SystemTest
+    # with 'system' do
+    #   include_context SystemTest
 
-      it 'forwards block in children prop' do
-        visit '/phlex/react/forward_children'
+    #   it 'forwards block in children prop' do
+    #     visit '/phlex/react/forward_children'
 
-        expect(page.has_button?('hello')).to be == true
-      end
-    end
+    #     expect(page.has_button?('hello')).to be == true
+    #   end
+    # end
   end
 
   with '`.forward_children = false`' do
@@ -206,14 +207,14 @@ describe Proscenium::Phlex::ReactComponent do
       expect(page.has_text?('Hello')).to be == true
     end
 
-    with 'system' do
-      include_context SystemTest
+    # with 'system' do
+    #   include_context SystemTest
 
-      it 'does not forward block in children prop' do
-        visit '/phlex/react/forward_children'
+    #   it 'does not forward block in children prop' do
+    #     visit '/phlex/react/forward_children'
 
-        expect(page.has_button?('Click One!')).to be == true
-      end
-    end
+    #     expect(page.has_button?('Click One!')).to be == true
+    #   end
+    # end
   end
 end

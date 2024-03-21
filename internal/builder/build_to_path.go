@@ -7,6 +7,8 @@ import (
 	"strings"
 )
 
+var libsSplitPath = "/proscenium/libs/"
+
 // Return a mapping of path inputs to outputs.
 //
 // Output example:
@@ -52,9 +54,10 @@ func BuildToPath(options BuildOptions) (bool, string) {
 	for output, v := range m["outputs"].(map[string]interface{}) {
 		for k, input := range v.(map[string]interface{}) {
 			if k == "entryPoint" {
-				key, found := strings.CutPrefix(input.(string), "../../lib/proscenium/libs")
-				if found {
-					key = "@proscenium" + key
+				key := input.(string)
+				if strings.Contains(key, libsSplitPath) {
+					sliced := strings.Split(key, libsSplitPath)
+					key = "@proscenium/" + sliced[len(sliced)-1]
 				}
 
 				if mapping[key] == "" {
