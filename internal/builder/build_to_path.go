@@ -30,7 +30,7 @@ func BuildToPath(options BuildOptions) (bool, string) {
 
 	// Paths which are not a descendent of the root will be returned as a relative path. For
 	// example: `gem4/lib/gem4/gem4.js` will be returned as `../external/gem4/lib/gem4/gem4.js`. And
-	// that means the returned mapping will be incorrect, as the keys are the map are the original
+	// that means the returned mapping will be incorrect, as the keys of the map are the original
 	// entrypoints. They need to match the returned paths.
 	mapping := map[string]string{}
 	for _, ep := range entrypoints {
@@ -52,7 +52,10 @@ func BuildToPath(options BuildOptions) (bool, string) {
 	for output, v := range m["outputs"].(map[string]interface{}) {
 		for k, input := range v.(map[string]interface{}) {
 			if k == "entryPoint" {
-				key := strings.TrimPrefix(input.(string), "libs:")
+				key, found := strings.CutPrefix(input.(string), "../../lib/proscenium/libs")
+				if found {
+					key = "@proscenium" + key
+				}
 
 				if mapping[key] == "" {
 					mapping[key] = output

@@ -63,7 +63,6 @@ var Bundler = esbuild.Plugin{
 
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				// pp.Println(args)
 
 				pathToResolve := path.Join(libDir, strings.TrimPrefix(args.Path, "@proscenium/"))
 

@@ -17,4 +17,9 @@ var _ = Describe("Build(Libs)", func() {
 			const classPath = "/@proscenium/ujs/class.js";
 		`))
 	})
+
+	It("builds to path", func() {
+		_, code := BuildToPath("@proscenium/test.js")
+		Expect(code).To(Equal("@proscenium/test.js::public/assets/@proscenium/test$SLCFI4GA$.js"))
+	})
 })
