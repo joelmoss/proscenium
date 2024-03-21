@@ -8,13 +8,13 @@ import (
 )
 
 var _ = Describe("Build(Libs)", func() {
-	PIt("builds from lib/libs", func() {
-		Expect(Resolve("@proscenium/react-manager/index.jsx")).To(Equal("/../../lib/proscenium/libs/react-manager/index.jsx"))
-	})
+	It("builds from lib/libs", func() {
+		Expect(Build("@proscenium/test.js")).To(ContainCode(`
+			console.log("/@proscenium/test.js");
+		`))
 
-	PIt("builds from lib/libs", func() {
-		Expect(Build("lib/libs/stimulus_loading.js")).To(ContainCode(`
-			function lazyLoadControllersFrom(under, application,
+		Expect(Build("@proscenium/ujs")).To(ContainCode(`
+			const classPath = "/@proscenium/ujs/class.js";
 		`))
 	})
 })

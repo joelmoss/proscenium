@@ -122,7 +122,6 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.I18n,
-		plugin.Libs,
 		plugin.Rjs(options.BaseUrl),
 		plugin.Bundler,
 		plugin.Svg, plugin.Url, plugin.Css,

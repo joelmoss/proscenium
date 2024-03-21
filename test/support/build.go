@@ -65,6 +65,9 @@ func buildOptions(pathToBuild string, restOpts BuildOpts) builder.BuildOptions {
 	types.Config.Debug = restOpts.Debug
 	types.Config.Engines = restOpts.Engines
 
+	_, filename, _, _ := runtime.Caller(1)
+	types.Config.GemPath = path.Join(path.Dir(filename), "..", "..")
+
 	if restOpts.EnvVars == "" {
 		options.EnvVars = "{\"RAILS_ENV\":\"test\"}"
 	}

@@ -25,6 +25,7 @@ var Bundler = esbuild.Plugin{
 	Name: "bundler",
 	Setup: func(build esbuild.PluginBuild) {
 		root := build.InitialOptions.AbsWorkingDir
+		libDir := path.Join(types.Config.GemPath, "lib", "proscenium", "libs")
 
 		// Resolve with esbuild. Try and avoid this call as much as possible!
 		resolveWithEsbuild := func(pathToResolve string, args esbuild.OnResolveArgs) (esbuildResolveResult, bool) {
@@ -59,6 +60,35 @@ var Bundler = esbuild.Plugin{
 
 			return result, true
 		}
+
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/`},
+			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				// pp.Println(args)
+
+				pathToResolve := path.Join(libDir, strings.TrimPrefix(args.Path, "@proscenium/"))
+
+				r := build.Resolve(pathToResolve, esbuild.ResolveOptions{
+					ResolveDir: args.ResolveDir,
+					Importer:   args.Importer,
+					Kind:       args.Kind,
+					PluginData: types.PluginData{
+						IsResolvingPath: true,
+					},
+				})
+
+				sideEffects := esbuild.SideEffectsFalse
+				if r.SideEffects {
+					sideEffects = esbuild.SideEffectsTrue
+				}
+
+				return esbuild.OnResolveResult{
+					Path:        r.Path,
+					External:    r.External,
+					Errors:      r.Errors,
+					Warnings:    r.Warnings,
+					SideEffects: sideEffects,
+				}, nil
+			})
 
 		// File types which should be external.
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `\.(gif|jpe?g|png|woff2?)$`},
