@@ -34,7 +34,6 @@ var _ = Describe("Resolve", func() {
 
 	It("resolves bare specifier", func() {
 		Expect(Resolve("mypackage")).To(Equal("/packages/mypackage/index.js"))
-		Expect(Resolve("is-ip")).To(Equal("/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js"))
 	})
 
 	It("resolves directory to its index file", func() {

@@ -33,14 +33,10 @@ var _ = Describe("Build", func() {
 	It("should build jsx", func() {
 		result := Build("lib/component.jsx")
 
-		Expect(result).NotTo(ContainCode(`
-			import { jsx } from "/node_modules/.pnpm/react@18.2.0/node_modules/react/jsx-runtime.js";
-		`))
-
-		Expect(Build("lib/component.jsx")).To(ContainCode(`
-			var import_jsx_runtime = __toESM(require_jsx_runtime());
+		Expect(result).To(ContainCode(`
+			import { jsx } from "react/jsx-runtime";
 			var Component = () => {
-				return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", { children: "Hello" });
+				return /* @__PURE__ */ jsx("div", { children: "Hello" });
 			};
 			var component_default = Component;
 			export {
@@ -50,8 +46,8 @@ var _ = Describe("Build", func() {
 	})
 
 	It("should bundle bare module", func() {
-		Expect(Build("lib/import_npm_module.js")).NotTo(ContainCode(`
-			import { isIP } from "/node_modules/.pnpm/is-ip@
+		Expect(Build("lib/import_npm_module.js")).To(ContainCode(`
+			function one() { console.log("one"); }
 		`))
 	})
 
@@ -92,8 +88,9 @@ var _ = Describe("Build", func() {
 				import "/lib/unbundle/foo1.js";
 				import "/lib/unbundle/foo2.js";
 				import "/lib/foo3.js";
-				import { isIP } from "/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js";
-				import { createPortal } from "/node_modules/.pnpm/react-dom@18.2.0_react@18.2.0/node_modules/react-dom/index.js";
+				import { one } from "/packages/mypackage/treeshake.js";
+				// packages/mypackage/index.js
+        console.log("node_modules/mypackage");
 			`))
 		})
 	})
@@ -108,7 +105,7 @@ var _ = Describe("Build", func() {
 
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
-			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`function one(`))
 			Expect(result).To(ContainCode(`console.log("gem3")`))
 			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
 			Expect(result).To(ContainCode(`console.log("gem3/imported")`))
@@ -123,7 +120,7 @@ var _ = Describe("Build", func() {
 
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
-			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`function one(`))
 			Expect(result).To(ContainCode(`console.log("gem3")`))
 			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
 			Expect(result).To(ContainCode(`console.log("gem3/imported")`))
@@ -142,7 +139,7 @@ var _ = Describe("Build", func() {
 			Expect(result).To(ContainCode(`.name-401b6cac`))
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
-			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`function one(`))
 			Expect(result).To(ContainCode(`console.log("gem4")`))
 			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
 			Expect(result).To(ContainCode(`console.log("gem4/imported")`))
@@ -159,7 +156,7 @@ var _ = Describe("Build", func() {
 			Expect(result).To(ContainCode(`.name-401b6cac`))
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
-			Expect(result).To(ContainCode(`function isIP(`))
+			Expect(result).To(ContainCode(`function one(`))
 			Expect(result).To(ContainCode(`console.log("gem4")`))
 			Expect(result).To(ContainCode(`console.log("/lib/foo.js")`))
 			Expect(result).To(ContainCode(`console.log("gem4/imported")`))
@@ -173,13 +170,7 @@ var _ = Describe("Build", func() {
 				console.log("one");
 			}
 
-			// node_modules/.pnpm/lodash-es@4.17.21/node_modules/lodash-es/noop.js
-			function noop() {
-			}
-			var noop_default = noop;
-
 			// lib/import_tree_shake.js
-			noop_default();
 			one();
 		`))
 	})

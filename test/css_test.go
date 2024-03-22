@@ -63,11 +63,8 @@ var _ = Describe("Build(css)", func() {
 		It("is replaced with absolute path", func() {
 			result := Build("lib/import_npm_module.css")
 
-			Expect(result).To(ContainCode(`[hidden] { display: none; }`))
-			Expect(result).NotTo(ContainCode(`@import 'normalize.css';`))
-			Expect(result).NotTo(ContainCode(`
-					@import "/node_modules/.pnpm/normalize.css@8.0.1/node_modules/normalize.css/normalize.css";
-				`))
+			Expect(result).To(ContainCode(`.mypackage { color: red; }`))
+			Expect(result).NotTo(ContainCode(`@import "mypackage/styles";`))
 		})
 	})
 

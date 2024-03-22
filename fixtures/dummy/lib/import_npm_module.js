@@ -1,3 +1,3 @@
-import { isIP } from 'is-ip'
+import { one } from "mypackage/treeshake";
 
-isIP('?')
+one();

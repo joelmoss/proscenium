@@ -42,7 +42,7 @@ describe Proscenium::Builder do
 
   with '.resolve' do
     it 'resolves value' do
-      expect(subject.resolve('is-ip')).to be == '/node_modules/.pnpm/is-ip@5.0.0/node_modules/is-ip/index.js'
+      expect(subject.resolve('mypackage')).to be == '/packages/mypackage/index.js'
     end
   end
 end

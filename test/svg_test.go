@@ -17,7 +17,7 @@ var _ = Describe("Build(svg)", func() {
 		It("bundles", func() {
 			result := Build("lib/svg/absolute.jsx")
 
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ jsx("svg"`))
 			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
 		})
 	})
@@ -26,7 +26,7 @@ var _ = Describe("Build(svg)", func() {
 		It("bundles", func() {
 			result := Build("lib/svg/absolute.tsx")
 
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ jsx("svg"`))
 			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
 		})
 	})
@@ -35,7 +35,7 @@ var _ = Describe("Build(svg)", func() {
 		It("bundles", func() {
 			result := Build("lib/svg/relative.jsx")
 
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ jsx("svg"`))
 			Expect(result).NotTo(ContainCode(`import AtIcon from "/lib/svg/at.svg";`))
 		})
 	})
@@ -45,7 +45,7 @@ var _ = Describe("Build(svg)", func() {
 			result := Build("lib/svg/bare.jsx")
 
 			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
-			Expect(result).To(ContainCode(`var svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(result).To(ContainCode(`var svg = /* @__PURE__ */ jsx("svg"`))
 		})
 	})
 

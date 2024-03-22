@@ -13,7 +13,7 @@ end
 
 IncludedPath = Sus::Shared('included path') do |args|
   it "serves from #{args[:path]}" do
-    get "/#{args[:path]}/foo.js"
+    get "/#{args[:path]}"
 
     expect(response.status).to be == 200
   end
@@ -43,11 +43,11 @@ describe Proscenium::Middleware do
   it_behaves_like SupportedExtension, { extension: 'tsx.map' }
   it_behaves_like SupportedExtension, { extension: 'css.map' }
 
-  it_behaves_like IncludedPath, { path: 'config' }
-  it_behaves_like IncludedPath, { path: 'app/views' }
-  it_behaves_like IncludedPath, { path: 'lib' }
-  it_behaves_like IncludedPath, { path: 'vendor' }
-  it_behaves_like IncludedPath, { path: 'node_modules' }
+  it_behaves_like IncludedPath, { path: 'config/foo.js' }
+  it_behaves_like IncludedPath, { path: 'app/views/foo.js' }
+  it_behaves_like IncludedPath, { path: 'lib/foo.js' }
+  it_behaves_like IncludedPath, { path: 'vendor/foo.js' }
+  it_behaves_like IncludedPath, { path: 'node_modules/mypackage/index.js' }
 
   it 'raises on compilation error' do
     expect do
