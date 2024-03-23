@@ -118,8 +118,6 @@ GEM
     benchmark-ips (2.13.0)
     bigdecimal (3.1.7)
     bindex (0.8.1)
-    bootsnap (1.18.3)
-      msgpack (~> 1.2)
     builder (3.2.4)
     capybara (3.40.0)
       addressable
@@ -192,7 +190,6 @@ GEM
     method_source (1.0.0)
     mini_mime (1.1.5)
     minitest (5.22.3)
-    msgpack (1.7.2)
     mutex_m (0.2.0)
     net-imap (0.4.10)
       date
@@ -344,7 +341,6 @@ PLATFORMS
 
 DEPENDENCIES
   benchmark-ips
-  bootsnap
   capybara
   cuprite
   debug

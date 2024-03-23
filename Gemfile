@@ -7,11 +7,9 @@ gemspec
 
 gem 'phlex-rails'
 gem 'rails', '~> 7.0'
-gem 'view_component', '~> 3.6.0'
 
 group :development do
   gem 'benchmark-ips'
-  gem 'bootsnap', require: false
   gem 'debug'
   gem 'puma'
   gem 'rubocop'
@@ -23,6 +21,7 @@ group :development do
 end
 
 group :test do
+  gem 'view_component', '~> 3.6.0'
   gem 'capybara'
   gem 'cuprite'
   gem 'dry-initializer'

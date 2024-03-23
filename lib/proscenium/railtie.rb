@@ -50,7 +50,9 @@ module Proscenium
     end
 
     initializer 'proscenium.ui' do
-      Rails.autoloaders.main.inflector.inflect('ui' => 'UI')
+      ActiveSupport::Inflector.inflections(:en) do |inflect|
+        inflect.acronym 'UI'
+      end
     end
 
     initializer 'proscenium.debugging' do

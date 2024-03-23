@@ -6,10 +6,10 @@ class PhlexController < ApplicationController
   sideload_assets false
 
   def basic
-    render Views::Phlex::Basic.new
+    render Phlex::BasicView.new
   end
 
   def include_assets
-    render Views::Phlex::IncludeAssets.new
+    render Phlex::IncludeAssetsView.new
   end
 end
