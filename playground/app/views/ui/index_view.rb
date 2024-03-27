@@ -2,7 +2,6 @@
 
 class UI::IndexView < UILayout
   def template
-    h1 { 'Proscenium UI' }
     ul do
       li do
         a href: ui_breadcrumbs_path do

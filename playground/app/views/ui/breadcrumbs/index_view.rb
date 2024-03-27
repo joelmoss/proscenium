@@ -2,8 +2,6 @@
 
 class UI::Breadcrumbs::IndexView < UILayout
   def template
-    h1 { 'Proscenium UI' }
-    h2 { 'Breadcrumbs' }
     main do
       render Proscenium::UI::Breadcrumbs::Component.new home_path: :ui
     end
