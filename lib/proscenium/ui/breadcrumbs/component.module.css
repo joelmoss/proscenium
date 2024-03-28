@@ -1,9 +1,8 @@
 @layer proscenium-ui-component {
-  :root {
-    --puiBreadcrumbs--separator-color: var(--stone-5);
-    --puiBreadcrumbs--current-color: var(--foreground);
-    --puiBreadcrumbs--link-color: var(--link-color);
-    --puiBreadcrumbs--link-hover-color: var(--link-hover-color);
+  :where(html) {
+    --puiBreadcrumbs--separator-color: darkgray;
+    --puiBreadcrumbs--link-color: initial;
+    --puiBreadcrumbs--link-hover-color: initial;
     --puiBreadcrumbs--separator: url("/proscenium/icons/angle-right-regular.svg");
   }
 

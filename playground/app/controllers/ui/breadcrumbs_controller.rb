@@ -6,7 +6,7 @@ class UI::BreadcrumbsController < UIController
   def index
     add_breadcrumb 'Proscenium UI', :ui
     add_breadcrumb 'Components', :ui
-    add_breadcrumb 'Breadcrumbs', :ui_breadcrumbs
+    add_breadcrumb 'Breadcrumbs'
 
     render UI::Breadcrumbs::IndexView.new
   end
