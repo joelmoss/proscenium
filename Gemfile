@@ -18,10 +18,15 @@ group :development do
   gem 'rubocop-rake'
   gem 'sqlite3'
   gem 'web-console'
+
+  # Playground
+  gem 'htmlbeautifier'
+  gem 'literal', github: 'joeldrapper/literal'
+  gem 'phlexible'
+  gem 'rouge'
 end
 
 group :test do
-  gem 'view_component', '~> 3.6.0'
   gem 'capybara'
   gem 'cuprite'
   gem 'dry-initializer'
@@ -32,4 +37,5 @@ group :test do
   gem 'gem4', path: './fixtures/external/gem4'
   gem 'phlex-testing-capybara'
   gem 'sus'
+  gem 'view_component', '~> 3.6.0'
 end

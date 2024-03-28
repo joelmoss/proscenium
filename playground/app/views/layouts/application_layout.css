@@ -1,0 +1,97 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+* {
+  margin: 0;
+}
+
+body {
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell,
+    Noto Sans, sans-serif;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+input,
+button,
+textarea,
+select {
+  font: inherit;
+}
+
+p,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  overflow-wrap: break-word;
+}
+
+p {
+  padding: 14px 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 30px 0 10px;
+}
+
+header {
+  --puiBreadcrumbs--link-color: black;
+
+  display: flex;
+  font-size: 0.8em;
+  align-items: flex-end;
+  background-color: blanchedalmond;
+  border-bottom: 1px solid lightgray;
+  padding: 10px 17px;
+  margin-bottom: 40px;
+
+  > .logo {
+    margin-right: 65px;
+  }
+}
+
+main {
+  flex: 1;
+
+  > *:first-child {
+    margin-top: 0;
+  }
+}
+
+.highlight {
+  padding: 22px;
+}
+
+.columned {
+  display: flex;
+  align-items: flex-start;
+  margin: 20px;
+}
+
+.page_nav {
+  width: 350px;
+  border-left: 1px solid lightgray;
+  padding: 20px 0;
+  margin-left: 20px;
+  font-size: 0.9em;
+}

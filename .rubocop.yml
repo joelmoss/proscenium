@@ -17,21 +17,17 @@ Layout/LineLength:
   Exclude:
     - "test/**/*"
 Metrics/BlockLength:
-  Exclude:
-    - Rakefile
-    - proscenium.gemspec
-    - "test/**/*"
+  Enabled: false
 Metrics/MethodLength:
-  Max: 20
+  Enabled: false
 Metrics/AbcSize:
-  Max: 20
+  Enabled: false
 Metrics/CyclomaticComplexity:
-  Max: 10
+  Enabled: false
 Metrics/PerceivedComplexity:
-  Max: 10
+  Enabled: false
 Metrics/ClassLength:
-  Exclude:
-    - "test/**/*"
+  Enabled: false
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:

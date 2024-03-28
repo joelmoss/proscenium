@@ -1,13 +1,12 @@
 # frozen_string_literal: true
 
-class UI::BreadcrumbsController < UIController
-  include Proscenium::UI::Breadcrumbs::Control
-
-  def index
-    add_breadcrumb 'Proscenium UI', :ui
-    add_breadcrumb 'Components', :ui
+module UI
+  class BreadcrumbsController < UIController
+    include Proscenium::UI::Breadcrumbs::Control
     add_breadcrumb 'Breadcrumbs'
 
-    render UI::Breadcrumbs::IndexView.new
+    def index
+      render Breadcrumbs::IndexView.new
+    end
   end
 end

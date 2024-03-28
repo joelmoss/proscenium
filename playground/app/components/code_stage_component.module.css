@@ -1,0 +1,9 @@
+.base {
+  margin: 20px;
+
+  > div {
+    border: 1px ridge;
+    background-color: snow;
+    padding: 30px;
+  }
+}

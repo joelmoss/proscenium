@@ -1,0 +1,15 @@
+.base {
+  margin: 10px 20px;
+
+  legend {
+    background-color: blanchedalmond;
+    padding: 5px 10px;
+    font-size: 0.7em;
+    color: dimgray;
+    width: fit-content;
+  }
+
+  pre {
+    margin: 0;
+  }
+}

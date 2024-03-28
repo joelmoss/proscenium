@@ -25,6 +25,8 @@ class ApplicationLayout < ApplicationView
         csp_meta_tag
         csrf_meta_tags
         include_assets
+
+        style { Rouge::Themes::Base16.mode(:dark).render(scope: '.highlight') }
       end
 
       body do

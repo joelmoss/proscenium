@@ -1,3 +1,11 @@
+GIT
+  remote: https://github.com/joeldrapper/literal.git
+  revision: 455f225574dbcb39b7e325a9f75c928a79ec812b
+  specs:
+    literal (0.1.0)
+      concurrent-ruby (~> 1.2)
+      zeitwerk (~> 2.6)
+
 PATH
   remote: .
   specs:
@@ -169,6 +177,7 @@ GEM
     ffi (1.16.3)
     globalid (1.2.1)
       activesupport (>= 6.1)
+    htmlbeautifier (1.4.3)
     i18n (1.14.4)
       concurrent-ruby (~> 1.0)
     io-console (0.7.2)
@@ -223,6 +232,9 @@ GEM
     phlex-testing-capybara (0.1.0)
       capybara (~> 3.38)
       phlex (>= 0.5)
+    phlexible (1.0.0)
+      phlex (>= 1.8.1)
+      phlex-rails (>= 1.0.0)
     psych (5.1.2)
       stringio
     public_suffix (5.0.4)
@@ -275,6 +287,7 @@ GEM
       io-console (~> 0.5)
     require-hooks (0.2.2)
     rexml (3.2.6)
+    rouge (4.2.1)
     rubocop (1.62.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
@@ -350,11 +363,15 @@ DEPENDENCIES
   gem2!
   gem3!
   gem4!
+  htmlbeautifier
+  literal!
   phlex-rails
   phlex-testing-capybara
+  phlexible
   proscenium!
   puma
   rails (~> 7.0)
+  rouge
   rubocop
   rubocop-packaging
   rubocop-performance
