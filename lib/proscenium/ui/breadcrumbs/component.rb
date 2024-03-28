@@ -10,13 +10,17 @@ module Proscenium::UI
     # Assign false to hide the home segment.
     option :with_home, Types::Bool, default: -> { true }
 
-    # HTML class name for the wrapping div element. Assigning this will override the default.
-    # Defaults to `:@base`.
-    option :class, Types::String | Types::Symbol | Types::Nominal::Nil, as: :class_name,
-                                                                        default: -> { :@base }
+    # One or more class name(s) for the base div element which will be appended to the default.
+    option :class, Types::Coercible::String | Types::Array.of(Types::Coercible::String),
+           as: :class_name, default: -> { [] }
+
+    # One or more class name(s) for the base div element which will replace the default. If both
+    # `class` and `class!` are provided, all values will be merged. Defaults to `:@base`.
+    option :class!, Types::Coercible::String | Types::Array.of(Types::Coercible::String),
+           as: :class_name_override, default: -> { :@base }
 
     def template
-      div class: class_name do
+      div class: [*class_name_override, *class_name] do
         ol do
           if with_home
             li do

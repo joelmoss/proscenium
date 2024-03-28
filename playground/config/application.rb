@@ -22,7 +22,13 @@ module Playground
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
     # Common ones are `templates`, `generators`, or `middleware`, for example.
-    config.autoload_lib(ignore: %w[assets tasks])
+    # config.autoload_lib(ignore: %w[assets tasks])
+
+    # Autoload Proscenium lib
+    lib = Proscenium.root.join('lib')
+    config.autoload_paths << lib.to_s
+    config.eager_load_paths << lib.to_s
+    Rails.autoloaders.main.ignore Array.wrap(%w[ext tasks]).map { lib.join(_1) }
 
     config.autoload_paths << "#{root}/app/views"
     config.autoload_paths << "#{root}/app/components"
