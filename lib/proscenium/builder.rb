@@ -71,7 +71,7 @@ module Proscenium
           msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
         end
 
-        super msg
+        super(msg)
       end
     end
 
@@ -79,7 +79,7 @@ module Proscenium
       attr_reader :error_msg, :path
 
       def initialize(path, error_msg)
-        super "Failed to resolve '#{path}' -- #{error_msg}"
+        super("Failed to resolve '#{path}' -- #{error_msg}")
       end
     end
 
@@ -163,7 +163,9 @@ module Proscenium
     end
 
     def engines
-      Proscenium.config.engines.to_h { |e| [e.engine_name, e.root.to_s] }
+      Proscenium.config.engines.to_h { |e| [e.engine_name, e.root.to_s] }.tap do |x|
+        x['proscenium/ui'] = Proscenium.ui_path.to_s
+      end
     end
 
     def import_map

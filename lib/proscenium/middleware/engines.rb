@@ -20,17 +20,25 @@ module Proscenium
     #
     class Engines < Esbuild
       def real_path
-        @real_path ||= Pathname.new(@request.path.delete_prefix("/#{engine.engine_name}")).to_s
+        @real_path ||= Pathname.new(@request.path.delete_prefix("/#{engine_name}")).to_s
       end
 
       def root_for_readable
-        engine.root
+        ui? ? Proscenium.ui_path : engine.root
       end
 
       def engine
-        @engine ||= Proscenium.config.engines.find do |engine|
-          @request.path.start_with?("/#{engine.engine_name}")
+        @engine ||= Proscenium.config.engines.find do |x|
+          @request.path.start_with?("/#{x.engine_name}")
         end
+      end
+
+      def engine_name
+        ui? ? 'proscenium/ui' : engine.engine_name
+      end
+
+      def ui?
+        @request.path.start_with?('/proscenium/ui/')
       end
     end
   end

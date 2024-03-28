@@ -28,6 +28,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'activesupport', ['>= 6.1.0', '< 8.0']
+  spec.add_dependency 'dry-initializer', '~> 3.1'
+  spec.add_dependency 'dry-types', '~> 1.7'
   spec.add_dependency 'ffi', '~> 1.16.3'
   spec.add_dependency 'oj', '~> 3.13'
   spec.add_dependency 'railties', ['>= 6.1.0', '< 8.0']

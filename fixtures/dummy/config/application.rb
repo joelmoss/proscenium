@@ -4,7 +4,6 @@ require_relative 'boot'
 
 require 'rails'
 require 'active_model/railtie'
-require 'active_record/railtie'
 require 'action_controller/railtie'
 require 'action_view/railtie'
 
@@ -25,6 +24,8 @@ module Dummy
     # config.time_zone = "Central Time (US & Canada)"
     # config.eager_load_paths << Rails.root.join("extras")
 
-    config.autoload_paths << "#{root}/app"
+    config.autoload_paths << "#{root}/app/views"
+    config.autoload_paths << "#{root}/app/components"
+    config.autoload_paths << "#{root}/app/views/layouts"
   end
 end

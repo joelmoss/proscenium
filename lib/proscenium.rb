@@ -27,6 +27,7 @@ module Proscenium
   autoload :Builder
   autoload :Importer
   autoload :Resolver
+  autoload :UI
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
@@ -54,6 +55,14 @@ module Proscenium
 
     def cache
       @cache ||= config.cache || ActiveSupport::Cache::NullStore.new
+    end
+
+    def ui_path
+      Railtie.root.join('lib', 'proscenium', 'ui')
+    end
+
+    def root
+      Railtie.root
     end
   end
 end

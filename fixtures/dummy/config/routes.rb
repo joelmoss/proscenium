@@ -1,5 +1,6 @@
+# frozen_string_literal: true
+
 Rails.application.routes.draw do
-  # Tests
   root to: 'bare_pages#home'
   get '/phlex/react/one', to: 'phlex/react#one'
   get '/phlex/react/lazy', to: 'phlex/react#lazy'
@@ -15,7 +16,4 @@ Rails.application.routes.draw do
   # get 'first_component', to: 'pages#first_component'
   # get 'first_react_component', to: 'pages#first_react_component'
   # get 'second_react_component', to: 'pages#second_react_component'
-
-  # Playground
-  resources :articles
 end

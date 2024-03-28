@@ -3,6 +3,8 @@ PATH
   specs:
     proscenium (0.15.0.beta.4)
       activesupport (>= 6.1.0, < 8.0)
+      dry-initializer (~> 3.1)
+      dry-types (~> 1.7)
       ffi (~> 1.16.3)
       oj (~> 3.13)
       railties (>= 6.1.0, < 8.0)
@@ -115,6 +117,7 @@ GEM
     base64 (0.2.0)
     benchmark-ips (2.13.0)
     bigdecimal (3.1.7)
+    bindex (0.8.1)
     builder (3.2.4)
     capybara (3.40.0)
       addressable
@@ -133,9 +136,27 @@ GEM
       capybara (~> 3.0)
       ferrum (~> 0.14.0)
     date (3.3.4)
+    debug (1.9.1)
+      irb (~> 1.10)
+      reline (>= 0.3.8)
     diff-lcs (1.5.1)
     drb (2.2.1)
+    dry-core (1.0.1)
+      concurrent-ruby (~> 1.0)
+      zeitwerk (~> 2.6)
+    dry-inflector (1.0.0)
     dry-initializer (3.1.1)
+    dry-logic (1.5.0)
+      concurrent-ruby (~> 1.0)
+      dry-core (~> 1.0, < 2)
+      zeitwerk (~> 2.6)
+    dry-types (1.7.2)
+      bigdecimal (~> 3.0)
+      concurrent-ruby (~> 1.0)
+      dry-core (~> 1.0)
+      dry-inflector (~> 1.0)
+      dry-logic (~> 1.4)
+      zeitwerk (~> 2.6)
     erb (4.0.4)
       cgi (>= 0.3.3)
     erubi (1.12.0)
@@ -300,6 +321,11 @@ GEM
       activesupport (>= 5.2.0, < 8.0)
       concurrent-ruby (~> 1.0)
       method_source (~> 1.0)
+    web-console (4.2.1)
+      actionview (>= 6.0.0)
+      activemodel (>= 6.0.0)
+      bindex (>= 0.4.0)
+      railties (>= 6.0.0)
     webrick (1.8.1)
     websocket-driver (0.7.6)
       websocket-extensions (>= 0.1.0)
@@ -317,6 +343,7 @@ DEPENDENCIES
   benchmark-ips
   capybara
   cuprite
+  debug
   dry-initializer
   fakefs
   gem1!
@@ -335,6 +362,7 @@ DEPENDENCIES
   sqlite3
   sus
   view_component (~> 3.6.0)
+  web-console
 
 BUNDLED WITH
    2.4.1

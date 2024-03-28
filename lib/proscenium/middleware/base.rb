@@ -15,7 +15,7 @@ module Proscenium
         def initialize(args)
           @detail = args[:detail]
           @file = args[:file]
-          super "Failed to build '#{args[:file]}' -- #{detail}"
+          super("Failed to build '#{args[:file]}' -- #{detail}")
         end
       end
 

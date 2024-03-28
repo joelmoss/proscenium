@@ -49,6 +49,12 @@ module Proscenium
       end
     end
 
+    initializer 'proscenium.ui' do
+      ActiveSupport::Inflector.inflections(:en) do |inflect|
+        inflect.acronym 'UI'
+      end
+    end
+
     initializer 'proscenium.debugging' do
       if Rails.gem_version >= Gem::Version.new('7.1.0')
         tpl_path = root.join('lib', 'proscenium', 'templates').to_s
@@ -73,6 +79,16 @@ module Proscenium
       ActiveSupport.on_load(:action_view) do
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
+      end
+    end
+
+    initializer 'proscenium.public_path' do |app|
+      if app.config.public_file_server.enabled
+        headers = app.config.public_file_server.headers || {}
+        index = app.config.public_file_server.index_name || 'index'
+
+        app.middleware.insert_after(ActionDispatch::Static, ActionDispatch::Static,
+                                    root.join('public').to_s, index: index, headers: headers)
       end
     end
   end

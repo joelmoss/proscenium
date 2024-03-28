@@ -159,6 +159,12 @@ describe Proscenium::Middleware do
     expect(response.body).to include('console.log("/@proscenium/test.js")')
   end
 
+  it 'serves proscenium/ui/* ui' do
+    get '/proscenium/ui/test.js'
+
+    expect(response.body).to include('console.log("/proscenium/ui/test.js")')
+  end
+
   with 'cache_query_string' do
     it 'should set cache header ' do
       Proscenium.config.cache_query_string = 'v1'
