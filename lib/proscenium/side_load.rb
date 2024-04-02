@@ -10,7 +10,7 @@ module Proscenium
 
           append_after_action :capture_and_replace_proscenium_stylesheets,
                               :capture_and_replace_proscenium_javascripts,
-                              if: -> { request.format.html? && !response.redirect? }
+                              if: -> { response.content_type&.include?('html') }
         end
       end
 
@@ -20,7 +20,7 @@ module Proscenium
         end
       end
 
-      def capture_and_replace_proscenium_stylesheets # rubocop:disable Metrics/*
+      def capture_and_replace_proscenium_stylesheets
         return if response_body.nil?
         return if response_body.first.blank? || !Proscenium::Importer.css_imported?
         return unless response_body.first.include? '<!-- [PROSCENIUM_STYLESHEETS] -->'
@@ -52,7 +52,7 @@ module Proscenium
         response_body.first.gsub! '<!-- [PROSCENIUM_STYLESHEETS] -->', out.join.html_safe
       end
 
-      def capture_and_replace_proscenium_javascripts # rubocop:disable Metrics/*
+      def capture_and_replace_proscenium_javascripts
         return if response_body.nil?
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
@@ -108,7 +108,7 @@ module Proscenium
       #
       # If the class responds to `.sideload`, it will be called instead of the regular side loading.
       # You can use this to customise what is side loaded.
-      def sideload_inheritance_chain(obj, options) # rubocop:disable Metrics/*
+      def sideload_inheritance_chain(obj, options)
         return unless Proscenium.config.side_load
 
         options = {} if options.nil?
