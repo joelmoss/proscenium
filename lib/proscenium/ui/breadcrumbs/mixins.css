@@ -1,4 +1,8 @@
 @define-mixin breadcrumbs {
+  /* Default properties */
+  --_puiBreadcrumbs--separator-color: GrayText;
+  --_puiBreadcrumbs--separator: url("/proscenium/icons/angle-right-regular.svg");
+
   margin: 10px;
 
   ol {
@@ -7,8 +11,6 @@
     margin: 0;
     display: flex;
     align-items: baseline;
-    display: flex;
-    align-items: center;
 
     li {
       text-transform: uppercase;
@@ -21,40 +23,22 @@
         }
 
         &:nth-last-child(2)::before {
-          display: inline-block;
-          content: "";
-          height: 1rem;
-          width: 1rem;
-          -webkit-mask: var(--puiBreadcrumbs--separator) no-repeat center center;
-          mask: var(--puiBreadcrumbs--separator) no-repeat center center;
-          vertical-align: sub;
+          @mixin _separator;
           margin: 0 0.5rem 0 0;
-          background-color: var(--puiBreadcrumbs--separator-color, revert);
           transform: rotate(180deg);
         }
       }
 
       @media (min-width: 427px) {
         &:not(:last-child)::after {
-          display: inline-block;
-          content: "";
-          height: 1rem;
-          width: 1rem;
-          -webkit-mask: var(--puiBreadcrumbs--separator) no-repeat center center;
-          mask: var(--puiBreadcrumbs--separator) no-repeat center center;
-          vertical-align: sub;
+          @mixin _separator;
           margin: 0 0.5rem;
-          background-color: var(--puiBreadcrumbs--separator-color, revert);
         }
       }
 
       &:last-child {
         font-weight: 500;
         text-transform: none;
-
-        @media (min-width: 769px) {
-          font-size: 1.1em;
-        }
       }
 
       &:last-child > a {
@@ -77,4 +61,23 @@
       }
     }
   }
+}
+
+@define-mixin _separator {
+  display: inline-block;
+  content: "";
+  height: 1rem;
+  width: 1rem;
+  -webkit-mask: var(
+      --puiBreadcrumbs--separator,
+      var(--_puiBreadcrumbs--separator)
+    )
+    no-repeat center center;
+  mask: var(--puiBreadcrumbs--separator, var(--_puiBreadcrumbs--separator))
+    no-repeat center center;
+  vertical-align: sub;
+  background-color: var(
+    --puiBreadcrumbs--separator-color,
+    var(--_puiBreadcrumbs--separator-color)
+  );
 }

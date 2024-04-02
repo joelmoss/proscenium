@@ -55,10 +55,8 @@ h6 {
 }
 
 header {
-  --puiBreadcrumbs--link-color: black;
-
   display: flex;
-  font-size: 0.8em;
+  font-size: 0.9em;
   align-items: flex-end;
   background-color: blanchedalmond;
   border-bottom: 1px solid lightgray;

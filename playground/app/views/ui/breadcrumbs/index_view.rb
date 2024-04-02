@@ -2,6 +2,8 @@
 
 class UI::Breadcrumbs::IndexView < UILayout
   def template
+    h1 { 'Breadcrumbs' }
+
     section do
       h2(id: 'basic-usage') { 'Basic Usage' }
 
