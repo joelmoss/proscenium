@@ -1,0 +1,9 @@
+@layer hue-component {
+  .fieldWrapper {
+    @mixin checkbox from url('/hue/lib/hue/mixins/checkbox.mixin.css');
+  }
+
+  .hint {
+    @mixin fieldHint from url('/hue/lib/hue/mixins/field.mixin.css');
+  }
+}

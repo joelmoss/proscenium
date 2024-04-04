@@ -1,0 +1,46 @@
+@layer hue-component {
+  .field {
+    @mixin fieldWrapper from url('/hue/lib/hue/mixins/form.mixin.css');
+
+    &[data-field-error] > div > span > span {
+      color: var(--input-error-color);
+      display: var(--fieldError-display);
+
+      &:first-child {
+        font-weight: 500;
+
+        &:after {
+          content: '\00a0';
+        }
+      }
+    }
+  }
+
+  .hint {
+    @mixin fieldHint from url('/hue/lib/hue/mixins/field.mixin.css');
+  }
+
+  .typeahead {
+    @mixin label from url('/hue/lib/hue/mixins/label.mixin.css');
+
+    > span:first-child {
+      margin: 0 0 0.2em 0.2em;
+    }
+
+    &:has(:not(> span)) {
+      margin: 0 0 0.2em 0.2em;
+    }
+  }
+
+  .typeahead_input {
+    &:empty {
+      @mixin select from url('/hue/lib/hue/mixins/select.mixin.css');
+      @mixin field__disabled from url('/hue/lib/hue/mixins/field.mixin.css');
+
+      &:after {
+        content: 'loading...';
+        color: var(--input-disabled-color);
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@
 require_relative 'boot'
 
 require 'rails'
+require 'active_record/railtie'
 require 'active_model/railtie'
 require 'action_controller/railtie'
 require 'action_view/railtie'
@@ -11,7 +12,7 @@ require 'action_view/railtie'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-require 'proscenium'
+# require 'proscenium'
 
 module Playground
   class Application < Rails::Application
@@ -24,11 +25,12 @@ module Playground
     # Common ones are `templates`, `generators`, or `middleware`, for example.
     # config.autoload_lib(ignore: %w[assets tasks])
 
-    # Autoload Proscenium lib
-    lib = Proscenium.root.join('lib')
+    # Autoload Proscenium
+    lib = Proscenium.root / 'lib'
     config.autoload_paths << lib.to_s
     config.eager_load_paths << lib.to_s
-    Rails.autoloaders.main.ignore Array.wrap(%w[ext tasks]).map { lib.join(_1) }
+    ignored = %w[ext libs tasks view_component]
+    Rails.autoloaders.main.ignore Array.wrap(ignored).map { lib / 'proscenium' / _1 }
 
     config.autoload_paths << "#{root}/app/views"
     config.autoload_paths << "#{root}/app/components"
