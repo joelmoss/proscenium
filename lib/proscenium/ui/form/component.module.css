@@ -1,0 +1,70 @@
+@layer proscenium-ui {
+  .base {
+    max-width: 600px;
+  }
+
+  .field_wrapper {
+    @mixin fieldWrapper from url("/hue/lib/hue/mixins/form.mixin.css");
+  }
+
+  .input {
+    &[type="color"],
+    &[type="date"],
+    &[type="datetime"],
+    &[type="datetime-local"],
+    &[type="email"],
+    &[type="month"],
+    &[type="number"],
+    &[type="password"],
+    &[type="search"],
+    &[type="tel"],
+    &[type="text"],
+    &[type="time"],
+    &[type="url"],
+    &[type="week"] {
+      @mixin input from url("/hue/lib/hue/mixins/input.mixin.css");
+    }
+  }
+
+  .checkbox {
+    @mixin checkbox from url("/hue/lib/hue/mixins/checkbox.mixin.css");
+  }
+
+  .radio_group_field {
+    @mixin fieldWrapper from url("/hue/lib/hue/mixins/form.mixin.css");
+
+    &[data-field-error] > div:first-child > label {
+      color: var(--input-error-color);
+      display: var(--fieldError-display);
+      font-weight: 500;
+    }
+
+    > div:first-child {
+      @mixin label from url("/hue/lib/hue/mixins/label.mixin.css");
+    }
+  }
+
+  .radio_group_inputs {
+    display: flex;
+    line-height: 1.25rem;
+
+    > label {
+      background-color: var(--gray2);
+      padding: 6px 10px 6px 8px;
+      border-radius: 6px;
+      display: flex;
+
+      &:has(+ label) {
+        margin-right: 15px;
+      }
+    }
+  }
+
+  .button {
+    @mixin button from url("/hue/lib/hue/mixins/button.mixin.css");
+  }
+
+  .hint {
+    @mixin fieldHint from url("/hue/lib/hue/mixins/field.mixin.css");
+  }
+}

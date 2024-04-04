@@ -22,6 +22,10 @@ AllCops:
 Layout/LineLength:
   Max: 100
 
+Lint/ConstantDefinitionInBlock:
+  Exclude:
+    - "test/**/*"
+
 Metrics/BlockLength:
   Enabled: false
 Metrics/MethodLength:
@@ -35,6 +39,8 @@ Metrics/PerceivedComplexity:
 Metrics/ClassLength:
   Enabled: false
 
+Style/CaseEquality:
+  Enabled: false
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:

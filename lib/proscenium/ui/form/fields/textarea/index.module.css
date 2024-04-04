@@ -1,0 +1,13 @@
+@layer hue-component {
+  .fieldWrapper {
+    @mixin fieldWrapper from url('/hue/lib/hue/mixins/form.mixin.css');
+  }
+
+  .input {
+    @mixin textarea from url('/hue/lib/hue/mixins/textarea.mixin.css');
+  }
+
+  .hint {
+    @mixin fieldHint from url('/hue/lib/hue/mixins/field.mixin.css');
+  }
+}

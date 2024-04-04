@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   get 'ui' => 'ui#index'
   namespace :ui do
     get :breadcrumbs, to: 'breadcrumbs#index'
+    get :form, to: 'form#index'
 
     get :ujs, to: 'ujs#index'
     namespace :ujs do
@@ -11,6 +12,9 @@ Rails.application.routes.draw do
       get 'confirm'
     end
   end
+
+  # Fixture routes
+  get 'users' => 'users#new'
 
   root to: 'pages#index'
 end

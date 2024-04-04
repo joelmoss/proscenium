@@ -9,6 +9,9 @@ class UI::IndexView < UILayout
       li do
         a(href: ui_breadcrumbs_path) { 'Breadcrumbs' }
       end
+      li do
+        a(href: ui_form_path) { 'Form' }
+      end
     end
   end
 end

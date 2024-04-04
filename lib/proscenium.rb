@@ -1,6 +1,14 @@
 # frozen_string_literal: true
 
-require 'active_support/dependencies/autoload'
+require 'proscenium/railtie'
+
+# require 'zeitwerk'
+
+# loader = Zeitwerk::Loader.for_gem
+# loader.inflector.inflect 'ui' => 'UI'
+# loader.ignore "#{__dir__}/proscenium/ext"
+# loader.ignore "#{__dir__}/proscenium/libs"
+# loader.setup
 
 module Proscenium
   extend ActiveSupport::Autoload
@@ -73,5 +81,3 @@ module Proscenium
     end
   end
 end
-
-require 'proscenium/railtie'
