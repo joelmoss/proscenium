@@ -1,0 +1,23 @@
+@import 'trix/dist/trix.css';
+
+trix-editor {
+  @mixin textarea from url('/hue/lib/hue/mixins/textarea.mixin.css');
+}
+
+trix-toolbar {
+  .trix-button-group {
+    @mixin button-group from url('/hue/lib/hue/mixins/button_group.mixin.css');
+    @mixin button-group__nospace from url('/hue/lib/hue/mixins/button_group.mixin.css');
+    border-color: var(--gray5);
+  }
+
+  .trix-button {
+    @mixin button from url('/hue/lib/hue/mixins/button.mixin.css');
+    @mixin button__secondary from url('/hue/lib/hue/mixins/button.mixin.css');
+    box-shadow: none;
+  }
+
+  [data-trix-button-group='file-tools'] {
+    display: none;
+  }
+}

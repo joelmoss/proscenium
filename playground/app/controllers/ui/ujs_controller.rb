@@ -4,10 +4,6 @@ module UI
   class UJSController < UIController
     add_breadcrumb 'UJS', :ui_ujs
 
-    def index
-      render UJS::IndexView.new
-    end
-
     def confirm
       add_breadcrumb 'confirm'
     end

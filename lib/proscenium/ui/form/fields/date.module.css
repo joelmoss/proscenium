@@ -1,0 +1,27 @@
+@layer hue-component {
+  .field_wrapper {
+    @mixin fieldWrapper from url('/hue/lib/hue/mixins/form.mixin.css');
+  }
+
+  .inputs {
+    display: flex;
+
+    & div {
+      padding-right: 10px;
+    }
+
+    & label > span {
+      color: var(--gray6);
+      font-size: var(--12px);
+      margin: 0 0 0.2em 0.2em;
+    }
+
+    > div {
+      width: 7em;
+    }
+  }
+
+  .hint {
+    @mixin fieldHint from url('/hue/lib/hue/mixins/field.mixin.css');
+  }
+}

@@ -5,4 +5,5 @@ module Proscenium::UI
 
   autoload :Component
   autoload :Breadcrumbs
+  autoload :Form
 end

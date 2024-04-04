@@ -9,6 +9,11 @@ Rails.application.routes.draw do
   get '/include_assets', to: 'bare_pages#include_assets'
   get '/phlex/include_assets', to: 'phlex#include_assets'
 
+  resources :users
+  # get '/users' => 'users#index'
+  # get '/user' => 'users#show'
+  get '/events' => 'users#index'
+
   # get '/sideloadpartial', to: 'pages#sideloadpartial'
   # get '/variant', to: 'pages#variant'
   # get '/external_gem', to: 'pages#external_gem'
