@@ -250,7 +250,7 @@ describe Proscenium::UI::Form::Fields::Select do
     end
 
     it 'overrides label' do
-      expect(view.find('label').native.inner_html).to be =~ /^Foobar<select/
+      expect(view.find('label').native.inner_html).to be =~ %r{^<div><span>Foobar</span></div>}
     end
   end
 
