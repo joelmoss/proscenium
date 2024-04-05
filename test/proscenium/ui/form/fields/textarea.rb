@@ -19,7 +19,7 @@ describe Proscenium::UI::Form::Fields::Textarea do
   end
 
   it 'has a label' do
-    expect(view.find('label').native.inner_html).to be =~ /^Name<textarea/
+    expect(view.find('label').native.inner_html).to be =~ %r{^<div><span>Name</span></div>}
   end
 
   it 'has a textarea with value' do

@@ -55,7 +55,12 @@ module Proscenium::UI
         error_message.present?
       end
 
-      # @param class: [String, Symbol] HTML class or classes to append.
+      # The main wrapper for the field. This is where the label, input, and error message are
+      # rendered. You can override this method to modify the markup of the field.
+      #
+      # @param tag_name: [Symbol] HTML tag name to use for the wrapper.
+      # @param ** [Hash] Additional HTML attributes to pass to the wrapper.
+      # @param [Proc] The block to render the field.
       def field(tag_name = :div, **rest, &)
         classes = [:@field_wrapper]
         classes << rest.delete(:class) if rest.key?(:class)
@@ -70,14 +75,17 @@ module Proscenium::UI
       # overide this by providing the `:label` keyword argument in `@arguments`. Passing false as
       # the value to `:label` will omit the label.
       #
-      # If a block is given, it will be yielded after the label and error message.
+      # If a block is given, it will be yielded with the label content, and after the label and
+      # error message.
       def label(**kwargs, &block)
         content = attributes.delete(:label)
 
         super(**kwargs) do
           captured = capture do
-            plain content || translate_label if content != false
-            error? && span { error_message }
+            div do
+              span { content || translate_label } if content != false
+              error? && span { error_message }
+            end
           end
 
           if !block
