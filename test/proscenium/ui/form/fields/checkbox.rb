@@ -36,7 +36,7 @@ describe Proscenium::UI::Form::Fields::Checkbox do
 
   it 'renders label after input' do
     expect(view.find('label').native.to_html).to be == %(
-      <label><input name="user[active]" type="hidden" value="0"><input name="user[active]" type="checkbox" value="1">Active</label>
+      <label><input name="user[active]" type="hidden" value="0"><input name="user[active]" type="checkbox" value="1"><div><span>Active</span></div></label>
     ).strip
   end
 

@@ -28,7 +28,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   it 'renders label before input' do
-    expect(view.find('label').native.inner_html).to be =~ /^Name<input/
+    expect(view.find('label').native.inner_html).to be =~ %r{^<div><span>Name</span>}
   end
 
   with 'attribute name as a string' do
@@ -89,7 +89,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     it 'shows error message' do
-      expect(view.find('label').native.inner_html).to be =~ /^Name<span>is invalid</
+      expect(view.find('label').text).to be == 'Nameis invalid'
     end
   end
 
@@ -105,7 +105,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     it 'shows error message' do
-      expect(view.find('label>span').text).to be == 'is invalid'
+      expect(view.find('label>div>span:last-child').text).to be == 'is invalid'
     end
   end
 
@@ -121,7 +121,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     it 'shows error message' do
-      expect(view.find('label>span').text).to be == 'is foobar'
+      expect(view.find('label>div>span:last-child').text).to be == 'is foobar'
     end
   end
 
