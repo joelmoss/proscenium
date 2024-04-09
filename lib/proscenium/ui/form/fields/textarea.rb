@@ -2,8 +2,10 @@
 
 module Proscenium::UI::Form::Fields
   class Textarea < Base
+    register_element :pui_textarea
+
     def template
-      field do
+      field :pui_textarea do
         label do
           attrs = build_attributes
           value = attrs.delete(:value)

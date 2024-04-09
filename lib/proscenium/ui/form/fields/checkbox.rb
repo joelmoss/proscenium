@@ -8,6 +8,8 @@ module Proscenium::UI::Form::Fields
   #   checkbox_field :active?
   #
   class Checkbox < Base
+    register_element :pui_checkbox
+
     def template
       checked = ActiveModel::Type::Boolean.new.cast(value.nil? ? false : value)
 
@@ -18,12 +20,11 @@ module Proscenium::UI::Form::Fields
       # TODO: use component
       # render Proscenium::UI::Fields::Checkbox::Component.new field_name, checked:
 
-      field class: :@checkbox do
+      field :pui_checkbox do
         label do |content|
           input(name: field_name, type: :hidden, value: unchecked_value, **attributes)
-          input(name: field_name, type: :checkbox, value: checked_value, checked:,
-                **attributes)
-          plain content
+          input(name: field_name, type: :checkbox, value: checked_value, checked:, **attributes)
+          yield_content_with_no_args { content }
         end
 
         hint hint_content
