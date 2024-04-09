@@ -7,7 +7,7 @@ describe Proscenium::UI::Form::Fields::RichTextarea do
   extend ViewHelper
 
   let(:user) { User.new name: 'Joel Moss' }
-  view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+  view -> { Proscenium::UI::Form.new(user) } do |f|
     f.rich_textarea_field :name
   end
 
@@ -15,7 +15,7 @@ describe Proscenium::UI::Form::Fields::RichTextarea do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css',
+    expect(imports).to be == ['/proscenium/ui/form.css',
                               '/proscenium/ui/form/fields/rich_textarea.js',
                               '/proscenium/ui/form/fields/rich_textarea.css']
   end

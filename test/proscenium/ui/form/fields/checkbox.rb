@@ -7,7 +7,7 @@ describe Proscenium::UI::Form::Fields::Checkbox do
   extend ViewHelper
 
   let(:user) { User.new }
-  view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+  view -> { Proscenium::UI::Form.new(user) } do |f|
     f.checkbox_field :active
   end
 
@@ -15,7 +15,7 @@ describe Proscenium::UI::Form::Fields::Checkbox do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/form.css']
   end
 
   it 'has an unchecked checkbox input' do
@@ -41,7 +41,7 @@ describe Proscenium::UI::Form::Fields::Checkbox do
   end
 
   with ':label' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.checkbox_field :active, label: 'Foobar'
     end
 
@@ -51,7 +51,7 @@ describe Proscenium::UI::Form::Fields::Checkbox do
   end
 
   with 'predicate? method' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.checkbox_field :active?
     end
 

@@ -11,21 +11,21 @@ class UI::Form::TextFieldView < UILayout
     section do
       h2(id: 'basic-usage') { 'Basic Usage' }
       markdown %(
-        Render `Proscenium::UI::Form::Component` with an ActiveRecord model instance and a block
+        Render `Proscenium::UI::Form` with an ActiveRecord model instance and a block
         that defines the inputs you wish to use. Each input is called a form "field", and expects
         to be given the name of an attribute on the model as its first argument.
       )
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name
           end
         RUBY
       end
 
       render CodeStageComponent do
-        render Proscenium::UI::Form::Component.new User.new do |f|
+        render Proscenium::UI::Form.new User.new do |f|
           f.text_field :name
         end
       end

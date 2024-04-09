@@ -7,7 +7,7 @@ describe Proscenium::UI::Form::Fields::Textarea do
   extend ViewHelper
 
   let(:user) { User.new name: 'Joel Moss' }
-  view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+  view -> { Proscenium::UI::Form.new(user) } do |f|
     f.textarea_field :name
   end
 

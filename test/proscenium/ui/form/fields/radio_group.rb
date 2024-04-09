@@ -9,7 +9,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
   let(:user) { User.new }
 
   with 'options as last argument' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.radio_group :role, %i[admin manager]
     end
 
@@ -20,7 +20,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
   end
 
   with ':options attribute' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.radio_group :role, options: %i[admin manager]
     end
 
@@ -31,7 +31,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
   end
 
   with 'selected value' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.radio_group :role, %i[admin manager]
     end
 
@@ -44,7 +44,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
   end
 
   with 'enum attribute' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
       f.radio_group :gender
     end
 
@@ -66,7 +66,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
     end
 
     with 'default value' do
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
         f.radio_group :gender_with_db_default
         f.radio_group :gender_with_code_default
       end
@@ -88,7 +88,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
     end
 
     let(:event) { Event.new }
-    view -> { Proscenium::UI::Form::Component.new(event) } do |f|
+    view -> { Proscenium::UI::Form.new(event) } do |f|
       f.radio_group :user
     end
 

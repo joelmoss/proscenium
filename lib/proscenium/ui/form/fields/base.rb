@@ -12,13 +12,13 @@ module Proscenium::UI
 
       # In most cases we want to use the main form component stylesheet. Override this method if
       # you want to use a different stylesheet.
-      def self.css_module_path
-        source_path.join('../../component.module.css')
-      end
+      # def self.css_module_path
+      #   source_path.join('../index.module.css')
+      # end
 
       # @param attribute [Array]
       # @param model [*]
-      # @param form [Proscenium::UI::Form::Component]
+      # @param form [Proscenium::UI::Form]
       # @param type [Symbol] input type, eg. 'text', 'select'
       # @param error [ActiveModel::Error, String] error message for the attribute.
       # @param attributes [Hash] HTML attributes to pass to the input.
@@ -144,7 +144,6 @@ module Proscenium::UI
 
       def build_attributes(**attrs)
         attributes.merge(attrs).tap do |x|
-          x[:class] ||= form.css_module(:input)
           x[:value] ||= value.to_s
         end
       end
