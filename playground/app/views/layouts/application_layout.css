@@ -87,9 +87,23 @@ main {
 }
 
 .page_nav {
-  width: 350px;
+  position: sticky;
+  top: 0;
+  width: 300px;
   border-left: 1px solid lightgray;
-  padding: 20px 0;
-  margin-left: 20px;
+  padding: 20px 0 20px 30px;
+  margin-left: 60px;
   font-size: 0.9em;
+
+  > div {
+    margin: 0 10px 15px;
+  }
+
+  > ul {
+    padding-inline-start: 10px;
+
+    ul {
+      padding-inline-start: 15px;
+    }
+  }
 }

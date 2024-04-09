@@ -10,6 +10,8 @@ module Proscenium::UI::Form::Fields
   #     automatic detection of options will be disabled. A flat array of strings will be used for
   #     both the label and value. While an Array of nested two-level arrays will be used.
   class RadioGroup < Base
+    register_element :pui_radio_group
+
     def before_template
       @options_from_attributes = attributes.delete(:options)
 
@@ -17,10 +19,10 @@ module Proscenium::UI::Form::Fields
     end
 
     def template
-      field class: :@radio_group_field do
+      field :pui_radio_group do
         label
 
-        div class: :@radio_group_inputs do
+        div part: :radio_group_inputs do
           options.each do |opt|
             form.radio_input(*attribute, name: field_name, value: opt[:value], label: opt[:label],
                                          checked: opt[:checked], **attributes)

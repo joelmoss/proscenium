@@ -93,7 +93,7 @@ module Proscenium::UI::Form
     # Returns a button with type of 'submit', using the `value` given.
     #
     # @param value [String] Value of the `value` attribute.
-    def submit(value, **kwargs)
+    def submit(value = 'Save', **kwargs)
       input name: 'commit', type: :submit, value:, **kwargs
     end
 
