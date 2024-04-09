@@ -8,7 +8,7 @@ describe Proscenium::UI::Form::Fields::RadioInput do
 
   let(:user) { User.new }
 
-  view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+  view -> { Proscenium::UI::Form.new(user) } do |f|
     f.radio_field :role, value: :admin
   end
 
@@ -16,7 +16,7 @@ describe Proscenium::UI::Form::Fields::RadioInput do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/form.css']
   end
 
   it 'has a radio input with the provided value' do
@@ -34,7 +34,7 @@ describe Proscenium::UI::Form::Fields::RadioInput do
   end
 
   with 'label attribute' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.radio_field :role, value: :admin, label: 'Administrator'
     end
 

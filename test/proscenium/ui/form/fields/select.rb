@@ -10,7 +10,7 @@ describe Proscenium::UI::Form::Fields::Select do
   let(:user) { User.new }
 
   describe 'assets' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
       f.select_field :gender
     end
 
@@ -25,7 +25,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'enum attribute' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
       f.select_field :gender
     end
 
@@ -43,7 +43,7 @@ describe Proscenium::UI::Form::Fields::Select do
     end
 
     with 'default value' do
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
         f.select_field :gender_with_db_default
         f.select_field :gender_with_code_default
       end
@@ -64,7 +64,7 @@ describe Proscenium::UI::Form::Fields::Select do
     end
 
     let(:event) { Event.new }
-    view -> { Proscenium::UI::Form::Component.new(event) } do |f|
+    view -> { Proscenium::UI::Form.new(event) } do |f|
       f.select_field :user
     end
 
@@ -100,7 +100,7 @@ describe Proscenium::UI::Form::Fields::Select do
         end
 
         def template
-          render Proscenium::UI::Form::Component.new(@user) do |f|
+          render Proscenium::UI::Form.new(@user) do |f|
             f.select_field :gender do
               option { 'Bloke' }
               option { 'Chick' }
@@ -119,7 +119,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'options: Array<String>' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :tags, options: %w[1tag 2tag]
     end
 
@@ -130,7 +130,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'options: Array<Array>' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :tags, options: [['Tag One', '1tag'], ['Tag two', '2tag']]
     end
 
@@ -141,7 +141,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'options: Enumerable' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :tags, options: %w[1tag 2tag]
     end
 
@@ -157,7 +157,7 @@ describe Proscenium::UI::Form::Fields::Select do
       Tag.create! [{ name: 'tag1' }, { name: 'tag2' }]
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :tags
     end
 
@@ -184,7 +184,7 @@ describe Proscenium::UI::Form::Fields::Select do
 
   describe 'bang attributes' do
     with ':required!' do
-      view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+      view -> { Proscenium::UI::Form.new(user) } do |f|
         f.select_field :gender, :required!
       end
 
@@ -194,7 +194,7 @@ describe Proscenium::UI::Form::Fields::Select do
     end
 
     with 'required: true' do
-      view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+      view -> { Proscenium::UI::Form.new(user) } do |f|
         f.select_field :gender, required: true
       end
 
@@ -204,7 +204,7 @@ describe Proscenium::UI::Form::Fields::Select do
     end
 
     with ':required! and required: false' do
-      view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+      view -> { Proscenium::UI::Form.new(user) } do |f|
         f.select_field :gender, :required!, required: false
       end
 
@@ -215,7 +215,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with ':required! and no value' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :gender, :required!
     end
 
@@ -225,7 +225,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'include_blank: false' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :gender, include_blank: false
     end
 
@@ -235,7 +235,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with 'include_blank: String' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :gender, include_blank: 'Select'
     end
 
@@ -245,7 +245,7 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with ':label' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
       f.select_field :gender, label: 'Foobar'
     end
 
@@ -255,14 +255,12 @@ describe Proscenium::UI::Form::Fields::Select do
   end
 
   with ':class' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
       f.select_field :gender, class: 'my_class'
     end
 
     it 'appends class value to field wrapper' do
-      expect(view.find('div[class^="field_wrapper-"]')[:class]).to(
-        be == 'field-eacb39cc my_class'
-      )
+      expect(view.find('pui-field')[:class]).to be == 'field-eacb39cc my_class'
     end
   end
 
@@ -272,7 +270,7 @@ describe Proscenium::UI::Form::Fields::Select do
       Tag.create! [{ name: 'tag1' }, { name: 'tag2' }]
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.select_field :tags, :typeahead!
     end
 

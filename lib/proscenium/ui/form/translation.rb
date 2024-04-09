@@ -60,7 +60,7 @@ module Proscenium::UI::Form::Translation
       default = model.human_attribute_name(attribute.last)
     end
 
-    translate :labels, attribute, default: default, postfix: postfix
+    translate :labels, attribute, default:, postfix:
   end
 
   private

@@ -17,14 +17,14 @@ class UI::Form::IndexView < UILayout
     section do
       h2(id: 'basic-usage') { 'Basic Usage' }
       markdown %(
-        Render `Proscenium::UI::Form::Component` with an ActiveRecord model instance and a block
+        Render `Proscenium::UI::Form` with an ActiveRecord model instance and a block
         that defines the inputs you wish to use. Each input is called a form "field", and expects
         to be given the name of an attribute on the model as its first argument.
       )
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name
             f.textarea_field :address
             f.select_field :country, options: %w[USA Canada Mexico]
@@ -36,7 +36,7 @@ class UI::Form::IndexView < UILayout
       end
 
       render CodeStageComponent do
-        render Proscenium::UI::Form::Component.new User.new do |f|
+        render Proscenium::UI::Form.new User.new do |f|
           f.text_field :name
           br
           f.textarea_field :address
@@ -55,7 +55,7 @@ class UI::Form::IndexView < UILayout
     section do
       h2(id: 'form') { 'Form' }
       markdown %(
-        Everything starts with a Form 🙄 and the `Proscenium::UI::Form::Component` class.
+        Everything starts with a Form 🙄 and the `Proscenium::UI::Form` class.
       )
     end
 
@@ -146,7 +146,7 @@ class UI::Form::IndexView < UILayout
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name, required: true
           end
         RUBY
@@ -160,7 +160,7 @@ class UI::Form::IndexView < UILayout
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name, :required!
           end
         RUBY
@@ -174,14 +174,14 @@ class UI::Form::IndexView < UILayout
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name, hint: 'Your full name'
           end
         RUBY
       end
 
       render CodeStageComponent do
-        render Proscenium::UI::Form::Component.new User.new do |f|
+        render Proscenium::UI::Form.new User.new do |f|
           f.text_field :name, hint: 'Your full name'
         end
       end
@@ -192,14 +192,14 @@ class UI::Form::IndexView < UILayout
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.text_field :name, error: 'Fail!!'
           end
         RUBY
       end
 
       render CodeStageComponent do
-        render Proscenium::UI::Form::Component.new User.new do |f|
+        render Proscenium::UI::Form.new User.new do |f|
           f.text_field :name, error: 'Fail!!'
         end
       end
@@ -228,14 +228,14 @@ class UI::Form::IndexView < UILayout
 
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
-          render Proscenium::UI::Form::Component.new @user do |f|
+          render Proscenium::UI::Form.new @user do |f|
             f.use_field MyEmailField, :email
           end
         RUBY
       end
 
       render CodeStageComponent do
-        render Proscenium::UI::Form::Component.new User.new do |f|
+        render Proscenium::UI::Form.new User.new do |f|
           f.use_field MyEmailField, :email
         end
       end

@@ -2,7 +2,7 @@
 
 require 'view_helper'
 
-describe Proscenium::UI::Form::Component do
+describe Proscenium::UI::Form do
   include TestHelper
   extend ViewHelper
 
@@ -13,7 +13,7 @@ describe Proscenium::UI::Form::Component do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/form.css']
   end
 
   it 'has an action attribute' do
@@ -76,7 +76,7 @@ describe Proscenium::UI::Form::Component do
   end
 
   describe '#submit' do
-    view -> { Proscenium::UI::Form::Component.new(user) } do |f|
+    view -> { Proscenium::UI::Form.new(user) } do |f|
       f.submit 'Save'
     end
 

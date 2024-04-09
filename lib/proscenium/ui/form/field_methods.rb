@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-module Proscenium::UI::Form
+class Proscenium::UI::Form
   module FieldMethods
     # Renders a hidden input field.
     #
@@ -78,7 +78,7 @@ module Proscenium::UI::Form
     end
 
     def radio_field(...)
-      div(class: :@field_wrapper) { radio_input(...) }
+      div { radio_input(...) }
     end
 
     def radio_input(*args, **kwargs)
