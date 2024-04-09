@@ -40,9 +40,9 @@ module Proscenium::UI::Form
 
     # @param args [Array<Symbol>] name or nested names of model attribute
     # @param attributes [Hash] passed through to each input
-    def select_field(*args, **attributes, &block)
+    def select_field(*args, **attributes, &)
       merge_bang_attributes! args, attributes, additional_bang_attrs: [:typeahead]
-      render Fields::Select.new(args, @model, self, **attributes, &block)
+      render Fields::Select.new(args, @model, self, **attributes, &)
     end
 
     # @see #select_field

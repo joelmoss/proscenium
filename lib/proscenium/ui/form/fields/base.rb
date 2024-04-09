@@ -8,6 +8,8 @@ module Proscenium::UI
     class Base < Component
       attr_reader :attribute, :model, :form, :attributes
 
+      register_element :pui_field
+
       # In most cases we want to use the main form component stylesheet. Override this method if
       # you want to use a different stylesheet.
       def self.css_module_path
@@ -61,8 +63,8 @@ module Proscenium::UI
       # @param tag_name: [Symbol] HTML tag name to use for the wrapper.
       # @param ** [Hash] Additional HTML attributes to pass to the wrapper.
       # @param [Proc] The block to render the field.
-      def field(tag_name = :div, **rest, &)
-        classes = [:@field_wrapper]
+      def field(tag_name = :pui_field, **rest, &)
+        classes = []
         classes << rest.delete(:class) if rest.key?(:class)
         classes << attributes.delete(:class) if attributes.key?(:class)
 
@@ -84,16 +86,16 @@ module Proscenium::UI
           captured = capture do
             div do
               span { content || translate_label } if content != false
-              error? && span { error_message }
+              error? && span(part: :error) { error_message }
             end
           end
 
           if !block
-            yield_content { captured }
+            yield_content_with_no_args { captured }
           elsif block.arity == 1
             yield captured
           else
-            yield_content { captured }
+            yield_content_with_no_args { captured }
             yield
           end
         end
@@ -105,7 +107,7 @@ module Proscenium::UI
         return if content == false
 
         content ||= translate(:hints)
-        content.present? && div(class: :@hint) { unsafe_raw content }
+        content.present? && div(part: :hint) { unsafe_raw content }
       end
 
       def field_type
