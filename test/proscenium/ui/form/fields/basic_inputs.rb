@@ -8,7 +8,7 @@ Field = Sus::Shared('field') do |args|
 
   let(:user) { User.new }
 
-  view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+  view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
     f.send :"#{type}_field", :name
   end
 
@@ -16,7 +16,7 @@ Field = Sus::Shared('field') do |args|
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/form.css']
   end
 
   it "has a #{type} field" do
@@ -32,7 +32,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with 'attribute name as a string' do
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", 'foo[]'
     end
 
@@ -42,7 +42,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with ':label' do
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, label: 'Foobar'
     end
 
@@ -52,19 +52,17 @@ Field = Sus::Shared('field') do |args|
   end
 
   with ':class' do
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, class: :my_class
     end
 
     it 'appends class value to field wrapper' do
-      expect(view.find('div[class^="field_wrapper-"]')[:class]).to(
-        be == 'field_wrapper-fe0d823b my_class'
-      )
+      expect(view.find('pui-field')[:class]).to be == 'my_class'
     end
   end
 
   with 'label: false' do
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, label: false
     end
 
@@ -80,12 +78,12 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name
     end
 
     it 'has data-field-error on wrapping div' do
-      expect(view.find('.field_wrapper-fe0d823b')['data-field-error']).not.to be_nil
+      expect(view.find('pui-field')['data-field-error']).not.to be_nil
     end
 
     it 'shows error message' do
@@ -100,7 +98,7 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, error: f.model.errors.where(:name).first
     end
 
@@ -116,7 +114,7 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, error: 'is foobar'
     end
 
@@ -130,7 +128,7 @@ Field = Sus::Shared('field') do |args|
       User.new address: Address.new(city: 'Chorley')
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :address, :city
     end
 
@@ -148,7 +146,7 @@ Field = Sus::Shared('field') do |args|
       Author.new address: Address.new(city: 'Chorley')
     end
 
-    view -> { Proscenium::UI::Form::Component.new(author, action: '/') } do |f|
+    view -> { Proscenium::UI::Form.new(author, action: '/') } do |f|
       f.send :"#{type}_field", :address, :city
     end
 
@@ -163,7 +161,7 @@ Field = Sus::Shared('field') do |args|
 
   describe 'bang attributes' do
     with ':required!' do
-      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, :required!
       end
 
@@ -173,7 +171,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     with 'required: true' do
-      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, required: true
       end
 
@@ -183,7 +181,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     with ':required! and required: false' do
-      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, :required!, required: false
       end
 
@@ -194,7 +192,7 @@ Field = Sus::Shared('field') do |args|
   end
 end
 
-describe Proscenium::UI::Form::Component do
+describe Proscenium::UI::Form do
   describe 'basic inputs' do
     include TestHelper
     extend ViewHelper
@@ -237,7 +235,7 @@ describe Proscenium::UI::Form::Component do
 
     describe '#hidden_field' do
       let(:user) { User.new }
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
         f.hidden_field :name
       end
 
