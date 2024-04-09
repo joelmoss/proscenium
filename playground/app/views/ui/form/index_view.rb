@@ -53,6 +53,13 @@ class UI::Form::IndexView < UILayout
     end
 
     section do
+      h2(id: 'form') { 'Form' }
+      markdown %(
+        Everything starts with a Form 🙄 and the `Proscenium::UI::Form::Component` class.
+      )
+    end
+
+    section do
       h2(id: 'fields') { 'Fields' }
       markdown %(
         We provide a field for each type of input you might want to use in a form. These match up
@@ -255,6 +262,9 @@ class UI::Form::IndexView < UILayout
     ul do
       li do
         a(href: '#basic-usage') { 'Basic Usage' }
+      end
+      li do
+        a(href: '#form') { 'Form' }
       end
       li do
         a(href: '#fields') { 'Fields' }

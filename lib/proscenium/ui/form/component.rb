@@ -60,13 +60,14 @@ module Proscenium::UI::Form
     #
     # @param model [Any] Model instance or record.
     # @param method [get,post,puts,patch,delete] Form method.
-    # @param url [String,Array] URL for the form action.
-    def initialize(model, method: nil, url: nil, **attributes) # rubocop:disable Lint/MissingSuper
+    # @param action [String,Array] the form action, which can be any value that can be passed to
+    #   Rails `url_for` helper.
+    def initialize(model, method: nil, action: nil, **attributes) # rubocop:disable Lint/MissingSuper
       # method => ^(Nilable(Union(:get, :post, :put, :patch, :delete)))
 
       @model = model
       @method = method
-      @url = url
+      @action = action
       @method ||= 'patch' if @model.respond_to?(:persisted?) && @model.persisted?
       @method = @method&.to_s&.downcase || 'post'
       @attributes = attributes
@@ -159,7 +160,7 @@ module Proscenium::UI::Form
     end
 
     def action
-      @action ||= @_view_context.url_for(@url || @model)
+      @_view_context.url_for(@action || @model)
     end
 
     def method_field

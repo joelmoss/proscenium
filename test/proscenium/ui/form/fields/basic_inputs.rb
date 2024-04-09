@@ -8,7 +8,7 @@ Field = Sus::Shared('field') do |args|
 
   let(:user) { User.new }
 
-  view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+  view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
     f.send :"#{type}_field", :name
   end
 
@@ -32,7 +32,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with 'attribute name as a string' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", 'foo[]'
     end
 
@@ -42,7 +42,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with ':label' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, label: 'Foobar'
     end
 
@@ -52,7 +52,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with ':class' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, class: :my_class
     end
 
@@ -64,7 +64,7 @@ Field = Sus::Shared('field') do |args|
   end
 
   with 'label: false' do
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, label: false
     end
 
@@ -80,7 +80,7 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name
     end
 
@@ -100,7 +100,7 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, error: f.model.errors.where(:name).first
     end
 
@@ -116,7 +116,7 @@ Field = Sus::Shared('field') do |args|
       end
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :name, error: 'is foobar'
     end
 
@@ -130,7 +130,7 @@ Field = Sus::Shared('field') do |args|
       User.new address: Address.new(city: 'Chorley')
     end
 
-    view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
       f.send :"#{type}_field", :address, :city
     end
 
@@ -148,7 +148,7 @@ Field = Sus::Shared('field') do |args|
       Author.new address: Address.new(city: 'Chorley')
     end
 
-    view -> { Proscenium::UI::Form::Component.new(author, url: '/') } do |f|
+    view -> { Proscenium::UI::Form::Component.new(author, action: '/') } do |f|
       f.send :"#{type}_field", :address, :city
     end
 
@@ -163,7 +163,7 @@ Field = Sus::Shared('field') do |args|
 
   describe 'bang attributes' do
     with ':required!' do
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, :required!
       end
 
@@ -173,7 +173,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     with 'required: true' do
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, required: true
       end
 
@@ -183,7 +183,7 @@ Field = Sus::Shared('field') do |args|
     end
 
     with ':required! and required: false' do
-      view -> { Proscenium::UI::Form::Component.new(user, url: '/') } do |f|
+      view -> { Proscenium::UI::Form::Component.new(user, action: '/') } do |f|
         f.send :"#{type}_field", :name, :required!, required: false
       end
 
