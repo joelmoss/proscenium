@@ -261,7 +261,7 @@ describe Proscenium::UI::Form::Fields::Select do
 
     it 'appends class value to field wrapper' do
       expect(view.find('div[class^="field_wrapper-"]')[:class]).to(
-        be == 'field_wrapper-eacb39cc field-eacb39cc my_class'
+        be == 'field-eacb39cc my_class'
       )
     end
   end

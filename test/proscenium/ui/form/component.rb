@@ -67,8 +67,8 @@ describe Proscenium::UI::Form::Component do
     expect(view.has_field?('authenticity_token', type: :hidden)).to be == true
   end
 
-  with ':url' do
-    view -> { subject.new(user, url: '/') }
+  with ':action' do
+    view -> { subject.new(user, action: '/') }
 
     it 'sets form action to URL' do
       expect(view.find('form')[:action]).to be == '/'
