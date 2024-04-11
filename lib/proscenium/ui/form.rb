@@ -58,7 +58,7 @@ module Proscenium::UI
       autoload :RichTextarea
       autoload :RadioGroup
       autoload :Select
-      autoload :Phone
+      autoload :Tel
     end
 
     include FieldMethods
