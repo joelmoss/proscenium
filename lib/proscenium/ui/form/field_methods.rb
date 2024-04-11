@@ -35,7 +35,7 @@ class Proscenium::UI::Form
     # @param attributes [Hash] passed through to each input
     def tel_field(*args, **attributes)
       merge_bang_attributes! args, attributes
-      render Fields::Phone.new(args, @model, self, **attributes)
+      render Fields::Tel.new(args, @model, self, **attributes)
     end
 
     # @param args [Array<Symbol>] name or nested names of model attribute

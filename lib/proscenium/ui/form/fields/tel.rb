@@ -4,36 +4,30 @@ require 'phonelib'
 require 'countries/iso3166'
 
 module Proscenium::UI::Form::Fields
-  class Phone < Base
+  class Tel < Base
     DEFAULT_COUNTRY = 'GB'
 
-    def self.css_module_path
-      source_path.sub_ext('.module.css')
-    end
+    sideload_assets js: { type: 'module' }
 
-    register_element :phone_field, tag: 'phone-field'
+    register_element :pui_tel_field
 
     def template
-      field :phone_field, class: :phone_field do
+      field :pui_tel_field do
         label do
-          label
-
-          div class: :@inputs do
-            div class: :@select do
-              select name: '_phone_country_code', data: { unstyled: true } do
+          div part: :inputs do
+            div part: :country do
+              select name: '_phone_country_code' do
                 countries.each do |name, code|
                   option(value: code, selected: code == country) { name }
                 end
               end
-              div data: { country_code: country.downcase }
-              icon 'caret-down-solid'
             end
 
-            input(name: field_name, type: 'text', **build_attributes)
+            input(name: field_name, type: 'text', part: :number, **build_attributes)
           end
-
-          hint
         end
+
+        hint
       end
     end
 
