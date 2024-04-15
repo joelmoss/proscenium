@@ -13,7 +13,6 @@ module Proscenium::UI::Form::Fields
     def view_template
       checked = ActiveModel::Type::Boolean.new.cast(value.nil? ? false : value)
 
-      hint_content = attributes.delete(:hint)
       checked_value = attributes.delete(:checked_value) || '1'
       unchecked_value = attributes.delete(:unchecked_value) || '0'
 
@@ -26,8 +25,7 @@ module Proscenium::UI::Form::Fields
           input(name: field_name, type: :checkbox, value: checked_value, checked:, **attributes)
           yield_content_with_no_args { content }
         end
-
-        hint hint_content
+        hint
       end
     end
   end
