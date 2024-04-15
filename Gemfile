@@ -5,7 +5,6 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
-gem 'phlex-rails'
 gem 'rails', '~> 7.0'
 
 group :development do

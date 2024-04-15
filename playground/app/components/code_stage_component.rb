@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class CodeStageComponent < ApplicationComponent
-  def template(&block)
+  def view_template(&block)
     div class: :@base do
       div(&block)
     end

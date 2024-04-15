@@ -1,6 +1,6 @@
 GIT
   remote: https://github.com/joeldrapper/literal.git
-  revision: 455f225574dbcb39b7e325a9f75c928a79ec812b
+  revision: 561119cc461535f41d8c58c27960d08807c97855
   specs:
     literal (0.1.0)
       concurrent-ruby (~> 1.2)
@@ -15,6 +15,7 @@ PATH
       dry-types (~> 1.7)
       ffi (~> 1.16.3)
       oj (~> 3.13)
+      phlex-rails (~> 1.2.1)
       railties (>= 6.1.0, < 8.0)
       ruby-next (~> 1.0.1)
 
@@ -136,7 +137,6 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
-    cgi (0.4.1)
     concurrent-ruby (1.2.3)
     connection_pool (2.4.1)
     crass (1.0.6)
@@ -144,7 +144,7 @@ GEM
       capybara (~> 3.0)
       ferrum (~> 0.14.0)
     date (3.3.4)
-    debug (1.9.1)
+    debug (1.9.2)
       irb (~> 1.10)
       reline (>= 0.3.8)
     diff-lcs (1.5.1)
@@ -165,8 +165,6 @@ GEM
       dry-inflector (~> 1.0)
       dry-logic (~> 1.4)
       zeitwerk (~> 2.6)
-    erb (4.0.4)
-      cgi (>= 0.3.3)
     erubi (1.12.0)
     fakefs (2.5.0)
     ferrum (0.14)
@@ -184,7 +182,7 @@ GEM
     irb (1.12.0)
       rdoc
       reline (>= 0.4.2)
-    json (2.7.1)
+    json (2.7.2)
     language_server-protocol (3.17.0.3)
     loofah (2.22.0)
       crass (~> 1.0.2)
@@ -207,12 +205,12 @@ GEM
       net-protocol
     net-protocol (0.2.2)
       timeout
-    net-smtp (0.4.0.1)
+    net-smtp (0.5.0)
       net-protocol
     nio4r (2.7.1)
-    nokogiri (1.16.3-arm64-darwin)
+    nokogiri (1.16.4-arm64-darwin)
       racc (~> 1.4)
-    nokogiri (1.16.3-x86_64-linux)
+    nokogiri (1.16.4-x86_64-linux)
       racc (~> 1.4)
     oj (3.16.3)
       bigdecimal (>= 3.0)
@@ -221,23 +219,19 @@ GEM
     parser (3.3.0.5)
       ast (~> 2.4.1)
       racc
-    phlex (1.9.1)
-      concurrent-ruby (~> 1.2)
-      erb (>= 4)
-      zeitwerk (~> 2.6)
-    phlex-rails (1.1.1)
-      phlex (~> 1.9)
+    phlex (1.10.0)
+    phlex-rails (1.2.1)
+      phlex (~> 1.10.0)
       railties (>= 6.1, < 8)
-      zeitwerk (~> 2.6)
     phlex-testing-capybara (0.1.0)
       capybara (~> 3.38)
       phlex (>= 0.5)
-    phlexible (1.0.0)
-      phlex (>= 1.8.1)
-      phlex-rails (>= 1.0.0)
+    phlexible (2.0.0)
+      phlex (>= 1.10.0, < 2.0.0)
+      phlex-rails (>= 1.2.1, < 2.0.0)
     psych (5.1.2)
       stringio
-    public_suffix (5.0.4)
+    public_suffix (5.0.5)
     puma (6.4.2)
       nio4r (~> 2.0)
     racc (1.7.3)
@@ -279,16 +273,16 @@ GEM
       thor (~> 1.0, >= 1.2.2)
       zeitwerk (~> 2.6)
     rainbow (3.1.1)
-    rake (13.1.0)
+    rake (13.2.1)
     rdoc (6.6.3.1)
       psych (>= 4.0.0)
     regexp_parser (2.9.0)
-    reline (0.4.3)
+    reline (0.5.1)
       io-console (~> 0.5)
     require-hooks (0.2.2)
     rexml (3.2.6)
     rouge (4.2.1)
-    rubocop (1.62.1)
+    rubocop (1.63.1)
       json (~> 2.3)
       language_server-protocol (>= 3.17.0)
       parallel (~> 1.10)
@@ -303,9 +297,9 @@ GEM
       parser (>= 3.3.0.4)
     rubocop-packaging (0.5.2)
       rubocop (>= 1.33, < 2.0)
-    rubocop-performance (1.20.2)
+    rubocop-performance (1.21.0)
       rubocop (>= 1.48.1, < 2.0)
-      rubocop-ast (>= 1.30.0, < 2.0)
+      rubocop-ast (>= 1.31.1, < 2.0)
     rubocop-rake (0.6.0)
       rubocop (~> 1.0)
     ruby-next (1.0.2)
@@ -365,7 +359,6 @@ DEPENDENCIES
   gem4!
   htmlbeautifier
   literal!
-  phlex-rails
   phlex-testing-capybara
   phlexible
   proscenium!

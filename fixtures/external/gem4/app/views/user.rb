@@ -1,6 +1,6 @@
 module Gem4::Views
   class User < Proscenium::Phlex
-    def template
+    def view_template
       h1 { 'Hello' }
     end
   end

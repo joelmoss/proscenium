@@ -3,7 +3,7 @@
 class UI::UJS::ConfirmView < UILayout
   register_element :ujs_confirm
 
-  def template
+  def view_template
     h1 do
       plain 'UJS '
       code { 'confirm' }

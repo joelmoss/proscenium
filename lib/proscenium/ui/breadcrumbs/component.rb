@@ -19,7 +19,7 @@ module Proscenium::UI
     option :class!, Types::Coercible::String | Types::Array.of(Types::Coercible::String),
            as: :class_name_override, default: -> { :@base }
 
-    def template
+    def view_template
       div class: [*class_name_override, *class_name] do
         ol do
           if with_home

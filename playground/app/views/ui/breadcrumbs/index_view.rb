@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UI::Breadcrumbs::IndexView < UILayout
-  def template
+  def view_template
     h1 { 'Breadcrumbs' }
 
     section do

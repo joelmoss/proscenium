@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Phlex::CssModuleHelperComponent < Proscenium::Phlex
-  def template
+  def view_template
     h1 class: css_module(:header) do
       'Hello'
     end

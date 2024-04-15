@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Phlex::NestedSideLoadView < Phlex::SideLoadView
-  def template
+  def view_template
     super do
       div { 'world' }
     end

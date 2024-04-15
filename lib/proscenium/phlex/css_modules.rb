@@ -40,7 +40,7 @@ module Proscenium
     #
     #   # app/components/user/component.rb
     #   class User::Component < Proscenium::Phlex
-    #     def template
+    #     def view_template
     #       div class: :@user_name do
     #         'Joel Moss'
     #       end
@@ -54,7 +54,7 @@ module Proscenium
     # add the CSS Module name `name` to the <div>.
     #
     #   class User::Component < Proscenium::Phlex
-    #     def template
+    #     def view_template
     #       div class: '/lib/users@name' do
     #         'Joel Moss'
     #       end

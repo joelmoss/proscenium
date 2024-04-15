@@ -5,7 +5,7 @@ class Phlex::SideLoadCssModuleFromAttributesView < Proscenium::Phlex
     @class_name = class_name
   end
 
-  def template
+  def view_template
     div(class: @class_name) { 'Hello' }
   end
 end

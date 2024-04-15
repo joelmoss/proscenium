@@ -7,7 +7,7 @@ class CodeBlockComponent < ApplicationComponent
 
   attribute :syntax, _Nilable(_Union(String, Symbol)), positional: true
 
-  def template(&block)
+  def view_template(&block)
     @code = capture(&block)
     @code = HtmlBeautifier.beautify(@code) if @syntax == :html
 

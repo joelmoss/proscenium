@@ -3,7 +3,7 @@
 class UI::UJS::DisableWithView < UILayout
   register_element :ujs_disable_with
 
-  def template
+  def view_template
     h1 do
       plain 'UJS '
       code { 'disable-with' }

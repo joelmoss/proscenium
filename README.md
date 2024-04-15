@@ -681,7 +681,7 @@ console.log(version);
 
 ```ruby
 class MyView < Proscenium::Phlex
-  def template
+  def view_template
     h1 { 'Hello World' }
   end
 end
@@ -693,7 +693,7 @@ In your layouts, include `Proscenium::Phlex::AssetInclusions`, and call the `inc
 class ApplicationLayout < Proscenium::Phlex
   include Proscenium::Phlex::AssetInclusions # <--
 
-  def template(&)
+  def view_template(&)
     doctype
     html do
       head do
@@ -721,7 +721,7 @@ Within your Phlex classes, any class names that begin with `@` will be treated a
 ```ruby
 # /app/views/users/show_view.rb
 class Users::ShowView < Proscenium::Phlex
-  def template
+  def view_template
     h1 class: :@user_name do
       @user.name
     end
@@ -750,7 +750,7 @@ You can of course continue to reference regular class names in your view, and th
 ```ruby
 # /app/views/users/show_view.rb
 class Users::ShowView < Proscenium::Phlex
-  def template
+  def view_template
     h1 class: :[@user_name, :title] do
       @user.name
     end
@@ -785,7 +785,7 @@ Any ViewComponent class that inherits `Proscenium::ViewComponent` will automatic
 ```ruby
 # /app/components/user_component.rb
 class UserComponent < Proscenium::ViewComponent
-  def template
+  def view_template
     div.h1 @user.name, class: css_module(:user_name)
   end
 end

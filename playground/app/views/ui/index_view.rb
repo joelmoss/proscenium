@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UI::IndexView < UILayout
-  def template
+  def view_template
     ul do
       li do
         a(href: ui_ujs_path) { 'UJS' }
