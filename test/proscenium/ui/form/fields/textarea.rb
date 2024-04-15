@@ -15,7 +15,7 @@ describe Proscenium::UI::Form::Fields::Textarea do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form/component.module.css']
+    expect(imports).to be == ['/proscenium/ui/form.css']
   end
 
   it 'has a label' do

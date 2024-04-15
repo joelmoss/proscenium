@@ -18,7 +18,7 @@ describe Proscenium::UI::Form::Fields::Select do
       view
       imports = Proscenium::Importer.imported.keys
 
-      expect(imports).to be == ['/proscenium/ui/form/component.module.css',
+      expect(imports).to be == ['/proscenium/ui/form.css',
                                 '/proscenium/ui/form/fields/select.jsx',
                                 '/proscenium/ui/form/fields/select.module.css']
     end
