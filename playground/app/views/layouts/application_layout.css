@@ -31,7 +31,7 @@ select {
   font: inherit;
 }
 
-code {
+p code {
   background-color: aliceblue;
   padding: 4px;
   border-radius: 6px;

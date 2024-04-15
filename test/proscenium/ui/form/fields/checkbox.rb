@@ -63,4 +63,27 @@ describe Proscenium::UI::Form::Fields::Checkbox do
                                              checked: true)).to be == true
     end
   end
+
+  with ':checked' do
+    view -> { Proscenium::UI::Form.new(user) } do |f|
+      f.checkbox_field :active?, checked: true
+    end
+
+    it 'overrides label' do
+      expect(view.has_field?('user[active]', type: :checkbox,
+                                             checked: true)).to be == true
+    end
+  end
+
+  with ':checked_value and :unchecked_value' do
+    view -> { Proscenium::UI::Form.new(user) } do |f|
+      f.checkbox_field :active, checked_value: 'yes'
+      f.checkbox_field :active, unchecked_value: 'no'
+    end
+
+    it 'overrides values' do
+      assert view.has_css?('[name="user[active]"][type="hidden"][value="no"]', visible: false)
+      assert view.has_css?('[name="user[active]"][value="yes"]')
+    end
+  end
 end
