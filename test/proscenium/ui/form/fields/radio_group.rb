@@ -50,7 +50,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
 
     it 'uses enum values for options' do
       fields = view.all('label:has(input[type="radio"][name="user[gender]"])')
-      expect(fields.map(&:text)).to be == %w[GenderMale GenderFemale GenderOther]
+      expect(fields.map(&:text)).to be == %w[Male Female Other]
 
       fields = view.all('label > input[type="radio"][name="user[gender]"]')
       expect(fields.map(&:value)).to be == %w[male female other]
@@ -94,7 +94,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
 
     it 'uses association values for options' do
       fields = view.all('label:has(input[type="radio"][name="event[user_id]"])')
-      expect(fields.map(&:text)).to be == ['UserJoel Moss', 'UserEve Moss']
+      expect(fields.map(&:text)).to be == ['Joel Moss', 'Eve Moss']
 
       fields = view.all('label > input[type="radio"][name="event[user_id]"]')
       expect(fields.map(&:value)).to be == User.pluck(:id).map(&:to_s)
