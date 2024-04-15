@@ -42,7 +42,7 @@ module Proscenium::UI::Form::Fields
       super
     end
 
-    def template(&options_block)
+    def view_template(&options_block)
       field class: :@field do
         if !options_block && typeahead?
           @component_props = attributes.delete(:component_props) || {}

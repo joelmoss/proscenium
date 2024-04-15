@@ -10,7 +10,7 @@ module Proscenium::UI::Form::Fields
   class Checkbox < Base
     register_element :pui_checkbox
 
-    def template
+    def view_template
       checked = ActiveModel::Type::Boolean.new.cast(value.nil? ? false : value)
 
       hint_content = attributes.delete(:hint)

@@ -18,7 +18,7 @@ module Proscenium::UI::Form::Fields
       super
     end
 
-    def template
+    def view_template
       field :pui_radio_group do
         label
 
