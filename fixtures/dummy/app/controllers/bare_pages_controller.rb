@@ -7,7 +7,7 @@ class BarePagesController < ApplicationController
 
   private
 
-  def normalize_sideload_assets_params # rubocop:disable Metrics/AbcSize
+  def normalize_sideload_assets_params
     %i[sideload_view_assets sideload_layout_assets
        sideload_partial_assets sideload_partial_layout_assets].each do |key|
       next unless params[key]

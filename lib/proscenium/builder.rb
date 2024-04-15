@@ -100,7 +100,7 @@ module Proscenium
       @base_url = base_url
     end
 
-    def build_to_path(path) # rubocop:disable Metrics/AbcSize
+    def build_to_path(path)
       ActiveSupport::Notifications.instrument('build_to_path.proscenium',
                                               identifier: path,
                                               cached: Proscenium.cache.exist?(path)) do

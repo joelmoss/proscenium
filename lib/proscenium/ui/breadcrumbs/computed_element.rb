@@ -37,7 +37,7 @@ module Proscenium::UI::Breadcrumbs
     # No matter what, the result is always passed to `url_for` before being returned.
     #
     # @return [String] the URL for the element
-    def path # rubocop:disable Metrics/AbcSize
+    def path
       @path ||= unless @element.path.nil?
                   case path = @element.path
                   when Array
