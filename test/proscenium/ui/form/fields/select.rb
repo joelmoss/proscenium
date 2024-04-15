@@ -99,7 +99,7 @@ describe Proscenium::UI::Form::Fields::Select do
           @user = user
         end
 
-        def template
+        def view_template
           render Proscenium::UI::Form.new(@user) do |f|
             f.select_field :gender do
               option { 'Bloke' }

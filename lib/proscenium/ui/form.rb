@@ -136,7 +136,7 @@ module Proscenium::UI
       end
     end
 
-    def template(&block)
+    def view_template(&block)
       form action:, method:, **@attributes do
         method_field
         authenticity_token_field

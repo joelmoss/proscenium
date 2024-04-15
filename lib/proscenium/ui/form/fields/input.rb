@@ -2,7 +2,7 @@
 
 module Proscenium::UI::Form::Fields
   class Input < Base
-    def template
+    def view_template
       field do
         label do
           input(name: field_name, type: field_type, **build_attributes)

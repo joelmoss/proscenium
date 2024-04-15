@@ -2,7 +2,7 @@
 
 module Proscenium::UI::Form::Fields
   class RadioInput < Base
-    def template
+    def view_template
       checked = attributes[:value].to_s == value.to_s
 
       default = model.class.human_attribute_name("#{attribute.join('.')}.#{attributes[:value]}")

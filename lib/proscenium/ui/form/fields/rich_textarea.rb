@@ -4,7 +4,7 @@ module Proscenium::UI::Form::Fields
   class RichTextarea < Base
     register_element :trix_editor
 
-    def template
+    def view_template
       value = attributes.delete(:value)
 
       field do

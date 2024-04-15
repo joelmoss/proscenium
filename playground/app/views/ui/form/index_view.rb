@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UI::Form::IndexView < UILayout
-  def template
+  def view_template
     h1 { 'Form' }
     markdown %(
       A form component that is used to render a form and its inputs in a consistent, and
@@ -211,7 +211,7 @@ class UI::Form::IndexView < UILayout
       render CodeBlockComponent.new :ruby do
         unsafe_raw <<~RUBY
           class MyEmailField < Proscenium::UI::Form::Fields::Base
-            def template
+            def view_template
               field do
                 label do
                   div style: 'display: flex;' do
@@ -243,7 +243,7 @@ class UI::Form::IndexView < UILayout
   end
 
   class MyEmailField < Proscenium::UI::Form::Fields::Base
-    def template
+    def view_template
       field do
         label do
           div style: 'display: flex;' do

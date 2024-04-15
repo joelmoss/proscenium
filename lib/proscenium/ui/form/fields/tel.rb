@@ -11,7 +11,7 @@ module Proscenium::UI::Form::Fields
 
     register_element :pui_tel_field
 
-    def template
+    def view_template
       field :pui_tel_field do
         label do
           div part: :inputs do

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class UI::Form::TelFieldView < UILayout
-  def template
+  def view_template
     h1 { 'Form::TelField' }
 
     markdown %(
