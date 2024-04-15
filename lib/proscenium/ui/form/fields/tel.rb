@@ -5,18 +5,24 @@ require 'countries/iso3166'
 
 module Proscenium::UI::Form::Fields
   class Tel < Base
-    DEFAULT_COUNTRY = 'GB'
+    DEFAULT_COUNTRY = 'US'
 
     sideload_assets js: { type: 'module' }
 
     register_element :pui_tel_field
+
+    def initialize(attribute, model, form, type: nil, error: nil, **attributes) # rubocop:disable Metrics/ParameterLists
+      super
+
+      @default_country = @attributes.delete(:default_country)&.to_s&.upcase || DEFAULT_COUNTRY
+    end
 
     def view_template
       field :pui_tel_field do
         label do
           div part: :inputs do
             div part: :country do
-              select name: '_phone_country_code' do
+              select do
                 countries.each do |name, code|
                   option(value: code, selected: code == country) { name }
                 end
@@ -35,9 +41,9 @@ module Proscenium::UI::Form::Fields
 
     def country
       @country ||= if value.blank?
-                     DEFAULT_COUNTRY
+                     @default_country
                    else
-                     Phonelib.parse(value, DEFAULT_COUNTRY).country || DEFAULT_COUNTRY
+                     Phonelib.parse(value, @default_country).country || @default_country
                    end
     end
 

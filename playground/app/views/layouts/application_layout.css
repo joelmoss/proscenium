@@ -31,6 +31,12 @@ select {
   font: inherit;
 }
 
+code {
+  background-color: aliceblue;
+  padding: 4px;
+  border-radius: 6px;
+}
+
 p,
 h1,
 h2,
