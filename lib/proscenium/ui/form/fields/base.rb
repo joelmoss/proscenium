@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'securerandom'
+
 module Proscenium::UI
   module Form::Fields
     #
@@ -58,7 +60,7 @@ module Proscenium::UI
       end
 
       # The main wrapper for the field. This is where the label, input, and error message are
-      # rendered. You can override this method to modify the markup of the field.
+      # rendered.
       #
       # @param tag_name: [Symbol] HTML tag name to use for the wrapper.
       # @param ** [Hash] Additional HTML attributes to pass to the wrapper.
@@ -131,7 +133,8 @@ module Proscenium::UI
       end
 
       def field_id(*args)
-        form.field_id(*attribute, *args)
+        @field_uid ||= SecureRandom.alphanumeric(10)
+        form.field_id(*attribute, @field_uid, *args)
       end
 
       def translate(namespace, postfix: nil, default: '')

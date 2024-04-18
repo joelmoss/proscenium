@@ -1,3 +1,5 @@
+@import "/proscenium/ui/props.css";
+
 pui-field {
   display: block;
 
@@ -12,6 +14,12 @@ pui-field {
   [part="hint"] {
     font-size: 0.9em;
     margin-top: 0.2em;
+  }
+
+  input {
+    border: var(--pui-input-border);
+    border-radius: var(--pui-input-border-radius);
+    background-color: var(--pui-input-background-color);
   }
 }
 
