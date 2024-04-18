@@ -19,18 +19,18 @@ module Proscenium::UI::Form::Fields
 
     def view_template
       field :pui_tel_field do
-        label do
-          div part: :inputs do
-            div part: :country do
-              select do
-                countries.each do |name, code|
-                  option(value: code, selected: code == country) { name }
-                end
+        label for: field_id
+
+        div part: :inputs do
+          div part: :country do
+            select do
+              countries.each do |name, code|
+                option(value: code, selected: code == country) { name }
               end
             end
-
-            input(name: field_name, type: 'text', part: :number, **build_attributes)
           end
+
+          input(name: field_name, type: 'text', part: :number, id: field_id, **build_attributes)
         end
 
         hint
