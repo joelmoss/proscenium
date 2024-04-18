@@ -1,0 +1,7 @@
+:where(html) {
+  --pui-input-border: 1px solid gray;
+  --pui-input-color: FieldText;
+  --pui-input-accent-color: lightgray;
+  --pui-input-border-radius: 2px;
+  --pui-input-background-color: Field;
+}
