@@ -10,12 +10,20 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.1].define(version: 2024_04_03_122248) do
+ActiveRecord::Schema[7.1].define(version: 2024_04_19_222304) do
+  create_table "fruits", force: :cascade do |t|
+    t.string "name"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "name"
     t.integer "gender"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "fruit_id"
+    t.index ["fruit_id"], name: "index_users_on_fruit_id", unique: true
   end
 
 end
