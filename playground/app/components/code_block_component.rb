@@ -5,7 +5,9 @@ require 'phlex/testing/view_helper'
 class CodeBlockComponent < ApplicationComponent
   FORMATTER = Rouge::Formatters::HTML.new
 
-  attribute :syntax, _Nilable(_Union(String, Symbol)), positional: true
+  include Dry::Initializer.define lambda {
+    param :syntax, Dry::Types['coercible.symbol']
+  }
 
   def view_template(&block)
     @code = capture(&block)

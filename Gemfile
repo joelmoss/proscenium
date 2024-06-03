@@ -20,7 +20,6 @@ group :development do
 
   # Playground
   gem 'htmlbeautifier'
-  gem 'literal', github: 'joeldrapper/literal'
   gem 'phlexible'
   gem 'rouge'
 end

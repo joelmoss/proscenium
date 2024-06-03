@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 class ApplicationComponent < Proscenium::Phlex
-  extend Literal::Attributes
   include Phlex::Rails::Helpers::Routes
   include Phlexible::Rails::AElement
 
