@@ -127,15 +127,27 @@ module Proscenium
           options[k] = obj.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
+        css_imports = []
+
         klass = obj.class
         while klass.respond_to?(:source_path) && klass.source_path && !klass.abstract_class
           if klass.respond_to?(:sideload)
             klass.sideload options
-          else
+          elsif options[:css] == false
             Importer.sideload klass.source_path, **options
+          else
+            Importer.sideload_js klass.source_path, **options
+            css_imports << klass.source_path
           end
 
           klass = klass.superclass
+        end
+
+        # The reason why we sideload CSS after JS is because the order of CSS is important.
+        # Basically, the layout should be loaded before the view so that CSS cascading works i9n the
+        # right direction.
+        css_imports.reverse_each do |it|
+          Importer.sideload_css it, **options
         end
       end
     end

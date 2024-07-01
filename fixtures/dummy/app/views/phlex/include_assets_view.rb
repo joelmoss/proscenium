@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-class Phlex::IncludeAssetsView < Proscenium::Phlex
+class Phlex::IncludeAssetsView < BasicLayout
   sideload_assets true
 
   def view_template

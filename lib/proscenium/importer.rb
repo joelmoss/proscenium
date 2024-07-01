@@ -61,19 +61,36 @@ module Proscenium
       #
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
       def sideload(filepath, **options)
+        return if !Proscenium.config.side_load || (options[:js] == false && options[:css] == false)
+
+        sideload_js(filepath, **options) unless options[:js] == false
+        sideload_css(filepath, **options) unless options[:css] == false
+      end
+
+      def sideload_js(filepath, **options)
         return unless Proscenium.config.side_load
 
         filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
         filepath = filepath.sub_ext('')
 
-        import_if_exists = lambda do |x|
+        JS_EXTENSIONS.find do |x|
           if (fp = filepath.sub_ext(x)).exist?
             import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
           end
         end
+      end
 
-        JS_EXTENSIONS.find(&import_if_exists) unless options[:js] == false
-        CSS_EXTENSIONS.find(&import_if_exists) unless options[:css] == false
+      def sideload_css(filepath, **options)
+        return unless Proscenium.config.side_load
+
+        filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
+        filepath = filepath.sub_ext('')
+
+        CSS_EXTENSIONS.find do |x|
+          if (fp = filepath.sub_ext(x)).exist?
+            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
+          end
+        end
       end
 
       def each_stylesheet(delete: false)
