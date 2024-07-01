@@ -16,6 +16,8 @@ module SystemTesting
     def puts(log_str)
       msg = Message.new(log_str)
 
+      return if msg.body.nil?
+
       raise ConsoleError, msg.message if msg.method == 'Runtime.exceptionThrown'
 
       if %w[Runtime.exceptionThrown Log.entryAdded Runtime.consoleAPICalled].include?(msg.method)
@@ -36,6 +38,9 @@ module SystemTesting
 
       def initialize(log_str)
         _symbol, _time, body_raw = log_str.strip.split(' ', 3)
+
+        return unless body_raw
+
         @body = JSON.parse body_raw
       end
 
