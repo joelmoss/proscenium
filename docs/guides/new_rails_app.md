@@ -1,10 +1,10 @@
 # Getting Started with a new Rails app
 
-Here we will guide you through the process of setting up a new Rails app with *Proscenium*, and demonstrate how simple and easy it is to use, especially when you [side load](/README.md#side-loading) your client side code. It's also a great starting point if you just use JavaScript sprinkles.
+Here we will guide you through the process of setting up a new Rails app with _Proscenium_, and demonstrate how simple and easy it is to use, especially when you [side load](/README.md#side-loading) your client side code. It's also a great starting point if you just use JavaScript sprinkles.
 
 ## Prerequisites
 
-Apart from the usual Rails prerequisites, there is absolutely nothing else that you need to install or configure to get started with *Proscenium*. It is a Ruby gem, and it will work with any version of Rails 7 or higher.
+Apart from the usual Rails prerequisites, there is absolutely nothing else that you need to install or configure to get started with _Proscenium_. It is a Ruby gem, and it will work with any version of Rails 7 or higher.
 
 ## Creating a new Rails app
 
@@ -60,7 +60,7 @@ Your new Rails app already has a `app/views/layouts/application.html.erb` file, 
   <body>
     <%= yield %>
 
-    <%= include_javascripts, type: 'module', defer: true %>
+    <%= include_javascripts %>
   </body>
 </html>
 ```

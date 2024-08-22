@@ -6,6 +6,6 @@
   </head>
   <body class="<%= css_module :body %>">
     <%= yield %>
-    <%= include_javascripts type: 'module', defer: true if Rails.env.development? %>
+    <%= include_javascripts if Rails.env.development? %>
   </body>
 </html>
