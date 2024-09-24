@@ -415,7 +415,7 @@ By default, Proscenium's output will take advantage of all modern JS features. F
 
 ### Tree Shaking
 
-Tree shaking is the term the JavaScript community uses for dead code elimination, a common compiler optimization that automatically removes unreachable code. Tree shaking is enabled by default in Proascenium.
+Tree shaking is the term the JavaScript community uses for dead code elimination, a common compiler optimization that automatically removes unreachable code. Tree shaking is enabled by default in Proscenium.
 
 ```javascript
 function one() {
