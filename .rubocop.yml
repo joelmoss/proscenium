@@ -8,6 +8,8 @@ AllCops:
   NewCops: enable
   SuggestExtensions: false
   Exclude:
+    - "lib/proscenium/ext/**/*"
+    - "playground/tmp/**/*"
     - "fixtures/dummy/node_modules/**/*"
     - "fixtures/dummy/vendor/**/*"
     - "fixtures/external/**/*"
