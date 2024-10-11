@@ -6,9 +6,6 @@ jobs:
       fail-fast: false
       matrix:
         os: ["ubuntu-latest", "macos-latest"]
-        ruby-version:
-          - "3.3"
-          - "head"
 
     runs-on: ${{ matrix.os }}
 
@@ -27,7 +24,6 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: ${{ matrix.ruby-version }}
       - run: bundle exec rake compile:local
       - run: bundle exec sus
 
@@ -39,7 +35,6 @@ jobs:
       - name: Setup
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
           bundler-cache: true
 
       - name: Rubocop
