@@ -3,6 +3,10 @@ require:
   - rubocop-performance
   - rubocop-rake
 
+inherit_mode:
+  merge:
+    - Exclude
+
 AllCops:
   TargetRubyVersion: 3.3
   NewCops: enable
