@@ -25,7 +25,7 @@ module Proscenium
       #   Should be the actual asset file, eg. app.css, some/component.js.
       # @param resolve [String] description of the file to resolve and import.
       # @return [String] the digest of the imported file path if a css module (*.module.css).
-      def import(filepath = nil, resolve: nil, **options)
+      def import(filepath = nil, resolve: nil, **)
         self.imported ||= {}
 
         filepath = Resolver.resolve(resolve) if !filepath && resolve

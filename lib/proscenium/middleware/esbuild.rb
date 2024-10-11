@@ -15,7 +15,7 @@ module Proscenium
                             detail[:text]
                           end
 
-          super(args)
+          super
         end
       end
 

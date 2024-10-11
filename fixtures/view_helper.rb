@@ -18,11 +18,11 @@ module ViewHelper
 
     let :view do
       result = if blk
-                 instance.call(view_context: view_context) do
+                 instance.call(view_context:) do
                    instance.instance_exec(instance, &blk)
                  end
                else
-                 instance.call(view_context: view_context)
+                 instance.call(view_context:)
                end
 
       ::Capybara::Node::Simple.new result

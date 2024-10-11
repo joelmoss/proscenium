@@ -25,8 +25,8 @@ module Proscenium
     #   end
     #
     # @yield the given block to a `div` within the top level component div.
-    def view_template(**attributes, &block)
-      send root_tag, **{ data: data_attributes }.deep_merge(attributes), &block
+    def view_template(**attributes, &)
+      send(root_tag, **{ data: data_attributes }.deep_merge(attributes), &)
     end
   end
 end

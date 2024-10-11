@@ -76,7 +76,7 @@ module Proscenium
             next unless imports.key?(inpath)
 
             if (import = imports[inpath]).delete(:lazy)
-              scripts[inpath] = import.merge(outpath: outpath)
+              scripts[inpath] = import.merge(outpath:)
             else
               opts = import[:js].is_a?(Hash) ? import[:js] : {}
               out << helpers.javascript_include_tag(outpath, extname: false, **opts)

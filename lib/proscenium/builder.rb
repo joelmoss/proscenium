@@ -84,15 +84,15 @@ module Proscenium
     end
 
     def self.build_to_path(path, root: nil, base_url: nil)
-      new(root: root, base_url: base_url).build_to_path(path)
+      new(root:, base_url:).build_to_path(path)
     end
 
     def self.build_to_string(path, root: nil, base_url: nil)
-      new(root: root, base_url: base_url).build_to_string(path)
+      new(root:, base_url:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
-      new(root: root).resolve(path)
+      new(root:).resolve(path)
     end
 
     def initialize(root: nil, base_url: nil)

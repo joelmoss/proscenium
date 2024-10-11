@@ -18,7 +18,7 @@ module Proscenium
 
       chunks_path = Rails.public_path.join('assets').to_s
       headers = Rails.application.config.public_file_server.headers || {}
-      @chunk_handler = ::ActionDispatch::FileHandler.new(chunks_path, headers: headers)
+      @chunk_handler = ::ActionDispatch::FileHandler.new(chunks_path, headers:)
     end
 
     def call(env)

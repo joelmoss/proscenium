@@ -1,40 +1,39 @@
 name: main
-on: [push, pull_request]
+on: [push]
 jobs:
   test:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "macos-latest"]
+        ruby-version:
+          - "3.3"
+          - "head"
+
+    runs-on: ${{ matrix.os }}
 
     env:
       RAILS_ENV: test
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-          ruby-version: 3.1
-      - run: bundle exec rake
+          ruby-version: ${{ matrix.ruby-version }}
+      - run: bundle exec sus
 
-  release:
-    runs-on: ubuntu-latest
-
+  rubocop:
+    runs-on: "ubuntu-latest"
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
-      - name: Set up Ruby
+      - name: Setup
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: 3.1
+          ruby-version: "3.3"
+          bundler-cache: true
 
-      - name: Install gem dependencies
-        run: bundle install
-
-      - name: Build native gem
-        env:
-          PROFILE: release
-        run: bundle exec rake build
-
-      - uses: actions/upload-artifact@v3
-        with:
-          name: artifacts
-          path: bin/esbuild-*
+      - name: Rubocop
+        run: bundle exec rubocop

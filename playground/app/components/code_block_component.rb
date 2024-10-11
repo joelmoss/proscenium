@@ -9,13 +9,13 @@ class CodeBlockComponent < ApplicationComponent
     param :syntax, Dry::Types['coercible.symbol']
   }
 
-  def view_template(&block)
-    @code = capture(&block)
+  def view_template(&)
+    @code = capture(&)
     @code = HtmlBeautifier.beautify(@code) if @syntax == :html
 
     div class: :@base do
       legend { @syntax }
-      pre class: :highlight, data: data do
+      pre(class: :highlight, data:) do
         @syntax ? unsafe_raw(FORMATTER.format(lexer.lex(@code))) : @code
       end
     end
@@ -24,7 +24,7 @@ class CodeBlockComponent < ApplicationComponent
   private
 
   def data
-    { language: @syntax, lines: lines }
+    { language: @syntax, lines: }
   end
 
   def lines

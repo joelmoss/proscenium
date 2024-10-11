@@ -88,7 +88,7 @@ module Proscenium
         index = app.config.public_file_server.index_name || 'index'
 
         app.middleware.insert_after(ActionDispatch::Static, ActionDispatch::Static,
-                                    root.join('public').to_s, index: index, headers: headers)
+                                    root.join('public').to_s, index:, headers:)
       end
     end
   end

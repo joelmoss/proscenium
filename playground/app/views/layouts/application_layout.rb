@@ -8,7 +8,7 @@ class ApplicationLayout < ApplicationView
     'Proscenium'
   end
 
-  def around_template(&block)
+  def around_template(&)
     doctype
 
     html do

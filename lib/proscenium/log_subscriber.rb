@@ -16,7 +16,7 @@ module Proscenium
       path = CGI.unescape(path) if path.start_with?(/https?%3A%2F%2F/)
 
       info do
-        message = +"  #{color('[Proscenium]', nil, bold: true)} Building (to path) #{path}"
+        message = "  #{color('[Proscenium]', nil, bold: true)} Building (to path) #{path}"
         message << " (Duration: #{event.duration.round(1)}ms | " \
                    "Allocations: #{event.allocations}#{cached})"
       end
@@ -27,7 +27,7 @@ module Proscenium
       path = CGI.unescape(path) if path.start_with?(/https?%3A%2F%2F/)
 
       info do
-        message = +"  #{color('[Proscenium]', nil, bold: true)} Building #{path}"
+        message = "  #{color('[Proscenium]', nil, bold: true)} Building #{path}"
         message << " (Duration: #{event.duration.round(1)}ms | Allocations: #{event.allocations})"
       end
     end
