@@ -34,7 +34,7 @@ module Proscenium
         unless self.imported.key?(filepath)
           # ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
 
-          self.imported[filepath] = { **options }
+          self.imported[filepath] = { ** }
           self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
         end
 
