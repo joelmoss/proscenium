@@ -1,13 +1,22 @@
-# Proscenium - Modern client-side development for Rails
+# Proscenium - Integrated Frontend Development for Rails
 
-Proscenium treats your client-side code as first class citizens of your Rails app, and assumes a "fast by default" internet. It bundles your JavaScript and CSS in real time, on demand, and with zero configuration.
+> 🗣️ prow · see · nee · uhm
+>
+> _noun_: **proscenium**
+>
+> - _the part of a theatre stage in front of the curtain._
+
+**_Proscenium_** treats your frontend and client-side code as first class citizens of your Rails
+app, and assumes a "fast by default" internet. It bundles and minifies JavaScript (+ JSX),
+TypeScript (+TSX) and CSS in real time, on demand, and with zero configuration.
 
 **The highlights:**
 
-- Fast real-time bundling, tree-shaking, code-splitting and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
-- NO JavaScript runtime needed - just the browser!
+- Fast, real-time bundling, tree-shaking, code-splitting and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
+- NO JavaScript runtime needed (eg. Node) - just the browser!
 - NO build step or pre-compilation.
-- NO additional process or server - Just run Rails!
+- NO additional process or server - Just run `rails s`!
+- Transforms newer JavaScript and CSS syntax to older syntax for older browsers.
 - Deep integration with Rails.
 - Automatically side-load your layouts, views, and partials.
 - Import from NPM, URL's, and locally.
@@ -70,7 +79,13 @@ Add this line to your Rails application's Gemfile, and you're good to go:
 gem 'proscenium'
 ```
 
-Please note that Proscenium is designed solely for use with Rails, so will not work - at least out of the box - anywhere else.
+Please note that Proscenium is designed solely for use with Rails, so will not work - at least out
+of the box - anywhere else.
+
+Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a
+file at `app/views/layouts/application.css` can be accessed at
+`https://yourapp.com/app/views/layouts/application.css`, which will be bundled, transformed,
+and minified [in production] in real time.
 
 ## Client-Side Code Anywhere
 
@@ -191,13 +206,46 @@ There are also `include_stylesheets` and `include_javascripts` helpers to allow 
 the CSS and JS assets are included in the HTML. These helpers should be used instead of
 `include_assets` if you want to control exactly where the assets are included.
 
-## Importing Assets
+## Bundling
 
-Proscenium supports importing JS, JSX, TS, TSX, CSS and SVG from NPM, by URL, your local app, and even from Ruby Gems.
+To bundle a file means to inline any imported dependencies into the file itself. This process is
+recursive so dependencies of dependencies (and so on) will also be inlined.
 
-Imported files are bundled together in real time. So no build step or pre-compilation is needed.
+Proscenium will bundle by default, and in real time. So there is no separate build step or
+pre-compilation.
 
-Imports are assumed to be JS files, so there is no need to specify the file extesnion in such cases. But you can if you like. All other file types must be specified using their full file name and extension.
+Proscenium supports importing JS, JSX, TS, TSX, CSS and SVG from NPM, by URL, your local app, and
+even from other Ruby Gems.
+
+Both static
+([`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import))
+and dynamic
+([`import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import))
+imports are supported for JavaScript and TypeScript, and can be used to import JS, TS, JSX, TSX,
+JSON, CSS and SVG files.
+
+The [`@import`](https://developer.mozilla.org/en-US/docs/Web/CSS/@import) CSS at-rule is supported for CSS.
+
+### Non-analyzable imports
+
+Import paths are currently only bundled if they are a string literal or a glob pattern. Other forms
+of import paths are not bundled, and are instead preserved verbatim in the generated output. This is
+because bundling is a compile-time operation and Proscenium doesn't support all forms of run-time
+path resolution.
+
+Here are some examples:
+
+```js
+// Analyzable imports (will be bundled)
+import "pkg";
+import("pkg");
+import(`./locale-${foo}.json`);
+
+// Non-analyzable imports (will not be bundled)
+import(`pkg/${foo}`);
+```
+
+The way to work around non-analyzable imports is to mark the package containing this problematic code as [unbundled](#Unbundling) so that it's not included in the bundle. You will then need to ensure that a copy of the external package is available to your bundled code at run-time.
 
 ### URL Imports
 
@@ -215,7 +263,17 @@ URL imports are cached, so that each import is only fetched once per server rest
 
 ### Import from NPM (`node_modules`)
 
-Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file:
+Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and
+will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file located at
+the root of your Rails app.
+
+Install the package you want to import using your package manager of choice...
+
+```
+npm install react
+```
+
+...and then import it as you would any other package.
 
 ```js
 import React from "react";
@@ -223,24 +281,17 @@ import React from "react";
 
 ### Local Imports
 
-And of course you can import your own code, using relative or absolute paths (file extension is optional):
+And of course you can import your own code, using relative or absolute paths (file extension is
+optional, and absolute paths use your Rails root as the base):
 
-```js /app/views/layouts/application.js
+```js
 import utils from "/lib/utils";
-```
-
-```js /lib/utils.js
 import constants from "./constants";
+import Header from "/app/components/header";
 ```
 
-```css /app/views/layouts/application.css
+```css
 @import "/lib/reset";
-```
-
-```css /lib/reset.css
-body {
-  /* some styles... */
-}
 ```
 
 ### Unbundling
@@ -253,7 +304,7 @@ import React from "unbundle:react";
 
 This only works any bare and local imports.
 
-You can also use the `unbundle` prefix in your import map, which ensures that all imports of a particular path is always unbundled:
+You can also use the `unbundle` prefix in your [import map](#import-maps), which ensures that all imports of a particular path is always unbundled:
 
 ```json
 {
@@ -411,7 +462,10 @@ import translations from "@proscenium/i18n";
 
 ## Javascript
 
-By default, Proscenium's output will take advantage of all modern JS features. For example, `a !== void 0 && a !== null ? a : b` will become `a ?? b` when minifying (enabled by default in production), which makes use of syntax from the ES2020 version of JavaScript.
+By default, Proscenium's output will take advantage of all modern JS features. For example, `a !==
+void 0 && a !== null ? a : b` will become `a ?? b` when minifying (enabled by default in
+production), which makes use of syntax from the ES2020 version of JavaScript. Any syntax feature
+that is not supported by ES2020 will be transformed into older JavaScript sysntax that is more widely supported.
 
 ### Tree Shaking
 
