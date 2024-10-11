@@ -63,7 +63,7 @@ describe Proscenium::Phlex::ReactComponent do
   end
 
   with 'root_tag' do
-    def after
+    def after(error = nil)
       Phlex::BasicReactComponent.root_tag = :div # reset
       super
     end
@@ -95,7 +95,7 @@ describe Proscenium::Phlex::ReactComponent do
   # end
 
   describe 'lazy loading' do
-    def after
+    def after(error = nil)
       Phlex::BasicReactComponent.lazy = false # reset
       super
     end
@@ -148,7 +148,7 @@ describe Proscenium::Phlex::ReactComponent do
   end
 
   with '`.forward_children = true`' do
-    def after
+    def after(error = nil)
       Phlex::React::ForwardChildren::Component.forward_children = true
       super
     end
@@ -186,7 +186,7 @@ describe Proscenium::Phlex::ReactComponent do
       super
     end
 
-    def after
+    def after(error = nil)
       Phlex::React::ForwardChildren::Component.forward_children = true
       super
     end

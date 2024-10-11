@@ -27,7 +27,7 @@ Capybara.server = :puma, { Silent: true }
 SystemTest = Sus::Shared('system test') do
   include Capybara::DSL
 
-  def after
+  def after(error = nil)
     super
     Capybara.reset_sessions!
   end
