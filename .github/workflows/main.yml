@@ -18,10 +18,15 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+      - run: go version
+      - run: go test ./test
+
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
           ruby-version: ${{ matrix.ruby-version }}
+      - run: bundle exec rake compile:local
       - run: bundle exec sus
 
   rubocop:
@@ -36,4 +41,4 @@ jobs:
           bundler-cache: true
 
       - name: Rubocop
-        run: bundle exec rubocop
+        run: bundle exec rubocop -P --fail-level C
