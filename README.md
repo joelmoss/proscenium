@@ -6,9 +6,7 @@
 >
 > - _the part of a theatre stage in front of the curtain._
 
-**_Proscenium_** treats your frontend and client-side code as first class citizens of your Rails
-app, and assumes a "fast by default" internet. It bundles and minifies JavaScript (+ JSX),
-TypeScript (+TSX) and CSS in real time, on demand, and with zero configuration.
+**_Proscenium_** treats your frontend and client-side code as first class citizens of your Rails app, and assumes a "fast by default" internet. It bundles and minifies JavaScript (+ JSX), TypeScript (+TSX) and CSS in real time, on demand, and with zero configuration.
 
 **The highlights:**
 
@@ -79,13 +77,9 @@ Add this line to your Rails application's Gemfile, and you're good to go:
 gem 'proscenium'
 ```
 
-Please note that Proscenium is designed solely for use with Rails, so will not work - at least out
-of the box - anywhere else.
+Please note that Proscenium is designed solely for use with Rails.
 
-Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a
-file at `app/views/layouts/application.css` can be accessed at
-`https://yourapp.com/app/views/layouts/application.css`, which will be bundled, transformed,
-and minified [in production] in real time.
+Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be bundled, transformed, and minified [in production] in real time.
 
 ## Client-Side Code Anywhere
 
@@ -97,23 +91,21 @@ Simply put your JS(X) and CSS anywhere you want, and they will be served by your
 
 Using the examples above...
 
-- `app/views/users/index.js` => `https://yourapp.com/app/views/users/index.js`
-- `app/views/layouts/application.css` => `https://yourapp.com/app/views/layouts/application.css`
-- `lib/utils.js` => `https://yourapp.com/lib/utils.js`
-- `app/components/menu_component.jsx` => `https://yourapp.com/app/components/menu_component.jsx`
-- `config/properties.css` => `https://yourapp.com/config/properties.css`
+- `app/views/users/index.js` => `https://localhost:3000/app/views/users/index.js`
+- `app/views/layouts/application.css` => `https://localhost:3000/app/views/layouts/application.css`
+- `lib/utils.js` => `https://localhost:3000/lib/utils.js`
+- `app/components/menu_component.jsx` => `https://localhost:3000/app/components/menu_component.jsx`
+- `config/properties.css` => `https://localhost:3000/config/properties.css`
 
 ## Side Loading
 
-> Prior to **0.10.0**, only assets with the extension `.js`, `.ts` and `.css` were side loaded. From 0.10.0, all assets are side loaded, including `.jsx`, `.tsx`, and `.module.css`. Also partials were not side loaded prior to 0.10.0.
-
-Proscenium is best experienced when you side load your assets.
+Proscenium is best experienced when your assets are automtically side loaded.
 
 ### The Problem
 
 With Rails you would typically declaratively load your JavaScript and CSS assets using the `javascript_include_tag` and `stylesheet_link_tag` helpers.
 
-For example, you may have top-level "application" CSS located in a file at `/app/assets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/assets/application.js`.
+For example, you may have top-level "application" CSS located in a file at `/app/assets/stylesheets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/javascript/application.js`.
 
 You would manually and declaratively include those two files in your application layout, something like this:
 
@@ -192,46 +184,29 @@ Now, in your layout and view, replace the `javascript_include_tag` and `styleshe
 </html>
 ```
 
-On each page request, Proscenium will check if any of your views, layouts and partials have a
-JS/TS/CSS file of the same name, and then include them wherever your placed the `include_assets`
-helper.
+On each page request, Proscenium will check if any of your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `include_assets` helper.
 
-Now you never have to remember to include your assets again. Just create them alongside your views,
-partials and layouts, and Proscenium will take care of the rest.
+Now you never have to remember to include your assets again. Just create them alongside your views, partials and layouts, and Proscenium will take care of the rest.
 
-Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load`
-to `false` in your `/config/application.rb`.
+Side loading is enabled by default, but you can disable it by setting `config.proscenium.side_load` to `false` in your `/config/application.rb`.
 
-There are also `include_stylesheets` and `include_javascripts` helpers to allow you to control where
-the CSS and JS assets are included in the HTML. These helpers should be used instead of
-`include_assets` if you want to control exactly where the assets are included.
+There are also `include_stylesheets` and `include_javascripts` helpers to allow you to control where the CSS and JS assets are included in the HTML. These helpers should be used instead of `include_assets` if you want to control exactly where the assets are included.
 
 ## Bundling
 
-To bundle a file means to inline any imported dependencies into the file itself. This process is
-recursive so dependencies of dependencies (and so on) will also be inlined.
+To bundle a file means to inline any imported dependencies into the file itself. This process is recursive so dependencies of dependencies (and so on) will also be inlined.
 
-Proscenium will bundle by default, and in real time. So there is no separate build step or
-pre-compilation.
+Proscenium will bundle by default, and in real time. So there is no separate build step or pre-compilation.
 
-Proscenium supports importing JS, JSX, TS, TSX, CSS and SVG from NPM, by URL, your local app, and
-even from other Ruby Gems.
+Proscenium supports importing JS, JSX, TS, TSX, CSS and SVG from NPM, by URL, your local app, and even from other Ruby Gems.
 
-Both static
-([`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import))
-and dynamic
-([`import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import))
-imports are supported for JavaScript and TypeScript, and can be used to import JS, TS, JSX, TSX,
-JSON, CSS and SVG files.
+Both static ([`import`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Statements/import)) and dynamic ([`import()`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/import)) imports are supported for JavaScript and TypeScript, and can be used to import JS, TS, JSX, TSX, JSON, CSS and SVG files.
 
 The [`@import`](https://developer.mozilla.org/en-US/docs/Web/CSS/@import) CSS at-rule is supported for CSS.
 
 ### Non-analyzable imports
 
-Import paths are currently only bundled if they are a string literal or a glob pattern. Other forms
-of import paths are not bundled, and are instead preserved verbatim in the generated output. This is
-because bundling is a compile-time operation and Proscenium doesn't support all forms of run-time
-path resolution.
+Import paths are currently only bundled if they are a string literal or a glob pattern. Other forms of import paths are not bundled, and are instead preserved verbatim in the generated output. This is because bundling is a compile-time operation and Proscenium doesn't support all forms of run-time path resolution.
 
 Here are some examples:
 
@@ -263,9 +238,7 @@ URL imports are cached, so that each import is only fetched once per server rest
 
 ### Import from NPM (`node_modules`)
 
-Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and
-will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file located at
-the root of your Rails app.
+Bare imports (imports not beginning with `./`, `/`, `https://`, `http://`) are fully supported, and will use your package manager of choice (eg, NPM, Yarn, pnpm) via the `package.json` file located at the root of your Rails app.
 
 Install the package you want to import using your package manager of choice...
 
@@ -281,8 +254,7 @@ import React from "react";
 
 ### Local Imports
 
-And of course you can import your own code, using relative or absolute paths (file extension is
-optional, and absolute paths use your Rails root as the base):
+And of course you can import your own code, using relative or absolute paths (file extension is optional, and absolute paths use your Rails root as the base):
 
 ```js
 import utils from "/lib/utils";
@@ -462,10 +434,7 @@ import translations from "@proscenium/i18n";
 
 ## Javascript
 
-By default, Proscenium's output will take advantage of all modern JS features. For example, `a !==
-void 0 && a !== null ? a : b` will become `a ?? b` when minifying (enabled by default in
-production), which makes use of syntax from the ES2020 version of JavaScript. Any syntax feature
-that is not supported by ES2020 will be transformed into older JavaScript sysntax that is more widely supported.
+By default, Proscenium's output will take advantage of all modern JS features from the ES2022 spec and earlier. For example, `a !== void 0 && a !== null ? a : b` will become `a ?? b` when minifying (enabled by default in production), which makes use of syntax from the ES2020 version of JavaScript. Any syntax feature that is not supported by ES2020 will be transformed into older JavaScript syntax that is more widely supported.
 
 ### Tree Shaking
 
@@ -544,6 +513,8 @@ CSS is a first-class content type in Proscenium, which means it can bundle CSS f
 Note that by default, Proscenium's output will take advantage of all modern CSS features. For example, `color: rgba(255, 0, 0, 0.4)` will become `color: #f006` after minifying in production, which makes use of syntax from [CSS Color Module Level 4](https://drafts.csswg.org/css-color-4/#changes-from-3).
 
 The new CSS nesting syntax is supported, and transformed into non-nested CSS for older browsers.
+
+Proscenium will also automatically insert vendor prefixes so that your CSS will work in older browsers.
 
 ### Importing CSS from JavaScript
 
@@ -889,7 +860,7 @@ Proscenium brings back RJS! Any path ending in .rjs will be served from your Rai
 
 Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories of your Rails application's root: `/app`, `/lib`, `/config`, `/node_modules`, `/vendor`.
 
-So a file at `/app/views/users/index.js` will be served from `https://yourapp.com/app/views/users/index.js`.
+So a file at `/app/views/users/index.js` will be served from `https://localhost:3000/app/views/users/index.js`.
 
 You can continue to access any file in the `/public` directory as you normally would. Proscenium will not process files in the `/public` directory.
 

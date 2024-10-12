@@ -36,9 +36,53 @@ And finally start the Rails server:
 rails server
 ```
 
+Now open up your app in your browser at http://localhost:3000/articles, and you should see the scaffolded views for your Article resource.
+
+Let's add a little styling to our app. Open up `app/assets/stylesheets/application.css`, and replace its contenets with the following:
+
+```css
+body {
+  font-family: sans-serif;
+
+  h1 {
+    color: red;
+  }
+}
+```
+
+Reload http://localhost:3000/articles and you will see your styling applied to the page!
+
+Note that we used CSS nesting above, which is a new CSS syntax that only supported by the most recent browser versions. Proscenium will automatically transform this to standard CSS that is supported by older browsers, and it will do so in real time. You can see this by going to http://localhost:3000/app/assets/stylesheets/application.css in your browser. It should look like this:
+
+```css
+/* app/assets/stylesheets/application.css */
+body {
+  font-family: sans-serif;
+}
+body h1 {
+  color: red;
+}
+/*# sourceMappingURL=application.css.map */
+```
+
+Now lets add some JavaScript sprinkles to our app. Create a new file (or replace the existing one) at `app/javascript/application.js` with the following contents:
+
+```js
+import confetti from "https://esm.sh/canvas-confetti@1.6.0";
+confetti();
+```
+
+Then include that JS file using Rails `javascript_include_tag` helper. Add the following line to your `app/views/layouts/application.html.erb` file, just before the closing `</body>` tag:
+
+```erb
+<%= javascript_include_tag "application", type: 'module' %>
+```
+
+Now open up your app in your browser at http://localhost:3000/articles, and you should see some confetti!
+
 ## Automatically Including your JavaScript and CSS
 
-Even though you created a Rails app without the default asset pipeline provided by Rails, Rails still assumes that you will be serving your JavaScript and CSS from the `app/assets` directory. Proscenium makes no such assumption, and you can [serve your assets from anywhere you like](https://github.com/joelmoss/proscenium#client-side-code-anywhere).
+Even though you created a Rails app without the default asset pipeline provided by Rails, Rails still assumes that you will be serving your CSS from the `app/assets/stylesheets` directory, and your JS from the `app/javascript` directory. Proscenium makes no such assumption, and you can [serve your assets from anywhere you like](https://github.com/joelmoss/proscenium#client-side-code-anywhere).
 
 While you could of course use the `javascript_include_tag` and `stylesheet_link_tag` helpers to [manually include](#manually-including-your-javascript-and-css) your JavaScript and CSS, Proscenium provides a much better way to do this by side loading your client side code.
 
@@ -54,13 +98,13 @@ Your new Rails app already has a `app/views/layouts/application.html.erb` file, 
     <%= csrf_meta_tags %>
     <%= csp_meta_tag %>
 
-    <%= include_stylesheets %>
+    <%= include_stylesheets %> # <--
   </head>
 
   <body>
     <%= yield %>
 
-    <%= include_javascripts %>
+    <%= include_javascripts %> # <--
   </body>
 </html>
 ```
@@ -69,18 +113,17 @@ You may have noticed that unlike the original Rails helpers that you just replac
 
 ### Side load your application layout
 
-Create a new file at `app/views/layouts/application.js` with the following contents:
+Earlier we added some JS into `app/javascript/application.js`. Let's move that to `app/views/layouts/application.js` so it is alongside your application layout at `app/views/layouts/application.html.erb`.
 
-```js
-import confetti from "https://esm.sh/canvas-confetti@1.6.0";
-confetti();
-```
+Then do the same with the application CSS, moving that from `app/assets/stylesheets/application.css` to `app/views/layouts/application.css`.
 
-Now open up your app in your browser at http://localhost:3000/articles, and you should see some confetti!
+Now open up your browser at http://localhost:3000/articles, and reload. You should still see the same styling and confetti!
 
 ### Side load your views
 
-Create a new file at `app/views/views/articles/index.css` with the following contents:
+We now want to add some different styling to the articles index page, while still keeping all other pages the same; using the application CSS.
+
+Create a new file alongside the articles index view at `app/views/views/articles/index.css` with the following contents:
 
 ```css
 body {
