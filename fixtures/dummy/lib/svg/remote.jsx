@@ -1,5 +1,5 @@
-import AtIcon from 'https://proscenium.test/at.svg'
+import AtIcon from "https://proscenium.test/at.svg";
 
 export default () => {
-  return <AtIcon />
-}
+  return <AtIcon />;
+};

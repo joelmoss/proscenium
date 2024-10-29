@@ -139,20 +139,6 @@ describe Proscenium::Middleware do
     ).squish
   end
 
-  it 'serves js from url' do
-    get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js'
-
-    expect(response.headers['Content-Type']).to be == 'application/javascript'
-    expect(response.body.squish).to include %(// url:https://ga.jspm.io/npm:is-fn@3.0.0/index.js)
-  end
-
-  it 'serves js sourcemap' do
-    get '/https%3A%2F%2Fga.jspm.io%2Fnpm%3Ais-fn%403.0.0%2Findex.js.map'
-
-    expect(response.headers['Content-Type']).to be == 'application/json'
-    expect(response.body.squish).to include %(sources": ["url:https://ga.jspm.io/npm:is-fn@3.0.0/index.js"])
-  end
-
   it 'serves @proscenium/* runtime libs' do
     get '/@proscenium/test.js'
 

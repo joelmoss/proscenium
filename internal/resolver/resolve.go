@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"net/url"
 	"path"
 	"reflect"
 	"strings"
@@ -44,12 +43,12 @@ func Resolve(options Options) (string, error) {
 	// Look for a match in the import map
 	resolvedImport, matched := importmap.Resolve(options.Path, types.Config.RootPath)
 	if matched {
-		if utils.IsUrl(resolvedImport) {
-			return "/" + url.QueryEscape(resolvedImport), nil
-		}
-
 		options.Path = resolvedImport
 	} else if path.IsAbs(options.Path) && utils.HasExtension(options.Path) {
+		return options.Path, nil
+	}
+
+	if utils.IsUrl(options.Path) {
 		return options.Path, nil
 	}
 

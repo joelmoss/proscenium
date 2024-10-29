@@ -4,7 +4,6 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"net/url"
 	"path"
 	"path/filepath"
 	"strings"
@@ -97,15 +96,13 @@ var Bundler = esbuild.Plugin{
 				}, nil
 			})
 
-		// Encode URL's and return with a prefixed slash. Then externalise them. This allows us to treat
-		// URL's as local paths for later bundling and transforming.
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://(.+)\.svg$`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				// pp.Println("[1a] filter(^https://)", args)
 
 				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
 				// namespace.
-				if utils.IsSvgImportedFromJsx(args.Path, args) {
+				if utils.IsImportedFromJsx(args.Path, args) {
 					return esbuild.OnResolveResult{
 						Path:      args.Path,
 						Namespace: "svgFromJsx",
@@ -114,73 +111,17 @@ var Bundler = esbuild.Plugin{
 
 				// URL's are external.
 				return esbuild.OnResolveResult{
-					Path:     "/" + url.QueryEscape(args.Path),
+					Path:     args.Path,
 					External: true,
 				}, nil
 			})
+
+		// Mark all paths starting with "http://" or "https://" as external
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				// pp.Println("[1a] filter(^https://)", args)
-
-				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
-				// namespace.
-				if utils.IsSvgImportedFromJsx(args.Path, args) {
-					return esbuild.OnResolveResult{
-						Path:      args.Path,
-						Namespace: "svgFromJsx",
-					}, nil
-				}
-
-				// URL's are external.
 				return esbuild.OnResolveResult{
-					Path:     "/" + url.QueryEscape(args.Path),
+					Path:     args.Path,
 					External: true,
-				}, nil
-			})
-
-		// Intercept URL encoded paths starting with "https%3A%2F%2F" and "http%3A%2F%2F", decode them
-		// back to the original URL, and tag them with the url namespace.
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?%3A%2F%2F`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				// pp.Println("[1b] filter(^https?%3A%2F%2F)", args)
-
-				path, err := url.QueryUnescape(args.Path)
-				if err != nil {
-					return esbuild.OnResolveResult{}, err
-				}
-
-				return esbuild.OnResolveResult{
-					Path:      path,
-					Namespace: "url",
-				}, nil
-			})
-
-		// Handles dependencies of URL modules. Relative and absolute paths are resolved relative to the
-		// URL. While bare paths are resolved relative to the local root.
-		build.OnResolve(esbuild.OnResolveOptions{Filter: ".*", Namespace: "url"},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				// pp.Println("[2] namespace(url)", args)
-
-				if utils.IsBareModule(args.Path) {
-					// pp.Println("[2a] namespace(url)", args)
-					return esbuild.OnResolveResult{
-						// Namespace: "file",
-					}, nil
-				}
-
-				base, err := url.Parse(args.Importer)
-				if err != nil {
-					return esbuild.OnResolveResult{}, err
-				}
-
-				relative, err := url.Parse(args.Path)
-				if err != nil {
-					return esbuild.OnResolveResult{}, err
-				}
-
-				return esbuild.OnResolveResult{
-					Path:      base.ResolveReference(relative).String(),
-					Namespace: "url",
 				}, nil
 			})
 
@@ -243,13 +184,12 @@ var Bundler = esbuild.Plugin{
 
 				resolvedImport, importMapMatched := importmap.Resolve(result.Path, args.ResolveDir)
 				if importMapMatched {
+					result.Path = resolvedImport
+
 					if utils.IsUrl(resolvedImport) {
-						result.Path = "/" + url.QueryEscape(resolvedImport)
 						result.External = true
 						return result, nil
 					}
-
-					result.Path = resolvedImport
 
 					if strings.HasPrefix(result.Path, "unbundle:") {
 						result.Path = strings.TrimPrefix(result.Path, "unbundle:")

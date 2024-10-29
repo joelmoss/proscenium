@@ -38,11 +38,6 @@ func IsUrl(name string) bool {
 	return re.MatchString(name)
 }
 
-func IsEncodedUrl(name string) bool {
-	var re = regexp.MustCompile(`^https?%3A%2F%2F`)
-	return re.MatchString(name)
-}
-
 func PathIsRelative(name string) bool {
 	var re = regexp.MustCompile(`^\.(\.)?\/`)
 	return re.MatchString(name)
@@ -90,7 +85,11 @@ func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
 }
 
 func IsSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement && PathIsSvg(path) && (PathIsJsx(args.Importer) || PathIsTsx(args.Importer))
+	return PathIsSvg(path) && IsImportedFromJsx(path, args)
+}
+
+func IsImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
+	return args.Kind == esbuild.ResolveJSImportStatement && (PathIsJsx(args.Importer) || PathIsTsx(args.Importer))
 }
 
 func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {

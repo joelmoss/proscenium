@@ -124,14 +124,10 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		plugin.I18n,
 		plugin.Rjs(options.BaseUrl),
 		plugin.Bundler,
-		plugin.Svg, plugin.Url, plugin.Css,
+		plugin.Svg, plugin.Css,
 	}
 
-	if utils.IsUrl(options.Path) || utils.IsEncodedUrl(options.Path) {
-		buildOptions.Define = make(map[string]string, 2)
-		buildOptions.Define["process.env.NODE_ENV"] = fmt.Sprintf("'%s'", types.Config.Environment.String())
-		buildOptions.Define["proscenium.env"] = "undefined"
-	} else {
+	if !utils.IsUrl(options.Path) {
 		definitions, err := buildEnvVars(options.EnvVars)
 		if err != nil {
 			return esbuild.BuildResult{
@@ -142,13 +138,12 @@ func Build(options BuildOptions) esbuild.BuildResult {
 			}
 		}
 		buildOptions.Define = definitions
+		buildOptions.Define["global"] = "window"
 
 		if options.Output == OutputToPath {
 			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
 		}
 	}
-
-	buildOptions.Define["global"] = "window"
 
 	return esbuild.Build(buildOptions)
 }

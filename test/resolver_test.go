@@ -58,7 +58,7 @@ var _ = Describe("Resolve", func() {
 			}`
 
 			Expect(Resolve("foo", ResolveOpts{ImportMap: im})).To(Equal("/lib/foo.js"))
-			Expect(Resolve("bar", ResolveOpts{ImportMap: im})).To(Equal("/https%3A%2F%2Fsome.com%2Fbar.js"))
+			Expect(Resolve("bar", ResolveOpts{ImportMap: im})).To(Equal("https://some.com/bar.js"))
 		})
 
 		It("produces error on invalid json", func() {

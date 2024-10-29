@@ -27,15 +27,11 @@ func BuildToString(options BuildOptions) (bool, string) {
 		return true, contents
 	}
 
-	if utils.IsEncodedUrl(options.Path) {
-		contents += "//# sourceMappingURL=" + options.Path + ".map"
+	sourcemapUrl := path.Base(options.Path)
+	if utils.PathIsCss(result.OutputFiles[0].Path) {
+		contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
 	} else {
-		sourcemapUrl := path.Base(options.Path)
-		if utils.PathIsCss(result.OutputFiles[0].Path) {
-			contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
-		} else {
-			contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
-		}
+		contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
 	}
 
 	return true, contents
