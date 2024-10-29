@@ -22,14 +22,4 @@ var _ = Describe("Build(env)", func() {
 			`))
 		})
 	})
-
-	When("used in URL import", func() {
-		It("is void", func() {
-			MockURL("/foo.js", `console.log(proscenium.env.RAILS_ENV);`)
-
-			Expect(Build("https%3A%2F%2Fproscenium.test%2Ffoo.js")).To(ContainCode(`
-				console.log((void 0).RAILS_ENV);
-			`))
-		})
-	})
 })

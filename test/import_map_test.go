@@ -69,7 +69,7 @@ var _ = Describe("Build(import_map)", func() {
 				})
 
 				Expect(result).To(ContainCode(`
-					import foo from "/https%3A%2F%2Fproscenium.test%2Ffoo.js";
+					import foo from "https://proscenium.test/foo.js";
 				`))
 			})
 		})
@@ -134,7 +134,7 @@ var _ = Describe("Build(import_map)", func() {
 		})
 
 		Expect(result).To(ContainCode(`
-			import axios from "/https%3A%2F%2Fproscenium.test%2Faxios.js";
+			import axios from "https://proscenium.test/axios.js";
 		`))
 	})
 

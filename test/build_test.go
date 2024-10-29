@@ -179,7 +179,7 @@ var _ = Describe("Build", func() {
 		MockURL("/import-url-module.js", "export default 'Hello World'")
 
 		Expect(Build("lib/import_url.js")).To(ContainCode(`
-			import myFunction from "/https%3A%2F%2Fproscenium.test%2Fimport-url-module.js";
+			import myFunction from "https://proscenium.test/import-url-module.js";
 		`))
 	})
 

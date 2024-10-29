@@ -11,9 +11,9 @@ module Proscenium
   # Default paths for Rails assets. Used by the `compute_asset_path` helper to maintain Rails
   # default conventions of where JS and CSS files are located.
   DEFAULT_RAILS_ASSET_PATHS = {
-    stylesheet: "app/assets/stylesheets/",
-    javascript: "app/javascript/"
-  }
+    stylesheet: 'app/assets/stylesheets/',
+    javascript: 'app/javascript/'
+  }.freeze
 
   ALLOWED_DIRECTORIES = 'app,lib,config,vendor,node_modules'
 

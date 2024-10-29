@@ -29,7 +29,6 @@
 - [Client-Side Code Anywhere](#client-side-code-anywhere)
 - [Side Loading](#side-loading)
 - [Importing](#importing-assets)
-  - [URL Imports](#url-imports)
   - [Local Imports](#local-imports)
 - [Import Maps](#import-maps)
 - [Source Maps](#source-maps)
@@ -221,20 +220,6 @@ import(`pkg/${foo}`);
 ```
 
 The way to work around non-analyzable imports is to mark the package containing this problematic code as [unbundled](#Unbundling) so that it's not included in the bundle. You will then need to ensure that a copy of the external package is available to your bundled code at run-time.
-
-### URL Imports
-
-Any import beginning with `http://` or `https://` will be fetched from the URL provided. For example:
-
-```js
-import React from "https://esm.sh/react";
-```
-
-```css
-@import "https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css";
-```
-
-URL imports are cached, so that each import is only fetched once per server restart.
 
 ### Import from NPM (`node_modules`)
 
