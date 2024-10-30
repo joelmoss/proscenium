@@ -7,7 +7,6 @@ PATH
       dry-types (~> 1.7)
       ffi (~> 1.17.0)
       oj (~> 3.13)
-      phlex-rails (~> 1.2.1)
       railties (>= 7.1.0, < 8.0)
       ruby-next (~> 1.0.1)
 

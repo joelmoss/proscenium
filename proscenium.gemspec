@@ -32,7 +32,6 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'dry-types', '~> 1.7'
   spec.add_dependency 'ffi', '~> 1.17.0'
   spec.add_dependency 'oj', '~> 3.13'
-  spec.add_dependency 'phlex-rails', '~> 1.2.1'
   spec.add_dependency 'railties', ['>= 7.1.0', '< 8.0']
   spec.add_dependency 'ruby-next', '~> 1.0.1'
 end
