@@ -1,17 +1,12 @@
 # frozen_string_literal: true
 
+require 'test_helper'
 require 'phlex/testing/rails/view_helper'
 require 'phlex/testing/capybara'
-require 'system_testing'
 
-describe Proscenium::Phlex::ReactComponent do
+class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
   include Phlex::Testing::Rails::ViewHelper
   include Phlex::Testing::Capybara::ViewHelper
-
-  def before
-    Proscenium::Importer.reset
-    Proscenium::Resolver.reset
-  end
 
   # describe 'system' do
   #   include_context SystemTest
@@ -31,57 +26,59 @@ describe Proscenium::Phlex::ReactComponent do
   it 'has data-proscenium-component attribute' do
     render Phlex::BasicReactComponent.new
 
-    expect(page.has_css?(selector)).to be == true
+    assert page.has_css?(selector)
   end
 
   it 'forwards block to content' do
     render(Phlex::BasicReactComponent.new) { 'Hello' }
 
-    expect(page.has_text?('Hello')).to be == true
+    assert page.has_text?('Hello')
   end
 
   it 'has empty props' do
     render Phlex::BasicReactComponent.new
 
-    expect(page.find(selector)['data-proscenium-component-props']).to be == '{}'
+    assert_equal '{}', page.find(selector)['data-proscenium-component-props']
   end
 
-  with 'props' do
+  context 'props' do
     it 'should pass through props' do
       render Phlex::BasicReactComponent.new(props: { name: 'Joel' })
 
-      expect(page.find(selector)['data-proscenium-component-props']).to be == %({"name":"Joel"})
+      assert_equal %({"name":"Joel"}), page.find(selector)['data-proscenium-component-props']
     end
 
     it 'should camelCase props keys' do
       render Phlex::BasicReactComponent.new(props: { first_name: 'Joel', 'some/last_name': 'Moss' })
 
-      expect(page.find(selector)['data-proscenium-component-props']).to be == %({
-        "firstName":"Joel", "some/lastName": "Moss"
-      }).gsub(/[[:space:]]/, '')
+      assert_equal(
+        %({
+          "firstName":"Joel", "some/lastName": "Moss"
+        }).gsub(/[[:space:]]/, ''),
+        page.find(selector)['data-proscenium-component-props']
+      )
     end
   end
 
-  with 'root_tag' do
-    def after(error = nil)
+  context 'root_tag' do
+    after do
       Phlex::BasicReactComponent.root_tag = :div # reset
-      super
     end
 
     it 'should use the given tag' do
       Phlex::BasicReactComponent.root_tag = :span
       render Phlex::BasicReactComponent.new
 
-      expect(page.has_css?('span[data-proscenium-component-path]')).to be == true
+      assert page.has_css?('span[data-proscenium-component-path]')
     end
   end
 
   it 'should import component manager' do
     render Phlex::BasicReactComponent.new
 
-    expect(Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx']).to be == {
-      js: { type: 'module' }
-    }
+    assert_equal({
+                   js: { type: 'module' }
+                 }, Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx'])
   end
 
   # describe ':loader' do
@@ -95,40 +92,39 @@ describe Proscenium::Phlex::ReactComponent do
   # end
 
   describe 'lazy loading' do
-    def after(error = nil)
+    after do
       Phlex::BasicReactComponent.lazy = false # reset
-      super
     end
 
     it 'should import component with `lazy: true` option' do
       render Phlex::BasicReactComponent.new(lazy: true)
 
-      expect(Proscenium::Importer.imported['/app/components/phlex/basic_react_component.jsx'][:lazy]).to be == true
+      assert Proscenium::Importer.imported['/app/components/phlex/basic_react_component.jsx'][:lazy]
     end
 
-    with '`.lazy = true`' do
+    context '`.lazy = true`' do
       it 'adds lazy data attribute' do
         Phlex::BasicReactComponent.lazy = true
         render Phlex::BasicReactComponent.new
 
-        expect(page.has_css?("#{selector}[data-proscenium-component-lazy]")).to be == true
+        assert page.has_css?("#{selector}[data-proscenium-component-lazy]")
       end
     end
 
-    with '`.lazy = true` + `#lazy = false`' do
+    context '`.lazy = true` + `#lazy = false`' do
       it 'does not add lazy data attribute' do
         Phlex::BasicReactComponent.lazy = true
         render Phlex::BasicReactComponent.new(lazy: false)
 
-        expect(page.has_css?("#{selector}[data-proscenium-component-lazy]")).to be == false
+        assert_not page.has_css?("#{selector}[data-proscenium-component-lazy]")
       end
     end
 
-    with '`.lazy = false` (default) + `#lazy = true`' do
+    context '`.lazy = false` (default) + `#lazy = true`' do
       it 'adds lazy data attribute' do
         render Phlex::BasicReactComponent.new(lazy: true)
 
-        expect(page.has_css?("#{selector}[data-proscenium-component-lazy]")).to be == true
+        assert page.has_css?("#{selector}[data-proscenium-component-lazy]")
       end
     end
 
@@ -147,10 +143,9 @@ describe Proscenium::Phlex::ReactComponent do
     # end
   end
 
-  with '`.forward_children = true`' do
-    def after(error = nil)
+  context '`.forward_children = true`' do
+    after do
       Phlex::React::ForwardChildren::Component.forward_children = true
-      super
     end
 
     let(:selector) do
@@ -160,16 +155,16 @@ describe Proscenium::Phlex::ReactComponent do
     it 'adds forward-children data attribute' do
       render(Phlex::React::ForwardChildren::Component.new) { 'Hello' }
 
-      expect(page.has_css?("#{selector}[data-proscenium-component-forward-children]")).to be == true
+      assert page.has_css?("#{selector}[data-proscenium-component-forward-children]")
     end
 
     it 'renders content block as children' do
       render(Phlex::React::ForwardChildren::Component.new) { 'Hello' }
 
-      expect(page.has_text?('Hello')).to be == true
+      assert page.has_text?('Hello')
     end
 
-    # with 'system' do
+    # context 'system' do
     #   include_context SystemTest
 
     #   it 'forwards block in children prop' do
@@ -180,15 +175,13 @@ describe Proscenium::Phlex::ReactComponent do
     # end
   end
 
-  with '`.forward_children = false`' do
-    def before
+  context '`.forward_children = false`' do
+    before do
       Phlex::React::ForwardChildren::Component.forward_children = false
-      super
     end
 
-    def after(error = nil)
+    after do
       Phlex::React::ForwardChildren::Component.forward_children = true
-      super
     end
 
     let(:selector) do
@@ -198,16 +191,16 @@ describe Proscenium::Phlex::ReactComponent do
     it 'does not adds forward-children data attribute' do
       render(Phlex::React::ForwardChildren::Component.new) { 'Hello' }
 
-      expect(page.has_css?("#{selector}[data-proscenium-component-forward-children]")).to be == false
+      assert_not page.has_css?("#{selector}[data-proscenium-component-forward-children]")
     end
 
     it 'renders content block as children' do
       render(Phlex::React::ForwardChildren::Component.new) { 'Hello' }
 
-      expect(page.has_text?('Hello')).to be == true
+      assert page.has_text?('Hello')
     end
 
-    # with 'system' do
+    # context 'system' do
     #   include_context SystemTest
 
     #   it 'does not forward block in children prop' do

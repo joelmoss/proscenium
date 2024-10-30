@@ -1,14 +1,9 @@
 # frozen_string_literal: true
 
-require 'action_controller/test_case'
+require 'test_helper'
 
-describe Proscenium::ViewComponent::ReactComponent do
+class Proscenium::ViewComponent::ReactComponentTest < ActiveSupport::TestCase
   include ViewComponent::TestHelpers
-
-  def before
-    Proscenium::Importer.reset
-    Proscenium::Resolver.reset
-  end
 
   let(:selector) do
     '[data-proscenium-component-path="/app/components/view_component/second_react/component.jsx"]'
@@ -17,18 +12,18 @@ describe Proscenium::ViewComponent::ReactComponent do
   it 'has data-proscenium-component attribute' do
     render_inline ViewComponent::SecondReact::Component.new
 
-    expect(page.has_css?(selector)).to be == true
+    assert page.has_css?(selector)
   end
 
   it 'has empty props' do
     render_inline ViewComponent::SecondReact::Component.new
 
-    expect(page.find(selector)['data-proscenium-component-props']).to be == '{}'
+    assert_equal '{}', page.find(selector)['data-proscenium-component-props']
   end
 
   it 'should pass through props' do
     render_inline ViewComponent::SecondReact::Component.new(props: { name: 'Joel' })
 
-    expect(page.find(selector)['data-proscenium-component-props']).to be == %({"name":"Joel"})
+    assert_equal %({"name":"Joel"}), page.find(selector)['data-proscenium-component-props']
   end
 end

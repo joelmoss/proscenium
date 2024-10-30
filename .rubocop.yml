@@ -2,6 +2,7 @@ require:
   - rubocop-packaging
   - rubocop-performance
   - rubocop-rake
+  - rubocop-minitest
 
 inherit_mode:
   merge:
@@ -20,8 +21,7 @@ AllCops:
 
 Layout/LineLength:
   Max: 100
-  Exclude:
-    - "test/**/*"
+
 Metrics/BlockLength:
   Enabled: false
 Metrics/MethodLength:
@@ -34,7 +34,11 @@ Metrics/PerceivedComplexity:
   Enabled: false
 Metrics/ClassLength:
   Enabled: false
+
 Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:
+  Enabled: false
+
+Minitest/EmptyLineBeforeAssertionMethods:
   Enabled: false

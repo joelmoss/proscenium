@@ -1,5 +1,21 @@
 # frozen_string_literal: true
 
+ENV['RAILS_ENV'] = 'test'
+
+require_relative '../fixtures/dummy/config/environment'
+require 'rails/test_help'
+require 'maxitest/autorun'
+
+module ActiveSupport
+  class TestCase
+    before do
+      Proscenium.config.side_load = true
+      Proscenium::Importer.reset
+      Proscenium::Resolver.reset
+    end
+  end
+end
+
 module ViewHelper
   def self.extended(parent)
     parent.class_exec do

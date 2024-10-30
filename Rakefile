@@ -1,22 +1,11 @@
 # frozen_string_literal: true
 
 require 'bundler/setup'
+require 'bundler/gem_tasks'
 
 APP_RAKEFILE = File.expand_path('playground/Rakefile', __dir__)
 load 'rails/tasks/engine.rake'
 
-require 'bundler/gem_tasks'
-require 'rake/testtask'
-require 'rubocop/rake_task'
-
-Rake::TestTask.new(:test) do |t|
-  t.libs << 'test'
-  t.pattern = 'test/**/*_test.rb'
-  t.verbose = false
-  t.warning = false
-end
-
-RuboCop::RakeTask.new
 CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]

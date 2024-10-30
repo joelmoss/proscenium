@@ -1,140 +1,132 @@
 # frozen_string_literal: true
 
-describe Proscenium::CssModule::Transformer do
-  def before
-    Proscenium::Importer.reset
-    Proscenium::Resolver.reset
-  end
+require 'test_helper'
 
-  attr_reader :page
-
-  def render(output)
-    @page = Capybara::Node::Simple.new(output)
-  end
-
+class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
   describe '#class_names' do
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      expect(names).to be == [['title-c3f452b4', '/lib/css_modules/basic.module.css']]
+      assert_equal [['title-c3f452b4', '/lib/css_modules/basic.module.css']], names
     end
 
     it 'transforms class names beginning with @ and underscore' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@_title)
 
-      expect(names).to be == [['_title-c3f452b4', '/lib/css_modules/basic.module.css']]
+      assert_equal [['_title-c3f452b4', '/lib/css_modules/basic.module.css']], names
     end
 
     it 'passes through regular class names' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :title)
 
-      expect(names).to be == ['title']
+      assert_equal ['title'], names
     end
 
     it 'accepts multiple names' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                              :title, :@subtitle)
 
-      expect(names).to be == ['title', ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']]
+      assert_equal ['title', ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']], names
     end
 
     it 'imports stylesheet' do
       Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      expect(Proscenium::Importer.imported).to be == {
-        '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
-      }
+      assert_equal({
+                     '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
+                   }, Proscenium::Importer.imported)
     end
 
-    with 'local path' do
+    context 'local path' do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                '/lib/css_modules/basic2@title',
                                                                :@subtitle)
 
-        expect(names).to be == [['title-6fd80271', '/lib/css_modules/basic2.module.css'],
-                                ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']]
+        assert_equal [['title-6fd80271', '/lib/css_modules/basic2.module.css'],
+                      ['subtitle-c3f452b4', '/lib/css_modules/basic.module.css']], names
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                        '/lib/css_modules/basic2@title', :@subtitle)
 
-        expect(Proscenium::Importer.imported).to be == {
-          '/lib/css_modules/basic2.module.css' => { digest: '6fd80271' },
-          '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
-        }
+        assert_equal({
+                       '/lib/css_modules/basic2.module.css' => { digest: '6fd80271' },
+                       '/lib/css_modules/basic.module.css' => { digest: 'c3f452b4' }
+                     }, Proscenium::Importer.imported)
       end
     end
 
-    with 'npm package path' do
+    context 'npm package path' do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                'mypackage/foo@foo')
 
-        expect(names).to be == [['foo-39337ba7', '/packages/mypackage/foo.module.css']]
+        assert_equal [['foo-39337ba7', '/packages/mypackage/foo.module.css']], names
       end
 
       it 'imports stylesheets' do
-        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', 'mypackage/foo@foo')
+        Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
+                                                       'mypackage/foo@foo')
 
-        expect(Proscenium::Importer.imported).to be == {
-          '/packages/mypackage/foo.module.css' => { digest: '39337ba7' }
-        }
+        assert_equal({
+                       '/packages/mypackage/foo.module.css' => { digest: '39337ba7' }
+                     }, Proscenium::Importer.imported)
       end
     end
 
-    with 'gem path' do
+    context 'gem path' do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                '/gem2/lib/gem2/styles@foo')
 
-        expect(names).to be == [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']]
+        assert_equal [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']], names
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                        '/gem2/lib/gem2/styles@@foo')
 
-        expect(Proscenium::Importer.imported).to be == {
-          '/gem2/lib/gem2/styles.module.css' => { digest: 'a074d644' }
-        }
+        assert_equal({
+                       '/gem2/lib/gem2/styles.module.css' => { digest: 'a074d644' }
+                     }, Proscenium::Importer.imported)
       end
     end
   end
 
   describe '.class_names' do
-    with 'given path is nil' do
+    context 'given path is nil' do
       let(:transformer) { Proscenium::CssModule::Transformer.new(nil) }
 
       it 'should raise when transforming class with leading @' do
-        expect do
+        assert_raises Proscenium::CssModule::TransformError do
           transformer.class_names(:@title)
-        end.to raise_exception Proscenium::CssModule::TransformError
+        end
       end
 
       it 'should transform regular class' do
         names = transformer.class_names(:title)
 
-        expect(names).to be == ['title']
+        assert_equal ['title'], names
       end
 
       it 'should transform local path' do
         names = transformer.class_names('/lib/css_modules/basic2@title')
 
-        expect(names).to be == [['title-6fd80271', '/lib/css_modules/basic2.module.css']]
+        assert_equal [['title-6fd80271', '/lib/css_modules/basic2.module.css']], names
       end
 
       it 'should transform npm path' do
         names = transformer.class_names('mypackage/foo@foo')
 
-        expect(names).to be == [['foo-39337ba7', '/packages/mypackage/foo.module.css']]
+        assert_equal [['foo-39337ba7', '/packages/mypackage/foo.module.css']], names
       end
 
       it 'should transform gem path' do
         names = transformer.class_names('/gem2/lib/gem2/styles@foo')
 
-        expect(names).to be == [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']]
+        assert_equal [['foo-a074d644', '/gem2/lib/gem2/styles.module.css']], names
       end
     end
   end
