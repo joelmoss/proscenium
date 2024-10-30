@@ -81,16 +81,6 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
                  }, Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx'])
   end
 
-  # describe ':loader' do
-  #   it 'show loader until component loads' do
-  #     render Phlex::BasicReactComponent.new(loader: true)
-
-  #     pp page.native.to_html
-
-  #     expect(Proscenium::Importer.imported['/app/components/phlex/basic_react_component.jsx'][:lazy]).to be == true
-  #   end
-  # end
-
   describe 'lazy loading' do
     after do
       Phlex::BasicReactComponent.lazy = false # reset
@@ -149,7 +139,8 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     end
 
     let(:selector) do
-      '[data-proscenium-component-path="/app/components/phlex/react/forward_children/component.jsx"]'
+      '[data-proscenium-component-path="' \
+        '/app/components/phlex/react/forward_children/component.jsx"]'
     end
 
     it 'adds forward-children data attribute' do
@@ -185,7 +176,8 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     end
 
     let(:selector) do
-      '[data-proscenium-component-path="/app/components/phlex/react/forward_children/component.jsx"]'
+      '[data-proscenium-component-path="' \
+        '/app/components/phlex/react/forward_children/component.jsx"]'
     end
 
     it 'does not adds forward-children data attribute' do
