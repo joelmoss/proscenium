@@ -1,28 +1,22 @@
 # frozen_string_literal: true
 
+require 'literal'
+
 module Proscenium::UI
   class Breadcrumbs::Component < Component
+    extend Literal::Properties
     include Phlex::Rails::Helpers::URLFor
 
     # The path (route) to use as the HREF for the home segment. Defaults to `:root`.
-    option :home_path, Types::String | Types::Symbol, default: -> { :root }
+    prop :home_path, _Union(String, Symbol), default: -> { :root }
 
     # Assign false to hide the home segment.
-    option :with_home, Types::Bool, default: -> { true }
-
-    # One or more class name(s) for the base div element which will be appended to the default.
-    option :class, Types::Coercible::String | Types::Array.of(Types::Coercible::String),
-           as: :class_name, default: -> { [] }
-
-    # One or more class name(s) for the base div element which will replace the default. If both
-    # `class` and `class!` are provided, all values will be merged. Defaults to `:@base`.
-    option :class!, Types::Coercible::String | Types::Array.of(Types::Coercible::String),
-           as: :class_name_override, default: -> { :@base }
+    prop :with_home, _Boolean, default: -> { true }
 
     def view_template
-      div class: [*class_name_override, *class_name] do
+      div class: :@base do
         ol do
-          if with_home
+          if @with_home
             li do
               home_template
             end
@@ -48,7 +42,7 @@ module Proscenium::UI
     #    super { 'hello' }
     #  end
     def home_template(&block)
-      a(href: url_for(home_path)) do
+      a(href: url_for(@home_path)) do
         if block
           yield
         else

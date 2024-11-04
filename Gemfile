@@ -8,6 +8,11 @@ gemspec
 gem 'debug'
 gem 'rails', '~> 7.0'
 
+# Playground
+gem 'htmlbeautifier'
+gem 'phlexible'
+gem 'rouge'
+
 group :development do
   gem 'benchmark-ips'
   gem 'puma'
@@ -18,17 +23,11 @@ group :development do
   gem 'rubocop-rake', require: false
   gem 'sqlite3'
   gem 'web-console'
-
-  # Playground
-  gem 'htmlbeautifier'
-  gem 'phlexible'
-  gem 'rouge'
 end
 
 group :test do
   gem 'capybara'
   gem 'cuprite'
-  gem 'dry-initializer'
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'
   gem 'gem2', path: './fixtures/external/gem2'
