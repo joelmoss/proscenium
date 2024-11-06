@@ -6,8 +6,8 @@ class Proscenium::UI::Form
     #
     # @param args [Array<Symbol>] name or nested names of model attribute
     # @param attributes [Hash] passed through to each input
-    def hidden_field(*args, **kwargs)
-      render Fields::Hidden.new(args, @model, self, **kwargs)
+    def hidden_field(*args, **)
+      render Fields::Hidden.new(args, @model, self, **)
     end
 
     # @param args [Array<Symbol>] name or nested names of model attribute
@@ -81,8 +81,8 @@ class Proscenium::UI::Form
       div { radio_input(...) }
     end
 
-    def radio_input(*args, **kwargs)
-      render Fields::RadioInput.new(args, @model, self, **kwargs)
+    def radio_input(*args, **)
+      render Fields::RadioInput.new(args, @model, self, **)
     end
   end
 end
