@@ -1,37 +1,37 @@
 # frozen_string_literal: true
 
-require 'view_helper'
+require 'test_helper'
 
-describe Proscenium::UI::Form::Fields::RadioGroup do
-  include TestHelper
+class Proscenium::UI::Form::Fields::RadioGroupTest < ActiveSupport::TestCase
   extend ViewHelper
 
+  let(:subject) { Proscenium::UI::Form }
   let(:user) { User.new }
 
   with 'options as last argument' do
-    view -> { Proscenium::UI::Form.new(user) } do |f|
+    view -> { subject.new(user) } do |f|
       f.radio_group :role, %i[admin manager]
     end
 
     it 'renders a radio input for each provided value' do
       values = view.all('input[type="radio"][name="user[role]"]').map(&:value)
-      expect(values).to be == %w[admin manager]
+      assert_equal %w[admin manager], values
     end
   end
 
   with ':options attribute' do
-    view -> { Proscenium::UI::Form.new(user) } do |f|
+    view -> { subject.new(user) } do |f|
       f.radio_group :role, options: %i[admin manager]
     end
 
     it 'renders a radio input for each provided value' do
       values = view.all('input[type="radio"][name="user[role]"]').map(&:value)
-      expect(values).to be == %w[admin manager]
+      assert_equal %w[admin manager], values
     end
   end
 
   with 'selected value' do
-    view -> { Proscenium::UI::Form.new(user) } do |f|
+    view -> { subject.new(user) } do |f|
       f.radio_group :role, %i[admin manager]
     end
 
@@ -39,21 +39,21 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
       user.role = :manager
 
       field = view.find_field('user[role]', checked: true)
-      expect(field[:value]).to be == 'manager'
+      assert_equal 'manager', field[:value]
     end
   end
 
   with 'enum attribute' do
-    view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
+    view -> { subject.new(user, url: '/') } do |f|
       f.radio_group :gender
     end
 
     it 'uses enum values for options' do
       fields = view.all('label:has(input[type="radio"][name="user[gender]"])')
-      expect(fields.map(&:text)).to be == %w[Male Female Other]
+      assert_equal %w[Male Female Other], fields.map(&:text)
 
       fields = view.all('label > input[type="radio"][name="user[gender]"]')
-      expect(fields.map(&:value)).to be == %w[male female other]
+      assert_equal %w[male female other], fields.map(&:value)
     end
 
     with 'persisted value' do
@@ -61,47 +61,46 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
 
       it 'uses persisted value' do
         field = view.find_field('user[gender]', checked: true)
-        expect(field.value).to be == 'male'
+        assert_equal 'male', field.value
       end
     end
 
     with 'default value' do
-      view -> { Proscenium::UI::Form.new(user, url: '/') } do |f|
+      view -> { subject.new(user, url: '/') } do |f|
         f.radio_group :gender_with_db_default
         f.radio_group :gender_with_code_default
       end
 
       it 'uses default enum value' do
         field = view.find_field('user[gender_with_db_default]', checked: true)
-        expect(field.value).to be == 'male'
+        assert_equal 'male', field.value
 
         field = view.find_field('user[gender_with_code_default]', checked: true)
-        expect(field.value).to be == 'female'
+        assert_equal 'female', field.value
       end
     end
   end
 
   with 'belongs_to association attribute' do
-    def before
-      super
+    before do
       User.create! [{ name: 'Joel Moss' }, { name: 'Eve Moss' }]
     end
 
     let(:event) { Event.new }
-    view -> { Proscenium::UI::Form.new(event) } do |f|
+    view -> { subject.new(event) } do |f|
       f.radio_group :user
     end
 
     it 'uses association values for options' do
       fields = view.all('label:has(input[type="radio"][name="event[user_id]"])')
-      expect(fields.map(&:text)).to be == ['Joel Moss', 'Eve Moss']
+      assert_equal ['Joel Moss', 'Eve Moss'], fields.map(&:text)
 
       fields = view.all('label > input[type="radio"][name="event[user_id]"]')
-      expect(fields.map(&:value)).to be == User.pluck(:id).map(&:to_s)
+      assert_equal User.pluck(:id).map(&:to_s), fields.map(&:value)
     end
 
     it 'has none checked' do
-      expect(view.has_field?('event[user]', checked: true)).to be_falsey
+      assert_not view.has_field?('event[user]', checked: true)
     end
 
     with 'persisted value' do
@@ -109,7 +108,7 @@ describe Proscenium::UI::Form::Fields::RadioGroup do
 
       it 'uses persisted value' do
         field = view.find_field('event[user_id]', checked: true)
-        expect(field.value).to be == event.user.id.to_s
+        assert_equal event.user.id.to_s, field.value
       end
     end
   end

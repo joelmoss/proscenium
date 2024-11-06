@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'view_helper'
+require 'test_helper'
 
-describe Proscenium::UI::Form::Fields::Tel do
-  include TestHelper
+class Proscenium::UI::Form::Fields::TelTest < ActiveSupport::TestCase
   extend ViewHelper
 
+  let(:subject) { Proscenium::UI::Form }
   let(:user) { User.new name: 'Joel Moss' }
-  view -> { Proscenium::UI::Form.new(user) } do |f|
+  view -> { subject.new(user) } do |f|
     f.tel_field :phone
   end
 

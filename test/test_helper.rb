@@ -6,12 +6,22 @@ require_relative '../fixtures/dummy/config/environment'
 require 'rails/test_help'
 require 'maxitest/autorun'
 
+DatabaseCleaner.strategy = :transaction
+
 module ActiveSupport
   class TestCase
+    around do |tests|
+      DatabaseCleaner.cleaning(&tests)
+    end
+
     before do
       Proscenium.config.side_load = true
       Proscenium::Importer.reset
       Proscenium::Resolver.reset
+    end
+
+    class << self
+      alias with context
     end
   end
 end

@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require 'view_helper'
+require 'test_helper'
 
-describe Proscenium::UI::Form do
-  include TestHelper
+class Proscenium::UI::FormTest < ActiveSupport::TestCase
   extend ViewHelper
 
+  let(:subject) { Proscenium::UI::Form }
   let(:user) { User.new }
   view -> { subject.new user }
 
@@ -13,20 +13,20 @@ describe Proscenium::UI::Form do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form.css']
+    assert_equal ['/proscenium/ui/form.css'], imports
   end
 
   it 'has an action attribute' do
-    expect(view.find('form')[:action]).to be == '/users'
+    assert_equal '/users', view.find('form')[:action]
   end
 
   with 'default method' do
     it 'has a default method attribute' do
-      expect(view.find('form')[:method]).to be == 'post'
+      assert_equal 'post', view.find('form')[:method]
     end
 
     it 'does not have a hidden _method field' do
-      expect(view.has_field?('_method', type: :hidden)).to be == false
+      assert_not view.has_field?('_method', type: :hidden)
     end
   end
 
@@ -34,11 +34,11 @@ describe Proscenium::UI::Form do
     view -> { subject.new(user, method: :get) }
 
     it 'has a method attribute' do
-      expect(view.find('form')[:method]).to be == 'get'
+      assert_equal 'get', view.find('form')[:method]
     end
 
     it 'does not have a hidden _method field' do
-      expect(view.has_field?('_method', type: :hidden)).to be == false
+      assert_not view.has_field?('_method', type: :hidden)
     end
   end
 
@@ -46,11 +46,11 @@ describe Proscenium::UI::Form do
     view -> { subject.new(user, method: :patch) }
 
     it 'form[method] == post' do
-      expect(view.find('form')[:method]).to be == 'post'
+      assert_equal 'post', view.find('form')[:method]
     end
 
     it 'has a hidden _method field' do
-      expect(view.find('input[name=_method]', visible: :hidden)[:value]).to be == 'patch'
+      assert_equal 'patch', view.find('input[name=_method]', visible: :hidden)[:value]
     end
   end
 
@@ -59,29 +59,29 @@ describe Proscenium::UI::Form do
     view -> { subject.new(user) }
 
     it 'has a hidden _method field' do
-      expect(view.find('input[name=_method]', visible: :hidden)[:value]).to be == 'patch'
+      assert_equal 'patch', view.find('input[name=_method]', visible: :hidden)[:value]
     end
   end
 
   it 'has an authenticity_token field' do
-    expect(view.has_field?('authenticity_token', type: :hidden)).to be == true
+    assert view.has_field?('authenticity_token', type: :hidden)
   end
 
   with ':action' do
     view -> { subject.new(user, action: '/') }
 
     it 'sets form action to URL' do
-      expect(view.find('form')[:action]).to be == '/'
+      assert_equal '/', view.find('form')[:action]
     end
   end
 
   describe '#submit' do
-    view -> { Proscenium::UI::Form.new(user) } do |f|
+    view -> { subject.new(user) } do |f|
       f.submit 'Save'
     end
 
     it 'has a submit button' do
-      expect(view.has_button?('Save')).to be == true
+      assert view.has_button?('Save')
     end
   end
 end

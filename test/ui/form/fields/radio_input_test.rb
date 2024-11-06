@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'view_helper'
+require 'test_helper'
 
-describe Proscenium::UI::Form::Fields::RadioInput do
-  include TestHelper
+class Proscenium::UI::Form::Fields::RadioInputTest < ActiveSupport::TestCase
   extend ViewHelper
 
+  let(:subject) { Proscenium::UI::Form }
   let(:user) { User.new }
 
-  view -> { Proscenium::UI::Form.new(user) } do |f|
+  view -> { subject.new(user) } do |f|
     f.radio_field :role, value: :admin
   end
 
@@ -16,21 +16,21 @@ describe Proscenium::UI::Form::Fields::RadioInput do
     view
     imports = Proscenium::Importer.imported.keys
 
-    expect(imports).to be == ['/proscenium/ui/form.css']
+    assert_equal ['/proscenium/ui/form.css'], imports
   end
 
   it 'has a radio input with the provided value' do
-    expect(view.find_field('user[role]', type: :radio)[:value]).to be == 'admin'
+    assert_equal 'admin', view.find_field('user[role]', type: :radio)[:value]
   end
 
   it 'is checked' do
     user.role = :admin
 
-    expect(view.has_field?('user[role]', checked: true)).to be == true
+    assert view.has_field?('user[role]', checked: true)
   end
 
   it 'has a label with the value' do
-    expect(view.find('label>span').text).to be == 'Admin'
+    assert_equal 'Admin', view.find('label>span').text
   end
 
   with 'label attribute' do
@@ -39,7 +39,7 @@ describe Proscenium::UI::Form::Fields::RadioInput do
     end
 
     it 'has a label with the value' do
-      expect(view.find('label>span').text).to be == 'Administrator'
+      assert_equal 'Administrator', view.find('label>span').text
     end
   end
 end
