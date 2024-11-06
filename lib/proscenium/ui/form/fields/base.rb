@@ -132,9 +132,9 @@ module Proscenium::UI
         form.field_name(*names, multiple:)
       end
 
-      def field_id(*args)
+      def field_id(*)
         @field_uid ||= SecureRandom.alphanumeric(10)
-        form.field_id(*attribute, @field_uid, *args)
+        form.field_id(*attribute, @field_uid, *)
       end
 
       def translate(namespace, postfix: nil, default: '')

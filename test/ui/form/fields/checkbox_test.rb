@@ -33,9 +33,11 @@ class Proscenium::UI::Form::Fields::CheckboxTest < ActiveSupport::TestCase
   end
 
   it 'renders label after input' do
+    # rubocop:disable Layout/LineLength
     assert_equal %(
       <label><input name="user[active]" type="hidden" value="0"><input name="user[active]" type="checkbox" value="1"><div><span>Active</span></div></label>
-    ).strip, view.find('label').native.to_html
+      ).strip, view.find('label').native.to_html
+    # rubocop:enable Layout/LineLength
   end
 
   with ':label' do

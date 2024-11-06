@@ -113,8 +113,8 @@ module Proscenium::UI
     # Returns a button with type of 'submit', using the `value` given.
     #
     # @param value [String] Value of the `value` attribute.
-    def submit(value = 'Save', **kwargs)
-      input name: 'commit', type: :submit, value:, **kwargs
+    def submit(value = 'Save', **)
+      input(name: 'commit', type: :submit, value:, **)
     end
 
     # Returns a <div> with the given `message` as its content. If `message` is not given, and
@@ -163,8 +163,8 @@ module Proscenium::UI
                                 multiple:)
     end
 
-    def field_id(*args)
-      @_view_context.field_id(ActiveModel::Naming.param_key(@model.class), *args)
+    def field_id(*)
+      @_view_context.field_id(ActiveModel::Naming.param_key(@model.class), *)
     end
 
     def authenticity_token_field
