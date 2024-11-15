@@ -59,7 +59,7 @@ module Proscenium
     end
 
     def include_stylesheets
-      '<!-- [PROSCENIUM_STYLESHEETS] -->'.html_safe
+      SideLoad::CSS_COMMENT.html_safe
     end
     alias side_load_stylesheets include_stylesheets
     deprecate side_load_stylesheets: 'Use `include_stylesheets` instead', deprecator: Deprecator.new
@@ -68,7 +68,7 @@ module Proscenium
     #
     # @return [String] the HTML tags for the javascripts.
     def include_javascripts
-      '<!-- [PROSCENIUM_LAZY_SCRIPTS] --><!-- [PROSCENIUM_JAVASCRIPTS] -->'.html_safe
+      (SideLoad::LAZY_COMMENT + SideLoad::JS_COMMENT).html_safe
     end
     alias side_load_javascripts include_javascripts
     deprecate side_load_javascripts: 'Use `include_javascripts` instead', deprecator: Deprecator.new
