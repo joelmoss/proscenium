@@ -9,6 +9,7 @@ gem 'debug'
 gem 'rails', '~> 7.0'
 
 # Playground
+gem 'appraisal'
 gem 'htmlbeautifier'
 gem 'phlexible'
 gem 'rouge'
@@ -37,5 +38,5 @@ group :test do
   gem 'minitest-focus'
   gem 'minitest-spec-rails'
   gem 'phlex-testing-capybara'
-  gem 'view_component', '~> 3.6.0'
+  gem 'view_component'
 end

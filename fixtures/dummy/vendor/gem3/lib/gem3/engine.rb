@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'proscenium'
+
 module Gem3
   class Engine < ::Rails::Engine
     # isolate_namespace Gem3

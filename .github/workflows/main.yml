@@ -24,7 +24,8 @@ jobs:
         with:
           bundler-cache: true
       - run: bundle exec rake compile:local
-      - run: bin/test
+      - run: bundle exec appraisal install
+      - run: bundle exec appraisal bin/test
 
   rubocop:
     runs-on: "ubuntu-latest"
