@@ -18,6 +18,7 @@ AllCops:
     - "fixtures/dummy/node_modules/**/*"
     - "fixtures/dummy/vendor/**/*"
     - "fixtures/external/**/*"
+    - "gemfiles/**/*"
 
 Layout/LineLength:
   Max: 100
