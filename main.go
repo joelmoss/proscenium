@@ -15,142 +15,66 @@ import (
 	"joelmoss/proscenium/internal/types"
 )
 
-// Build the given `path` in the `root`.
+//export reset_config
+func reset_config() {
+	types.Config.Reset()
+}
+
+// Build the given `path` using the `config`.
 //
-//	BuildOptions
-//	- path - The path to build relative to `root`.
-//	- baseUrl - base URL of the Rails app. eg. https://example.com
-//	- importMap - Path to the import map relative to `root`.
-//	- envVars - JSON string of environment variables.
-//	Config:
-//	- root - The working directory.
-//	- env - The environment (1 = development, 2 = test, 3 = production)
-//	- codeSpitting?
-//	- debug?
+// - path - The path to build relative to `root`.
+// - config
 //
 //export build_to_string
-func build_to_string(
-	filepath *C.char,
-	baseUrl *C.char,
-	importMap *C.char,
-	envVars *C.char,
-	appRoot *C.char,
-	gemPath *C.char,
-	env C.uint,
-	codeSplitting bool,
-	engines *C.char,
-	debug bool,
-) C.struct_Result {
-	types.Config.RootPath = C.GoString(appRoot)
-	types.Config.GemPath = C.GoString(gemPath)
-	types.Config.Environment = types.Environment(env)
-	types.Config.CodeSplitting = codeSplitting
-	types.Config.Debug = debug
-
-	var enginesMap map[string]string
-	err := json.Unmarshal([]byte(C.GoString(engines)), &enginesMap)
-	if err == nil {
-		types.Config.Engines = enginesMap
-	} else {
+func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
+	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(err.Error())}
 	}
 
-	pathStr := C.GoString(filepath)
-
-	success, result := builder.BuildToString(builder.BuildOptions{
-		Path:          pathStr,
-		BaseUrl:       C.GoString(baseUrl),
-		ImportMapPath: C.GoString(importMap),
-		EnvVars:       C.GoString(envVars),
-	})
+	success, result := builder.BuildToString(C.GoString(filePath))
 
 	if success {
 		return C.struct_Result{C.int(1), C.CString(result)}
-	} else {
-		return C.struct_Result{C.int(0), C.CString(result)}
 	}
+
+	return C.struct_Result{C.int(0), C.CString(result)}
 }
 
 // Build the given `path` in the `root`.
 //
-//	BuildOptions
-//	- path - The path to build relative to `root`. Multiple paths can be given by separating them
-//	  with a semi-colon.
-//	- baseUrl - base URL of the Rails app. eg. https://example.com
-//	- importMap - Path to the import map relative to `root`.
-//	- envVars - JSON string of environment variables.
-//	Config:
-//	- root - The working directory.
-//	- env - The environment (1 = development, 2 = test, 3 = production)
-//	- codeSpitting?
-//	- debug?
+// - path - The path to build relative to `root`.
+// - config
 //
 //export build_to_path
-func build_to_path(
-	filepath *C.char,
-	baseUrl *C.char,
-	importMap *C.char,
-	envVars *C.char,
-	appRoot *C.char,
-	gemPath *C.char,
-	env C.uint,
-	codeSplitting bool,
-	engines *C.char,
-	debug bool,
-) C.struct_Result {
-	types.Config.RootPath = C.GoString(appRoot)
-	types.Config.GemPath = C.GoString(gemPath)
-	types.Config.Environment = types.Environment(env)
-	types.Config.CodeSplitting = codeSplitting
-	types.Config.Debug = debug
-
-	var enginesMap map[string]string
-	err := json.Unmarshal([]byte(C.GoString(engines)), &enginesMap)
-	if err == nil {
-		types.Config.Engines = enginesMap
-	} else {
+func build_to_path(filePath *C.char, configJson *C.char) C.struct_Result {
+	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(err.Error())}
 	}
 
-	pathStr := C.GoString(filepath)
-
-	success, result := builder.BuildToPath(builder.BuildOptions{
-		Path:          pathStr,
-		BaseUrl:       C.GoString(baseUrl),
-		ImportMapPath: C.GoString(importMap),
-		EnvVars:       C.GoString(envVars),
-	})
+	success, result := builder.BuildToPath(C.GoString(filePath))
 
 	if success {
 		return C.struct_Result{C.int(1), C.CString(result)}
-	} else {
-		return C.struct_Result{C.int(0), C.CString(result)}
 	}
+
+	return C.struct_Result{C.int(0), C.CString(result)}
 }
 
 // Resolve the given `path` relative to the `root`.
 //
-//	ResolveOptions
-//	- path - The path to build relative to `root`.
-//	- importMap - Path to the import map relative to `root`.
-//	Config
-//	- root - The working directory.
-//	- env - The environment (1 = development, 2 = test, 3 = production)
-//	- debug?
+// - path - The path to build relative to `root`.
+// - config
 //
 //export resolve
-func resolve(
-	path *C.char, importMap *C.char, appRoot *C.char, gemPath *C.char, env C.uint, debug bool,
-) C.struct_Result {
-	types.Config.Environment = types.Environment(env)
-	types.Config.RootPath = C.GoString(appRoot)
-	types.Config.GemPath = C.GoString(gemPath)
-	types.Config.Debug = debug
+func resolve(filePath *C.char, configJson *C.char) C.struct_Result {
+	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	if err != nil {
+		return C.struct_Result{C.int(0), C.CString(err.Error())}
+	}
 
-	resolvedPath, err := resolver.Resolve(resolver.Options{
-		Path:          C.GoString(path),
-		ImportMapPath: C.GoString(importMap),
-	})
+	resolvedPath, err := resolver.Resolve(C.GoString(filePath), resolver.Options{})
 	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
 	}

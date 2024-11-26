@@ -14,14 +14,8 @@ import (
 )
 
 type Options struct {
-	// The path to build relative to `root`.
-	Path string
-
 	// The absolute file system path of the file doing the importing.
 	Importer string
-
-	// Path to an import map (js or json), relative to the given root.
-	ImportMapPath string
 
 	// Import map as a string.
 	ImportMap []byte
@@ -31,38 +25,40 @@ type Options struct {
 // This function is primarily intended to be used to resolve bare or NPM modules outside of any
 // build.
 //
+// - filePath - The path to build relative to `root`.
+//
 // Returns an absolute URL path. That is, one that has a leading slash and can be appended to the
 // app domain.
-func Resolve(options Options) (string, error) {
+func Resolve(filePath string, options Options) (string, error) {
 	// Parse the import map - if any.
-	err := importmap.Parse(options.ImportMap, options.ImportMapPath)
+	err := importmap.Parse(options.ImportMap)
 	if err != nil {
 		return "", errors.New("Failed to parse import map: " + err.Error())
 	}
 
 	// Look for a match in the import map
-	resolvedImport, matched := importmap.Resolve(options.Path, types.Config.RootPath)
+	resolvedImport, matched := importmap.Resolve(filePath, types.Config.RootPath)
 	if matched {
-		options.Path = resolvedImport
-	} else if path.IsAbs(options.Path) && utils.HasExtension(options.Path) {
-		return options.Path, nil
+		filePath = resolvedImport
+	} else if path.IsAbs(filePath) && utils.HasExtension(filePath) {
+		return filePath, nil
 	}
 
-	if utils.IsUrl(options.Path) {
-		return options.Path, nil
+	if utils.IsUrl(filePath) {
+		return filePath, nil
 	}
 
-	if utils.PathIsRelative(options.Path) {
+	if utils.PathIsRelative(filePath) {
 		if options.Importer == "" {
 			return "", errors.New("relative paths are not supported when an importer is not given")
 		}
 
-		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), options.Path), types.Config.RootPath), nil
+		return strings.TrimPrefix(path.Join(path.Dir(options.Importer), filePath), types.Config.RootPath), nil
 	}
 
 	// Replace leading slash with `./` for absolute paths.
-	if path.IsAbs(options.Path) {
-		options.Path = "." + options.Path
+	if path.IsAbs(filePath) {
+		filePath = "." + filePath
 	}
 
 	logLevel := esbuild.LogLevelSilent
@@ -71,7 +67,7 @@ func Resolve(options Options) (string, error) {
 	}
 
 	result := esbuild.Build(esbuild.BuildOptions{
-		EntryPoints:   []string{options.Path},
+		EntryPoints:   []string{filePath},
 		AbsWorkingDir: types.Config.RootPath,
 		Format:        esbuild.FormatESModule,
 		Conditions:    []string{types.Config.Environment.String(), "proscenium"},

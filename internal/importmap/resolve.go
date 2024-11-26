@@ -56,10 +56,10 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 		normalizedImports[key] = importEntry{value, keyHasTrailingSlash, valueHasTrailingSlash}
 	}
 
-	if types.Config.Debug {
-		log.Printf("[proscenium] importmap match? `%v` in `%v` from `%v`",
-			specifier, resolveDir, normalizedImports)
-	}
+	// if types.Config.Debug {
+	// 	log.Printf("[proscenium] importmap match? `%v` in `%v` from `%v`",
+	// 		specifier, resolveDir, normalizedImports)
+	// }
 
 	// Sort the keys of the normalized imports by longest first.
 	importKeys := make([]string, 0, len(normalizedImports))

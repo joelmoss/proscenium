@@ -4,7 +4,8 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-func Rjs(baseUrl string) esbuild.Plugin {
+// func Rjs(baseUrl string) esbuild.Plugin {
+func Rjs() esbuild.Plugin {
 	return esbuild.Plugin{
 		Name: "rjs",
 		Setup: func(build esbuild.PluginBuild) {

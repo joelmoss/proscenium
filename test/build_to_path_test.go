@@ -36,8 +36,7 @@ var _ = Describe("BuildToPath", func() {
 				Engines: map[string]string{
 					"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
 					"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
-				},
-			})
+				}})
 
 			Expect(code).To(Equal("gem4/lib/gem4/gem4.js::public/assets/gem4/lib/gem4/gem4$24V4BFL3$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$NH2KC6S6$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
 		})

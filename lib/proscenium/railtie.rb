@@ -11,6 +11,7 @@ module Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.debug = false
+    config.proscenium.bundle = false
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
 

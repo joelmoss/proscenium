@@ -15,11 +15,10 @@ var libsSplitPath = "/proscenium/libs/"
 //
 //	lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
 //	lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
-func BuildToPath(options BuildOptions) (bool, string) {
-	entrypoints := strings.Split(options.Path, ";")
-	options.Output = OutputToPath
+func BuildToPath(filePath string) (bool, string) {
+	entrypoints := strings.Split(filePath, ";")
 
-	result := Build(options)
+	result := Build(filePath, OutputToPath)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])

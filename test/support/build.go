@@ -2,6 +2,7 @@ package support
 
 import (
 	"joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"path"
 	"runtime"
@@ -25,8 +26,9 @@ func BuildToString(pathToBuild string, rest ...BuildOpts) (bool, string) {
 	if len(rest) > 0 {
 		restOpts = rest[0]
 	}
+	buildConfig(restOpts)
 
-	return builder.BuildToString(buildOptions(pathToBuild, restOpts))
+	return builder.BuildToString(pathToBuild)
 }
 
 func BuildToPath(pathToBuild string, rest ...BuildOpts) (bool, string) {
@@ -37,8 +39,9 @@ func BuildToPath(pathToBuild string, rest ...BuildOpts) (bool, string) {
 	if len(rest) > 0 {
 		restOpts = rest[0]
 	}
+	buildConfig(restOpts)
 
-	return builder.BuildToPath(buildOptions(pathToBuild, restOpts))
+	return builder.BuildToPath(pathToBuild)
 }
 
 func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
@@ -49,18 +52,14 @@ func Build(pathToBuild string, rest ...BuildOpts) esbuild.BuildResult {
 	if len(rest) > 0 {
 		restOpts = rest[0]
 	}
+	buildConfig(restOpts)
 
-	return builder.Build(buildOptions(pathToBuild, restOpts))
+	return builder.Build(pathToBuild, builder.OutputToString)
 }
 
-func buildOptions(pathToBuild string, restOpts BuildOpts) builder.BuildOptions {
+func buildConfig(restOpts BuildOpts) {
 	// Ensure test environment.
 	types.Config.Environment = types.Environment(2)
-
-	options := builder.BuildOptions{
-		Path:    pathToBuild,
-		BaseUrl: "https://proscenium.test",
-	}
 
 	types.Config.Debug = restOpts.Debug
 	types.Config.Engines = restOpts.Engines
@@ -68,15 +67,15 @@ func buildOptions(pathToBuild string, restOpts BuildOpts) builder.BuildOptions {
 	_, filename, _, _ := runtime.Caller(1)
 	types.Config.GemPath = path.Join(path.Dir(filename), "..", "..")
 
-	if restOpts.EnvVars == "" {
-		options.EnvVars = "{\"RAILS_ENV\":\"test\"}"
-	}
+	// if restOpts.EnvVars == "" {
+	// 	types.Config.EnvVars = make(map[string]string)
+	// 	types.Config.EnvVars["NODE_ENV"] = "test"
+	// }
 
 	if restOpts.ImportMap != "" {
-		options.ImportMap = []byte(restOpts.ImportMap)
+		importmap.Contents.IsParsed = false
+		importmap.Parse([]byte(restOpts.ImportMap))
 	} else if restOpts.ImportMapPath != "" {
-		options.ImportMapPath = restOpts.ImportMapPath
+		types.Config.ImportMapPath = restOpts.ImportMapPath
 	}
-
-	return options
 }

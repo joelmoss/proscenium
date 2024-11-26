@@ -4,6 +4,7 @@ require 'test_helper'
 
 class Proscenium::BuilderTest < ActiveSupport::TestCase
   before do
+    subject.reset_config!
     Proscenium.config.env_vars = Set.new
   end
 

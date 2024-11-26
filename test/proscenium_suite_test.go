@@ -29,6 +29,7 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	types.Config.Reset()
 	types.Config.Environment = types.TestEnv
 	importmap.Contents = &types.ImportMap{}
 	plugin.DiskvCache.EraseAll()

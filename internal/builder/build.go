@@ -1,7 +1,6 @@
 package builder
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -40,18 +39,30 @@ type BuildOptions struct {
 	Output Output
 }
 
-// Build the given `options.Path` in the `options.Root`.
+// Build the given `path` in the `config.RootPath`.
+//
+// - path - The path to build relative to `root`.
+// - config
+//   - RootPath - The working directory, usually Rails root.
+//   - GemPath - Proscenium gem root.
+//   - Environment - The environment (1 = development, 2 = test, 3 = production)
+//   - ImportMapPath - Path to the import map relative to `root`.
+//   - EnvVars - Map of environment variables.
+//   - Engines- Map of Rails engine names and paths.
+//   - CodeSpitting?
+//   - Debug?
 //
 //export build
-func Build(options BuildOptions) esbuild.BuildResult {
-	entrypoints := strings.Split(options.Path, ";")
+func Build(path string, output Output) esbuild.BuildResult {
+	entrypoints := strings.Split(path, ";")
 
 	// default to outputting to a string
-	if options.Output < 1 {
-		options.Output = OutputToString
+	if output < 1 {
+		output = OutputToString
 	}
 
-	err := importmap.Parse(options.ImportMap, options.ImportMapPath)
+	importMap := []byte{}
+	err := importmap.Parse(importMap)
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
@@ -69,11 +80,11 @@ func Build(options BuildOptions) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if options.Output == OutputToPath {
+	if output == OutputToPath {
 		sourcemap = esbuild.SourceMapLinked
-	} else if strings.HasSuffix(options.Path, ".map") {
-		options.Path = strings.TrimSuffix(options.Path, ".map")
-		entrypoints = []string{options.Path}
+	} else if strings.HasSuffix(path, ".map") {
+		path = strings.TrimSuffix(path, ".map")
+		entrypoints = []string{path}
 		sourcemap = esbuild.SourceMapExternal
 	}
 
@@ -98,7 +109,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          options.Output == OutputToPath,
+		Metafile:          output == OutputToPath,
 		Target:            esbuild.ES2022,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
@@ -122,13 +133,13 @@ func Build(options BuildOptions) esbuild.BuildResult {
 
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.I18n,
-		plugin.Rjs(options.BaseUrl),
+		plugin.Rjs(),
 		plugin.Bundler,
 		plugin.Svg, plugin.Css,
 	}
 
-	if !utils.IsUrl(options.Path) {
-		definitions, err := buildEnvVars(options.EnvVars)
+	if !utils.IsUrl(path) {
+		definitions, err := buildEnvVars()
 		if err != nil {
 			return esbuild.BuildResult{
 				Errors: []esbuild.Message{{
@@ -140,7 +151,7 @@ func Build(options BuildOptions) esbuild.BuildResult {
 		buildOptions.Define = definitions
 		buildOptions.Define["global"] = "window"
 
-		if options.Output == OutputToPath {
+		if output == OutputToPath {
 			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
 		}
 	}
@@ -151,24 +162,18 @@ func Build(options BuildOptions) esbuild.BuildResult {
 // Maintains a cache of environment variables.
 var envVarMap = make(map[string]string, 4)
 
-func buildEnvVars(envVarsS string) (map[string]string, error) {
+func buildEnvVars() (map[string]string, error) {
 	if types.Config.Environment != types.TestEnv && len(envVarMap) > 0 {
 		return envVarMap, nil
 	}
 
-	if envVarsS != "" {
-		var varsJson map[string]string
-		err := json.Unmarshal([]byte(envVarsS), &varsJson)
-		if err != nil {
-			return nil, err
+	for key, value := range types.Config.EnvVars {
+		if key != "" || value != "" {
+			envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
 		}
+	}
 
-		for key, value := range varsJson {
-			if key != "" || value != "" {
-				envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
-			}
-		}
-	} else {
+	if len(types.Config.EnvVars) == 0 {
 		// This ensures that we always have NODE_ENV and RAILS_ENV defined even the given env vars do
 		// not define them.
 		env := fmt.Sprintf("'%s'", types.Config.Environment)

@@ -7,9 +7,8 @@ import (
 	"strings"
 )
 
-func BuildToString(options BuildOptions) (bool, string) {
-	options.Output = OutputToString
-	result := Build(options)
+func BuildToString(filePath string) (bool, string) {
+	result := Build(filePath, OutputToString)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])
@@ -22,12 +21,12 @@ func BuildToString(options BuildOptions) (bool, string) {
 
 	contents := string(result.OutputFiles[0].Contents)
 
-	isSourceMap := strings.HasSuffix(options.Path, ".map")
+	isSourceMap := strings.HasSuffix(filePath, ".map")
 	if isSourceMap {
 		return true, contents
 	}
 
-	sourcemapUrl := path.Base(options.Path)
+	sourcemapUrl := path.Base(filePath)
 	if utils.PathIsCss(result.OutputFiles[0].Path) {
 		contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
 	} else {

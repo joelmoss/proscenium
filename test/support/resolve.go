@@ -27,9 +27,7 @@ func Resolve(pathToResolve string, rest ...ResolveOpts) (string, error) {
 
 	types.Config.Debug = restOpts.Debug
 
-	options := resolver.Options{
-		Path: pathToResolve,
-	}
+	options := resolver.Options{}
 	if restOpts.ImportMap != "" {
 		options.ImportMap = []byte(restOpts.ImportMap)
 	}
@@ -37,5 +35,5 @@ func Resolve(pathToResolve string, rest ...ResolveOpts) (string, error) {
 		options.Importer = restOpts.Importer
 	}
 
-	return resolver.Resolve(options)
+	return resolver.Resolve(pathToResolve, options)
 }

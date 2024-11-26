@@ -41,8 +41,7 @@ module Proscenium
           paths_to_build << x.delete_prefix('/')
         end
 
-        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'),
-                                                   base_url: helpers.request.base_url)
+        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'))
 
         out = []
         result.split(';').each do |x|
@@ -77,8 +76,7 @@ module Proscenium
           paths_to_build << x.delete_prefix('/')
         end
 
-        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'),
-                                                   base_url: helpers.request.base_url)
+        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'))
 
         included_js_comment = response_body.first.include?(JS_COMMENT)
         included_lazy_comment = response_body.first.include?(LAZY_COMMENT)

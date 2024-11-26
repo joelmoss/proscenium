@@ -8,12 +8,6 @@ import (
 )
 
 var _ = Describe("Build(import_map)", func() {
-	It("produces error on invalid json", func() {
-		result := Build("lib/foo.js", BuildOpts{ImportMap: `{[}]}`})
-
-		Expect(result.Errors[0].Text).To(Equal("Failed to parse import map"))
-	})
-
 	When("import map is JS", func() {
 		It("should parse", func() {
 			result := Build("lib/import_map/as_js.js", BuildOpts{

@@ -7,6 +7,8 @@ module Proscenium
   class Builder
     class CompileError < StandardError; end
 
+    ENVIRONMENTS = { development: 1, test: 2, production: 3 }.freeze
+
     class Result < FFI::Struct
       layout :success, :bool,
              :response, :string
@@ -19,45 +21,21 @@ module Proscenium
       enum :environment, [:development, 1, :test, :production]
 
       attach_function :build_to_string, [
-        :string,      # Path or entry point.
-        :string,      # Base URL of the Rails app. eg. https://example.com
-        :string,      # Path to import map, relative to root
-        :string,      # ENV variables as a JSON string
-
-        # Config
-        :string,      # Rails application root
-        :string,      # Proscenium gem root
-        :environment, # Rails environment as a Symbol
-        :bool,        # Code splitting enabled?
-        :string,      # Engine names and paths as a JSON string
-        :bool         # Debugging enabled?
+        :string, # Path or entry point.
+        :pointer # Config as JSON.
       ], Result.by_value
 
       attach_function :build_to_path, [
-        :string,      # Path or entry point. Multiple can be given by separating with a semi-colon
-        :string,      # Base URL of the Rails app. eg. https://example.com
-        :string,      # Path to import map, relative to root
-        :string,      # ENV variables as a JSON string
-
-        # Config
-        :string,      # Rails application root
-        :string,      # Proscenium gem root
-        :environment, # Rails environment as a Symbol
-        :bool,        # Code splitting enabled?
-        :string,      # Engine names and paths as a JSON string
-        :bool         # Debugging enabled?
+        :string, # Path or entry point. Multiple can be given by separating with a semi-colon
+        :pointer # Config as JSON.
       ], Result.by_value
 
       attach_function :resolve, [
-        :string,      # path or entry point
-        :string,      # path to import map, relative to root
-
-        # Config
-        :string,      # Rails application root
-        :string,      # Proscenium gem root
-        :environment, # Rails environment as a Symbol
-        :bool         # debugging enabled?
+        :string, # path or entry point
+        :pointer # Config as JSON.
       ], Result.by_value
+
+      attach_function :reset_config, [], :void
     end
 
     class BuildError < StandardError
@@ -83,21 +61,34 @@ module Proscenium
       end
     end
 
-    def self.build_to_path(path, root: nil, base_url: nil)
-      new(root:, base_url:).build_to_path(path)
+    def self.build_to_path(path, root: nil)
+      new(root:).build_to_path(path)
     end
 
-    def self.build_to_string(path, root: nil, base_url: nil)
-      new(root:, base_url:).build_to_string(path)
+    def self.build_to_string(path, root: nil)
+      new(root:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
       new(root:).resolve(path)
     end
 
-    def initialize(root: nil, base_url: nil)
-      @root = root || Rails.root
-      @base_url = base_url
+    # Intended for tests only.
+    def self.reset_config!
+      Request.reset_config
+    end
+
+    def initialize(root: nil)
+      @request_config = FFI::MemoryPointer.from_string({
+        RootPath: (root || Rails.root).to_s,
+        GemPath: gem_root,
+        Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
+        ImportMapPath: import_map_path,
+        Engines: engines,
+        EnvVars: env_vars,
+        CodeSplitting: Proscenium.config.code_splitting,
+        Debug: Proscenium.config.debug
+      }.to_json)
     end
 
     def build_to_path(path)
@@ -105,13 +96,7 @@ module Proscenium
                                               identifier: path,
                                               cached: Proscenium.cache.exist?(path)) do
         Proscenium.cache.fetch path do
-          result = Request.build_to_path(path, @base_url, import_map, env_vars.to_json,
-                                         @root.to_s,
-                                         gem_root,
-                                         Rails.env.to_sym,
-                                         Proscenium.config.code_splitting,
-                                         engines.to_json,
-                                         Proscenium.config.debug)
+          result = Request.build_to_path(path, @request_config)
 
           raise BuildError, result[:response] unless result[:success]
 
@@ -122,13 +107,7 @@ module Proscenium
 
     def build_to_string(path)
       ActiveSupport::Notifications.instrument('build_to_string.proscenium', identifier: path) do
-        result = Request.build_to_string(path, @base_url, import_map, env_vars.to_json,
-                                         @root.to_s,
-                                         gem_root,
-                                         Rails.env.to_sym,
-                                         Proscenium.config.code_splitting,
-                                         engines.to_json,
-                                         Proscenium.config.debug)
+        result = Request.build_to_string(path, @request_config)
 
         raise BuildError, result[:response] unless result[:success]
 
@@ -138,10 +117,8 @@ module Proscenium
 
     def resolve(path)
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
-        result = Request.resolve(path, import_map, @root.to_s,
-                                 gem_root,
-                                 Rails.env.to_sym,
-                                 Proscenium.config.debug)
+        result = Request.resolve(path, @request_config)
+
         raise ResolveError.new(path, result[:response]) unless result[:success]
 
         result[:response]
@@ -168,7 +145,7 @@ module Proscenium
       end
     end
 
-    def import_map
+    def import_map_path
       return unless (path = Rails.root&.join('config'))
 
       if (json = path.join('import_map.json')).exist?
