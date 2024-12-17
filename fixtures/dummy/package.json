@@ -8,6 +8,8 @@
     "gem2": "file:../external/gem2",
     "internal-one-link": "link:packages/one",
     "internal-two": "file:packages/two",
-    "mypackage": "link:packages/mypackage"
-  }
+    "mypackage": "link:packages/mypackage",
+    "react": "^18.3.1"
+  },
+  "packageManager": "pnpm@8.10.2+sha512.0782093d5ba6c7ad9462081bc1ef0775016a4b4109eca1e1fedcea6f110143af5f50993db36c427d4fa8c62be3920a3224db12da719d246ca19dd9f18048c33c"
 }

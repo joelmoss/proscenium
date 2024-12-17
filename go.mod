@@ -42,6 +42,7 @@ require (
 	github.com/peterbourgon/mergemap v0.0.1
 	github.com/riking/cssparse v0.0.0-20180325025645-c37ded0aac89
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
+	github.com/spf13/afero v1.11.0
 	golang.org/x/sys v0.26.0 // indirect
 	golang.org/x/text v0.19.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1

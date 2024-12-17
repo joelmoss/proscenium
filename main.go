@@ -74,7 +74,7 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_Result {
 		return C.struct_Result{C.int(0), C.CString(err.Error())}
 	}
 
-	resolvedPath, err := resolver.Resolve(C.GoString(filePath), resolver.Options{})
+	resolvedPath, err := resolver.Resolve(C.GoString(filePath), "")
 	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
 	}

@@ -83,10 +83,10 @@ module Proscenium
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
-        ImportMapPath: import_map_path,
         Engines: engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
+        Bundle: Proscenium.config.bundle,
         Debug: Proscenium.config.debug
       }.to_json)
     end
@@ -145,19 +145,19 @@ module Proscenium
       end
     end
 
-    def import_map_path
-      return unless (path = Rails.root&.join('config'))
+    # def import_map_path
+    #   return unless (path = Rails.root&.join('config'))
 
-      if (json = path.join('import_map.json')).exist?
-        return json.relative_path_from(@root).to_s
-      end
+    #   if (json = path.join('import_map.json')).exist?
+    #     return json.relative_path_from(@root).to_s
+    #   end
 
-      if (js = path.join('import_map.js')).exist?
-        return js.relative_path_from(@root).to_s
-      end
+    #   if (js = path.join('import_map.js')).exist?
+    #     return js.relative_path_from(@root).to_s
+    #   end
 
-      nil
-    end
+    #   nil
+    # end
 
     def gem_root
       Pathname.new(__dir__).join('..', '..').to_s

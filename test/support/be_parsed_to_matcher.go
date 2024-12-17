@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
-	"os"
-	"path"
 	"runtime"
 	"strings"
 
@@ -24,16 +22,11 @@ type BeParsedToMatcher struct {
 	Expected interface{}
 }
 
-var cwd, _ = os.Getwd()
-var root string = path.Join(cwd, "..", "fixtures", "dummy")
-
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
-	types.Config.RootPath = root
-
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, root, "")
+	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, types.Config.RootPath, "")
 	matcher.Output = strings.TrimSpace(matcher.Output)
 
 	defer func() {

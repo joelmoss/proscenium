@@ -29,9 +29,16 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	importmap.Reset()
 	types.Config.Reset()
 	types.Config.Environment = types.TestEnv
-	importmap.Contents = &types.ImportMap{}
+
+	_, filename, _, _ := runtime.Caller(0)
+	root := path.Dir(filename)
+	types.Config.RootPath = path.Join(root, "..", "fixtures", "dummy")
+	types.Config.GemPath = path.Join(root, "..")
+
+	// Currently only used by the SVG plugin
 	plugin.DiskvCache.EraseAll()
 })
 

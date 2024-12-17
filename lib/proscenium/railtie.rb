@@ -11,7 +11,7 @@ module Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.debug = false
-    config.proscenium.bundle = false
+    config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
 
@@ -39,6 +39,7 @@ module Proscenium
     #     config.proscenium.engines << self
     #   end
     config.proscenium.engines = Set.new
+    config.proscenium.engines << self
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'
