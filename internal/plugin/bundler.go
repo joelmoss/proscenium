@@ -209,7 +209,7 @@ var Bundler = esbuild.Plugin{
 
 					if path.IsAbs(result.Path) && filepath.Ext(result.Path) != "" {
 						// If the path is absolute, then we can just return it as is. However, it must be a
-						// fully qualified path with a file extension. We can then return it as is. Othwerwise,
+						// fully qualified path with a file extension. We can then return it as is. Otherwise,
 						// we need to resolve it.
 						if unbundled {
 							result.Path = strings.TrimPrefix(result.Path, root)

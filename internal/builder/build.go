@@ -113,7 +113,7 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.I18n,
 		plugin.Rjs(),
-		plugin.Libs,
+		plugin.Ui,
 	}
 
 	if types.Config.Bundle {

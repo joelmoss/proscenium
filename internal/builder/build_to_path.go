@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-var libsSplitPath = "/proscenium/libs/"
+var libsSplitPath = "/proscenium/ui/"
 
 // Return a mapping of path inputs to outputs.
 //
@@ -16,9 +16,8 @@ var libsSplitPath = "/proscenium/libs/"
 //	lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
 //	lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
 func BuildToPath(filePath string) (bool, string) {
-	entrypoints := strings.Split(filePath, ";")
-
 	result := Build(filePath, OutputToPath)
+	entrypoints := strings.Split(filePath, ";")
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])
@@ -56,7 +55,7 @@ func BuildToPath(filePath string) (bool, string) {
 				key := input.(string)
 				if strings.Contains(key, libsSplitPath) {
 					sliced := strings.Split(key, libsSplitPath)
-					key = "@proscenium/" + sliced[len(sliced)-1]
+					key = "@proscenium/ui/" + sliced[len(sliced)-1]
 				}
 
 				if mapping[key] == "" {
@@ -75,7 +74,6 @@ func BuildToPath(filePath string) (bool, string) {
 	}
 
 	return true, strings.Join(contents, ";")
-
 }
 
 func entryPointToRelativePath(entryPoint string) string {

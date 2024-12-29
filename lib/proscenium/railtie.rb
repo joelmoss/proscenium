@@ -39,7 +39,6 @@ module Proscenium
     #     config.proscenium.engines << self
     #   end
     config.proscenium.engines = Set.new
-    config.proscenium.engines << self
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'

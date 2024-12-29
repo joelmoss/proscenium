@@ -27,12 +27,6 @@ var _ = Describe("Build", func() {
 		Expect(b.Build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
-	It("should bundle rjs", Pending, func() {
-		MockURL("/constants.rjs", "export default 'constants';")
-
-		Expect(b.Build("lib/rjs.js")).To(ContainCode(`"constants"`))
-	})
-
 	It("should bundle bare module", func() {
 		Expect(b.Build("lib/import_npm_module.js")).To(ContainCode(`
 			function one() { console.log("one"); }
@@ -53,12 +47,6 @@ var _ = Describe("Build", func() {
 
 	It("should bundle absolute path", func() {
 		Expect(b.Build("lib/import_absolute_module.js")).To(ContainCode(`
-			console.log("/lib/foo4.js")
-		`))
-	})
-
-	PIt("should build dynamic path", func() {
-		Expect(b.Build("lib/import_dynamic.js")).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
 	})

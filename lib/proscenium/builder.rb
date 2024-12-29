@@ -145,20 +145,6 @@ module Proscenium
       end
     end
 
-    # def import_map_path
-    #   return unless (path = Rails.root&.join('config'))
-
-    #   if (json = path.join('import_map.json')).exist?
-    #     return json.relative_path_from(@root).to_s
-    #   end
-
-    #   if (js = path.join('import_map.js')).exist?
-    #     return js.relative_path_from(@root).to_s
-    #   end
-
-    #   nil
-    # end
-
     def gem_root
       Pathname.new(__dir__).join('..', '..').to_s
     end

@@ -47,7 +47,7 @@ var Css = esbuild.Plugin{
 						return esbuild.OnLoadResult{
 							Errors:   cssResult.Errors,
 							Warnings: cssResult.Warnings,
-						}, fmt.Errorf(cssResult.Errors[0].Text)
+						}, fmt.Errorf("%s", cssResult.Errors[0].Text)
 					}
 
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
