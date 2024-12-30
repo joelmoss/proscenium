@@ -130,7 +130,7 @@ var _ = Describe("Build bundless", func() {
 		It("should fail on engined but unknown entrypoint", func() {
 			result := b.Build("gem3/unknown.js")
 
-			Expect(result.Errors[0].Text).To(Equal("Could not read from file: /Users/joelmoss/dev/proscenium/fixtures/dummy/vendor/gem3/unknown.js"))
+			Expect(result.Errors[0].Text).To(HavePrefix("Could not read from file: /"))
 		})
 
 		It("resolves entry point", func() {
@@ -194,7 +194,7 @@ var _ = Describe("Build bundless", func() {
 		It("should fail on engined but unknown entrypoint", func() {
 			result := b.Build("gem4/unknown.js")
 
-			Expect(result.Errors[0].Text).To(Equal("Could not read from file: /Users/joelmoss/dev/proscenium/fixtures/external/gem4/unknown.js"))
+			Expect(result.Errors[0].Text).To(HavePrefix("Could not read from file: /"))
 		})
 
 		It("resolves entry point", func() {
