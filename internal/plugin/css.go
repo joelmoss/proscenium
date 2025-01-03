@@ -17,7 +17,7 @@ var Css = esbuild.Plugin{
 
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[6] filter(.css$)", args)
+				// pp.Println("[cssPlugin.onLoad] args:", args)
 
 				var pluginData types.PluginData
 				if args.PluginData != nil {

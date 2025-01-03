@@ -173,7 +173,7 @@ var Bundless = esbuild.Plugin{
 
 						if newPath != "" {
 							result.Path = newPath
-						} else if strings.HasPrefix(result.Path, root) {
+						} else if result.External && strings.HasPrefix(result.Path, root) {
 							result.Path = strings.TrimPrefix(result.Path, root)
 						}
 					}
