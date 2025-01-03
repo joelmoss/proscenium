@@ -1,5 +1,5 @@
 # frozen_string_literal: true
 
 module Proscenium
-  VERSION = '0.19.0.beta3'
+  VERSION = '0.19.0.beta4'
 end
