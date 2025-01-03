@@ -100,6 +100,7 @@ var _ = Describe("Build bundless", func() {
 		var _ = BeforeEach(func() {
 			types.Config.Engines = map[string]string{
 				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+				"gem5": filepath.Join(fixturesRoot, "dummy", "vendor", "bundle", "ruby", "3.3.0", "bundler", "gems", "gem5"),
 			}
 		})
 
@@ -118,13 +119,13 @@ var _ = Describe("Build bundless", func() {
 
 			result := b.Build("lib/engines/gem3.js")
 
-			Expect(result).To(ContainCode(`import "/vendor/gem3/lib/gem3/console.js";`))
+			Expect(result).To(ContainCode(`import "/gem3/lib/gem3/console.js";`))
 		})
 
 		It("should resolve extension-less imports", func() {
 			result := b.Build("gem3/lib/gem3/gem3.js")
 
-			Expect(result).To(ContainCode(`import "/vendor/gem3/lib/gem3/foo.js";`))
+			Expect(result).To(ContainCode(`import "/gem3/lib/gem3/foo.js";`))
 		})
 
 		It("should fail on engined but unknown entrypoint", func() {
@@ -142,9 +143,7 @@ var _ = Describe("Build bundless", func() {
 		It("resolves absolute and same engine imports", func() {
 			result := b.Build("gem3/lib/gem3/gem3.js")
 
-			Expect(result).To(ContainCode(`
-				import "/vendor/gem3/lib/gem3/console.js";
-			`))
+			Expect(result).To(ContainCode(`import "/gem3/lib/gem3/console.js";`))
 		})
 
 		It("resolves bare import to Rails app (not engine)", func() {
@@ -158,23 +157,25 @@ var _ = Describe("Build bundless", func() {
 		It("resolves relative import to engine", func() {
 			result := b.Build("gem3/lib/gem3/gem3.js")
 
-			Expect(result).To(ContainCode(`
-				import imported from "/vendor/gem3/lib/gem3/imported.js";
-			`))
+			Expect(result).To(ContainCode(`import imported from "/gem3/lib/gem3/imported.js";`))
 		})
 
 		It("resolves absolute import to Rails app (not engine)", func() {
 			result := b.Build("gem3/lib/gem3/gem3.js")
 
-			Expect(result).To(ContainCode(`
-				import "/lib/foo.js";
-			`))
+			Expect(result).To(ContainCode(`import "/lib/foo.js";`))
 		})
 
 		It("resolves import from engine when in app", func() {
 			result := b.Build("lib/gems/gem3.js")
 
-			Expect(result).To(ContainCode(`import "/vendor/gem3/lib/gem3/gem3.js"`))
+			Expect(result).To(ContainCode(`import "/gem3/lib/gem3/gem3.js"`))
+		})
+
+		It("should not bundle fonts", func() {
+			result := b.Build("lib/engines/fonts.css")
+
+			Expect(result).To(ContainCode(`url(/gem5/somefont.woff2)`))
 		})
 	})
 

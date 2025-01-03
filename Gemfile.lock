@@ -10,6 +10,12 @@ PATH
       ruby-next (~> 1.0.1)
 
 PATH
+  remote: fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5
+  specs:
+    gem5 (0.1.0)
+      rails (>= 7.0.4)
+
+PATH
   remote: fixtures/dummy/vendor/gem1
   specs:
     gem1 (0.1.0)
@@ -350,6 +356,7 @@ DEPENDENCIES
   gem2!
   gem3!
   gem4!
+  gem5!
   htmlbeautifier
   maxitest
   minitest-focus

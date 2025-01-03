@@ -148,7 +148,7 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 
 				When("mixin file is not found", func() {
-					It("should log warning", Pending)
+					// It("should log warning", Pending)
 
 					It("should pass through the @mixin declaration", func() {
 						Expect(`

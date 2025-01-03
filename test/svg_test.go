@@ -3,7 +3,6 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	. "joelmoss/proscenium/test/support"
-	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -70,18 +69,18 @@ var _ = Describe("b.Build(svg)", func() {
 		})
 	})
 
-	When("importing remote svg from css", func() {
-		PIt("should not bundle or encode; leave as is", func() {
-			var re = regexp.MustCompile(`^https?://.+(^\.svg)`)
-			Expect(re.MatchString("https://sdfsdf.jsvg")).To(BeTrue())
-		})
+	// When("importing remote svg from css", func() {
+	// 	PIt("should not bundle or encode; leave as is", func() {
+	// 		var re = regexp.MustCompile(`^https?://.+(^\.svg)`)
+	// 		Expect(re.MatchString("https://sdfsdf.jsvg")).To(BeTrue())
+	// 	})
 
-		PIt("should not bundle or encode; leave as is", func() {
-			MockURL("/at.svg", svgContent)
+	// 	PIt("should not bundle or encode; leave as is", func() {
+	// 		MockURL("/at.svg", svgContent)
 
-			result := b.Build("lib/svg/remote.css")
+	// 		result := b.Build("lib/svg/remote.css")
 
-			Expect(result).To(ContainCode(`background-image: url(https://proscenium.test/at.svg);`))
-		})
-	})
+	// 		Expect(result).To(ContainCode(`background-image: url(https://proscenium.test/at.svg);`))
+	// 	})
+	// })
 })

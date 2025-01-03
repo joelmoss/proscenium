@@ -24,6 +24,8 @@ var Bundless = esbuild.Plugin{
 					return esbuild.OnResolveResult{}, nil
 				}
 
+				// pp.Println("[bundless] args:", args)
+
 				// Should we use esbuild to resolve this path?
 				useResolve := false
 
@@ -141,6 +143,8 @@ var Bundless = esbuild.Plugin{
 
 					r := build.Resolve(result.Path, resolveOpts)
 
+					// pp.Println("[bundless] resolve result:", r)
+
 					result.Path = r.Path
 					result.Errors = r.Errors
 					result.Warnings = r.Warnings
@@ -155,23 +159,27 @@ var Bundless = esbuild.Plugin{
 			FINISH:
 				// Only entrypoints must be an absolute path.
 				if args.Kind != esbuild.ResolveEntryPoint && result.Path != "" {
-					if !strings.HasPrefix(result.Path, root) {
-						if resolvedEnginePath != "" && resolvedEngineKey != "" {
-							result.Path = filepath.Join(pathSep, resolvedEngineKey, strings.TrimPrefix(result.Path, resolvedEnginePath))
-						} else {
-							for key, value := range types.Config.Engines {
-								if strings.HasPrefix(result.Path, value+pathSep) {
-									result.Path = filepath.Join(pathSep, key, strings.TrimPrefix(result.Path, value))
-									break
-								}
+					if resolvedEnginePath != "" && resolvedEngineKey != "" {
+						result.Path = filepath.Join(pathSep, resolvedEngineKey, strings.TrimPrefix(result.Path, resolvedEnginePath))
+					} else {
+						newPath := ""
+
+						for key, value := range types.Config.Engines {
+							if strings.HasPrefix(result.Path, value+pathSep) {
+								newPath = filepath.Join(pathSep, key, strings.TrimPrefix(result.Path, value))
+								break
 							}
 						}
-					} else {
-						result.Path = strings.TrimPrefix(result.Path, root)
+
+						if newPath != "" {
+							result.Path = newPath
+						} else if strings.HasPrefix(result.Path, root) {
+							result.Path = strings.TrimPrefix(result.Path, root)
+						}
 					}
 				}
 
-				// pp.Println("[bundless] resolve", result)
+				// pp.Println("[bundless] result:", result)
 
 				return result, nil
 			})

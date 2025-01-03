@@ -67,8 +67,8 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
 
     assert_equal({
                    '/@proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
-                   '/vendor/gem1/app/components/flash/component.jsx' => { sideloaded: true,
-                                                                          lazy: true },
+                   '/gem1/app/components/flash/component.jsx' => { sideloaded: true,
+                                                                   lazy: true },
                    '/app/views/layouts/bare.js' => { sideloaded: true },
                    '/app/views/layouts/bare.css' => { sideloaded: true }
                  }, Proscenium::Importer.imported)

@@ -1,0 +1,6 @@
+h1 {
+  @mixin red from url("./red.css");
+}
+h2 {
+  @mixin blue from url("/gem5/lib/gem5/blue.css");
+}
