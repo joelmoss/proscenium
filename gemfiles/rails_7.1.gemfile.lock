@@ -1,4 +1,10 @@
 PATH
+  remote: ../fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5
+  specs:
+    gem5 (0.1.0)
+      rails (>= 7.0.4)
+
+PATH
   remote: ../fixtures/dummy/vendor/gem1
   specs:
     gem1 (0.1.0)
@@ -25,7 +31,7 @@ PATH
 PATH
   remote: ..
   specs:
-    proscenium (0.18.0)
+    proscenium (0.19.0.beta4)
       activesupport (>= 7.1.0, < 9.0)
       ffi (~> 1.17.0)
       literal (~> 1.0)
@@ -345,6 +351,7 @@ DEPENDENCIES
   gem2!
   gem3!
   gem4!
+  gem5!
   htmlbeautifier
   maxitest
   minitest-focus

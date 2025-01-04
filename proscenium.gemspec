@@ -27,10 +27,10 @@ Gem::Specification.new do |spec|
     'LICENSE.txt']
   spec.require_paths = ['lib']
 
-  spec.add_dependency 'activesupport', ['>= 7.1.0', '< 8.0']
+  spec.add_dependency 'activesupport', ['>= 7.1.0', '< 9.0']
   spec.add_dependency 'ffi', '~> 1.17.0'
   spec.add_dependency 'literal', '~> 1.0'
   spec.add_dependency 'oj', '~> 3.13'
-  spec.add_dependency 'railties', ['>= 7.1.0', '< 8.0']
+  spec.add_dependency 'railties', ['>= 7.1.0', '< 9.0']
   spec.add_dependency 'ruby-next', '~> 1.0.1'
 end
