@@ -19,26 +19,6 @@ const (
 	OutputToPath
 )
 
-type BuildOptions struct {
-	// The path to build relative to `root`. Multiple paths can be given by separating them with a
-	// semi-colon.
-	Path string
-
-	// Base URL of the Rails app. eg. https://example.com
-	BaseUrl string
-
-	// Path to an import map (js or json), relative to the given root.
-	ImportMapPath string
-
-	// Environment variables as a JSON string.
-	EnvVars string
-
-	// Import map contents.
-	ImportMap []byte
-
-	Output Output
-}
-
 // Build the given `path` in the `config.RootPath`.
 //
 // - path - The path to build relative to `root`.
@@ -46,30 +26,29 @@ type BuildOptions struct {
 //   - RootPath - The working directory, usually Rails root.
 //   - GemPath - Proscenium gem root.
 //   - Environment - The environment (1 = development, 2 = test, 3 = production)
-//   - ImportMapPath - Path to the import map relative to `root`.
 //   - EnvVars - Map of environment variables.
 //   - Engines- Map of Rails engine names and paths.
 //   - CodeSpitting?
+//   - Bundle?
 //   - Debug?
 //
 //export build
-func Build(path string, output Output) esbuild.BuildResult {
+func Build(path string, args ...Output) esbuild.BuildResult {
 	entrypoints := strings.Split(path, ";")
 
-	// default to outputting to a string
-	if output < 1 {
-		output = OutputToString
-	}
-
-	importMap := []byte{}
-	err := importmap.Parse(importMap)
+	_, err := importmap.Imports()
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
-				Text:   "Failed to parse import map",
+				Text:   "Failed to parse importmap",
 				Detail: err.Error(),
 			}},
 		}
+	}
+
+	output := OutputToString
+	if len(args) > 0 {
+		output = args[0]
 	}
 
 	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
@@ -104,7 +83,7 @@ func Build(path string, output Output) esbuild.BuildResult {
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
 		Bundle:            true,
-		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
+		ResolveExtensions: []string{".tsx", ".ts", ".jsx", ".js", ".mjs", ".css", ".json"},
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             true,
 		Sourcemap:         sourcemap,
@@ -134,9 +113,17 @@ func Build(path string, output Output) esbuild.BuildResult {
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.I18n,
 		plugin.Rjs(),
-		plugin.Bundler,
-		plugin.Svg, plugin.Css,
+		plugin.Ui,
 	}
+
+	if types.Config.Bundle {
+		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
+	} else {
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
+	}
+
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Svg, plugin.Css)
 
 	if !utils.IsUrl(path) {
 		definitions, err := buildEnvVars()

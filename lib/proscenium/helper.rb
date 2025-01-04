@@ -16,7 +16,7 @@ module Proscenium
     # those asset paths all begin with a slash, which the Rails asset helpers do not pass through to
     # here.
     #
-    # If the given `path` is a bare path (does not start with `/` or `./` or `../`), then we use
+    # If the given `path` is a bare path (does not start with `./` or `../`), then we use
     # Rails default conventions, and serve CSS from /app/assets/stylesheets and JS from
     # /app/javascript.
     def compute_asset_path(path, options = {})

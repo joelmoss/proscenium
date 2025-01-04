@@ -1,16 +1,18 @@
 package proscenium_test
 
 import (
+	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("Build(css)", func() {
+var _ = Describe("b.Build(css)", func() {
 	Describe("plain css", func() {
 		It("should build", func() {
-			Expect(Build("lib/foo.css")).To(ContainCode(`.body { color: red; }`))
+			Expect(b.Build("lib/foo.css")).To(ContainCode(`.body { color: red; }`))
 		})
 	})
 
@@ -18,30 +20,30 @@ var _ = Describe("Build(css)", func() {
 		path := "lib/css_modules/basic.module.css"
 
 		It("should build", func() {
-			Expect(Build(path)).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
+			Expect(b.Build(path)).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 		})
 	})
 
 	When("importing absolute path", func() {
 		It("should bundle", func() {
-			Expect(Build("lib/import_absolute.css")).To(ContainCode(`.stuff { color: red; }`))
+			Expect(b.Build("lib/import_absolute.css")).To(ContainCode(`.stuff { color: red; }`))
 		})
 	})
 
 	When("importing css module from css", func() {
 		It("should bundle", func() {
-			Expect(Build("lib/css_modules/import_css_module.css")).To(ContainCode(`
-					/* lib/css_modules/basic.module.css */
-          .foo-c3f452b4 { color: red; }
-          /* lib/css_modules/import_css_module.css */
-          .bar { color: blue; }
-				`))
+			Expect(b.Build("lib/css_modules/import_css_module.css")).To(ContainCode(`
+			/* lib/css_modules/basic.module.css */
+			.foo-c3f452b4 { color: red; }
+			/* lib/css_modules/import_css_module.css */
+			.bar { color: blue; }
+			`))
 		})
 	})
 
 	When("importing css module from css module", func() {
 		It("should bundle with different digest", func() {
-			result := Build("lib/css_modules/import_css_module.module.css")
+			result := b.Build("lib/css_modules/import_css_module.module.css")
 
 			Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 			Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
@@ -50,28 +52,37 @@ var _ = Describe("Build(css)", func() {
 
 	When("importing relative path", func() {
 		It("should bundle", func() {
-			Expect(Build("lib/import_relative.css")).To(ContainCode(`
-					/* lib/foo.css */
-					.body { color: red; }
-					/* lib/foo2.css */
-					.body { color: blue; }
-				`))
+			Expect(b.Build("lib/import_relative.css")).To(ContainCode(`
+			/* lib/foo.css */
+			.body { color: red; }
+			/* lib/foo2.css */
+			.body { color: blue; }
+			`))
 		})
 	})
 
 	When("importing bare specifier", func() {
 		It("is replaced with absolute path", func() {
-			result := Build("lib/import_npm_module.css")
+			result := b.Build("lib/import_npm_module.css")
 
 			Expect(result).To(ContainCode(`.mypackage { color: red; }`))
 			Expect(result).NotTo(ContainCode(`@import "mypackage/styles";`))
 		})
 	})
 
+	When("importing bare specifier with extension", func() {
+		It("is replaced with absolute path", func() {
+			types.Config.Bundle = false
+			result := b.Build("lib/import_npm_module_with_ext.css")
+
+			Expect(result).To(ContainCode(`@import "/packages/mypackage/styles.css"`))
+		})
+	})
+
 	Describe("mixins", func() {
 		When("from URL", func() {
 			It("is replaced with defined mixin", func() {
-				Expect(Build("lib/with_mixin_from_url.css")).To(ContainCode(`
+				Expect(b.Build("lib/with_mixin_from_url.css")).To(ContainCode(`
 						a { color: red; font-size: 20px; }
 					`))
 			})
@@ -79,7 +90,7 @@ var _ = Describe("Build(css)", func() {
 
 		When("from relative URL", func() {
 			It("is replaced with defined mixin", func() {
-				Expect(Build("lib/with_mixin_from_relative_url.css")).To(ContainCode(`
+				Expect(b.Build("lib/with_mixin_from_relative_url.css")).To(ContainCode(`
 					a { color: red; font-size: 20px; }
 				`))
 			})
@@ -121,18 +132,30 @@ var _ = Describe("Build(css)", func() {
 		`
 
 		It("includes stylesheet and proxies class names", func() {
-			Expect(Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
+			Expect(b.Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
 		})
 
 		It("import relative css module from js", func() {
-			Expect(Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
+			Expect(b.Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
+		})
+
+		When("Bundle = false", func() {
+			BeforeEach(func() {
+				types.Config.Bundle = false
+			})
+
+			It("import relative css module from js", func() {
+				Expect(b.Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
+			})
+
+			It("includes stylesheet and proxies class names", func() {
+				Expect(b.Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
+			})
 		})
 
 		When("importing css module from css module", func() {
-			path := "lib/css_modules/import_css_module.js"
-
 			It("should bundle with different digest", func() {
-				result := Build(path)
+				result := b.Build("lib/css_modules/import_css_module.js")
 
 				Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))

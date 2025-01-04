@@ -16,35 +16,27 @@ func (e Environment) String() string {
 // - RootPath - The working directory, usually Rails root.
 // - GemPath - Proscenium gem root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
-// - ImportMapPath - Path to the import map relative to `root`.
 // - EnvVars - Map of environment variables.
 // - Engines- Map of Rails engine names and paths.
-// - CodeSpitting?
+// - CodeSplitting?
+// - Bundle?
 // - Debug?
 type ConfigT struct {
 	RootPath      string
 	GemPath       string
-	ImportMapPath string
 	Engines       map[string]string
 	EnvVars       map[string]string
 	Debug         bool
 	CodeSplitting bool
+	Bundle        bool
 	Environment   Environment
 }
 
-var Config = ConfigT{}
-var zeroConfig = &ConfigT{}
+var Config = ConfigT{CodeSplitting: true, Bundle: true}
+var zeroConfig = &ConfigT{CodeSplitting: true, Bundle: true}
 
 func (config *ConfigT) Reset() {
 	*config = *zeroConfig
-}
-
-type ImportMapScopes map[string]string
-
-type ImportMap struct {
-	Imports  map[string]string
-	Scopes   map[string]ImportMapScopes
-	IsParsed bool
 }
 
 type PluginData = struct {

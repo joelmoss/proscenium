@@ -34,6 +34,7 @@ group :test do
   gem 'gem2', path: './fixtures/external/gem2'
   gem 'gem3', path: './fixtures/dummy/vendor/gem3'
   gem 'gem4', path: './fixtures/external/gem4'
+  gem 'gem5', path: './fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5'
   gem 'maxitest'
   gem 'minitest-focus'
   gem 'minitest-spec-rails'

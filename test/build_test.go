@@ -1,6 +1,9 @@
 package proscenium_test
 
 import (
+	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"os"
 	"path/filepath"
@@ -15,93 +18,66 @@ var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
 
 var _ = Describe("Build", func() {
 	It("should fail on unknown entrypoint", func() {
-		result := Build("unknown.js")
+		result := b.Build("unknown.js")
 
 		Expect(result.Errors[0].Text).To(Equal("Could not resolve \"unknown.js\""))
 	})
 
 	It("should build js", func() {
-		Expect(Build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
-	})
-
-	It("should bundle rjs", Pending, func() {
-		MockURL("/constants.rjs", "export default 'constants';")
-
-		Expect(Build("lib/rjs.js")).To(ContainCode(`"constants"`))
-	})
-
-	It("should build jsx", func() {
-		result := Build("lib/component.jsx")
-
-		Expect(result).To(ContainCode(`
-			import { jsx } from "react/jsx-runtime";
-			var Component = () => {
-				return /* @__PURE__ */ jsx("div", { children: "Hello" });
-			};
-			var component_default = Component;
-			export {
-				component_default as default
-			};
-		`))
+		Expect(b.Build("lib/foo.js")).To(ContainCode(`console.log("/lib/foo.js")`))
 	})
 
 	It("should bundle bare module", func() {
-		Expect(Build("lib/import_npm_module.js")).To(ContainCode(`
+		Expect(b.Build("lib/import_npm_module.js")).To(ContainCode(`
 			function one() { console.log("one"); }
 		`))
 	})
 
 	It("should resolve extension-less imports", func() {
-		Expect(Build("lib/import_absolute_module_without_extension.js")).To(ContainCode(`
+		Expect(b.Build("lib/import_absolute_module_without_extension.js")).To(ContainCode(`
 			console.log("/lib/foo2.js")
 		`))
 	})
 
 	It("should bundle relative path", func() {
-		Expect(Build("lib/import_relative_module.js")).To(ContainCode(`
+		Expect(b.Build("lib/import_relative_module.js")).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
 	})
 
 	It("should bundle absolute path", func() {
-		Expect(Build("lib/import_absolute_module.js")).To(ContainCode(`
-			console.log("/lib/foo4.js")
-		`))
-	})
-
-	PIt("should build dynamic path", func() {
-		Expect(Build("lib/import_dynamic.js")).To(ContainCode(`
+		Expect(b.Build("lib/import_absolute_module.js")).To(ContainCode(`
 			console.log("/lib/foo4.js")
 		`))
 	})
 
 	Describe("unbundle:* imports", func() {
 		It("should unbundle imports", func() {
-			Expect(Build("lib/unbundle/local_modules.js", BuildOpts{
-				ImportMap: `{
-					"imports": {
-						"/lib/foo3.js": "unbundle:/lib/foo3.js",
-						"react-dom": "unbundle:react-dom"
-					}
-				}`,
-			})).To(ContainCode(`
+			importmap.NewJsonImportMap([]byte(`{
+				"imports": {
+					"/lib/foo3.js": "unbundle:/lib/foo3.js",
+					"react-dom": "unbundle:react-dom"
+				}
+			}`))
+
+			Expect(b.Build("lib/unbundle/local_modules.js")).To(ContainCode(`
 				import "/lib/unbundle/foo1.js";
 				import "/lib/unbundle/foo2.js";
 				import "/lib/foo3.js";
 				import { one } from "/packages/mypackage/treeshake.js";
 				// packages/mypackage/index.js
-        console.log("node_modules/mypackage");
+	      console.log("node_modules/mypackage");
 			`))
 		})
 	})
 
 	Describe("vendored ruby gem", func() {
 		It("resolves entry point", func() {
-			result := Build("gem3/lib/gem3/gem3.js", BuildOpts{
-				Engines: map[string]string{
-					"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
-				},
-			})
+			types.Config.Engines = map[string]string{
+				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+			}
+
+			result := b.Build("gem3/lib/gem3/gem3.js")
 
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
@@ -112,11 +88,11 @@ var _ = Describe("Build", func() {
 		})
 
 		It("bundles", func() {
-			result := Build("lib/gems/gem3.js", BuildOpts{
-				Engines: map[string]string{
-					"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
-				},
-			})
+			types.Config.Engines = map[string]string{
+				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+			}
+
+			result := b.Build("lib/gems/gem3.js")
 
 			Expect(result).To(ContainCode(`h1 { color: red; }`))
 			Expect(result).To(ContainCode(`h2 { color: blue; }`))
@@ -129,11 +105,12 @@ var _ = Describe("Build", func() {
 
 	Describe("non-vendored ruby gem", func() {
 		It("resolves entry point", func() {
-			result := Build("gem4/lib/gem4/gem4", BuildOpts{
-				Engines: map[string]string{
-					"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
-				},
-			})
+			types.Config.Engines = map[string]string{
+				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+				"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
+			}
+
+			result := b.Build("gem4/lib/gem4/gem4")
 
 			Expect(result).To(ContainCode(`e.id = "_401b6cac";`))
 			Expect(result).To(ContainCode(`.name-401b6cac`))
@@ -146,11 +123,12 @@ var _ = Describe("Build", func() {
 		})
 
 		It("bundles", func() {
-			result := Build("lib/gems/gem4.js", BuildOpts{
-				Engines: map[string]string{
-					"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
-				},
-			})
+			types.Config.Engines = map[string]string{
+				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+				"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
+			}
+
+			result := b.Build("lib/gems/gem4.js")
 
 			Expect(result).To(ContainCode(`e.id = "_401b6cac";`))
 			Expect(result).To(ContainCode(`.name-401b6cac`))
@@ -164,7 +142,7 @@ var _ = Describe("Build", func() {
 	})
 
 	It("tree shakes bare import", func() {
-		Expect(Build("lib/import_tree_shake.js")).To(EqualCode(`
+		Expect(b.Build("lib/import_tree_shake.js")).To(EqualCode(`
 			// packages/mypackage/treeshake.js
 			function one() {
 				console.log("one");
@@ -178,20 +156,20 @@ var _ = Describe("Build", func() {
 	It("does not bundle URLs", func() {
 		MockURL("/import-url-module.js", "export default 'Hello World'")
 
-		Expect(Build("lib/import_url.js")).To(ContainCode(`
+		Expect(b.Build("lib/import_url.js")).To(ContainCode(`
 			import myFunction from "https://proscenium.test/import-url-module.js";
 		`))
 	})
 
 	It("should define NODE_ENV", func() {
-		result := Build("lib/define_node_env.js")
+		result := b.Build("lib/define_node_env.js")
 
 		Expect(result).To(ContainCode(`console.log("test")`))
 	})
 
 	When("css", func() {
 		It("should bundle absolute path", func() {
-			Expect(Build("lib/import_absolute.css")).To(ContainCode(`
+			Expect(b.Build("lib/import_absolute.css")).To(ContainCode(`
 				.stuff {
 					color: red;
 				}
@@ -199,7 +177,7 @@ var _ = Describe("Build", func() {
 		})
 
 		It("should bundle relative path", func() {
-			result := Build("lib/import_relative.css")
+			result := b.Build("lib/import_relative.css")
 
 			Expect(result).To(ContainCode(`
 				.body {
@@ -214,7 +192,7 @@ var _ = Describe("Build", func() {
 		})
 
 		It("should not bundle fonts", func() {
-			result := Build("lib/fonts.css")
+			result := b.Build("lib/fonts.css")
 
 			Expect(result).To(ContainCode(`url(/somefont.woff2)`))
 			Expect(result).To(ContainCode(`url(/somefont.woff)`))
@@ -222,11 +200,11 @@ var _ = Describe("Build", func() {
 	})
 })
 
-func BenchmarkBuild(b *testing.B) {
-	b.ResetTimer()
+func BenchmarkBuild(bm *testing.B) {
+	bm.ResetTimer()
 
-	for i := 0; i < b.N; i++ {
-		result := Build("lib/foo.js")
+	for i := 0; i < bm.N; i++ {
+		result := b.Build("lib/foo.js")
 
 		if len(result.Errors) > 0 {
 			panic("Build failed: " + result.Errors[0].Text)

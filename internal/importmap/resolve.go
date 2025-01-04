@@ -28,21 +28,24 @@ type importEntry struct {
 // Returns the resolved specifier, and a boolean indicating whether the resolution was successful.
 // It is important to note that the resolved specifier could be an absolute URL path, an HTTP(S)
 // URL, or a bare module specifier.
-func Resolve(specifier string, resolveDir string) (string, bool) {
-	if Contents == nil || len(Contents.Imports) == 0 {
-		return "", false
+func Resolve(specifier string, resolveDir string) (string, error) {
+	imports, err := Imports()
+	if err != nil {
+		return specifier, err
+	} else if len(imports) == 0 {
+		return specifier, nil
 	}
 
 	resolveDir = strings.TrimPrefix(resolveDir, types.Config.RootPath)
 	normalizedImports := make(map[string]importEntry)
 
 	// Sort and normalize imports.
-	for key, value := range Contents.Imports {
+	for key, value := range imports {
 		if key == "" || value == "" {
 			continue
 		}
 
-		key = normalizeKey(key, resolveDir)
+		// key = normalizeKey(key, resolveDir)
 		value = normalizeValue(value, resolveDir)
 		keyHasTrailingSlash := strings.HasSuffix(key, "/")
 		valueHasTrailingSlash := strings.HasSuffix(value, "/")
@@ -101,10 +104,10 @@ func Resolve(specifier string, resolveDir string) (string, bool) {
 			log.Printf("[proscenium] importmap match! `%v` => `%v`", specifier, matchedPath)
 		}
 
-		return matchedPath, true
+		return matchedPath, nil
 	}
 
-	return "", false
+	return specifier, nil
 }
 
 func normalizeKey(key string, resolveDir string) string {
