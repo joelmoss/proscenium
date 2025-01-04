@@ -32,7 +32,7 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'ffi', '~> 1.17.0'
   spec.add_dependency 'literal', '~> 1.0'
   spec.add_dependency 'oj', '~> 3.13'
-  spec.add_dependency 'phonelib', '~> 0.8.8'
+  spec.add_dependency 'phonelib', '~> 0.10.3'
   spec.add_dependency 'railties', ['>= 7.1.0', '< 9.0']
   spec.add_dependency 'ruby-next', '~> 1.0.1'
 end
