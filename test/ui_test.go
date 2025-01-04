@@ -43,6 +43,12 @@ var _ = Describe("b.Build(ui)", func() {
 			`))
 		})
 
+		It("resolves @proscenium/stimulus-loading", func() {
+			Expect(b.Build("@proscenium/stimulus-loading")).To(ContainCode(`
+				function lazyLoadControllersFrom
+			`))
+		})
+
 		It("resolves imports", func() {
 			Expect(b.Build("@proscenium/ujs/class.js")).To(ContainCode(`
 				import DataConfirm from "/proscenium/ui/ujs/data_confirm.js";
@@ -75,6 +81,12 @@ var _ = Describe("b.Build(ui)", func() {
 		It("builds without file extension", func() {
 			Expect(b.Build("@proscenium/ui/test")).To(ContainCode(`
 				console.log("@proscenium/ui/test.js");
+			`))
+		})
+
+		It("resolves @proscenium/stimulus-loading", func() {
+			Expect(b.Build("@proscenium/stimulus-loading")).To(ContainCode(`
+				function lazyLoadControllersFrom
 			`))
 		})
 	})
