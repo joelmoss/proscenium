@@ -68,27 +68,29 @@ module Proscenium
       end
 
       def sideload_js(filepath, **options)
-        return unless Proscenium.config.side_load
-
-        filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
-        filepath = filepath.sub_ext('')
-
-        JS_EXTENSIONS.find do |x|
-          if (fp = filepath.sub_ext(x)).exist?
-            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
-          end
-        end
+        _sideload(filepath, JS_EXTENSIONS, **options)
       end
 
       def sideload_css(filepath, **options)
+        _sideload(filepath, CSS_EXTENSIONS, **options)
+      end
+
+      private def _sideload(filepath, extensions, **options)
         return unless Proscenium.config.side_load
 
         filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
         filepath = filepath.sub_ext('')
 
-        CSS_EXTENSIONS.find do |x|
+        extensions.find do |x|
           if (fp = filepath.sub_ext(x)).exist?
-            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
+            # import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
+
+            if (fp = fp.to_s).start_with?(Proscenium.ui_path.to_s)
+              fp.sub!(Proscenium.ui_path_regex, '@proscenium/ui/')
+              import(Resolver.resolve(fp), sideloaded: true, **options)
+            else
+              import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
+            end
           end
         end
       end

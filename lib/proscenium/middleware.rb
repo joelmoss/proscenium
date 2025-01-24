@@ -10,7 +10,6 @@ module Proscenium
     autoload :Base
     autoload :Esbuild
     autoload :Engines
-    autoload :Runtime
 
     def initialize(app)
       @app = app
@@ -40,7 +39,6 @@ module Proscenium
     end
 
     def find_type(request)
-      return Runtime if request.path.match?(%r{^/@proscenium/})
       return Esbuild if Pathname.new(request.path).fnmatch?(app_path_glob, File::FNM_EXTGLOB)
 
       pathname = Pathname.new(request.path)

@@ -73,7 +73,11 @@ module Proscenium
     end
 
     def ui_path
-      Railtie.root.join('lib', 'proscenium', 'ui')
+      @ui_path ||= Railtie.root.join('lib', 'proscenium', 'ui')
+    end
+
+    def ui_path_regex
+      @ui_path_regex ||= Regexp.new("^#{Proscenium.ui_path}/")
     end
 
     def root

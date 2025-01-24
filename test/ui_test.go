@@ -55,6 +55,11 @@ var _ = Describe("b.Build(ui)", func() {
 				import DataDisableWith from "/proscenium/ui/ujs/data_disable_with.js";
 			`))
 		})
+
+		It("BuildToPath", func() {
+			_, code := b.BuildToPath("@proscenium/ui/ujs/class.js")
+			Expect(code).To(Equal(`@proscenium/ui/ujs/class.js::public/assets/@proscenium/ui/ujs/class$JSE5BU6W$.js`))
+		})
 	})
 
 	When("Bundle = true", func() {

@@ -172,7 +172,7 @@ module Proscenium
         end
 
         # The reason why we sideload CSS after JS is because the order of CSS is important.
-        # Basically, the layout should be loaded before the view so that CSS cascading works i9n the
+        # Basically, the layout should be loaded before the view so that CSS cascading works in the
         # right direction.
         css_imports.reverse_each do |it|
           Importer.sideload_css it, **options
