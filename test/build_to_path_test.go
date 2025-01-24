@@ -40,7 +40,7 @@ var _ = Describe("BuildToPath", func() {
 
 			_, code := b.BuildToPath("gem4/lib/gem4/gem4.js;lib/gems/gem3.js;lib/foo.css")
 
-			Expect(code).To(Equal("gem4/lib/gem4/gem4.js::public/assets/gem4/lib/gem4/gem4$YQBH44X7$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$BPCGTVQJ$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
+			Expect(code).To(Equal("gem4/lib/gem4/gem4.js::public/assets/gem4/lib/gem4/gem4$ZNBNP5VZ$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$BXE432DM$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
 		})
 	})
 })

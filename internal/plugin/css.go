@@ -38,36 +38,43 @@ var Css = esbuild.Plugin{
 				// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
 				// module, it exports a plain object of class names.
 				if pluginData.ImportedFromJs {
-					cssResult := cssBuild(CssBuildOptions{
-						Path: urlPath[1:],
-						Root: root,
-					})
+					contents := ""
 
-					if len(cssResult.Errors) != 0 {
-						return esbuild.OnLoadResult{
-							Errors:   cssResult.Errors,
-							Warnings: cssResult.Warnings,
-						}, fmt.Errorf("%s", cssResult.Errors[0].Text)
-					}
+					if utils.PathIsCssModule(args.Path) && args.With["type"] == "cssmodulenames" {
+						// User has requested only the CSS module names be returned.
+						contents = cssModulesProxyTemplate(hash)
+					} else {
+						cssResult := cssBuild(CssBuildOptions{
+							Path: urlPath[1:],
+							Root: root,
+						})
 
-					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
-					contents = `
-						const existingStyle = document.querySelector('#_` + hash + `');
-						const existingLink = document.querySelector('link[href="` + urlPath + `"]');
-						const existingOriginalLink = document.querySelector('link[data-original-href="` + urlPath + `"]');
-						if (!existingStyle && !existingLink && !existingOriginalLink) {
-							const e = document.createElement('style');
-							e.id = '_` + hash + `';
-							e.dataset.href = '` + urlPath + `';
-							e.dataset.prosceniumStyle = true;
-							e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
-							const pStyleEle = document.head.querySelector('[data-proscenium-style]');
-							pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
+						if len(cssResult.Errors) != 0 {
+							return esbuild.OnLoadResult{
+								Errors:   cssResult.Errors,
+								Warnings: cssResult.Warnings,
+							}, fmt.Errorf("%s", cssResult.Errors[0].Text)
 						}
-					`
 
-					if utils.PathIsCssModule(args.Path) {
-						contents = contents + cssModulesProxyTemplate(hash)
+						contents = strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
+						contents = `
+							const existingStyle = document.querySelector('#_` + hash + `');
+							const existingLink = document.querySelector('link[href="` + urlPath + `"]');
+							const existingOriginalLink = document.querySelector('link[data-original-href="` + urlPath + `"]');
+							if (!existingStyle && !existingLink && !existingOriginalLink) {
+								const e = document.createElement('style');
+								e.id = '_` + hash + `';
+								e.dataset.href = '` + urlPath + `';
+								e.dataset.prosceniumStyle = true;
+								e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
+								const pStyleEle = document.head.querySelector('[data-proscenium-style]');
+								pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
+							}
+						`
+
+						if utils.PathIsCssModule(args.Path) {
+							contents = contents + cssModulesProxyTemplate(hash)
+						}
 					}
 
 					return esbuild.OnLoadResult{
