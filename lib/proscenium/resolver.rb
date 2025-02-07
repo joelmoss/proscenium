@@ -11,8 +11,6 @@ module Proscenium
     #
     # @param path [String] Can be URL path, file system path, or bare specifier (ie. NPM package).
     # @return [String] URL path.
-    #
-    # rubocop:disable Metrics/*
     def self.resolve(path)
       self.resolved ||= {}
 
@@ -25,8 +23,8 @@ module Proscenium
           "/#{path}"
         elsif path.start_with?(Proscenium.ui_path.to_s)
           path.delete_prefix Proscenium.root.join('lib').to_s
-        elsif (engine = Proscenium.config.engines.find { |e| path.start_with? "#{e.root}/" })
-          path.sub(/^#{engine.root}/, "/#{engine.engine_name}")
+        elsif (engine = Proscenium.config.engines.find { |_, v| path.start_with? "#{v}/" })
+          path.sub(/^#{engine.last}/, "/#{engine.first}")
         elsif path.start_with?("#{Rails.root}/")
           path.delete_prefix Rails.root.to_s
         else
@@ -34,6 +32,5 @@ module Proscenium
         end
       end
     end
-    # rubocop:enable Metrics/*
   end
 end

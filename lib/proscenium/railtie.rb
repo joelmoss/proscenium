@@ -36,9 +36,9 @@ module Proscenium
     #
     # Example:
     #   class Gem1::Engine < ::Rails::Engine
-    #     config.proscenium.engines << self
+    #     config.proscenium.engines[:gem1] = root
     #   end
-    config.proscenium.engines = Set.new
+    config.proscenium.engines = {}
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'

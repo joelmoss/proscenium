@@ -3,7 +3,7 @@ module Gem2
     # isolate_namespace Gem2
     engine_name 'gem2'
 
-    config.proscenium.engines << self
+    config.proscenium.engines[:gem2] = root
 
     initializer 'gem2.autoload' do
       # ActiveSupport::Dependencies.autoload_paths << "#{root}/app"

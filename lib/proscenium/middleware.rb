@@ -53,7 +53,7 @@ module Proscenium
     end
 
     def engines_path_glob
-      names = Proscenium.config.engines.map(&:engine_name)
+      names = Proscenium.config.engines.keys
       "/{#{names.join(',')}}/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{file_extensions}}"
     end
 

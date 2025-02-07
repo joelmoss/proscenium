@@ -7,7 +7,7 @@ module Gem1
     # isolate_namespace Gem1
     engine_name 'gem1'
 
-    config.proscenium.engines << self
+    config.proscenium.engines[:gem1] = root
 
     initializer 'gem1.autoload' do
       # ActiveSupport::Dependencies.autoload_paths << "#{root}/app"

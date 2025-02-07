@@ -140,7 +140,7 @@ module Proscenium
     end
 
     def engines
-      Proscenium.config.engines.to_h { |e| [e.engine_name, e.root.to_s] }.tap do |x|
+      Proscenium.config.engines.tap do |x|
         x['proscenium/ui'] = Proscenium.ui_path.to_s
       end
     end

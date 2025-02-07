@@ -24,17 +24,17 @@ module Proscenium
       end
 
       def root_for_readable
-        ui? ? Proscenium.ui_path : engine.root
+        ui? ? Proscenium.ui_path : engine.last
       end
 
       def engine
-        @engine ||= Proscenium.config.engines.find do |x|
-          @request.path.start_with?("/#{x.engine_name}")
+        @engine ||= Proscenium.config.engines.find do |k, _|
+          @request.path.start_with?("/#{k}")
         end
       end
 
       def engine_name
-        ui? ? 'proscenium/ui' : engine.engine_name
+        ui? ? 'proscenium/ui' : engine.first
       end
 
       def ui?
