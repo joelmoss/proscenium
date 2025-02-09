@@ -78,7 +78,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
 
     assert_equal({
                    js: { type: 'module' }
-                 }, Proscenium::Importer.imported['/@proscenium/react-manager/index.jsx'])
+                 }, Proscenium::Importer.imported['/proscenium/react-manager/index.jsx'])
   end
 
   describe 'lazy loading' do

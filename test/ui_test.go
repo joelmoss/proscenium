@@ -21,19 +21,26 @@ var _ = Describe("b.Build(ui)", func() {
 			types.Config.Bundle = false
 		})
 
-		It("builds from lib/ui", func() {
-			Expect(b.Build("@proscenium/ui/test.js")).To(ContainCode(`
-				console.log("@proscenium/ui/test.js");
-			`))
+		It("fails to build @proscenium/*", func() {
+			result := b.Build("@proscenium/ui/test.js")
+			Expect(result.Errors[0].Text).To(Equal("Could not resolve \"@proscenium/ui/test.js\""))
+		})
 
-			Expect(b.Build("@proscenium/ujs")).To(ContainCode(`
+		It("builds proscenium/ui", func() {
+			Expect(b.Build("proscenium/ui/test.js")).To(ContainCode(`
+				console.log("proscenium/ui/test.js");
+			`))
+		})
+
+		It("builds proscenium/ujs", func() {
+			Expect(b.Build("proscenium/ujs")).To(ContainCode(`
 				const classPath = "/proscenium/ui/ujs/class.js";
 			`))
 		})
 
 		It("builds without file extension", func() {
-			Expect(b.Build("@proscenium/ui/test")).To(ContainCode(`
-				console.log("@proscenium/ui/test.js");
+			Expect(b.Build("proscenium/ui/test")).To(ContainCode(`
+				console.log("proscenium/ui/test.js");
 			`))
 		})
 
@@ -43,22 +50,22 @@ var _ = Describe("b.Build(ui)", func() {
 			`))
 		})
 
-		It("resolves @proscenium/stimulus-loading", func() {
-			Expect(b.Build("@proscenium/stimulus-loading")).To(ContainCode(`
+		It("resolves proscenium/stimulus-loading", func() {
+			Expect(b.Build("proscenium/stimulus-loading")).To(ContainCode(`
 				function lazyLoadControllersFrom
 			`))
 		})
 
 		It("resolves imports", func() {
-			Expect(b.Build("@proscenium/ujs/class.js")).To(ContainCode(`
+			Expect(b.Build("proscenium/ujs/class.js")).To(ContainCode(`
 				import DataConfirm from "/proscenium/ui/ujs/data_confirm.js";
 				import DataDisableWith from "/proscenium/ui/ujs/data_disable_with.js";
 			`))
 		})
 
 		It("BuildToPath", func() {
-			_, code := b.BuildToPath("@proscenium/ui/ujs/class.js")
-			Expect(code).To(Equal(`@proscenium/ui/ujs/class.js::public/assets/@proscenium/ui/ujs/class$JSE5BU6W$.js`))
+			_, code := b.BuildToPath("proscenium/ui/ujs/class.js")
+			Expect(code).To(Equal(`proscenium/ui/ujs/class.js::public/assets/proscenium/ui/ujs/class$5IN4F65N$.js`))
 		})
 	})
 
@@ -67,30 +74,32 @@ var _ = Describe("b.Build(ui)", func() {
 			types.Config.Bundle = true
 		})
 
-		It("builds from lib/ui", func() {
-			Expect(b.Build("@proscenium/ui/test.js")).To(ContainCode(`
-				console.log("@proscenium/ui/test.js");
+		It("builds proscenium/ui", func() {
+			Expect(b.Build("proscenium/ui/test.js")).To(ContainCode(`
+				console.log("proscenium/ui/test.js");
 			`))
+		})
 
-			Expect(b.Build("@proscenium/ujs")).To(ContainCode(`
+		It("builds proscenium/ujs", func() {
+			Expect(b.Build("proscenium/ujs")).To(ContainCode(`
 				const classPath = "/proscenium/ui/ujs/class.js";
 			`))
 		})
 
 		It("bundles imports", func() {
 			Expect(b.Build("lib/ui/test.js")).To(ContainCode(`
-				console.log("@proscenium/ui/test.js");
+				console.log("proscenium/ui/test.js");
 			`))
 		})
 
 		It("builds without file extension", func() {
-			Expect(b.Build("@proscenium/ui/test")).To(ContainCode(`
-				console.log("@proscenium/ui/test.js");
+			Expect(b.Build("proscenium/ui/test")).To(ContainCode(`
+				console.log("proscenium/ui/test.js");
 			`))
 		})
 
-		It("resolves @proscenium/stimulus-loading", func() {
-			Expect(b.Build("@proscenium/stimulus-loading")).To(ContainCode(`
+		It("resolves proscenium/stimulus-loading", func() {
+			Expect(b.Build("proscenium/stimulus-loading")).To(ContainCode(`
 				function lazyLoadControllersFrom
 			`))
 		})

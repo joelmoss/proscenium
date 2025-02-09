@@ -66,7 +66,7 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :vendored_gem
 
     assert_equal({
-                   '/@proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
+                   '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
                    '/gem1/app/components/flash/component.jsx' => { sideloaded: true,
                                                                    lazy: true },
                    '/app/views/layouts/bare.js' => { sideloaded: true },
@@ -78,7 +78,7 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :external_gem
 
     assert_equal({
-                   '/@proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
+                   '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
                    '/gem2/app/components/flash/component.jsx' => { sideloaded: true, lazy: true },
                    '/app/views/layouts/bare.js' => { sideloaded: true },
                    '/app/views/layouts/bare.css' => { sideloaded: true }

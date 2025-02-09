@@ -60,21 +60,21 @@ var Ui = esbuild.Plugin{
 			}, nil
 		}
 
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/ujs`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/ujs`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "@proscenium/")
+				args.Path = strings.TrimPrefix(args.Path, "proscenium/")
 				return resolvePath(args)
 			})
 
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/stimulus-loading`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/stimulus-loading`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "@proscenium/")
+				args.Path = strings.TrimPrefix(args.Path, "proscenium/")
 				return resolvePath(args)
 			})
 
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "@proscenium/ui")
+				args.Path = strings.TrimPrefix(args.Path, "proscenium/ui")
 				return resolvePath(args)
 			})
 	}}

@@ -40,7 +40,7 @@ module Proscenium
       class_attribute :loader
 
       # @return [String] the URL path to the component manager.
-      class_attribute :manager, default: '/@proscenium/react-manager/index.jsx'
+      class_attribute :manager, default: '/proscenium/react-manager/index.jsx'
     end
 
     class_methods do

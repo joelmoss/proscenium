@@ -20,7 +20,7 @@ var I18n = esbuild.Plugin{
 		cwd := build.InitialOptions.AbsWorkingDir
 		root := filepath.Join(cwd, "config", "locales")
 
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^@proscenium/i18n$`},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/i18n$`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				return esbuild.OnResolveResult{
 					Path:      args.Path,

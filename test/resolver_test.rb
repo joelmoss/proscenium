@@ -41,10 +41,10 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       end
     end
 
-    context '@proscenium runtime' do
+    context 'proscenium runtime' do
       it 'resolves' do
-        assert_equal '/@proscenium/react-manager/index.jsx',
-                     subject.resolve('@proscenium/react-manager/index.jsx')
+        assert_equal '/proscenium/react-manager/index.jsx',
+                     subject.resolve('proscenium/react-manager/index.jsx')
       end
     end
   end

@@ -19,7 +19,7 @@ module Proscenium
           raise ArgumentError, 'path must be an absolute file system or URL path'
         end
 
-        if path.start_with?('@proscenium/')
+        if path.start_with?('proscenium/')
           "/#{path}"
         elsif path.start_with?(Proscenium.ui_path.to_s)
           path.delete_prefix Proscenium.root.join('lib').to_s

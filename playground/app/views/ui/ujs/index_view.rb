@@ -14,7 +14,7 @@ class UI::UJS::IndexView < UILayout
 
     render CodeBlockComponent.new :javascript do
       unsafe_raw <<~JS
-        import startUJS from "@proscenium/ujs";
+        import startUJS from "proscenium/ujs";
         startUJS();
       JS
     end

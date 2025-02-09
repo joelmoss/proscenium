@@ -126,16 +126,16 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     ).squish
   end
 
-  it 'serves @proscenium/* runtime libs' do
+  it 'serves proscenium/* runtime libs' do
     get '/proscenium/ui/test.js'
 
-    assert_includes response.body, 'console.log("@proscenium/ui/test.js")'
+    assert_includes response.body, 'console.log("proscenium/ui/test.js")'
   end
 
   it 'serves proscenium/ui/* ui' do
     get '/proscenium/ui/test.js'
 
-    assert_includes response.body, 'console.log("@proscenium/ui/test.js")'
+    assert_includes response.body, 'console.log("proscenium/ui/test.js")'
   end
 
   context 'cache_query_string' do
