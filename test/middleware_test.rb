@@ -127,15 +127,9 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
   end
 
   it 'serves proscenium/* runtime libs' do
-    get '/proscenium/ui/test.js'
+    get '/proscenium/test.js'
 
-    assert_includes response.body, 'console.log("proscenium/ui/test.js")'
-  end
-
-  it 'serves proscenium/ui/* ui' do
-    get '/proscenium/ui/test.js'
-
-    assert_includes response.body, 'console.log("proscenium/ui/test.js")'
+    assert_includes response.body, 'console.log("proscenium/test.js")'
   end
 
   context 'cache_query_string' do

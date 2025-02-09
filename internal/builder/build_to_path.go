@@ -55,7 +55,7 @@ func BuildToPath(filePath string) (bool, string) {
 				key := input.(string)
 				if strings.Contains(key, libsSplitPath) {
 					sliced := strings.Split(key, libsSplitPath)
-					key = "proscenium/ui/" + sliced[len(sliced)-1]
+					key = "proscenium/" + sliced[len(sliced)-1]
 				}
 
 				if mapping[key] == "" {

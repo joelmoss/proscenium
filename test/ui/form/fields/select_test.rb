@@ -17,9 +17,9 @@ class Proscenium::UI::Form::Fields::SelectTest < ActiveSupport::TestCase
       view
       imports = Proscenium::Importer.imported.keys
 
-      assert_equal ['/proscenium/ui/form.css',
-                    '/proscenium/ui/form/fields/select.jsx',
-                    '/proscenium/ui/form/fields/select.module.css'], imports
+      assert_equal ['/proscenium/form.css',
+                    '/proscenium/form/fields/select.jsx',
+                    '/proscenium/form/fields/select.module.css'], imports
     end
   end
 
@@ -252,7 +252,7 @@ class Proscenium::UI::Form::Fields::SelectTest < ActiveSupport::TestCase
     end
 
     it 'appends class value to field wrapper' do
-      assert_equal 'field-eacb39cc my_class', view.find('pui-field')[:class]
+      assert_equal 'field-b5bb7bfc my_class', view.find('pui-field')[:class]
     end
   end
 

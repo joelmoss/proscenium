@@ -15,7 +15,7 @@ class Proscenium::UI::Form::Fields::TextareaTest < ActiveSupport::TestCase
     view
     imports = Proscenium::Importer.imported.keys
 
-    assert_equal ['/proscenium/ui/form.css'], imports
+    assert_equal ['/proscenium/form.css'], imports
   end
 
   it 'has a label' do

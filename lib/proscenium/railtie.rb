@@ -38,7 +38,9 @@ module Proscenium
     #   class Gem1::Engine < ::Rails::Engine
     #     config.proscenium.engines[:gem1] = root
     #   end
-    config.proscenium.engines = {}
+    config.proscenium.engines = {
+      proscenium: Proscenium.ui_path
+    }
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'

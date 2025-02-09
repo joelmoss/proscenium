@@ -56,7 +56,7 @@ module Proscenium
     end
 
     def ui_path_glob
-      "/proscenium/ui/**.{#{file_extensions}}"
+      "/proscenium/**.{#{file_extensions}}"
     end
 
     def file_extensions

@@ -10,7 +10,7 @@ module Proscenium
     #
     #   module Gem1
     #     class Engine < ::Rails::Engine
-    #       config.proscenium.engines << self
+    #       config.proscenium.engines['gem1'] = root
     #     end
     #   end
     #
@@ -24,7 +24,7 @@ module Proscenium
       end
 
       def root_for_readable
-        ui? ? Proscenium.ui_path : engine.last
+        engine.last
       end
 
       def engine
@@ -34,11 +34,7 @@ module Proscenium
       end
 
       def engine_name
-        ui? ? 'proscenium/ui' : engine.first
-      end
-
-      def ui?
-        @request.path.start_with?('/proscenium/ui/')
+        engine.first
       end
     end
   end

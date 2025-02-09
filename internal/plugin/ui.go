@@ -9,12 +9,6 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-// var aliases = map[string]string{
-// 	"@proscenium/ujs":              "@proscenium/ui/ujs",
-// 	"@proscenium/react-manager":    "@proscenium/ui/react-manager",
-// 	"@proscenium/stimulus-loading": path.Join(uiDir, "stimulus-loading.js"),
-// }
-
 var Ui = esbuild.Plugin{
 	Name: "ui",
 	Setup: func(build esbuild.PluginBuild) {
@@ -48,7 +42,7 @@ var Ui = esbuild.Plugin{
 			if !types.Config.Bundle && args.Kind != esbuild.ResolveEntryPoint {
 				r.External = true
 				r.Path = strings.TrimPrefix(r.Path, uiDir)
-				r.Path = path.Join("/proscenium", "ui", r.Path)
+				r.Path = path.Join("/proscenium", r.Path)
 			}
 
 			return esbuild.OnResolveResult{
@@ -60,21 +54,9 @@ var Ui = esbuild.Plugin{
 			}, nil
 		}
 
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/ujs`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "proscenium/")
-				return resolvePath(args)
-			})
-
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/stimulus-loading`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "proscenium/")
-				return resolvePath(args)
-			})
-
 		build.OnResolve(esbuild.OnResolveOptions{Filter: `^proscenium/`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				args.Path = strings.TrimPrefix(args.Path, "proscenium/ui")
+				args.Path = strings.TrimPrefix(args.Path, "proscenium/")
 				return resolvePath(args)
 			})
 	}}

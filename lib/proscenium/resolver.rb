@@ -21,8 +21,6 @@ module Proscenium
 
         if path.start_with?('proscenium/')
           "/#{path}"
-        elsif path.start_with?(Proscenium.ui_path.to_s)
-          path.delete_prefix Proscenium.root.join('lib').to_s
         elsif (engine = Proscenium.config.engines.find { |_, v| path.start_with? "#{v}/" })
           path.sub(/^#{engine.last}/, "/#{engine.first}")
         elsif path.start_with?("#{Rails.root}/")

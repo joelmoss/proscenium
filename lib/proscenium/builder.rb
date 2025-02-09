@@ -83,7 +83,7 @@ module Proscenium
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
-        Engines: engines,
+        Engines: Proscenium.config.engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
         Bundle: Proscenium.config.bundle,
@@ -137,12 +137,6 @@ module Proscenium
     def cache_query_string
       q = Proscenium.config.cache_query_string
       q ? "--cache-query-string #{q}" : nil
-    end
-
-    def engines
-      Proscenium.config.engines.tap do |x|
-        x['proscenium/ui'] = Proscenium.ui_path.to_s
-      end
     end
 
     def gem_root

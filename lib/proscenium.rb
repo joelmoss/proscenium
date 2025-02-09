@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'proscenium/railtie'
-
 # require 'zeitwerk'
 
 # loader = Zeitwerk::Loader.for_gem
@@ -85,3 +83,5 @@ module Proscenium
     end
   end
 end
+
+require 'proscenium/railtie'

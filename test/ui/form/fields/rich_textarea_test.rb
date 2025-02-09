@@ -15,9 +15,9 @@ class Proscenium::UI::Form::Fields::RichTextareaTest < ActiveSupport::TestCase
     view
     imports = Proscenium::Importer.imported.keys
 
-    assert_equal ['/proscenium/ui/form.css',
-                  '/proscenium/ui/form/fields/rich_textarea.js',
-                  '/proscenium/ui/form/fields/rich_textarea.css'], imports
+    assert_equal ['/proscenium/form.css',
+                  '/proscenium/form/fields/rich_textarea.js',
+                  '/proscenium/form/fields/rich_textarea.css'], imports
   end
 
   it 'has a label' do
