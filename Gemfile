@@ -13,6 +13,7 @@ gem 'rails', '~> 7.0'
 gem 'appraisal'
 gem 'htmlbeautifier'
 gem 'phlexible'
+gem 'phlex-markdown', github: 'phlex-ruby/phlex-markdown'
 gem 'rouge'
 
 group :development do

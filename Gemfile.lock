@@ -1,3 +1,11 @@
+GIT
+  remote: https://github.com/phlex-ruby/phlex-markdown.git
+  revision: ee1e2763fc842563577003a269982cfc4ac79006
+  specs:
+    phlex-markdown (0.3.0)
+      markly (~> 0.7)
+      phlex (>= 0.5)
+
 PATH
   remote: .
   specs:
@@ -187,6 +195,7 @@ GEM
       net-pop
       net-smtp
     marcel (1.0.4)
+    markly (0.12.1)
     matrix (0.4.2)
     maxitest (5.8.0)
       minitest (>= 5.14.0, < 5.26.0)
@@ -374,6 +383,7 @@ DEPENDENCIES
   maxitest
   minitest-focus
   minitest-spec-rails
+  phlex-markdown!
   phlex-testing-capybara
   phlexible
   proscenium!
