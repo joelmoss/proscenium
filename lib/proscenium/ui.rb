@@ -7,4 +7,5 @@ module Proscenium::UI
   autoload :Component
   autoload :Breadcrumbs
   autoload :Form
+  autoload :Flash
 end
