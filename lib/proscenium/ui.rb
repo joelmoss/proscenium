@@ -2,6 +2,7 @@
 
 module Proscenium::UI
   extend ActiveSupport::Autoload
+  extend Phlex::Kit
 
   autoload :Component
   autoload :Breadcrumbs
