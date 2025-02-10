@@ -75,6 +75,14 @@ class Proscenium::UI::FormTest < ActiveSupport::TestCase
     end
   end
 
+  with '**attributes' do
+    view -> { subject.new(user, class: 'myform') }
+
+    it 'passes attributes to form' do
+      assert view.has_css?('form.myform')
+    end
+  end
+
   describe '#submit' do
     view -> { subject.new(user) } do |f|
       f.submit 'Save'

@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require 'literal'
+
 module Proscenium::UI
   # Helpers to aid in building forms and associated inputs with built-in styling, and inspired by
-  # Rails form helpers.
+  # Rails form helpers and SimpleForm.
   #
   # Start by creating the form with `Proscenium::UI::Form`, which expects a model
   # instance, and a block in which you define one or more fields. It automatically includes a hidden
@@ -42,6 +44,7 @@ module Proscenium::UI
   #
   class Form < Proscenium::UI::Component
     extend ActiveSupport::Autoload
+    extend Literal::Properties
 
     autoload :FieldMethods
     autoload :Translation
@@ -73,24 +76,18 @@ module Proscenium::UI
       end
     end
 
-    attr_reader :model
+    prop :model, _Interface(:to_model), :positional, reader: :public
 
-    # Initialize a form for the given `model` instance.
-    #
-    # @param model [Any] Model instance or record.
-    # @param method [get,post,puts,patch,delete] Form method.
-    # @param action [String,Array] the form action, which can be any value that can be passed to
-    #   Rails `url_for` helper.
-    def initialize(model, method: nil, action: nil, **attributes) # rubocop:disable Lint/MissingSuper
-      # method => ^(Nilable(Union(:get, :post, :put, :patch, :delete)))
-
-      @model = model
-      @method = method
-      @action = action
-      @method ||= 'patch' if @model.respond_to?(:persisted?) && @model.persisted?
-      @method = @method&.to_s&.downcase || 'post'
-      @attributes = attributes
+    prop :method, _Union?(:get, :post, :put, :patch, :delete,
+                          'get', 'post', 'put', 'patch', 'delete') do |value|
+      value ||= 'patch' if @model.respond_to?(:persisted?) && @model.persisted?
+      value&.to_s&.downcase || 'post'
     end
+
+    # The form action, which can be any value that can be passed to Rails `url_for` helper.
+    prop :action, _Union?(String, Symbol, Array, Hash)
+
+    prop :attributes, Hash, :**
 
     # Use the given `field_class` to render a custom field. This allows you to create a custom
     # form field on an as-needed basis. The `field_class` must be a subclass of
