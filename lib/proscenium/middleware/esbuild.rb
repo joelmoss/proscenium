@@ -6,14 +6,14 @@ module Proscenium
       class CompileError < Base::CompileError
         def initialize(args)
           detail = args[:detail]
-          detail = ActiveSupport::HashWithIndifferentAccess.new(Oj.load(detail, mode: :strict))
+          detail = JSON.parse(detail, mode: :strict)
 
-          args[:detail] = if detail[:location]
-                            "#{detail[:text]} in #{detail[:location][:file]}:" +
-                              detail[:location][:line].to_s
-                          else
-                            detail[:text]
-                          end
+          args['detail'] = if detail['location']
+                             "#{detail['text']} in #{detail['location']['file']}:" +
+                               detail['location']['line'].to_s
+                           else
+                             detail['text']
+                           end
 
           super
         end

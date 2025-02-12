@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'oj'
-
 module Proscenium
   class Middleware
     class Base

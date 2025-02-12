@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'ffi'
-require 'oj'
 
 module Proscenium
   class Builder
@@ -42,7 +41,7 @@ module Proscenium
       attr_reader :error
 
       def initialize(error)
-        @error = Oj.load(error, mode: :strict).deep_transform_keys(&:underscore)
+        @error = JSON.parse(error, strict: true).deep_transform_keys(&:underscore)
 
         msg = @error['text']
         if (location = @error['location'])
