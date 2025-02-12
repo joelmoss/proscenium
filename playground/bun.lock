@@ -1,0 +1,13 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "dependencies": {
+        "style-observer": "^0.0.4",
+      },
+    },
+  },
+  "packages": {
+    "style-observer": ["style-observer@0.0.4", "", {}, "sha512-bKvTV6i2T8q656YkF+WWbj8pSEyjPTyO0h+i6jZVDk7Bq/MN3l7SW4W3u8u9puJvzHzBRaWb5oT/FzQA1PizQQ=="],
+  }
+}

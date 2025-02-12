@@ -241,6 +241,10 @@ var Bundler = esbuild.Plugin{
 									break
 								}
 							}
+
+							if types.Config.ExternalNodeModules {
+								unbundled = true
+							}
 						}
 
 						// Unqualified path! - use esbuild to resolve.

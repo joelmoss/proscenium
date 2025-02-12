@@ -14,6 +14,7 @@ module Proscenium
     config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
+    config.proscenium.external_node_modules = false
 
     # Cache asset paths when building to path. Enabled by default in production.
     # @see Proscenium::Builder#build_to_path

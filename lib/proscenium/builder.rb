@@ -65,8 +65,8 @@ module Proscenium
       new(root:).build_to_path(path)
     end
 
-    def self.build_to_string(path, root: nil)
-      new(root:).build_to_string(path)
+    def self.build_to_string(path, root: nil, bundle: nil)
+      new(root:, bundle:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
@@ -78,7 +78,9 @@ module Proscenium
       Request.reset_config
     end
 
-    def initialize(root: nil)
+    def initialize(root: nil, bundle: nil)
+      bundle = Proscenium.config.bundle if bundle.nil?
+
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
@@ -86,7 +88,8 @@ module Proscenium
         Engines: Proscenium.config.engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
-        Bundle: Proscenium.config.bundle,
+        ExternalNodeModules: Proscenium.config.external_node_modules,
+        Bundle: bundle,
         Debug: Proscenium.config.debug
       }.to_json)
     end

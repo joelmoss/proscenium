@@ -20,7 +20,12 @@ module Proscenium
       end
 
       def attempt
-        render_response Builder.build_to_string(path_to_build)
+        bundle = nil
+        if Proscenium.config.external_node_modules && path_to_build.start_with?('node_modules/')
+          bundle = false
+        end
+
+        render_response Builder.build_to_string(path_to_build, bundle:)
       rescue Builder::CompileError => e
         raise self.class::CompileError, { file: @request.fullpath, detail: e.message }, caller
       end

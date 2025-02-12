@@ -19,17 +19,19 @@ func (e Environment) String() string {
 // - EnvVars - Map of environment variables.
 // - Engines- Map of Rails engine names and paths.
 // - CodeSplitting?
+// - ExternalNodeModules? - externalise everything under /node_modules/
 // - Bundle?
 // - Debug?
 type ConfigT struct {
-	RootPath      string
-	GemPath       string
-	Engines       map[string]string
-	EnvVars       map[string]string
-	Debug         bool
-	CodeSplitting bool
-	Bundle        bool
-	Environment   Environment
+	RootPath            string
+	GemPath             string
+	Engines             map[string]string
+	EnvVars             map[string]string
+	Debug               bool
+	CodeSplitting       bool
+	Bundle              bool
+	ExternalNodeModules bool
+	Environment         Environment
 }
 
 var Config = ConfigT{CodeSplitting: true, Bundle: true}
