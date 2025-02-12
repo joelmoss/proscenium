@@ -1,2 +1,2 @@
-import { lazyLoadControllersFrom } from "@proscenium/stimulus-loading";
+import { lazyLoadControllersFrom } from "proscenium/stimulus-loading";
 lazyLoadControllersFrom();

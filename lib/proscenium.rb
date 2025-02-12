@@ -1,6 +1,12 @@
 # frozen_string_literal: true
 
-require 'active_support/dependencies/autoload'
+# require 'zeitwerk'
+
+# loader = Zeitwerk::Loader.for_gem
+# loader.inflector.inflect 'ui' => 'UI'
+# loader.ignore "#{__dir__}/proscenium/ext"
+# loader.ignore "#{__dir__}/proscenium/libs"
+# loader.setup
 
 module Proscenium
   extend ActiveSupport::Autoload
@@ -65,7 +71,11 @@ module Proscenium
     end
 
     def ui_path
-      Railtie.root.join('lib', 'proscenium', 'ui')
+      @ui_path ||= Railtie.root.join('lib', 'proscenium', 'ui')
+    end
+
+    def ui_path_regex
+      @ui_path_regex ||= Regexp.new("^#{Proscenium.ui_path}/")
     end
 
     def root

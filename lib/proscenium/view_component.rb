@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'view_component'
-
 class Proscenium::ViewComponent < ViewComponent::Base
   extend ActiveSupport::Autoload
 

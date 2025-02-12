@@ -1,5 +1,5 @@
-import startUJS from "@proscenium/ujs";
-import CustomElement from "@proscenium/custom_element";
+import startUJS from "proscenium/ujs";
+import CustomElement from "proscenium/custom_element";
 startUJS();
 
 class UjsDisableWith extends CustomElement {

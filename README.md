@@ -413,7 +413,7 @@ if (typeof proscenium.env?.UNKNOWN !== "undefined") {
 Basic support is provided for importing your Rails locale files from `config/locales/*.yml`, exporting them as JSON.
 
 ```js
-import translations from "@proscenium/i18n";
+import translations from "proscenium/i18n";
 // translations.en.*
 ```
 

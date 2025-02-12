@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'ffi'
-require 'oj'
 
 module Proscenium
   class Builder
@@ -42,7 +41,7 @@ module Proscenium
       attr_reader :error
 
       def initialize(error)
-        @error = Oj.load(error, mode: :strict).deep_transform_keys(&:underscore)
+        @error = JSON.parse(error, strict: true).deep_transform_keys(&:underscore)
 
         msg = @error['text']
         if (location = @error['location'])
@@ -65,8 +64,8 @@ module Proscenium
       new(root:).build_to_path(path)
     end
 
-    def self.build_to_string(path, root: nil)
-      new(root:).build_to_string(path)
+    def self.build_to_string(path, root: nil, bundle: nil)
+      new(root:, bundle:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
@@ -78,15 +77,18 @@ module Proscenium
       Request.reset_config
     end
 
-    def initialize(root: nil)
+    def initialize(root: nil, bundle: nil)
+      bundle = Proscenium.config.bundle if bundle.nil?
+
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
-        Engines: engines,
+        Engines: Proscenium.config.engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
-        Bundle: Proscenium.config.bundle,
+        ExternalNodeModules: Proscenium.config.external_node_modules,
+        Bundle: bundle,
         Debug: Proscenium.config.debug
       }.to_json)
     end
@@ -137,12 +139,6 @@ module Proscenium
     def cache_query_string
       q = Proscenium.config.cache_query_string
       q ? "--cache-query-string #{q}" : nil
-    end
-
-    def engines
-      Proscenium.config.engines.tap do |x|
-        x['proscenium/ui'] = Proscenium.ui_path.to_s
-      end
     end
 
     def gem_root

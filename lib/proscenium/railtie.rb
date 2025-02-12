@@ -14,6 +14,7 @@ module Proscenium
     config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
+    config.proscenium.external_node_modules = false
 
     # Cache asset paths when building to path. Enabled by default in production.
     # @see Proscenium::Builder#build_to_path
@@ -38,7 +39,9 @@ module Proscenium
     #   class Gem1::Engine < ::Rails::Engine
     #     config.proscenium.engines[:gem1] = root
     #   end
-    config.proscenium.engines = {}
+    config.proscenium.engines = {
+      proscenium: Proscenium.ui_path
+    }
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'
@@ -64,7 +67,7 @@ module Proscenium
     end
 
     initializer 'proscenium.middleware' do |app|
-      app.middleware.insert_after ActionDispatch::Static, Middleware
+      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
       app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
       app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end

@@ -42,10 +42,10 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       assert_equal({ '/app/views/layouts/application.js' => {} }, subject.imported)
     end
 
-    it 'imports @proscenium/* runtime files' do
-      subject.import resolve: '@proscenium/react-manager/index.jsx'
+    it 'imports proscenium/* runtime files' do
+      subject.import resolve: 'proscenium/react-manager/index.jsx'
 
-      assert_equal({ '/@proscenium/react-manager/index.jsx' => {} }, subject.imported)
+      assert_equal({ '/proscenium/react-manager/index.jsx' => {} }, subject.imported)
     end
   end
 

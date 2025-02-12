@@ -5,6 +5,7 @@ source 'https://rubygems.org'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
+gem 'amazing_print'
 gem 'debug'
 gem 'rails', '~> 7.0'
 
@@ -12,6 +13,7 @@ gem 'rails', '~> 7.0'
 gem 'appraisal'
 gem 'htmlbeautifier'
 gem 'phlexible'
+gem 'phlex-markdown', github: 'phlex-ruby/phlex-markdown'
 gem 'rouge'
 
 group :development do
@@ -29,6 +31,7 @@ end
 group :test do
   gem 'capybara'
   gem 'cuprite'
+  gem 'database_cleaner-active_record', require: 'database_cleaner/active_record'
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'
   gem 'gem2', path: './fixtures/external/gem2'

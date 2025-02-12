@@ -85,7 +85,7 @@ function init(elements) {
       throw `[proscenium/react/manager] Cannot load component ${path} (not found in Proscenium.lazyScripts)`;
     }
 
-    const react = import("@proscenium/react-manager/react");
+    const react = import("proscenium/react-manager/react");
     const Component = import(window.Proscenium.lazyScripts[path].outpath);
 
     const forwardChildren =

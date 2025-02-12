@@ -1,0 +1,52 @@
+@import "/proscenium/props.css";
+
+pui-field {
+  display: block;
+
+  [part="error"] {
+    &::before {
+      content: " ";
+    }
+
+    color: red;
+  }
+
+  [part="hint"] {
+    font-size: 0.9em;
+    margin-top: 0.2em;
+  }
+
+  input {
+    border: var(--pui-input-border);
+    border-radius: var(--pui-input-border-radius);
+    background-color: var(--pui-input-background-color);
+  }
+}
+
+pui-checkbox {
+  display: block;
+
+  label {
+    display: flex;
+    gap: 0.3rem;
+  }
+}
+
+pui-radio-group {
+  [part="radio_group_inputs"] {
+    display: flex;
+    gap: 1em;
+
+    > label > input {
+      margin-right: 0.3em;
+    }
+  }
+}
+
+pui-textarea {
+  display: block;
+
+  textarea {
+    display: block;
+  }
+}
