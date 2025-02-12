@@ -32,7 +32,7 @@ module Playground
     config.autoload_paths << lib.to_s
     config.eager_load_paths << lib.to_s
     ignored = %w[ext libs tasks view_component]
-    Rails.autoloaders.main.ignore Array.wrap(ignored).map { lib / 'proscenium' / _1 }
+    Rails.autoloaders.main.ignore(Array.wrap(ignored).map { lib / 'proscenium' / _1 })
 
     config.autoload_paths << "#{root}/app/views"
     config.autoload_paths << "#{root}/app/components"

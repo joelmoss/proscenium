@@ -115,7 +115,7 @@ module Proscenium::UI::Form::Fields
         return value
       end
 
-      options.filter { |k, _v| value.include?(k) }.values
+      options.slice(*value).values
     end
 
     def options

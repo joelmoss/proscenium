@@ -84,7 +84,7 @@ module Proscenium::UI
       def label(**kwargs, &block)
         content = attributes.delete(:label)
 
-        super(**kwargs) do
+        super do
           captured = capture do
             div do
               span { content || translate_label } if content != false
