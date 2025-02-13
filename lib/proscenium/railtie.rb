@@ -24,6 +24,13 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
 
+    # A proc that will be given the path to build, and should return a boolean indicating whether to
+    # cache the response.
+    #
+    # Example:
+    #   cache_middleware_response = ->(path) { path.start_with?('node_modules/') }
+    config.proscenium.cache_middleware_response = nil
+
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
     # defined means a faster build, as esbuild will have less to do.
@@ -68,8 +75,8 @@ module Proscenium
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
-      app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
-      app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
+      # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     initializer 'proscenium.sideloading' do

@@ -88,6 +88,11 @@ module Proscenium
           response.cache! Proscenium.config.cache_max_age
         end
 
+        cache_proc = Proscenium.config.cache_middleware_response
+        if cache_proc.is_a?(Proc) && cache_proc.call(path_to_build)
+          response.cache! Proscenium.config.cache_max_age
+        end
+
         yield response if block_given?
 
         response.finish
