@@ -3,6 +3,7 @@ package resolver
 import (
 	"encoding/json"
 	"errors"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
@@ -13,38 +14,90 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-type Options struct {
-	// The absolute file system path of the file doing the importing.
-	Importer string
+func returnResolve(filePath string, err error) (string, error) {
+	if debug.Enabled {
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+		debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
+	}
+
+	return filePath, err
 }
 
-// Resolve the given `path` relative to the `root`, where the path is a URL path or bare specifier.
-// This function is primarily intended to be used to resolve bare or NPM modules outside of any
-// build.
+// Resolve the given `filePath` relative to the root, where the filePath is a URL path or bare
+// specifier. This function is primarily intended to be used to resolve bare or NPM modules outside
+// of any build.
 //
-// - filePath - The path to build relative to `root`.
+// If `importer` is given, then the `filePath` is resolved relative to the `importer` path.
+//
+// This is used to resolve CSS mixins, and other paths that are not part of the build process. It
+// does not actually build the file, but returns the URL path that will then usually be requested
+// and served by the Rails middleware.
 //
 // Returns an absolute URL path. That is, one that has a leading slash and can be appended to the
 // app domain.
 func Resolve(filePath string, importer string) (string, error) {
+	rootPath := types.Config.RootPath
+
+	debug.Debug("Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
+
 	// Look for a match in the import map
-	filePath, imErr := importmap.Resolve(filePath, types.Config.RootPath)
+	filePath, imErr := importmap.Resolve(filePath, rootPath)
 	if imErr != nil {
-		return filePath, imErr
-	} else if path.IsAbs(filePath) && utils.HasExtension(filePath) {
-		return filePath, nil
+		return returnResolve(filePath, imErr)
+	} else if path.IsAbs(filePath) {
+		if _, ok := utils.HasExtension(filePath); ok {
+			return returnResolve(filePath, nil)
+		}
 	}
 
 	if utils.IsUrl(filePath) {
-		return filePath, nil
+		return returnResolve(filePath, nil)
 	}
 
 	if utils.PathIsRelative(filePath) {
 		if importer == "" {
-			return "", errors.New("relative paths are not supported when an importer is not given")
+			return returnResolve("", errors.New("relative paths are not supported when an importer is not given"))
 		}
 
-		return strings.TrimPrefix(path.Join(path.Dir(importer), filePath), types.Config.RootPath), nil
+		filePath = path.Join(path.Dir(importer), filePath)
+
+		// TODO: while filePath is relative, the importer could be a ruby gem. Check now, and return
+		// correct path (beginning /node_modules/@rubygems/...)
+		gemName, gemPath, found := utils.PathIsRubyGem(filePath)
+		if found {
+			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, gemPath), nil)
+		}
+
+		return returnResolve(strings.TrimPrefix(filePath, rootPath), nil)
+	}
+
+	gemName := ""
+	if utils.IsRubyGem(filePath) {
+		if _, ok := utils.HasExtension(filePath); ok {
+			return returnResolve("/node_modules/"+filePath, nil)
+		}
+
+		var err error
+		gemName, rootPath, err = utils.ResolveRubyGem(filePath)
+		if err != nil {
+			return returnResolve(filePath, err)
+		}
+
+		suffix := utils.RemoveRubygemPrefix(filePath, gemName)
+		if suffix == "" {
+			filePath = "./"
+		} else {
+			filePath = suffix
+		}
+	}
+
+	if !utils.IsBareModule(filePath) {
+		if _, ok := utils.HasExtension(filePath); ok {
+			return returnResolve(filePath, nil)
+		}
 	}
 
 	// Replace leading slash with `./` for absolute paths.
@@ -59,7 +112,7 @@ func Resolve(filePath string, importer string) (string, error) {
 
 	result := esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:       []string{filePath},
-		AbsWorkingDir:     types.Config.RootPath,
+		AbsWorkingDir:     rootPath,
 		Format:            esbuild.FormatESModule,
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		ResolveExtensions: []string{".tsx", ".ts", ".jsx", ".js", ".mjs", ".css", ".json"},
@@ -75,14 +128,20 @@ func Resolve(filePath string, importer string) (string, error) {
 	})
 
 	if len(result.Errors) > 0 {
-		return "", errors.New(result.Errors[0].Text)
+		return returnResolve("", errors.New(result.Errors[0].Text))
 	}
 
 	var metadata struct{ Inputs map[string]interface{} }
 	err := json.Unmarshal([]byte(result.Metafile), &metadata)
 	if err != nil {
-		return "", err
+		return returnResolve("", err)
 	}
 
-	return "/" + reflect.ValueOf(metadata.Inputs).MapKeys()[0].String(), nil
+	filePath = reflect.ValueOf(metadata.Inputs).MapKeys()[0].String()
+
+	if gemName != "" {
+		return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+"/"+filePath, nil)
+	}
+
+	return returnResolve("/"+filePath, nil)
 }

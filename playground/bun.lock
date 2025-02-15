@@ -3,11 +3,15 @@
   "workspaces": {
     "": {
       "dependencies": {
-        "style-observer": "^0.0.4",
+        "@rubygems/rails": "^8.0.1",
       },
     },
   },
   "packages": {
+    "@rubygems/rails": ["@rubygems/rails@8.0.1", "http://registry.proscenium.test:3001/tarballs/@rubygems/rails/rails-8.0.1.tgz", { "dependencies": { "dom-mutations": "^1.0.0", "style-observer": "0.0.4" } }, "sha512-6TQ+Ap7GzcDMQsuRrqGg/7SWuujd041dYWBIylz/Fri2BmNGpfwkSsfIazw5kMuQBlWWVK4kgIwvFzbqk+dEjA=="],
+
+    "dom-mutations": ["dom-mutations@1.0.0", "", {}, "sha512-qr4ufk/qu+JKwtz7NPbu6TxpTM/7nqburohI07J+mKSM20USvhcUjEb8hWY6g2a3QYp3LtlGpi+mAZLPuxTi7g=="],
+
     "style-observer": ["style-observer@0.0.4", "", {}, "sha512-bKvTV6i2T8q656YkF+WWbj8pSEyjPTyO0h+i6jZVDk7Bq/MN3l7SW4W3u8u9puJvzHzBRaWb5oT/FzQA1PizQQ=="],
   }
 }

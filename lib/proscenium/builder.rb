@@ -44,6 +44,7 @@ module Proscenium
         @error = JSON.parse(error, strict: true).deep_transform_keys(&:underscore)
 
         msg = @error['text']
+        msg << ' - ' << @error['detail'] if @error['detail'].is_a?(String)
         if (location = @error['location'])
           msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
         end
@@ -80,14 +81,15 @@ module Proscenium
     def initialize(root: nil, bundle: nil)
       bundle = Proscenium.config.bundle if bundle.nil?
 
+      # TODO: constantlise this, as it will be generated on every call! benchmark!
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
-        Engines: Proscenium.config.engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
         ExternalNodeModules: Proscenium.config.external_node_modules,
+        RubyGems: Proscenium::BundledGems.paths,
         Bundle: bundle,
         Debug: Proscenium.config.debug
       }.to_json)

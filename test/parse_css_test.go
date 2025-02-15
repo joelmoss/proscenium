@@ -1,7 +1,9 @@
 package proscenium_test
 
 import (
+	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
+	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -89,7 +91,7 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 			})
 
-			Describe("url", func() {
+			Describe("from url()", func() {
 				It("mixin is replaced with defined mixin", func() {
 					Expect(`
 						header {
@@ -112,6 +114,40 @@ var _ = Describe("Build(parseCss)", func() {
 							color: red;
 						}
 					`, "/foo.css"))
+				})
+
+				Context("mixin from @rubygems/*", func() {
+					It("relative gem is resolved", func() {
+						types.Config.RubyGems = map[string]string{
+							"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
+						}
+
+						Expect(`
+							header {
+								@mixin red from url('@rubygems/gem1/lib/colors.mixin.css');
+							}
+						`).To(BeParsedTo(`
+							header {
+								color: red;
+							}
+						`, "/foo.css"))
+					})
+
+					It("external gem is resolved", func() {
+						types.Config.RubyGems = map[string]string{
+							"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
+						}
+
+						Expect(`
+							header {
+								@mixin red from url('@rubygems/gem2/lib/colors.mixin.css');
+							}
+						`).To(BeParsedTo(`
+							header {
+								color: red;
+							}
+						`, "/foo.css"))
+					})
 				})
 
 				It("relative mixin is resolved", func() {

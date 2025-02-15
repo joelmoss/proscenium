@@ -36,20 +36,6 @@ module Proscenium
     # defined means a faster build, as esbuild will have less to do.
     config.proscenium.env_vars = Set.new
 
-    # Rails engines to expose and allow Proscenium to serve their assets.
-    #
-    # A Rails engine that has assets, can add Proscenium as a gem dependency, and then add itself
-    # to this list. Proscenium will then serve the engine's assets at the URL path beginning with
-    # the engine name.
-    #
-    # Example:
-    #   class Gem1::Engine < ::Rails::Engine
-    #     config.proscenium.engines[:gem1] = root
-    #   end
-    config.proscenium.engines = {
-      proscenium: Proscenium.ui_path
-    }
-
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'
     }

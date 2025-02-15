@@ -1,68 +1,85 @@
-lockfileVersion: '6.0'
+lockfileVersion: '9.0'
 
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
-dependencies:
-  '@external/three':
-    specifier: link:../external/three
-    version: link:../external/three
-  external-one-link:
-    specifier: link:../external/one
-    version: link:../external/one
-  gem1:
-    specifier: link:vendor/gem1
-    version: link:vendor/gem1
-  gem2:
-    specifier: file:../external/gem2
-    version: file:../external/gem2
-  internal-one-link:
-    specifier: link:packages/one
-    version: link:packages/one
-  internal-two:
-    specifier: file:packages/two
-    version: file:packages/two
-  mypackage:
-    specifier: link:packages/mypackage
-    version: link:packages/mypackage
-  react:
-    specifier: ^18.3.1
-    version: 18.3.1
+importers:
+
+  .:
+    dependencies:
+      '@external/three':
+        specifier: link:../external/three
+        version: link:../external/three
+      '@rubygems/foo':
+        specifier: ^0.0.2
+        version: 0.0.2
+      external-one-link:
+        specifier: link:../external/one
+        version: link:../external/one
+      gem1:
+        specifier: link:vendor/gem1
+        version: link:vendor/gem1
+      gem2:
+        specifier: file:../external/gem2
+        version: file:../external/gem2
+      internal-one-link:
+        specifier: link:packages/one
+        version: link:packages/one
+      internal-two:
+        specifier: file:packages/two
+        version: file:packages/two
+      mypackage:
+        specifier: link:packages/mypackage
+        version: link:packages/mypackage
+      react:
+        specifier: ^18.3.1
+        version: 18.3.1
 
 packages:
 
-  /is-plain-obj@4.1.0:
+  '@rubygems/foo@0.0.2':
+    resolution: {integrity: sha512-1hlZ8vnlxdkuWQApqbbyq6zlH5Ii1M+/NPw/jtaDE2WNpAqVW36YSzplMLrqMMgp5NlYiKynZfBv1/8ghv959A==, tarball: http://registry.proscenium.test:3001/tarballs/@rubygems/foo/foo-0.0.2.tgz}
+
+  gem2@file:../external/gem2:
+    resolution: {directory: ../external/gem2, type: directory}
+
+  internal-two@file:packages/two:
+    resolution: {directory: packages/two, type: directory}
+
+  is-plain-obj@4.1.0:
     resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
     engines: {node: '>=12'}
-    dev: false
 
-  /js-tokens@4.0.0:
+  js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
-    dev: false
 
-  /loose-envify@1.4.0:
+  loose-envify@1.4.0:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
-    dependencies:
-      js-tokens: 4.0.0
-    dev: false
 
-  /react@18.3.1:
+  react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
-    dependencies:
-      loose-envify: 1.4.0
-    dev: false
 
-  file:../external/gem2:
-    resolution: {directory: ../external/gem2, type: directory}
-    name: gem2
-    dev: false
+snapshots:
 
-  file:packages/two:
-    resolution: {directory: packages/two, type: directory}
-    name: internal-two
+  '@rubygems/foo@0.0.2': {}
+
+  gem2@file:../external/gem2: {}
+
+  internal-two@file:packages/two:
     dependencies:
       is-plain-obj: 4.1.0
-    dev: false
+
+  is-plain-obj@4.1.0: {}
+
+  js-tokens@4.0.0: {}
+
+  loose-envify@1.4.0:
+    dependencies:
+      js-tokens: 4.0.0
+
+  react@18.3.1:
+    dependencies:
+      loose-envify: 1.4.0

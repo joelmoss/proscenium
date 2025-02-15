@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "@external/three": "link:../external/three",
+    "@rubygems/foo": "^0.0.2",
     "external-one-link": "link:../external/one",
     "gem1": "link:vendor/gem1",
     "gem2": "file:../external/gem2",
@@ -11,5 +12,5 @@
     "mypackage": "link:packages/mypackage",
     "react": "^18.3.1"
   },
-  "packageManager": "pnpm@8.10.2+sha512.0782093d5ba6c7ad9462081bc1ef0775016a4b4109eca1e1fedcea6f110143af5f50993db36c427d4fa8c62be3920a3224db12da719d246ca19dd9f18048c33c"
+  "packageManager": "pnpm@10.4.0+sha512.6b849d0787d97f8f4e1f03a9b8ff8f038e79e153d6f11ae539ae7c435ff9e796df6a862c991502695c7f9e8fac8aeafc1ac5a8dab47e36148d183832d886dd52"
 }

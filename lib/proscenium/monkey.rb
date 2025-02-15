@@ -48,7 +48,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload "app/views/#{tpl.virtual_path}", **options
+        Importer.sideload Rails.root.join("app/views/#{tpl.virtual_path}"), **options
       end
     end
 
@@ -87,7 +87,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload "app/views/#{tpl.virtual_path}", **options
+        Importer.sideload Rails.root.join("app/views/#{tpl.virtual_path}"), **options
       end
     end
   end

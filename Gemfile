@@ -11,6 +11,7 @@ gem 'rails', '~> 7.0'
 
 # Playground
 gem 'appraisal'
+gem 'gems'
 gem 'htmlbeautifier'
 gem 'phlexible'
 gem 'phlex-markdown', github: 'phlex-ruby/phlex-markdown'
@@ -18,6 +19,7 @@ gem 'rouge'
 
 group :development do
   gem 'benchmark-ips'
+  gem 'localhost'
   gem 'puma'
   gem 'rubocop'
   gem 'rubocop-minitest', require: false

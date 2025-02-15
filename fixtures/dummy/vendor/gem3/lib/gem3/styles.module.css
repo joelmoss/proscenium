@@ -2,5 +2,11 @@ h1 {
   @mixin red from url("./red.css");
 }
 h2 {
-  @mixin blue from url("/gem3/lib/gem3/blue.css");
+  @mixin blue from url("@rubygems/gem4/lib/gem4/blue.css"); /* external */
+}
+h3 {
+  @mixin green from url("@rubygems/gem1/lib/colors.mixin.css"); /* internal */
+}
+.name {
+  font-size: 2em;
 }

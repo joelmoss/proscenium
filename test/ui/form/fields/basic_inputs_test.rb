@@ -20,7 +20,8 @@ class Proscenium::UI::Form::Fields::BasicInputsTest < ActiveSupport::TestCase
       it 'side loads only the form css modules' do
         view
 
-        assert_equal ['/proscenium/form.css'], Proscenium::Importer.imported.keys
+        assert_equal ['/node_modules/@rubygems/proscenium/form.css'],
+                     Proscenium::Importer.imported.keys
       end
 
       it "has a #{type} field" do

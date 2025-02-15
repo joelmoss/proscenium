@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
@@ -26,10 +27,8 @@ var Bundler = esbuild.Plugin{
 		root := build.InitialOptions.AbsWorkingDir
 
 		// Resolve with esbuild. Try and avoid this call as much as possible!
-		resolveWithEsbuild := func(pathToResolve string, args esbuild.OnResolveArgs) (esbuildResolveResult, bool) {
-			result := esbuildResolveResult{}
-
-			r := build.Resolve(pathToResolve, esbuild.ResolveOptions{
+		resolveWithEsbuild := func(args esbuild.OnResolveArgs, onResolveResult *esbuild.OnResolveResult) bool {
+			r := build.Resolve(onResolveResult.Path, esbuild.ResolveOptions{
 				ResolveDir: args.ResolveDir,
 				Importer:   args.Importer,
 				Kind:       args.Kind,
@@ -41,100 +40,117 @@ var Bundler = esbuild.Plugin{
 			if len(r.Errors) > 0 {
 				// Could not resolve the path, so mark as external. This ensures we receive no
 				// error, and instead allows the browser to handle the import failure.
-				result.External = true
-				return result, false
+				onResolveResult.External = true
+
+				debug.Debug("resolveWithEsbuild:failure", args, onResolveResult, r.Errors)
+
+				return false
 			}
 
 			if r.SideEffects {
-				result.SideEffects = esbuild.SideEffectsTrue
+				onResolveResult.SideEffects = esbuild.SideEffectsTrue
 			} else {
-				result.SideEffects = esbuild.SideEffectsFalse
+				onResolveResult.SideEffects = esbuild.SideEffectsFalse
 			}
 
-			result.External = r.External
-			result.Path = r.Path
+			onResolveResult.External = r.External
+			onResolveResult.Path = r.Path
 
-			// pp.Println("[1] resolveWithEsbuild", pathToResolve, args, result)
+			debug.Debug("resolveWithEsbuild:success", args, onResolveResult)
 
-			return result, true
+			return true
 		}
 
-		// File types which should be external.
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `\.(gif|jpe?g|png|woff2?)$`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				return esbuild.OnResolveResult{
-					External: true,
-				}, nil
-			})
-
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://(.+)\.svg$`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
-				// namespace.
-				if utils.IsImportedFromJsx(args.Path, args) {
-					return esbuild.OnResolveResult{
-						Path:      args.Path,
-						Namespace: "svgFromJsx",
-					}, nil
-				}
-
-				// URL's are external.
-				return esbuild.OnResolveResult{
-					Path:     args.Path,
-					External: true,
-				}, nil
-			})
-
-		// Mark all paths starting with "http://" or "https://" as external
-		build.OnResolve(esbuild.OnResolveOptions{Filter: `^https?://`},
-			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
-				return esbuild.OnResolveResult{
-					Path:     args.Path,
-					External: true,
-				}, nil
-			})
-
-		build.OnResolve(esbuild.OnResolveOptions{Filter: ".*"},
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `^(unbundle:)?(node_modules/)?@rubygems/`},
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				// Pass through paths that are currently resolving.
 				if args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath {
 					return esbuild.OnResolveResult{}, nil
 				}
 
-				unbundled := false
-				isEngine := false
-				result := esbuild.OnResolveResult{}
+				debug.Debug("OnResolve(@rubygems/*):begin", args)
 
-				// Pass through entry points.
-				if args.Kind == esbuild.ResolveEntryPoint {
-					// Handle Ruby gems.
-					for key, value := range types.Config.Engines {
-						prefix := key + pathSep
-						if strings.HasPrefix(args.Path, prefix) {
-							result.Path = filepath.Join(value, strings.TrimPrefix(args.Path, prefix))
-							isEngine = true
-							break
-						}
-					}
+				result := esbuild.OnResolveResult{Path: args.Path}
+				unbundled := resolveUnbundledPrefix(&result)
+				result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
-					if result.Path == "" {
-						return esbuild.OnResolveResult{}, nil
+				gemName, gemPath, err := utils.ResolveRubyGem(result.Path)
+				if err != nil {
+					return result, err
+				}
+
+				if resolveWithImportMap(&result, args.ResolveDir) {
+					if resolveUnbundledPrefix(&result) {
+						unbundled = true
 					}
 				} else {
-					// Handle non-entrypoint Ruby gems.
-					for key, value := range types.Config.Engines {
-						prefix := pathSep + key + pathSep
-						if strings.HasPrefix(args.Path, prefix) {
-							result.Path = filepath.Join(value, strings.TrimPrefix(args.Path, prefix))
-							isEngine = true
-							break
-						}
+					return result, nil
+				}
+
+				if utils.IsCssImportedFromJs(result.Path, args) {
+					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
+					// the css plugin to return the CSS as a JS object of class names (css module).
+					result.PluginData = types.PluginData{ImportedFromJs: true}
+				}
+
+				ext, hasExt := utils.HasExtension(result.Path)
+
+				if hasExt {
+					if ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".eot" {
+						unbundled = true
+					} else if utils.IsSvgImportedFromJsx(result.Path, args) {
+						result.Namespace = "svgFromJsx"
+					} else if utils.IsSvgImportedFromCss(result.Path, args) {
+						unbundled = true
+					}
+				} else {
+					// == Unqualified path! - use esbuild to resolve.
+
+					resolveArgs := cloneResolveArgs(args)
+					resolveArgs.ResolveDir = gemPath
+
+					suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
+					result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
+
+					ok := resolveWithEsbuild(resolveArgs, &result)
+					if !ok {
+						return result, nil
 					}
 				}
 
-				if result.Path == "" {
-					result.Path = args.Path
+				if unbundled {
+					result.Path = "/node_modules/" + result.Path
+					result.External = true
+				} else if hasExt {
+					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 				}
+
+				debug.Debug("OnResolve(@rubygems/*):end", result)
+
+				return result, nil
+			})
+
+		// FIXME: still needed? as build specifies these directly in `buildOptions.External`
+		build.OnResolve(esbuild.OnResolveOptions{Filter: `\.(gif|jpe?g|png|woff2?)$`},
+			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				debug.Debug("OnResolve(images/fonts):begin", args)
+
+				return esbuild.OnResolveResult{
+					External: true,
+				}, nil
+			})
+
+		build.OnResolve(esbuild.OnResolveOptions{Filter: ".*"},
+			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
+				// Pass through entrypoint and paths that are currently resolving.
+				if args.Kind == esbuild.ResolveEntryPoint ||
+					(args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath) {
+					return esbuild.OnResolveResult{}, nil
+				}
+
+				debug.Debug("OnResolve(.*):begin", args)
+
+				result := esbuild.OnResolveResult{Path: args.Path}
 
 				// Used to ensure that the result is marked as external no matter what. If this is true, it
 				// will override the result.External value.
@@ -144,32 +160,14 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				}
 
-				if strings.HasPrefix(result.Path, "unbundle:") {
-					result.Path = strings.TrimPrefix(result.Path, "unbundle:")
-					unbundled = true
-				}
+				unbundled := resolveUnbundledPrefix(&result)
 
-				resolvedImport, imErr := importmap.Resolve(result.Path, args.ResolveDir)
-				if imErr != nil {
-					result.PluginName = "importmap"
-					result.Errors = []esbuild.Message{{
-						Text:     imErr.Error(),
-						Location: &esbuild.Location{File: importmap.FilePath()},
-						Detail:   imErr,
-					}}
-					return result, nil
-				} else {
-					result.Path = resolvedImport
-
-					if utils.IsUrl(result.Path) {
-						result.External = true
-						return result, nil
-					}
-
-					if strings.HasPrefix(result.Path, "unbundle:") {
-						result.Path = strings.TrimPrefix(result.Path, "unbundle:")
+				if resolveWithImportMap(&result, args.ResolveDir) {
+					if resolveUnbundledPrefix(&result) {
 						unbundled = true
 					}
+				} else {
+					return result, nil
 				}
 
 				isCssImportedFromJs := false
@@ -187,14 +185,11 @@ var Bundler = esbuild.Plugin{
 				// Ensure external if importing SVG from CSS.
 				// TODO: Bundle SVG?
 				if utils.IsSvgImportedFromCss(result.Path, args) {
-					if isEngine {
-						result.Path = args.Path
-					}
 					ensureExternal()
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if !isEngine && path.IsAbs(result.Path) && !shouldBeExternal {
+				if !shouldBeExternal && path.IsAbs(result.Path) {
 					result.Path = path.Join(root, result.Path)
 				}
 
@@ -204,42 +199,34 @@ var Bundler = esbuild.Plugin{
 					// It's external, so pass it through for esbuild to resolve.
 					result.External = true
 				} else {
-					// If the path should not be external, then we may still need to resolve it, as it may not
+					// If the path should not be external, we may still need to resolve it, as it may not
 					// be a fully qualified path.
 
-					if path.IsAbs(result.Path) && filepath.Ext(result.Path) != "" {
-						// If the path is absolute, then we can just return it as is. However, it must be a
-						// fully qualified path with a file extension. We can then return it as is. Otherwise,
-						// we need to resolve it.
-						if unbundled {
-							result.Path = strings.TrimPrefix(result.Path, root)
-							result.External = true
-						}
+					_, hasExt := utils.HasExtension(result.Path)
 
-						return result, nil
+					if path.IsAbs(result.Path) && hasExt {
+						goto FINISH
 					}
 
 					// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
 					// that can get expensive. Also, by not returning the path, we let esbuild handle
 					// resolving the path, which is faster and also ensures tree shaking works.
-					if utils.PathIsRelative(result.Path) {
-						if isCssImportedFromJs || result.Namespace == "svgFromJsx" {
-							result.Path = path.Join(args.ResolveDir, result.Path)
-						} else if unbundled {
+					if utils.PathIsRelative(result.Path) && hasExt {
+						if isCssImportedFromJs || result.Namespace == "svgFromJsx" || unbundled {
 							result.Path = path.Join(args.ResolveDir, result.Path)
 						} else {
 							result.Path = ""
 						}
 					} else {
+						resolveArgs := cloneResolveArgs(args)
+
 						if utils.IsBareModule(result.Path) {
-							// If importer is a Rails engine, then change ResolveDir to the app root. This ensures
-							// that bare imports are resolved relative to the app root, and not the engine root.
+							// If importer is a RubyGem, then change ResolveDir to the app root. This ensures
+							// that bare imports are resolved relative to the app root, and not the gem root.
 							// Which allows us to use the app's package.json and node_modules dir.
-							for _, value := range types.Config.Engines {
-								if strings.HasPrefix(args.Importer, value+pathSep) {
-									args.ResolveDir = root
-									break
-								}
+							_, _, foundGem := utils.PathIsRubyGem(args.Importer)
+							if foundGem {
+								resolveArgs.ResolveDir = root
 							}
 
 							if types.Config.ExternalNodeModules {
@@ -248,23 +235,73 @@ var Bundler = esbuild.Plugin{
 						}
 
 						// Unqualified path! - use esbuild to resolve.
-						resolveResult, ok := resolveWithEsbuild(result.Path, args)
-
-						result.Path = resolveResult.Path
-						result.External = resolveResult.External
-						result.SideEffects = resolveResult.SideEffects
-
+						ok := resolveWithEsbuild(resolveArgs, &result)
 						if !ok {
 							return result, nil
 						}
 					}
 				}
 
+			FINISH:
+
 				if unbundled {
 					result.Path = strings.TrimPrefix(result.Path, root)
 					result.External = true
 				}
 
+				debug.Debug("OnResolve(.*):end", result)
+
 				return result, nil
 			})
 	}}
+
+func cloneResolveArgs(args esbuild.OnResolveArgs) esbuild.OnResolveArgs {
+	return esbuild.OnResolveArgs{
+		Path:       args.Path,
+		Importer:   args.Importer,
+		Namespace:  args.Namespace,
+		ResolveDir: args.ResolveDir,
+		Kind:       args.Kind,
+		PluginData: args.PluginData,
+		With:       args.With,
+	}
+}
+
+// Strips the "unbundle:" prefix from the `result.Path`, and returns true if the prefix was found.
+func resolveUnbundledPrefix(result *esbuild.OnResolveResult) bool {
+	if strings.HasPrefix(result.Path, "unbundle:") {
+		result.Path = strings.TrimPrefix(result.Path, "unbundle:")
+		return true
+	}
+
+	return false
+}
+
+// Resolves the `result.Path` using the import map.
+//
+// Returns true if the path was resolved by the import map.
+// Returns false if the path was not resolved by the import map.
+// Returns false if the path was resolved by the import map, but is a URL.
+func resolveWithImportMap(result *esbuild.OnResolveResult, resolveDir string) bool {
+	resolvedImport, imErr := importmap.Resolve(result.Path, resolveDir)
+
+	if imErr == nil {
+		result.Path = resolvedImport
+
+		if utils.IsUrl(result.Path) {
+			result.External = true
+			return false
+		}
+	} else {
+		result.PluginName = "importmap"
+		result.Errors = []esbuild.Message{{
+			Text:     imErr.Error(),
+			Location: &esbuild.Location{File: importmap.FilePath()},
+			Detail:   imErr,
+		}}
+
+		return false
+	}
+
+	return true
+}

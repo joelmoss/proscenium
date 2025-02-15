@@ -60,6 +60,7 @@ module Proscenium
       # `.tsx` extension is matched first.
       #
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
+      # @param options [Hash] Options to pass to `import`.
       def sideload(filepath, **options)
         return if !Proscenium.config.side_load || (options[:js] == false && options[:css] == false)
 
@@ -75,20 +76,22 @@ module Proscenium
         _sideload(filepath, CSS_EXTENSIONS, **)
       end
 
+      # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
+      # @param extensions [Array<String>] Supported file extensions to sideload.
+      # @param options [Hash] Options to pass to `import`.
+      # @raise [ArgumentError] if `filepath` is not an absolute file system path.
       private def _sideload(filepath, extensions, **options) # rubocop:disable Style/AccessModifierDeclarations
         return unless Proscenium.config.side_load
 
-        filepath = Rails.root.join(filepath) unless filepath.is_a?(Pathname)
+        if !filepath.is_a?(Pathname) || !filepath.absolute?
+          raise ArgumentError, '`filepath` must be an absolute file system path'
+        end
+
         filepath = filepath.sub_ext('')
 
         extensions.find do |x|
           if (fp = filepath.sub_ext(x)).exist?
-            if (fp = fp.to_s).start_with?(Proscenium.ui_path.to_s)
-              fp.sub!(Proscenium.ui_path_regex, 'proscenium/')
-              import(Resolver.resolve(fp), sideloaded: true, **options)
-            else
-              import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
-            end
+            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
           end
         end
       end

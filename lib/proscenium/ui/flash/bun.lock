@@ -1,0 +1,19 @@
+{
+  "lockfileVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "@proscenium/flash",
+      "dependencies": {
+        "dom-mutations": "^1.0.0",
+      },
+      "devDependencies": {
+        "sourdough-toast": "latest",
+      },
+    },
+  },
+  "packages": {
+    "dom-mutations": ["dom-mutations@1.0.0", "", {}, "sha512-qr4ufk/qu+JKwtz7NPbu6TxpTM/7nqburohI07J+mKSM20USvhcUjEb8hWY6g2a3QYp3LtlGpi+mAZLPuxTi7g=="],
+
+    "sourdough-toast": ["sourdough-toast@0.1.0", "", {}, "sha512-ianhWqaaA5a0n9TRg6dLEt5DWflXqsQUMxEAGZi8JcHGqsPRm7XTWEfhhDKSi/zJ11CBbvh8b8oRcgxjCeYZeg=="],
+  }
+}

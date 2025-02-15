@@ -1,0 +1,6 @@
+@define-mixin red {
+  color: red;
+}
+@define-mixin green {
+  color: green;
+}

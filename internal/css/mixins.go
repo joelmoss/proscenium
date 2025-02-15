@@ -2,7 +2,7 @@ package css
 
 import (
 	"joelmoss/proscenium/internal/resolver"
-	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path"
 	"path/filepath"
@@ -41,19 +41,20 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 		// We need the absolute file system path
 
-		engineMatch := false
-		for k, v := range types.Config.Engines {
-			if strings.HasPrefix(absPath, v+pathSep) {
-				engineMatch = true
-				break
-			} else if strings.HasPrefix(absPath, pathSep+k+pathSep) {
-				absPath = filepath.Join(v, strings.TrimPrefix(absPath, pathSep+k+pathSep))
-				engineMatch = true
-				break
+		isRubyGem := false
+		relativePath := strings.TrimPrefix(absPath, "/node_modules/")
+		if utils.IsRubyGem(relativePath) {
+			gemName, gemPath, err := utils.ResolveRubyGem(relativePath)
+			if err != nil {
+				return false
 			}
+
+			isRubyGem = true
+			suffix := utils.RemoveRubygemPrefix(relativePath, gemName)
+			absPath = filepath.Join(gemPath, suffix)
 		}
 
-		if !engineMatch {
+		if !isRubyGem {
 			absPath = path.Join(p.rootPath, absPath)
 		}
 

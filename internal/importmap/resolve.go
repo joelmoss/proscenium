@@ -35,7 +35,6 @@ func Resolve(specifier string, resolveDir string) (string, error) {
 	} else if len(imports) == 0 {
 		return specifier, nil
 	}
-
 	resolveDir = strings.TrimPrefix(resolveDir, types.Config.RootPath)
 	normalizedImports := make(map[string]importEntry)
 
