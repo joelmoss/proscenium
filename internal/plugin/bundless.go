@@ -29,6 +29,8 @@ var Bundless = esbuild.Plugin{
 				// Should we use esbuild to resolve this path?
 				useResolve := false
 
+				rubyGem := ""
+
 				// Path that is resolved from a Rails engine.
 				pathFromEngine := ""
 
@@ -115,9 +117,21 @@ var Bundless = esbuild.Plugin{
 					result.PluginData = types.PluginData{ImportedFromJs: true}
 				}
 
-				if strings.HasPrefix(args.Path, types.RubyGemsScope) {
-					utils.ResolveRubyGem(args.Path, &result)
-					goto FINISH
+				if utils.IsRubyGem(result.Path) {
+					gemName, err := utils.ResolveRubyGem(result.Path)
+					if err != nil {
+						return result, err
+					}
+
+					if filepath.Ext(result.Path) == "" {
+						suffix := strings.TrimPrefix(result.Path, types.RubyGemsScope+gemName)
+						result.Path = filepath.Join(types.Config.RubyGems[gemName], suffix)
+						useResolve = true
+						rubyGem = gemName
+					} else {
+						result.Path = "/node_modules/" + result.Path
+						goto FINISH
+					}
 				}
 
 				if utils.IsBareModule(result.Path) || filepath.Ext(result.Path) == "" {
@@ -148,8 +162,6 @@ var Bundless = esbuild.Plugin{
 
 					r := build.Resolve(result.Path, resolveOpts)
 
-					// pp.Println("[bundless] resolve result:", r)
-
 					result.Path = r.Path
 					result.Errors = r.Errors
 					result.Warnings = r.Warnings
@@ -162,6 +174,12 @@ var Bundless = esbuild.Plugin{
 				}
 
 			FINISH:
+
+				if rubyGem != "" {
+					suffix := strings.TrimPrefix(result.Path, types.Config.RubyGems[rubyGem])
+					result.Path = "/node_modules/" + types.RubyGemsScope + rubyGem + suffix
+				}
+
 				// Only entrypoints must be an absolute path.
 				if args.Kind != esbuild.ResolveEntryPoint && result.Path != "" {
 					if resolvedEnginePath != "" && resolvedEngineKey != "" {

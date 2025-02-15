@@ -8,9 +8,7 @@ class PackagesController < ActionController::API
 
   def index = render json: {}
 
-  # 1. Fetch the gem metadata from RubyGems API
-  #   https://rubygems.org/api/v2/rubygems/GEM/versions/VERSION.json for a specific version,
-  #   https://rubygems.org/api/v1/versions/GEM/latest.json to get latest version number.
+  # 1. Fetch the gem metadata from RubyGems API.
   # 2. Extract any package.json from the gem, and populate the response with it.
   # 3. Create a tarball containing the fetched package.json. This will be downloaded by the npm
   #    client, and unpacked into node_modules. Proscenium ignores this, as it will pull contents

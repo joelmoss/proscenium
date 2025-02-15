@@ -42,6 +42,9 @@ var Bundler = esbuild.Plugin{
 				// Could not resolve the path, so mark as external. This ensures we receive no
 				// error, and instead allows the browser to handle the import failure.
 				result.External = true
+
+				// pp.Println("resolveWithEsbuild", pathToResolve, args, result, false)
+
 				return result, false
 			}
 
@@ -54,7 +57,7 @@ var Bundler = esbuild.Plugin{
 			result.External = r.External
 			result.Path = r.Path
 
-			// pp.Println("[1] resolveWithEsbuild", pathToResolve, args, result)
+			// pp.Println("resolveWithEsbuild", pathToResolve, args, result, true)
 
 			return result, true
 		}
@@ -103,6 +106,7 @@ var Bundler = esbuild.Plugin{
 
 				unbundled := false
 				isEngine := false
+				rubyGem := ""
 				result := esbuild.OnResolveResult{}
 
 				// Pass through entry points.
@@ -193,19 +197,17 @@ var Bundler = esbuild.Plugin{
 					ensureExternal()
 				}
 
-				if strings.HasPrefix(result.Path, types.RubyGemsScope) {
-					utils.ResolveRubyGem(result.Path, &result)
-
-					if unbundled {
-						result.Path = strings.TrimPrefix(result.Path, root)
-						result.External = true
+				if utils.IsRubyGem(result.Path) {
+					gemName, err := utils.ResolveRubyGem(result.Path)
+					if err != nil {
+						return result, err
 					}
 
-					return result, nil
+					rubyGem = gemName
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if !isEngine && path.IsAbs(result.Path) && !shouldBeExternal {
+				if rubyGem == "" && !isEngine && !shouldBeExternal && path.IsAbs(result.Path) {
 					result.Path = path.Join(root, result.Path)
 				}
 
@@ -223,11 +225,22 @@ var Bundler = esbuild.Plugin{
 						// fully qualified path with a file extension. We can then return it as is. Otherwise,
 						// we need to resolve it.
 						if unbundled {
-							result.Path = strings.TrimPrefix(result.Path, root)
-							result.External = true
+							if rubyGem == "" {
+								result.Path = strings.TrimPrefix(result.Path, root)
+							} else {
+								suffix := strings.TrimPrefix(result.Path, types.RubyGemsScope+rubyGem)
+								result.Path = "/node_modules/" + types.RubyGemsScope + rubyGem + suffix
+							}
 						}
 
-						return result, nil
+						goto FINISH
+					}
+
+					if rubyGem != "" && unbundled && filepath.Ext(result.Path) != "" {
+						suffix := strings.TrimPrefix(result.Path, types.RubyGemsScope+rubyGem)
+						result.Path = "/node_modules/" + types.RubyGemsScope + rubyGem + suffix
+
+						goto FINISH
 					}
 
 					// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
@@ -253,6 +266,12 @@ var Bundler = esbuild.Plugin{
 								}
 							}
 
+							if rubyGem != "" {
+								args.ResolveDir = types.Config.RubyGems[rubyGem]
+								suffix := strings.TrimPrefix(args.Path, types.RubyGemsScope+rubyGem)
+								result.Path = filepath.Join(args.ResolveDir, suffix)
+							}
+
 							if types.Config.ExternalNodeModules {
 								unbundled = true
 							}
@@ -265,18 +284,20 @@ var Bundler = esbuild.Plugin{
 						result.External = resolveResult.External
 						result.SideEffects = resolveResult.SideEffects
 
-						// pp.Println("OnResolve", args, resolveResult, unbundled)
-
 						if !ok {
 							return result, nil
 						}
 					}
 				}
 
+			FINISH:
+
 				if unbundled {
 					result.Path = strings.TrimPrefix(result.Path, root)
 					result.External = true
 				}
+
+				// pp.Println("OnResolve", args, result)
 
 				return result, nil
 			})

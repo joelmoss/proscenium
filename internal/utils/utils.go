@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -98,9 +97,9 @@ func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {
 	return PathIsSvg(path) && PathIsCss(args.Importer)
 }
 
-// ExtractPackageName extracts the package name from a path.
-// For example, given the path "@rubygems/foo/bar.js", it will return "foo".
-func ExtractPackageName(path string) string {
+// Extracts the package name from a path. For example, given the path "@rubygems/foo/bar.js", it
+// will return "foo".
+func extractScopedPackageName(path string) string {
 	firstSlash := strings.Index(path, "/")
 	if firstSlash == -1 {
 		return ""
@@ -116,14 +115,17 @@ func ExtractPackageName(path string) string {
 	return rest[:secondSlash]
 }
 
-func ResolveRubyGem(path string, result *esbuild.OnResolveResult) {
-	gemName := ExtractPackageName(path)
-	if value, exists := types.Config.RubyGems[gemName]; exists {
-		suffix := strings.TrimPrefix(path, types.RubyGemsScope+gemName)
-		result.Path = filepath.Join(value, suffix)
+func IsRubyGem(path string) bool {
+	return strings.HasPrefix(path, types.RubyGemsScope)
+}
+
+func ResolveRubyGem(path string) (gemName string, err error) {
+	name := extractScopedPackageName(path)
+
+	if _, exists := types.Config.RubyGems[name]; exists {
+		return name, nil
 	} else {
-		result.Errors = []esbuild.Message{{
-			Text: fmt.Sprintf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", gemName, gemName),
-		}}
+		return "", fmt.Errorf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
 	}
+
 }
