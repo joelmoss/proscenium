@@ -1,5 +1,7 @@
 package types
 
+const RubyGemsScope = "@rubygems/"
+
 type Environment uint8
 
 // The environment (1 = development, 2 = test, 3 = production)
@@ -17,7 +19,8 @@ func (e Environment) String() string {
 // - GemPath - Proscenium gem root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
-// - Engines- Map of Rails engine names and paths.
+// - Engines - Map of Rails engine names and paths.
+// - RubyGems - Map of bundle ruby gem names and paths.
 // - CodeSplitting?
 // - ExternalNodeModules? - externalise everything under /node_modules/
 // - Bundle?
@@ -27,6 +30,7 @@ type ConfigT struct {
 	GemPath             string
 	Engines             map[string]string
 	EnvVars             map[string]string
+	RubyGems            map[string]string
 	Debug               bool
 	CodeSplitting       bool
 	Bundle              bool

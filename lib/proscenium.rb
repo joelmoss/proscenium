@@ -40,6 +40,7 @@ module Proscenium
   autoload :Builder
   autoload :Importer
   autoload :Resolver
+  autoload :Bundle
   autoload :UI
 
   class Deprecator

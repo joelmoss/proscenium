@@ -115,6 +115,11 @@ var Bundless = esbuild.Plugin{
 					result.PluginData = types.PluginData{ImportedFromJs: true}
 				}
 
+				if strings.HasPrefix(args.Path, types.RubyGemsScope) {
+					utils.ResolveRubyGem(args.Path, &result)
+					goto FINISH
+				}
+
 				if utils.IsBareModule(result.Path) || filepath.Ext(result.Path) == "" {
 					useResolve = true
 				}

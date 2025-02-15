@@ -88,6 +88,7 @@ module Proscenium
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
         ExternalNodeModules: Proscenium.config.external_node_modules,
+        RubyGems: Proscenium::Bundle.paths,
         Bundle: bundle,
         Debug: Proscenium.config.debug
       }.to_json)

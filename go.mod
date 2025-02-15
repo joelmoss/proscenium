@@ -4,6 +4,7 @@ go 1.23
 
 require (
 	github.com/evanw/esbuild v0.25.0
+	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/onsi/ginkgo/v2 v2.22.2
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sergi/go-diff v1.3.1
@@ -18,6 +19,8 @@ require (
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/pprof v0.0.0-20250208200701-d0013a598941 // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
+	github.com/mattn/go-colorable v0.1.14 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/stretchr/testify v1.10.0 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/tools v0.30.0 // indirect

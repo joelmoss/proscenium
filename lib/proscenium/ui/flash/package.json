@@ -1,0 +1,11 @@
+{
+  "name": "@proscenium/flash",
+  "module": "index.js",
+  "type": "module",
+  "devDependencies": {
+    "sourdough-toast": "latest"
+  },
+  "dependencies": {
+    "dom-mutations": "^1.0.0"
+  }
+}

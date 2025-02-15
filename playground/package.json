@@ -1,5 +1,6 @@
 {
   "dependencies": {
-    "style-observer": "^0.0.4"
+    "@rubygems/foo": "^0.0.2",
+    "@rubygems/rails": "^8.0.1"
   }
 }

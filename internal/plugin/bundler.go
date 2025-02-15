@@ -193,6 +193,17 @@ var Bundler = esbuild.Plugin{
 					ensureExternal()
 				}
 
+				if strings.HasPrefix(result.Path, types.RubyGemsScope) {
+					utils.ResolveRubyGem(result.Path, &result)
+
+					if unbundled {
+						result.Path = strings.TrimPrefix(result.Path, root)
+						result.External = true
+					}
+
+					return result, nil
+				}
+
 				// Absolute path - prepend the root to prepare for resolution.
 				if !isEngine && path.IsAbs(result.Path) && !shouldBeExternal {
 					result.Path = path.Join(root, result.Path)
@@ -253,6 +264,8 @@ var Bundler = esbuild.Plugin{
 						result.Path = resolveResult.Path
 						result.External = resolveResult.External
 						result.SideEffects = resolveResult.SideEffects
+
+						// pp.Println("OnResolve", args, resolveResult, unbundled)
 
 						if !ok {
 							return result, nil

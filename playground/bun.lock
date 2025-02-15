@@ -3,11 +3,14 @@
   "workspaces": {
     "": {
       "dependencies": {
-        "style-observer": "^0.0.4",
+        "@rubygems/foo": "^0.0.2",
+        "@rubygems/rails": "^8.0.1",
       },
     },
   },
   "packages": {
-    "style-observer": ["style-observer@0.0.4", "", {}, "sha512-bKvTV6i2T8q656YkF+WWbj8pSEyjPTyO0h+i6jZVDk7Bq/MN3l7SW4W3u8u9puJvzHzBRaWb5oT/FzQA1PizQQ=="],
+    "@rubygems/foo": ["@rubygems/foo@0.0.2", "http://registry.proscenium.test:3001/tarballs/@rubygems/foo/foo-0.0.2.tgz", {}, "sha512-b3HwrkL/6sQ0k1UJmnIvkxitXLkcRU5+bXirIS56cnq+MqUUxnRIPdqiKTFZW5opPDjRUZBwz1ZT6IA8KoXL5A=="],
+
+    "@rubygems/rails": ["@rubygems/rails@8.0.1", "http://registry.proscenium.test:3001/tarballs/@rubygems/rails/rails-8.0.1.tgz", {}, "sha512-UhcxF/4wh8YTBE3iDvPSTD+N5bajy2v+kgsZGZy/CCuN8unkroKdAjn9hm4uk2xepxGYbEk0AVC7jHKcfD2+UQ=="],
   }
 }
