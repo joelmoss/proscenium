@@ -11,10 +11,10 @@ class PackagesController < ActionController::API
   # 1. Fetch the gem metadata from RubyGems API
   #   https://rubygems.org/api/v2/rubygems/GEM/versions/VERSION.json for a specific version,
   #   https://rubygems.org/api/v1/versions/GEM/latest.json to get latest version number.
-  # 2. Extract the dependencies from the response, via the `metadata.npm_dependencies` key.
-  # 3. Create an empty tarball, which will be downloaded by the npm client, and unpacked into
-  #    node_modules. Proscenium ignores this, as it will pull contents directly from location of the
-  #    installed gem.
+  # 2. Extract any package.json from the gem, and populate the response with it.
+  # 3. Create a tarball containing the fetched package.json. This will be downloaded by the npm
+  #    client, and unpacked into node_modules. Proscenium ignores this, as it will pull contents
+  #    directly from location of the installed gem.
   # 4. Return a valid npm response listing package details, tarball location, and its dependencies.
   def show
     render json: {
@@ -26,7 +26,7 @@ class PackagesController < ActionController::API
         "#{package_version}": {
           name: package_name,
           version: package_version,
-          dependencies: gem_data['metadata']['npm_dependencies'] || {},
+          dependencies: package_json['dependencies'] || {},
           dist: {
             tarball:,
             integrity:,
@@ -85,11 +85,22 @@ class PackagesController < ActionController::API
     File.open(tarball_path, 'wb') do |file|
       Zlib::GzipWriter.wrap(file) do |gz|
         Gem::Package::TarWriter.new(gz) do |tar|
-          pjson = '{}'
-          tar.add_file_simple('package/package.json', 0o444, pjson.length) do |io|
-            io.write pjson
+          contents = package_json.to_json
+          tar.add_file_simple('package/package.json', 0o444, contents.length) do |io|
+            io.write contents
           end
         end
+      end
+    end
+  end
+
+  def package_json
+    @package_json ||= begin
+      path = Proscenium::Gems.path_for(gem_name, package_version).join('package.json')
+      if path.exist?
+        JSON.parse path.read
+      else
+        {}
       end
     end
   end

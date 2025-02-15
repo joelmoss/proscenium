@@ -40,7 +40,8 @@ module Proscenium
   autoload :Builder
   autoload :Importer
   autoload :Resolver
-  autoload :Bundle
+  autoload :BundledGems
+  autoload :Gems
   autoload :UI
 
   class Deprecator
