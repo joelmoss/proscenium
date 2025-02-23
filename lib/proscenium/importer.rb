@@ -23,12 +23,11 @@ module Proscenium
       #
       # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
-      # @param resolve [String] description of the file to resolve and import.
       # @return [String] the digest of the imported file path if a css module (*.module.css).
-      def import(filepath = nil, resolve: nil, **)
+      def import(filepath = nil, **)
         self.imported ||= {}
 
-        filepath = Resolver.resolve(resolve) if !filepath && resolve
+        filepath = "/node_modules/#{filepath}" if filepath.start_with?('@rubygems/')
         css_module = filepath.end_with?('.module.css')
 
         unless self.imported.key?(filepath)
@@ -84,7 +83,7 @@ module Proscenium
         return unless Proscenium.config.side_load
 
         if !filepath.is_a?(Pathname) || !filepath.absolute?
-          raise ArgumentError, "`filepath` (#{filepath}) must be an absolute file system path"
+          raise ArgumentError, "`filepath` (#{filepath}) must be a `Pathname`, and an absolute path"
         end
 
         filepath = filepath.sub_ext('')
