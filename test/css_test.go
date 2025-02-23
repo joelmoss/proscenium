@@ -140,7 +140,7 @@ var _ = Describe("b.BuildToString(css)", func() {
 			});
 		`
 
-		When("Bundle = false", func() {
+		When("Bundle = true", func() {
 			BeforeEach(func() {
 				types.Config.Bundle = true
 			})

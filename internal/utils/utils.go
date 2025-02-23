@@ -51,7 +51,7 @@ func ToDigest(s string) string {
 	path := ""
 
 	if types.Config.Environment == types.DevEnv {
-		re := regexp.MustCompile(`[/.]`)
+		re := regexp.MustCompile(`[/.@]`)
 		path = "__" + re.ReplaceAllLiteralString(strings.TrimPrefix(s, "/"), "-")
 	}
 
