@@ -252,15 +252,13 @@ import Header from "/app/components/header";
 
 ### Unbundling
 
-Sometimes you don't want to bundle an import. For example, you want to ensure that only one instance of React is loaded. In this cases, you can use the `unbundle` prefix
+Sometimes you don't want to bundle an import. For example, you want to ensure that only one instance of React is loaded. In these cases, you can use the `unbundle` import attribute:
 
 ```js
-import React from "unbundle:react";
+import React from "react" with { unbundle: 'true' };
 ```
 
-This only works any bare and local imports.
-
-You can also use the `unbundle` prefix in your [import map](#import-maps), which ensures that all imports of a particular path is always unbundled:
+You can also unbundle entries in your [import map](#import-maps) using an `unbundle:` prefix, which ensures that all imports of a particular path are always unbundled:
 
 ```json
 {

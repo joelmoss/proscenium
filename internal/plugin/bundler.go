@@ -71,7 +71,12 @@ var Bundler = esbuild.Plugin{
 				debug.Debug("OnResolve(@rubygems/*):begin", args)
 
 				result := esbuild.OnResolveResult{Path: args.Path}
+
 				unbundled := resolveUnbundledPrefix(&result)
+				if args.With["unbundle"] == "true" {
+					unbundled = true
+				}
+
 				result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
 				gemName, gemPath, err := utils.ResolveRubyGem(result.Path)
@@ -161,6 +166,9 @@ var Bundler = esbuild.Plugin{
 				}
 
 				unbundled := resolveUnbundledPrefix(&result)
+				if args.With["unbundle"] == "true" {
+					unbundled = true
+				}
 
 				if resolveWithImportMap(&result, args.ResolveDir) {
 					if resolveUnbundledPrefix(&result) {
