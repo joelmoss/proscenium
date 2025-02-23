@@ -84,7 +84,7 @@ module Proscenium
         return unless Proscenium.config.side_load
 
         if !filepath.is_a?(Pathname) || !filepath.absolute?
-          raise ArgumentError, '`filepath` must be an absolute file system path'
+          raise ArgumentError, "`filepath` (#{filepath}) must be an absolute file system path"
         end
 
         filepath = filepath.sub_ext('')

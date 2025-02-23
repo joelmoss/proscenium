@@ -94,9 +94,6 @@ func build(path string, outputToPath bool) esbuild.BuildResult {
 			"nesting": false,
 		},
 
-		// TODO: Will using aliases instead of import map be faster?
-		// Alias: map[string]string{"foo/sdf.js": "./lib/foo.js"},
-
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
 		// uses CJS.
