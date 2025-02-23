@@ -7,8 +7,6 @@ module Gem3
     # isolate_namespace Gem3
     engine_name 'gem3'
 
-    config.proscenium.engines[:gem3] = root
-
     initializer 'gem3.autoload' do
       # ActiveSupport::Dependencies.autoload_paths << "#{root}/app"
 

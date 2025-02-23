@@ -26,13 +26,16 @@ func ToString(a interface{}) (string, bool) {
 	return "", false
 }
 
-func HasExtension(name string) bool {
-	return path.Ext(name) != ""
+func HasExtension(name string) (extension string, found bool) {
+	ext := path.Ext(name)
+	return ext, ext != ""
 }
 
 func IsBareModule(name string) bool {
 	return !path.IsAbs(name) && !PathIsRelative(name)
 }
+
+var IsBareSpecifier = IsBareModule
 
 func IsUrl(name string) bool {
 	var re = regexp.MustCompile(`^https?:\/\/`)
@@ -97,6 +100,10 @@ func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {
 	return PathIsSvg(path) && PathIsCss(args.Importer)
 }
 
+func RemoveRubygemPrefix(path string, gemName string) string {
+	return strings.TrimPrefix(path, types.RubyGemsScope+gemName)
+}
+
 // Extracts the package name from a path. For example, given the path "@rubygems/foo/bar.js", it
 // will return "foo".
 func extractScopedPackageName(path string) string {
@@ -115,17 +122,52 @@ func extractScopedPackageName(path string) string {
 	return rest[:secondSlash]
 }
 
-func IsRubyGem(path string) bool {
-	return strings.HasPrefix(path, types.RubyGemsScope)
+func PathIsRubyGem(path string) (gemName string, gemPath string, found bool) {
+	for gemName, gemPath := range types.Config.RubyGems {
+		if strings.HasPrefix(path, gemPath) {
+			return gemName, gemPath, true
+		}
+	}
+	return "", "", false
 }
 
-func ResolveRubyGem(path string) (gemName string, err error) {
-	name := extractScopedPackageName(path)
-
-	if _, exists := types.Config.RubyGems[name]; exists {
-		return name, nil
-	} else {
-		return "", fmt.Errorf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
+// Checks if the given path is a Ruby gem, ie. starts with "@rubygems/" or "node_modules/@rubygems".
+// If the second argument is true, it will only return true if the path starts with
+// "node_modules/@rubygems".
+func IsRubyGem(path string, mustBeFromNodeModules ...bool) bool {
+	// Default value is false if no argument provided
+	_mustBeFromNodeModules := false
+	if len(mustBeFromNodeModules) > 0 {
+		_mustBeFromNodeModules = mustBeFromNodeModules[0]
 	}
 
+	if _mustBeFromNodeModules {
+		return strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
+	}
+
+	return strings.HasPrefix(path, types.RubyGemsScope) || strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
+}
+
+func ResolveRubyGem(path string) (gemName string, gemPath string, err error) {
+	name := extractScopedPackageName(path)
+
+	if gemPath, exists := types.Config.RubyGems[name]; exists {
+		return name, gemPath, nil
+	} else {
+		return "", "", fmt.Errorf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
+	}
+}
+
+// Converts an absolute Rubygem file system path to a URL path.
+//
+// Example:
+//
+//	"/full/path/to/rubygems/@rubygems/foo/bar" -> "/node_modules/@rubygems/foo/bar"
+func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
+	if gemName, gemPath, ok := PathIsRubyGem(fsPath); ok {
+		suffix := strings.TrimPrefix(fsPath, gemPath)
+		return path.Join("/node_modules", types.RubyGemsScope, gemName, suffix), true
+	}
+
+	return "", false
 }

@@ -5,23 +5,33 @@ module Proscenium
     module_function
 
     def paths
-      specs = Bundler.load.specs.reject { |s| s.name == 'bundler' }.sort_by(&:name)
+      @paths ||= begin
+        specs = Bundler.load.specs.reject { |s| s.name == 'bundler' }.sort_by(&:name)
 
-      raise 'No gems in your Gemfile' if specs.empty?
+        raise 'No gems in your Gemfile' if specs.empty?
 
-      bundle = {}
-      specs.each do |s|
-        bundle[s.name] = s.full_gem_path
+        bundle = {}
+        specs.each do |s|
+          bundle[s.name] = if s.name == 'proscenium'
+                             Pathname(s.full_gem_path).join('lib/proscenium/ui').to_s
+                           else
+                             s.full_gem_path
+                           end
+        end
+        bundle
       end
-      bundle
     end
 
-    # def pathname_for(name)
-    #   spec = Bundler.load.specs.find { |s| s.name == name }
+    def pathname_for(name)
+      (path = paths[name]) ? Pathname(path) : nil
+    end
 
-    #   raise "Gem `#{name}` not found in your Gemfile" unless spec
+    def pathname_for!(name)
+      unless (path = pathname_for(name))
+        raise "Gem `#{name}` not found in your Gemfile"
+      end
 
-    #   Pathname spec.full_gem_path
-    # end
+      path
+    end
   end
 end

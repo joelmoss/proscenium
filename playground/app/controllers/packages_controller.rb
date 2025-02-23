@@ -94,7 +94,7 @@ class PackagesController < ActionController::API
 
   def package_json
     @package_json ||= begin
-      path = Proscenium::Gems.path_for(gem_name, package_version).join('package.json')
+      path = Proscenium::RubyGems.path_for(gem_name, package_version).join('package.json')
       if path.exist?
         JSON.parse path.read
       else

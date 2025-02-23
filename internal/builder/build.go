@@ -12,29 +12,27 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-type Output uint8
-
-const (
-	OutputToString Output = iota + 1
-	OutputToPath
-)
-
-// Build the given `path` in the `config.RootPath`.
+// Build the given `path`.
 //
-// - path - The path to build relative to `root`.
-// - config
-//   - RootPath - The working directory, usually Rails root.
-//   - GemPath - Proscenium gem root.
-//   - Environment - The environment (1 = development, 2 = test, 3 = production)
-//   - EnvVars - Map of environment variables.
-//   - Engines- Map of Rails engine names and paths.
-//   - CodeSpitting?
-//   - Bundle?
-//   - Debug?
+// - path - The path to build relative to `root`. Multiple paths can be separated by a semicolon.
+// - output - The output format. Defaults to `outputToString`. Can also be `outputToPath`.
 //
 //export build
-func Build(path string, args ...Output) esbuild.BuildResult {
+func build(path string, outputToPath bool) esbuild.BuildResult {
 	entrypoints := strings.Split(path, ";")
+
+	// Ensure entrypoints are bare specifiers (do not begin with a `/`, `./` or `../`).
+	for i, entrypoint := range entrypoints {
+		if !utils.IsBareSpecifier(entrypoint) {
+			return esbuild.BuildResult{
+				Errors: []esbuild.Message{{
+					Text:   fmt.Sprintf("Could not resolve %q", entrypoint),
+					Detail: "Entrypoints must be bare specifiers",
+				}},
+			}
+		}
+		entrypoints[i] = entrypoint
+	}
 
 	_, err := importmap.Imports()
 	if err != nil {
@@ -46,11 +44,6 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 		}
 	}
 
-	output := OutputToString
-	if len(args) > 0 {
-		output = args[0]
-	}
-
 	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
 
 	logLevel := esbuild.LogLevelSilent
@@ -59,7 +52,7 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if output == OutputToPath {
+	if outputToPath {
 		sourcemap = esbuild.SourceMapLinked
 	} else if strings.HasSuffix(path, ".map") {
 		path = strings.TrimSuffix(path, ".map")
@@ -88,7 +81,7 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          output == OutputToPath,
+		Metafile:          outputToPath,
 		Target:            esbuild.ES2022,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
@@ -111,9 +104,9 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 	}
 
 	buildOptions.Plugins = []esbuild.Plugin{
+		plugin.Http,
 		plugin.I18n,
 		plugin.Rjs(),
-		plugin.Ui,
 	}
 
 	if types.Config.Bundle {
@@ -138,7 +131,7 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 		buildOptions.Define = definitions
 		buildOptions.Define["global"] = "window"
 
-		if output == OutputToPath {
+		if outputToPath {
 			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
 		}
 	}

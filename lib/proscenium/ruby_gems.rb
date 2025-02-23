@@ -4,7 +4,7 @@ require 'rubygems/package'
 require 'rubygems/remote_fetcher'
 
 module Proscenium
-  class Gems
+  class RubyGems
     def self.path_for(name, version = nil)
       Pathname new(name, version).path
     end

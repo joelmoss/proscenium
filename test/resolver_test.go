@@ -3,6 +3,8 @@ package proscenium_test
 import (
 	"joelmoss/proscenium/internal/importmap"
 	r "joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/types"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -35,6 +37,70 @@ var _ = Describe("Resolve", func() {
 
 	It("resolves bare specifier", func() {
 		Expect(r.Resolve("mypackage", "")).To(Equal("/packages/mypackage/index.js"))
+	})
+
+	Context("relative @rubygems/*", func() {
+		It("resolves gem", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
+			}
+
+			Expect(r.Resolve("@rubygems/gem1/index.js", "")).To(Equal(
+				"/node_modules/@rubygems/gem1/index.js",
+			))
+		})
+
+		It("resolves gem without file extension", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
+			}
+
+			Expect(r.Resolve("@rubygems/gem1", "")).To(Equal("/node_modules/@rubygems/gem1/index.js"))
+		})
+
+		It("resolves relative path with importer", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
+			}
+
+			importer := "/Users/joelmoss/dev/proscenium/fixtures/dummy/vendor/gem3/lib/gem3/styles.module.css"
+			Expect(r.Resolve("./red.css", importer)).To(Equal(
+				"/node_modules/@rubygems/gem3/lib/gem3/red.css",
+			))
+		})
+	})
+
+	Context("external @rubygems/*", func() {
+		It("resolves gem", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
+			}
+
+			Expect(r.Resolve("@rubygems/gem2/lib/gem2/gem2.js", "")).To(Equal(
+				"/node_modules/@rubygems/gem2/lib/gem2/gem2.js",
+			))
+		})
+
+		It("resolves gem without file extension", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
+			}
+
+			Expect(r.Resolve("@rubygems/gem2/lib/gem2/gem2", "")).To(Equal(
+				"/node_modules/@rubygems/gem2/lib/gem2/gem2.js",
+			))
+		})
+
+		It("resolves relative path with importer", func() {
+			types.Config.RubyGems = map[string]string{
+				"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
+			}
+
+			importer := "/Users/joelmoss/dev/proscenium/fixtures/external/gem4/lib/gem4/styles.module.css"
+			Expect(r.Resolve("./red.css", importer)).To(Equal(
+				"/node_modules/@rubygems/gem4/lib/gem4/red.css",
+			))
+		})
 	})
 
 	It("resolves directory to its index file", func() {

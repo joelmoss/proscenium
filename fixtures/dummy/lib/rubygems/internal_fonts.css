@@ -3,5 +3,5 @@
   font-weight: 300;
   font-style: normal;
   font-display: swap;
-  src: local("SomeFont"), url("/gem5/somefont.woff2") format("woff2");
+  src: local("SomeFont"), url("@rubygems/gem1/somefont.woff2") format("woff2");
 }

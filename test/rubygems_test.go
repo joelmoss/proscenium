@@ -11,12 +11,22 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("@rubygems scoped imports", func() {
-	When("gem not found", func() {
-		It("should resolve to installed ruby gem", func() {
-			result := b.Build("lib/rubygems/vendored.js")
+var _ = Describe("@rubygems scoped paths", func() {
+	Context("entrypoint", func() {
+		It("fails if gem not found", func() {
+			success, result := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
 
-			Expect(result.Errors[0].Text).To(ContainSubstring("Could not resolve Ruby gem \"gem1\""))
+			Expect(success).To(BeFalse())
+			Expect(result).To(ContainSubstring(`Could not resolve Ruby gem \"gem1\"`))
+		})
+	})
+
+	Context("import", func() {
+		It("fails if gem not found", func() {
+			success, result := b.BuildToString("lib/rubygems/vendored.js")
+
+			Expect(success).To(BeFalse())
+			Expect(result).To(ContainSubstring(`Could not resolve Ruby gem \"gem1\"`))
 		})
 	})
 
@@ -25,88 +35,214 @@ var _ = Describe("@rubygems scoped imports", func() {
 			types.Config.Bundle = true
 		})
 
-		It("should resolve vendored ruby gem", func() {
-			addGem("gem1", "dummy/vendor")
-
-			Expect(b.Build("lib/rubygems/vendored.js")).To(ContainCode(`
-				console.log("gem1");
-			`))
-		})
-
-		It("should resolve external ruby gem", func() {
-			addGem("gem2", "external")
-
-			Expect(b.Build("lib/rubygems/external.js")).To(ContainCode(`
-				console.log("gem2");
-			`))
-		})
-
-		It("should resolve without extension", func() {
-			addGem("gem1", "dummy/vendor")
-
-			Expect(b.Build("lib/rubygems/extensionless.js")).To(ContainCode(`
-				console.log("gem1");
-			`))
-		})
-
-		It("should resolve without filename (index)", func() {
-			addGem("gem1", "dummy/vendor")
-
-			Expect(b.Build("lib/rubygems/filenameless.js")).To(ContainCode(`
-				console.log("gem1/index.js");
-			`))
-		})
-
-		// FIt("should resolve entry point", func() {
-		// 	Expect(b.Build("@rubygems/gem1/lib/gem1/gem1.js")).To(ContainCode(`
-		// 		console.log("gem1");
-		// 	`))
-		// })
-
-		Describe("unbundle:* vendored gem", func() {
-			It("should unbundle import", func() {
+		Describe("inside root", func() {
+			BeforeEach(func() {
 				addGem("gem1", "dummy/vendor")
+			})
 
-				Expect(b.Build("lib/rubygems/unbundle_vendored.js")).To(ContainCode(`
-					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+			It("bundles", func() {
+				_, code := b.BuildToString("lib/rubygems/vendored.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem1");
 				`))
+			})
+
+			It("bundles without extension", func() {
+				_, code := b.BuildToString("lib/rubygems/vendored_extensionless.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem1");
+				`))
+			})
+
+			It("resolves entry point", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem1");
+				`))
+			})
+
+			It("bundles from entrypoint", func() {
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
+
+				_, code := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
+
+				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
+				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
+				Expect(code).To(ContainCode(`console.log("gem3/foo")`))
+				Expect(code).To(ContainCode(`console.log("gem3")`))
+				Expect(code).To(ContainCode(`console.log("gem1")`))
+				Expect(code).To(ContainCode(`console.log("gem4")`))
+				Expect(code).To(ContainCode(`h1 { color: red; }`))
+				Expect(code).To(ContainCode(`h2 { color: blue; }`))
+				Expect(code).To(ContainCode(`h3 { color: green; }`))
+				Expect(code).To(ContainCode(`console.log("lib/gem3/gem3")`))
+			})
+
+			It("bundles from import", func() {
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
+
+				_, code := b.BuildToString("lib/gems/gem3.js")
+
+				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
+				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
+				Expect(code).To(ContainCode(`console.log("gem3/foo")`))
+				Expect(code).To(ContainCode(`console.log("gem3")`))
+				Expect(code).To(ContainCode(`console.log("gem1")`))
+				Expect(code).To(ContainCode(`console.log("gem4")`))
+				Expect(code).To(ContainCode(`h1 { color: red; }`))
+				Expect(code).To(ContainCode(`h2 { color: blue; }`))
+				Expect(code).To(ContainCode(`h3 { color: green; }`))
+				Expect(code).To(ContainCode(`console.log("lib/gem3/gem3")`))
+			})
+
+			When("unbundle:* on import", func() {
+				It("unbundles", func() {
+					_, code := b.BuildToString("lib/rubygems/unbundle_vendored.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+					`))
+				})
+			})
+
+			When("unbundle:* in import map", func() {
+				It("unbundles", func() {
+					importmap.NewJsonImportMap([]byte(`{
+						"imports": {
+							"@rubygems/gem1/": "unbundle:@rubygems/gem1/"
+						}
+					}`))
+
+					_, code := b.BuildToString("lib/rubygems/vendored.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+					`))
+				})
+			})
+
+			It("does not bundle fonts", func() {
+				_, code := b.BuildToString("lib/rubygems/internal_fonts.css")
+
+				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2)`))
 			})
 		})
 
-		Describe("unbundle:* external gem", func() {
-			It("should unbundle import", func() {
+		Describe("outside root", func() {
+			BeforeEach(func() {
 				addGem("gem2", "external")
+			})
 
-				Expect(b.Build("lib/rubygems/unbundle_external.js")).To(ContainCode(`
-					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+			It("bundles", func() {
+				_, code := b.BuildToString("lib/rubygems/external.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem2");
 				`))
 			})
-		})
 
-		Describe("unbundle:* in import map", func() {
-			It("should unbundle", func() {
+			It("bundles without extension", func() {
+				_, code := b.BuildToString("lib/rubygems/external_extensionless.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem2");
+				`))
+			})
+
+			It("resolves entry point", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem2");
+				`))
+			})
+
+			It("bundles from entrypoint", func() {
 				addGem("gem1", "dummy/vendor")
-				importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"@rubygems/gem1/": "unbundle:@rubygems/gem1/"
-					}
-				}`))
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
 
-				Expect(b.Build("lib/rubygems/vendored.js")).To(ContainCode(`
-					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
-				`))
+				_, code := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
+
+				Expect(code).To(ContainCode(`document.querySelector("#_3ddf717c")`))
+				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
+				Expect(code).To(ContainCode(`.name-3ddf717c`))
+
+				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
+				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
+				Expect(code).To(ContainCode(`console.log("gem4/foo")`))
+				Expect(code).To(ContainCode(`console.log("gem4")`))
+				Expect(code).To(ContainCode(`console.log("gem3")`))
+				Expect(code).To(ContainCode(`console.log("gem2")`))
+				Expect(code).To(ContainCode(`h1 { color: red; }`))
+				Expect(code).To(ContainCode(`h2 { color: blue; }`))
+				Expect(code).To(ContainCode(`h3 { color: green; }`))
+				Expect(code).To(ContainCode(`console.log("lib/gem4/gem4")`))
 			})
-		})
 
-		It("should resolve nested imports", func() {
-			addGem("gem1", "dummy/vendor")
-			addGem("gem2", "external")
+			It("bundles from import", func() {
+				addGem("gem1", "dummy/vendor")
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
 
-			result := b.Build("lib/rubygems/nested_imports.js")
+				_, code := b.BuildToString("lib/gems/gem4.js")
 
-			Expect(result).To(ContainCode(`console.log("gem1");`))
-			Expect(result).To(ContainCode(`console.log("gem2");`))
-			Expect(result).To(ContainCode(`console.log("node_modules/mypackage");`))
+				Expect(code).To(ContainCode(`document.querySelector("#_3ddf717c")`))
+				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
+				Expect(code).To(ContainCode(`.name-3ddf717c`))
+
+				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
+				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
+				Expect(code).To(ContainCode(`console.log("gem4/foo")`))
+				Expect(code).To(ContainCode(`console.log("gem4")`))
+				Expect(code).To(ContainCode(`console.log("gem3")`))
+				Expect(code).To(ContainCode(`console.log("gem2")`))
+				Expect(code).To(ContainCode(`h1 { color: red; }`))
+				Expect(code).To(ContainCode(`h2 { color: blue; }`))
+				Expect(code).To(ContainCode(`h3 { color: green; }`))
+				Expect(code).To(ContainCode(`console.log("lib/gem4/gem4")`))
+			})
+
+			When("unbundle:* on import", func() {
+				It("unbundles", func() {
+					_, code := b.BuildToString("lib/rubygems/unbundle_external.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+					`))
+				})
+			})
+
+			Describe("unbundle:* in import map", func() {
+				It("unbundles", func() {
+					importmap.NewJsonImportMap([]byte(`{
+						"imports": {
+							"@rubygems/gem2/": "unbundle:@rubygems/gem2/"
+						}
+					}`))
+
+					_, code := b.BuildToString("lib/rubygems/external.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+					`))
+				})
+			})
+
+			It("does not bundle fonts", func() {
+				_, code := b.BuildToString("lib/rubygems/external_fonts.css")
+
+				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem2/somefont.woff2)`))
+			})
 		})
 	})
 
@@ -115,36 +251,134 @@ var _ = Describe("@rubygems scoped imports", func() {
 			types.Config.Bundle = false
 		})
 
-		It("should resolve vendored ruby gem", func() {
-			addGem("gem1", "dummy/vendor")
+		Describe("inside root", func() {
+			BeforeEach(func() {
+				addGem("gem1", "dummy/vendor")
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
+			})
 
-			Expect(b.Build("lib/rubygems/vendored.js")).To(ContainCode(`
-				import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
-			`))
+			It("bundles", func() {
+				_, code := b.BuildToString("lib/rubygems/vendored.js")
+
+				Expect(code).To(ContainCode(`
+					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+				`))
+			})
+
+			It("bundles without extension", func() {
+				_, code := b.BuildToString("lib/rubygems/vendored_extensionless.js")
+
+				Expect(code).To(ContainCode(`
+					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+				`))
+			})
+
+			It("resolves entry point", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem1");
+				`))
+			})
+
+			It("rubygem is resolved before import map", func() {
+				importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"@rubygems/gem3/lib/gem3/console.js": "/lib/foo.js",
+					}
+				}`))
+
+				_, code := b.BuildToString("lib/rubygems/gem3.js")
+
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
+			})
+
+			It("resolves imports", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
+
+				Expect(code).To(ContainCode(`import { one } from "/packages/mypackage/treeshake.js";`))
+				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem3/lib/gem3/imported.js";`))
+				Expect(code).To(ContainCode(`import "/lib/foo.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/foo.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem1/lib/gem1/console.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/console.js";`))
+				Expect(code).To(ContainCode(`import styles from "/node_modules/@rubygems/gem3/lib/gem3/styles.module.css";`))
+				Expect(code).To(ContainCode(`console.log("lib/gem3/gem3")`))
+			})
+
+			It("does not bundle fonts", func() {
+				_, code := b.BuildToString("lib/rubygems/internal_fonts.css")
+
+				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2)`))
+			})
 		})
 
-		It("should resolve external ruby gem", func() {
-			addGem("gem2", "external")
+		Describe("outside root", func() {
+			BeforeEach(func() {
+				addGem("gem2", "external")
+			})
 
-			Expect(b.Build("lib/rubygems/external.js")).To(ContainCode(`
-				import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
-			`))
-		})
+			It("bundles", func() {
+				_, code := b.BuildToString("lib/rubygems/external.js")
 
-		It("should resolve without extension", func() {
-			addGem("gem1", "dummy/vendor")
+				Expect(code).To(ContainCode(`
+					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+				`))
+			})
 
-			Expect(b.Build("lib/rubygems/extensionless.js")).To(ContainCode(`
-				import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
-			`))
-		})
+			It("bundles without extension", func() {
+				_, code := b.BuildToString("lib/rubygems/external_extensionless.js")
 
-		It("should resolve without filename (index)", func() {
-			addGem("gem1", "dummy/vendor")
+				Expect(code).To(ContainCode(`
+					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+				`))
+			})
 
-			Expect(b.Build("lib/rubygems/filenameless.js")).To(ContainCode(`
-				import "/node_modules/@rubygems/gem1/index.js";
-			`))
+			It("resolves entry point", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+
+				Expect(code).To(ContainCode(`
+					console.log("gem2");
+				`))
+			})
+
+			It("rubygem is resolved before import map", func() {
+				importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"@rubygems/gem2/lib/gem2/console.js": "/lib/foo.js",
+					}
+				}`))
+
+				_, code := b.BuildToString("lib/rubygems/gem2.js")
+
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
+			})
+
+			It("resolves import", func() {
+				addGem("gem1", "dummy/vendor")
+				addGem("gem3", "dummy/vendor")
+				addGem("gem4", "external")
+
+				_, code := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
+
+				Expect(code).To(ContainCode(`import { one } from "/packages/mypackage/treeshake.js";`))
+				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem4/lib/gem4/imported.js";`))
+				Expect(code).To(ContainCode(`import "/lib/foo.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/foo.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/console.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
+				Expect(code).To(ContainCode(`import styles from "/node_modules/@rubygems/gem4/lib/gem4/styles.module.css";`))
+				Expect(code).To(ContainCode(`console.log("lib/gem4/gem4")`))
+			})
+
+			It("does not bundle fonts", func() {
+				_, code := b.BuildToString("lib/rubygems/external_fonts.css")
+
+				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem2/somefont.woff2)`))
+			})
 		})
 	})
 })

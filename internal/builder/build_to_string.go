@@ -7,8 +7,12 @@ import (
 	"strings"
 )
 
-func BuildToString(filePath string) (bool, string) {
-	result := Build(filePath, OutputToString)
+// Builds the given `filePath`, which should be a full URL path, but without the leading slash, and
+// returns the contents as a string.
+//
+// Only used by the Esbuild middleware. See Proscenium::Middleware::Esbuild.
+func BuildToString(filePath string) (success bool, code string) {
+	result := build(filePath, false)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])

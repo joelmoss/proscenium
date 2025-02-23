@@ -9,7 +9,7 @@ module Proscenium
 
     autoload :Base
     autoload :Esbuild
-    autoload :Engines
+    autoload :RubyGems
 
     def initialize(app)
       @app = app
@@ -39,20 +39,19 @@ module Proscenium
     end
 
     def find_type(request)
-      return Esbuild if Pathname.new(request.path).fnmatch?(app_path_glob, File::FNM_EXTGLOB)
-
       pathname = Pathname.new(request.path)
-      Engines if pathname.fnmatch?(ui_path_glob, File::FNM_EXTGLOB) ||
-                 pathname.fnmatch?(engines_path_glob, File::FNM_EXTGLOB)
+
+      return RubyGems if pathname.fnmatch?(gems_path_glob, File::FNM_EXTGLOB)
+
+      Esbuild if pathname.fnmatch?(app_path_glob, File::FNM_EXTGLOB)
     end
 
     def app_path_glob
       "/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{file_extensions}}"
     end
 
-    def engines_path_glob
-      names = Proscenium.config.engines.keys
-      "/{#{names.join(',')}}/{#{Proscenium::ALLOWED_DIRECTORIES}}/**.{#{file_extensions}}"
+    def gems_path_glob
+      "/node_modules/@rubygems/**.{#{file_extensions}}"
     end
 
     def ui_path_glob

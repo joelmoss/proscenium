@@ -3,20 +3,31 @@ package builder
 import (
 	"encoding/json"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"path/filepath"
 	"strings"
 )
 
-var libsSplitPath = "/proscenium/ui/"
-
-// Return a mapping of path inputs to outputs.
+// Builds the given URL file path to a file located in public/assets, It returns a mapping of the
+// path input to its output file path as a string seperated by double colon `::`. The input path can
+// also be multiple files each separated by a semicolon.
 //
-// Output example:
+// Each output file is appended with a unique hash to support caching.
 //
-//	lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
-//	lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
-func BuildToPath(filePath string) (bool, string) {
-	result := Build(filePath, OutputToPath)
+// Note that this function is only used by side loading and the `compute_asset_path` Rails helper,
+// so expects and only supports a full URL path.
+//
+// Example:
+//
+//	input: "lib/foo.js"
+//	output: "lib/foo.js::public/assets/lib/foo$2IXPSM5U$.js"
+//
+// or with multiple files:
+//
+//	input: "son.js;daughter.js"
+//	output: "son.js::public/assets/son$LAGMAD6O$.js;daughter.js::public/assets/daughter$7JJ2HGHC$.js"
+func BuildToPath(filePath string) (success bool, paths string) {
+	result := build(filePath, true)
 	entrypoints := strings.Split(filePath, ";")
 
 	if len(result.Errors) != 0 {
@@ -28,17 +39,17 @@ func BuildToPath(filePath string) (bool, string) {
 		return false, string(j)
 	}
 
-	// Paths which are not a descendent of the root will be returned as a relative path. For
-	// example: `gem4/lib/gem4/gem4.js` will be returned as `../external/gem4/lib/gem4/gem4.js`. And
-	// that means the returned mapping will be incorrect, as the keys of the map are the original
-	// entrypoints. They need to match the returned paths.
+	// Paths which are not a descendent of the root will be returned as a relative path, which will
+	// usually be RubyGems. For example: `gem4/lib/gem4/gem4.js` will be returned as
+	// `../external/gem4/lib/gem4/gem4.js`. And that means the returned mapping will be incorrect, as
+	// the keys of the map are the original entrypoints. They need to match the returned paths.
 	mapping := map[string]string{}
 	for _, ep := range entrypoints {
 		relPath := entryPointToRelativePath(ep)
 		if relPath == ep {
 			mapping[ep] = ""
 		} else {
-			mapping[entryPointToRelativePath(ep)] = ep
+			mapping[relPath] = ep
 		}
 	}
 
@@ -48,15 +59,12 @@ func BuildToPath(filePath string) (bool, string) {
 		return false, string(err.Error())
 	}
 
+	// Find the output file path for each entrypoint.
 	m := meta.(map[string]interface{})
 	for output, v := range m["outputs"].(map[string]interface{}) {
-		for k, input := range v.(map[string]interface{}) {
+		for k, relativeEntrypoint := range v.(map[string]interface{}) {
 			if k == "entryPoint" {
-				key := input.(string)
-				if strings.Contains(key, libsSplitPath) {
-					sliced := strings.Split(key, libsSplitPath)
-					key = "proscenium/" + sliced[len(sliced)-1]
-				}
+				key := relativeEntrypoint.(string)
 
 				if mapping[key] == "" {
 					mapping[key] = output
@@ -79,13 +87,19 @@ func BuildToPath(filePath string) (bool, string) {
 func entryPointToRelativePath(entryPoint string) string {
 	relPath := ""
 
-	for key, value := range types.Config.Engines {
-		prefix := key + "/"
-		if strings.HasPrefix(entryPoint, prefix) {
-			newPath := filepath.Join(value, strings.TrimPrefix(entryPoint, prefix))
-			relPath, _ = filepath.Rel(types.Config.RootPath, newPath)
-			break
+	// Ruby gems must begin with `node_modules/`.
+	if utils.IsRubyGem(entryPoint, true) {
+		entryPoint = strings.TrimPrefix(entryPoint, "node_modules/")
+
+		gemName, gemPath, err := utils.ResolveRubyGem(entryPoint)
+		if err != nil {
+			return entryPoint
 		}
+
+		// Trim "@rubygems/gemName/" prefix from the entryPoint and append the rest to the gemPath.
+		entryPointPath := utils.RemoveRubygemPrefix(entryPoint, gemName)
+		newPath := filepath.Join(gemPath, entryPointPath)
+		relPath, _ = filepath.Rel(types.Config.RootPath, newPath)
 	}
 
 	if relPath != "" {

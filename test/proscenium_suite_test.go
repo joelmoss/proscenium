@@ -6,6 +6,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 
@@ -13,6 +14,9 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var cwd, _ = os.Getwd()
+var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
 
 func TestProscenium(t *testing.T) {
 	RegisterFailHandler(Fail)

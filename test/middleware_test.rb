@@ -41,45 +41,43 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     end
   end
 
-  context 'unsupported path' do
+  context 'unsupported/unknown path' do
     let(:app) { subject.new HelloApp }
 
     it 'passes through' do
-      get '/db/some.js'
+      get '/lib/some.js'
 
       assert_equal 'Hello, World!', response.body
     end
   end
 
-  context 'vendored engine with package.json' do
-    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
-      get '/gem1/lib/gem1/gem1.js'
+  context '@rubygems/*' do
+    it 'builds local with package.json' do
+      get '/node_modules/@rubygems/gem1/lib/gem1/gem1.js'
 
       assert_includes response.body, 'console.log("gem1");'
     end
-  end
 
-  context 'vendored engine without package.json' do
-    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
-      get '/gem3/lib/gem3/gem3.js'
+    it 'builds local without package.json' do
+      get '/node_modules/@rubygems/gem3/lib/gem3/gem3.js'
 
       assert_includes response.body, 'console.log("gem3");'
     end
-  end
 
-  context 'un-vendored engine with package.json' do
-    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
-      get '/gem2/lib/gem2/gem2.js'
+    context 'un-vendored gem with package.json' do
+      it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+        get '/node_modules/@rubygems/gem2/lib/gem2/gem2.js'
 
-      assert_includes response.body, 'console.log("gem2");'
+        assert_includes response.body, 'console.log("gem2");'
+      end
     end
-  end
 
-  context 'un-vendored engine without package.json' do
-    it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
-      get '/gem4/lib/gem4/gem4.js'
+    context 'un-vendored gem without package.json' do
+      it 'serves assets from allowed dirs at /[GEM_NAME]/*' do
+        get '/node_modules/@rubygems/gem4/lib/gem4/gem4.js'
 
-      assert_includes response.body, 'console.log("gem4");'
+        assert_includes response.body, 'console.log("gem4");'
+      end
     end
   end
 
@@ -126,8 +124,8 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     ).squish
   end
 
-  it 'serves proscenium/* runtime libs' do
-    get '/proscenium/test.js'
+  it 'serves proscenium/* runtime libs direct from lib/proscenium/ui' do
+    get '/node_modules/@rubygems/proscenium/test.js'
 
     assert_includes response.body, 'console.log("proscenium/test.js")'
   end

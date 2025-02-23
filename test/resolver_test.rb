@@ -11,7 +11,7 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
         error = assert_raises ArgumentError do
           subject.resolve('./foo')
         end
-        assert_equal 'path must be an absolute file system or URL path', error.message
+        assert_equal '`path` must be an absolute file system or URL path', error.message
       end
     end
 
@@ -43,8 +43,8 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
 
     context 'proscenium runtime' do
       it 'resolves' do
-        assert_equal '/proscenium/react-manager/index.jsx',
-                     subject.resolve('proscenium/react-manager/index.jsx')
+        assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
+                     subject.resolve('@rubygems/proscenium/react-manager/index.jsx')
       end
     end
   end
