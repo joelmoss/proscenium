@@ -81,7 +81,6 @@ module Proscenium
     def initialize(root: nil, bundle: nil)
       bundle = Proscenium.config.bundle if bundle.nil?
 
-      # TODO: constantlise this, as it will be generated on every call! benchmark!
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
