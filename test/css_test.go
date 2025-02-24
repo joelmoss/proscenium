@@ -135,7 +135,7 @@ var _ = Describe("b.BuildToString(css)", func() {
 			}
 			var styles_default = new Proxy({}, {
 				get(t, p, r) {
-					return prop in t || typeof p === "symbol" ? Reflect.get(t, p, r) : p + "-330940eb";
+					return p in t || typeof p === "symbol" ? Reflect.get(t, p, r) : p + "-330940eb";
 				}
 			});
 		`

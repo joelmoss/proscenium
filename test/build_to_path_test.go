@@ -62,7 +62,7 @@ var _ = Describe("BuildToPath", func() {
 
 			_, code := b.BuildToPath("node_modules/@rubygems/gem4/lib/gem4/gem4.js;lib/gems/gem3.js;lib/foo.css")
 
-			Expect(code).To(Equal("node_modules/@rubygems/gem4/lib/gem4/gem4.js::public/assets/node_modules/@rubygems/gem4/lib/gem4/gem4$SKI7JDBI$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$A3M6YYQ3$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
+			Expect(code).To(Equal("node_modules/@rubygems/gem4/lib/gem4/gem4.js::public/assets/node_modules/@rubygems/gem4/lib/gem4/gem4$B6JZL62F$.js;lib/gems/gem3.js::public/assets/lib/gems/gem3$QB4NOOOT$.js;lib/foo.css::public/assets/lib/foo$EAILS7QS$.css"))
 		})
 	})
 })
