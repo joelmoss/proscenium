@@ -122,7 +122,7 @@ func cssModulesProxyTemplate(hash string) string {
 	return `
     export default new Proxy( {}, {
       get(t, p, r) {
-        return prop in t || typeof p === 'symbol' ? Reflect.get(t, p, r) : p + '-` + hash + `';
+        return p in t || typeof p === 'symbol' ? Reflect.get(t, p, r) : p + '-` + hash + `';
       }
     });
 	`
