@@ -2,13 +2,7 @@
   "name": "dummy",
   "private": true,
   "dependencies": {
-    "@external/three": "link:../external/three",
-    "@rubygems/foo": "^0.0.2",
-    "external-one-link": "link:../external/one",
-    "gem1": "link:vendor/gem1",
-    "gem2": "file:../external/gem2",
-    "internal-one-link": "link:packages/one",
-    "internal-two": "file:packages/two",
+    "@rubygems/gem1": "^1.0.0",
     "mypackage": "link:packages/mypackage",
     "react": "^18.3.1"
   },

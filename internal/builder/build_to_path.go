@@ -2,6 +2,7 @@ package builder
 
 import (
 	"encoding/json"
+	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path/filepath"
@@ -78,6 +79,10 @@ func BuildToPath(filePath string) (success bool, paths string) {
 
 	contents := []string{}
 	for _, ep := range entrypoints {
+		if _, exists := mapping[ep]; !exists {
+			return false, fmt.Sprintf("Could not find output file for entrypoint: %s", ep)
+		}
+
 		contents = append(contents, ep+"::"+mapping[ep])
 	}
 
