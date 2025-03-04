@@ -2,8 +2,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
-	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -17,6 +15,18 @@ var _ = Describe("BuildToPath", func() {
 		_, result := b.BuildToPath("lib/foo.js")
 
 		Expect(result).To(Equal("lib/foo.js::public/assets/lib/foo$2IXPSM5U$.js"))
+	})
+
+	It("builds js from file:* dependency", func() {
+		_, result := b.BuildToPath("internal-one-link/index.js")
+
+		Expect(result).To(Equal("internal-one-link/index.js::public/assets/internal-one-link/index$T5LBKH5D$.js"))
+	})
+
+	It("builds js from link:* dependency", func() {
+		_, result := b.BuildToPath("mypackage/index.js")
+
+		Expect(result).To(Equal("mypackage/index.js::public/assets/mypackage/index$JDMLNL27$.js"))
 	})
 
 	It("builds css", func() {
@@ -33,9 +43,7 @@ var _ = Describe("BuildToPath", func() {
 
 	When("@rubygems/*", func() {
 		It("maps from inside app root", func() {
-			types.Config.RubyGems = map[string]string{
-				"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
-			}
+			addGem("gem1", "dummy/vendor")
 
 			_, code := b.BuildToPath("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
 
@@ -43,9 +51,7 @@ var _ = Describe("BuildToPath", func() {
 		})
 
 		It("maps from outside app root", func() {
-			types.Config.RubyGems = map[string]string{
-				"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
-			}
+			addGem("gem2", "external")
 
 			_, code := b.BuildToPath("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
 
@@ -53,12 +59,10 @@ var _ = Describe("BuildToPath", func() {
 		})
 
 		It("should return input > output mapping", func() {
-			types.Config.RubyGems = map[string]string{
-				"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
-				"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
-				"gem3": filepath.Join(fixturesRoot, "dummy", "vendor", "gem3"),
-				"gem4": filepath.Join(fixturesRoot, "external", "gem4"),
-			}
+			addGem("gem1", "dummy/vendor")
+			addGem("gem2", "external")
+			addGem("gem3", "dummy/vendor")
+			addGem("gem4", "external")
 
 			_, code := b.BuildToPath("node_modules/@rubygems/gem4/lib/gem4/gem4.js;lib/gems/gem3.js;lib/foo.css")
 

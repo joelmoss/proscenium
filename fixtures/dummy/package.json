@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "@rubygems/gem1": "^1.0.0",
+    "internal-one-link": "file:packages/one",
     "mypackage": "link:packages/mypackage",
     "react": "^18.3.1"
   },

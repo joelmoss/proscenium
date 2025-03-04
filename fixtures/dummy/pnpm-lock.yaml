@@ -11,6 +11,9 @@ importers:
       '@rubygems/gem1':
         specifier: ^1.0.0
         version: 1.0.0
+      internal-one-link:
+        specifier: file:packages/one
+        version: file:packages/one
       mypackage:
         specifier: link:packages/mypackage
         version: link:packages/mypackage
@@ -25,6 +28,13 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+
+  internal-one-link@file:packages/one:
+    resolution: {directory: packages/one, type: directory}
+
+  is-plain-obj@4.1.0:
+    resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
+    engines: {node: '>=12'}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -52,6 +62,12 @@ snapshots:
       p-queue: 8.1.0
 
   eventemitter3@5.0.1: {}
+
+  internal-one-link@file:packages/one:
+    dependencies:
+      is-plain-obj: 4.1.0
+
+  is-plain-obj@4.1.0: {}
 
   js-tokens@4.0.0: {}
 
