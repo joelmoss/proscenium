@@ -1,13 +1,45 @@
-lockfileVersion: 5.4
+lockfileVersion: '9.0'
 
-specifiers:
-  open-props: ^1.5.1
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
 
-dependencies:
-  open-props: 1.5.1
+importers:
+
+  .:
+    dependencies:
+      open-props:
+        specifier: ^1.5.1
+        version: 1.7.13
+      p-queue:
+        specifier: ^8.1.0
+        version: 8.1.0
 
 packages:
 
-  /open-props/1.5.1:
-    resolution: {integrity: sha512-FA1T/0neIXWaJToPhS4HjBrgEFOeVOAUls9cOe1ME1BV4G25sIKdRNdZhzNNgOQ2RtfuZCTGtSKVnhjdD4Gzvg==}
-    dev: false
+  eventemitter3@5.0.1:
+    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
+
+  open-props@1.7.13:
+    resolution: {integrity: sha512-A+8iJVr5oOpSrhvJMPz5KRb7ib4kav6V7+0014qpOM+rPukRxibi5BGCmwFECAz8uj6lN3pL1h7yp0ljtxqxuA==}
+
+  p-queue@8.1.0:
+    resolution: {integrity: sha512-mxLDbbGIBEXTJL0zEx8JIylaj3xQ7Z/7eEVjcF9fJX4DBiH9oqe+oahYnlKKxm0Ci9TlWTyhSHgygxMxjIB2jw==}
+    engines: {node: '>=18'}
+
+  p-timeout@6.1.4:
+    resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
+    engines: {node: '>=14.16'}
+
+snapshots:
+
+  eventemitter3@5.0.1: {}
+
+  open-props@1.7.13: {}
+
+  p-queue@8.1.0:
+    dependencies:
+      eventemitter3: 5.0.1
+      p-timeout: 6.1.4
+
+  p-timeout@6.1.4: {}

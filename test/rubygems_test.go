@@ -35,6 +35,44 @@ var _ = Describe("@rubygems scoped paths", func() {
 			types.Config.Bundle = true
 		})
 
+		Describe("installed via npm", func() {
+			BeforeEach(func() {
+				addGem("gem1", "dummy/vendor")
+			})
+
+			It("resolves bare import which is a dependency of the rubygem", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem1/gem_dependency.js")
+
+				Expect(code).To(ContainCode(`function stringLength(`))
+				Expect(code).To(ContainCode(`stringLength("foo");`))
+			})
+
+			It("resolves bare import which is a dependency of the app", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem1/app_dependency.js")
+
+				Expect(code).To(ContainCode(`console.log("node_modules/mypackage");`))
+			})
+		})
+
+		Describe("not installed via npm", func() {
+			BeforeEach(func() {
+				addGem("gem2", "external")
+			})
+
+			It("does not bundle bare import which is a dependency of the rubygem", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem2/gem_dependency.js")
+
+				Expect(code).To(ContainCode(`import stringLength from "string-length";`))
+				Expect(code).To(ContainCode(`stringLength("foo");`))
+			})
+
+			It("resolves bare import which is a dependency of the app", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem2/app_dependency.js")
+
+				Expect(code).To(ContainCode(`console.log("node_modules/mypackage");`))
+			})
+		})
+
 		Describe("inside root", func() {
 			BeforeEach(func() {
 				addGem("gem1", "dummy/vendor")

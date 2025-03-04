@@ -8,27 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@external/three':
-        specifier: link:../external/three
-        version: link:../external/three
-      '@rubygems/foo':
-        specifier: ^0.0.2
-        version: 0.0.2
-      external-one-link:
-        specifier: link:../external/one
-        version: link:../external/one
-      gem1:
-        specifier: link:vendor/gem1
-        version: link:vendor/gem1
-      gem2:
-        specifier: file:../external/gem2
-        version: file:../external/gem2
-      internal-one-link:
-        specifier: link:packages/one
-        version: link:packages/one
-      internal-two:
-        specifier: file:packages/two
-        version: file:packages/two
+      '@rubygems/gem1':
+        specifier: ^1.0.0
+        version: 1.0.0
       mypackage:
         specifier: link:packages/mypackage
         version: link:packages/mypackage
@@ -38,18 +20,11 @@ importers:
 
 packages:
 
-  '@rubygems/foo@0.0.2':
-    resolution: {integrity: sha512-1hlZ8vnlxdkuWQApqbbyq6zlH5Ii1M+/NPw/jtaDE2WNpAqVW36YSzplMLrqMMgp5NlYiKynZfBv1/8ghv959A==, tarball: http://registry.proscenium.test:3001/tarballs/@rubygems/foo/foo-0.0.2.tgz}
+  '@rubygems/gem1@1.0.0':
+    resolution: {integrity: sha512-39YlTfB556sd9qVY4x3WuD51v4Br7D6i3tjqoBd7LTuJBJdaJdmxN5DHcUQGS239Kyhv8fJdnnRqYdoL6Xxgkg==, tarball: http://registry.proscenium.test:3001/tarballs/@rubygems/gem1/gem1-1.0.0.tgz}
 
-  gem2@file:../external/gem2:
-    resolution: {directory: ../external/gem2, type: directory}
-
-  internal-two@file:packages/two:
-    resolution: {directory: packages/two, type: directory}
-
-  is-plain-obj@4.1.0:
-    resolution: {integrity: sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==}
-    engines: {node: '>=12'}
+  eventemitter3@5.0.1:
+    resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
 
   js-tokens@4.0.0:
     resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
@@ -58,27 +33,38 @@ packages:
     resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
     hasBin: true
 
+  p-queue@8.1.0:
+    resolution: {integrity: sha512-mxLDbbGIBEXTJL0zEx8JIylaj3xQ7Z/7eEVjcF9fJX4DBiH9oqe+oahYnlKKxm0Ci9TlWTyhSHgygxMxjIB2jw==}
+    engines: {node: '>=18'}
+
+  p-timeout@6.1.4:
+    resolution: {integrity: sha512-MyIV3ZA/PmyBN/ud8vV9XzwTrNtR4jFrObymZYnZqMmW0zA8Z17vnT0rBgFE/TlohB+YCHqXMgZzb3Csp49vqg==}
+    engines: {node: '>=14.16'}
+
   react@18.3.1:
     resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
     engines: {node: '>=0.10.0'}
 
 snapshots:
 
-  '@rubygems/foo@0.0.2': {}
-
-  gem2@file:../external/gem2: {}
-
-  internal-two@file:packages/two:
+  '@rubygems/gem1@1.0.0':
     dependencies:
-      is-plain-obj: 4.1.0
+      p-queue: 8.1.0
 
-  is-plain-obj@4.1.0: {}
+  eventemitter3@5.0.1: {}
 
   js-tokens@4.0.0: {}
 
   loose-envify@1.4.0:
     dependencies:
       js-tokens: 4.0.0
+
+  p-queue@8.1.0:
+    dependencies:
+      eventemitter3: 5.0.1
+      p-timeout: 6.1.4
+
+  p-timeout@6.1.4: {}
 
   react@18.3.1:
     dependencies:

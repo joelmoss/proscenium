@@ -5,6 +5,7 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -28,7 +29,9 @@ var Bundler = esbuild.Plugin{
 
 		// Resolve with esbuild. Try and avoid this call as much as possible!
 		resolveWithEsbuild := func(args esbuild.OnResolveArgs, onResolveResult *esbuild.OnResolveResult) bool {
-			r := build.Resolve(onResolveResult.Path, esbuild.ResolveOptions{
+			originalPath := onResolveResult.Path
+
+			r := build.Resolve(originalPath, esbuild.ResolveOptions{
 				ResolveDir: args.ResolveDir,
 				Importer:   args.Importer,
 				Kind:       args.Kind,
@@ -42,7 +45,7 @@ var Bundler = esbuild.Plugin{
 				// error, and instead allows the browser to handle the import failure.
 				onResolveResult.External = true
 
-				debug.Debug("resolveWithEsbuild:failure", args, onResolveResult, r.Errors)
+				debug.Debug("resolveWithEsbuild:failure", originalPath, args, onResolveResult, r.Errors)
 
 				return false
 			}
@@ -56,7 +59,7 @@ var Bundler = esbuild.Plugin{
 			onResolveResult.External = r.External
 			onResolveResult.Path = r.Path
 
-			debug.Debug("resolveWithEsbuild:success", args, onResolveResult)
+			debug.Debug("resolveWithEsbuild:success", originalPath, args, onResolveResult)
 
 			return true
 		}
@@ -128,6 +131,17 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				} else if hasExt {
 					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+
+					// In order for module resolution to be correct, we need to return a path that is within
+					// the node_modules directory. If we don't, any dependencies of the rubygem will not
+					// resolve correctly. But the files are actually in the gem's directory.
+					// resolveArgs := cloneResolveArgs(args)
+					// resolveArgs.ResolveDir = path.Join(root, "/node_modules/@rubygems", gemName)
+					// result.Path = "." + strings.TrimPrefix(result.Path, gemPath)
+					// ok := resolveWithEsbuild(resolveArgs, &result)
+					// if !ok {
+					// 	return result, nil
+					// }
 				}
 
 				debug.Debug("OnResolve(@rubygems/*):end", result)
@@ -229,12 +243,29 @@ var Bundler = esbuild.Plugin{
 						resolveArgs := cloneResolveArgs(args)
 
 						if utils.IsBareModule(result.Path) {
-							// If importer is a RubyGem, then change ResolveDir to the app root. This ensures
-							// that bare imports are resolved relative to the app root, and not the gem root.
-							// Which allows us to use the app's package.json and node_modules dir.
-							_, _, foundGem := utils.PathIsRubyGem(args.Importer)
+							// If importer is a RubyGem...
+							//
+							// ...and that gem is NOT installed to node_modules, then change ResolveDir to the app
+							// root. This ensures that bare imports are resolved relative to the app root, and not
+							// the gem root, which allows us to use the app's package.json.
+							//
+							// ...OR that gem IS installed to node_modules, then change ResolveDir to the gem's
+							// node_modules directory. This ensures that bare imports are resolved relative to the
+							// gem's node_modules directory, and not the app's node_modules directory.
+							gemName, _, foundGem := utils.PathIsRubyGem(args.Importer)
 							if foundGem {
-								resolveArgs.ResolveDir = root
+								nodeModulePath := filepath.Join(root, "node_modules", "@rubygems", gemName)
+								_, err := os.Stat(nodeModulePath)
+								if err == nil {
+									realPath, err := filepath.EvalSymlinks(nodeModulePath)
+									if err != nil {
+										return result, err
+									}
+
+									resolveArgs.ResolveDir = realPath
+								} else {
+									resolveArgs.ResolveDir = root
+								}
 							}
 
 							if types.Config.ExternalNodeModules {
@@ -253,8 +284,14 @@ var Bundler = esbuild.Plugin{
 			FINISH:
 
 				if unbundled {
-					result.Path = strings.TrimPrefix(result.Path, root)
 					result.External = true
+
+					// if gemName, gemPath, foundGem := utils.PathIsRubyGem(result.Path); foundGem {
+					// 	suffix := strings.TrimPrefix(result.Path, gemPath)
+					// 	result.Path = "/node_modules/" + types.RubyGemsScope + gemName + suffix
+					// } else {
+					result.Path = strings.TrimPrefix(result.Path, root)
+					// }
 				}
 
 				debug.Debug("OnResolve(.*):end", result)

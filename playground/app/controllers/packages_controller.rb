@@ -40,7 +40,7 @@ class PackagesController < ActionController::API
   def validate_package
     return if package_name.start_with?('@rubygems/')
 
-    render_not_found('Package not found; only Ruby gems are currently supported, and via the ' \
+    render_not_found('Package not found; only Ruby gems are currently supported via the ' \
                      '@rubygems scope.') and return
   end
 
@@ -49,7 +49,7 @@ class PackagesController < ActionController::API
   end
 
   def package_name = params[:package]
-  def package_version = gem_data['version']
+  def package_version = '0.2.2' # gem_data['version']
 
   def gem_data
     @gem_data ||= if params[:version].present?
@@ -93,14 +93,23 @@ class PackagesController < ActionController::API
   end
 
   def package_json
-    @package_json ||= begin
-      path = Proscenium::RubyGems.path_for(gem_name, package_version).join('package.json')
-      if path.exist?
-        JSON.parse path.read
-      else
-        {}
-      end
-    end
+    {
+      'name' => '@rubygems/hue',
+      'version' => '0.2.2',
+      'dependencies' => {
+        'style-observer': '^0.0.5',
+        'p-queue': '^8.1.0'
+      }
+    }
+    # @package_json ||= begin
+    #   path = Proscenium::RubyGems.path_for(gem_name, package_version).join('package.json')
+    #   if path.exist?
+    #     JSON.parse path.read
+    #   else
+    #     # FIXME: raise when gem is not installed
+    #     {}
+    #   end
+    # end
   end
 
   def render_not_found(message = 'Not found')
