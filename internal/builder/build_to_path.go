@@ -2,10 +2,11 @@ package builder
 
 import (
 	"encoding/json"
-	"fmt"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
@@ -54,39 +55,36 @@ func BuildToPath(filePath string) (success bool, paths string) {
 		}
 	}
 
-	var meta interface{}
+	var meta any
 	err := json.Unmarshal([]byte(result.Metafile), &meta)
 	if err != nil {
 		return false, string(err.Error())
 	}
 
 	// Find the output file path for each entrypoint.
-	m := meta.(map[string]interface{})
-	for output, v := range m["outputs"].(map[string]interface{}) {
-		for k, relativeEntrypoint := range v.(map[string]interface{}) {
+	m := meta.(map[string]any)
+	for output, v := range m["outputs"].(map[string]any) {
+		for k := range v.(map[string]any) {
 			if k == "entryPoint" {
-				key := relativeEntrypoint.(string)
-
-				if mapping[key] == "" {
-					mapping[key] = output
-				} else {
-					mapping[mapping[key]] = output
-					delete(mapping, key)
-				}
+				key := stripBuildHash(strings.TrimPrefix(output, "public/assets/"))
+				mapping[key] = output
 			}
 		}
 	}
 
+	debug.Debug(meta, entrypoints, mapping)
+
 	contents := []string{}
 	for _, ep := range entrypoints {
-		if _, exists := mapping[ep]; !exists {
-			return false, fmt.Sprintf("Could not find output file for entrypoint: %s", ep)
-		}
-
 		contents = append(contents, ep+"::"+mapping[ep])
 	}
 
 	return true, strings.Join(contents, ";")
+}
+
+func stripBuildHash(path string) string {
+	re := regexp.MustCompile(`\$[^$]+\$`)
+	return re.ReplaceAllString(path, "")
 }
 
 func entryPointToRelativePath(entryPoint string) string {
