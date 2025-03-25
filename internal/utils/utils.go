@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"path"
 	"regexp"
@@ -50,9 +51,11 @@ func PathIsRelative(name string) bool {
 func ToDigest(s string) string {
 	path := ""
 
-	if types.Config.Environment == types.DevEnv {
-		re := regexp.MustCompile(`[/.@]`)
+	if types.Config.UseDevCSSModuleNames || types.Config.Environment == types.DevEnv {
+		re := regexp.MustCompile(`[@/\.+]`)
 		path = "__" + re.ReplaceAllLiteralString(strings.TrimPrefix(s, "/"), "-")
+
+		debug.Debug(s, path)
 	}
 
 	hash := sha1.Sum([]byte(s))
@@ -102,6 +105,36 @@ func IsSvgImportedFromCss(path string, args esbuild.OnResolveArgs) bool {
 
 func RemoveRubygemPrefix(path string, gemName string) string {
 	return strings.TrimPrefix(path, types.RubyGemsScope+gemName)
+}
+
+// Returns an empty string if the path is not a bare module.
+func ExtractBareModule(path string) string {
+	if !IsBareModule(path) {
+		return ""
+	}
+
+	if strings.HasPrefix(path, "@") {
+		// For scoped packages like @scope/package/file.js, return @scope/package
+		firstSlash := strings.Index(path, "/")
+		if firstSlash == -1 {
+			return path
+		}
+
+		secondSlash := strings.Index(path[firstSlash+1:], "/")
+		if secondSlash == -1 {
+			return path
+		}
+
+		return path[:firstSlash+secondSlash+1]
+	}
+
+	// For non-scoped packages like package/file.js, return package
+	firstSlash := strings.Index(path, "/")
+	if firstSlash == -1 {
+		return path
+	}
+
+	return path[:firstSlash]
 }
 
 // Extracts the package name from a path. For example, given the path "@rubygems/foo/bar.js", it

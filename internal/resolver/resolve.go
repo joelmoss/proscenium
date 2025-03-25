@@ -7,24 +7,14 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
-
-func returnResolve(filePath string, err error) (string, error) {
-	if debug.Enabled {
-		errStr := ""
-		if err != nil {
-			errStr = err.Error()
-		}
-		debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
-	}
-
-	return filePath, err
-}
 
 // Resolve the given `filePath` relative to the root, where the filePath is a URL path or bare
 // specifier. This function is primarily intended to be used to resolve bare or NPM modules outside
@@ -32,9 +22,9 @@ func returnResolve(filePath string, err error) (string, error) {
 //
 // If `importer` is given, then the `filePath` is resolved relative to the `importer` path.
 //
-// This is used to resolve CSS mixins, and other paths that are not part of the build process. It
-// does not actually build the file, but returns the URL path that will then usually be requested
-// and served by the Rails middleware.
+// This is used to resolve paths that are not part of the build process. It does not actually build
+// the file, but returns the URL path that will then usually be requested and served by the Rails
+// middleware.
 //
 // Returns an absolute URL path. That is, one that has a leading slash and can be appended to the
 // app domain.
@@ -76,21 +66,33 @@ func Resolve(filePath string, importer string) (string, error) {
 
 	gemName := ""
 	if utils.IsRubyGem(filePath) {
-		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve("/node_modules/"+filePath, nil)
-		}
-
 		var err error
 		gemName, rootPath, err = utils.ResolveRubyGem(filePath)
 		if err != nil {
 			return returnResolve(filePath, err)
 		}
 
-		suffix := utils.RemoveRubygemPrefix(filePath, gemName)
-		if suffix == "" {
+		pathSuffix := utils.RemoveRubygemPrefix(filePath, gemName)
+
+		if _, ok := utils.HasExtension(filePath); ok {
+			nodeModulePath := filepath.Join(types.Config.RootPath, "node_modules", "@rubygems", gemName)
+			_, err := os.Stat(nodeModulePath)
+			if err == nil {
+				realPath, err := filepath.EvalSymlinks(nodeModulePath)
+				if err != nil {
+					return returnResolve(filePath, err)
+				}
+
+				return returnResolve(strings.TrimPrefix(path.Join(realPath, pathSuffix), types.Config.RootPath), nil)
+			}
+
+			return returnResolve("/node_modules/"+filePath, nil)
+		}
+
+		if pathSuffix == "" {
 			filePath = "./"
 		} else {
-			filePath = suffix
+			filePath = pathSuffix
 		}
 	}
 
@@ -120,6 +122,7 @@ func Resolve(filePath string, importer string) (string, error) {
 		Metafile:          true,
 		LogLevel:          logLevel,
 		LogLimit:          1,
+		PreserveSymlinks:  true,
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
@@ -144,4 +147,47 @@ func Resolve(filePath string, importer string) (string, error) {
 	}
 
 	return returnResolve("/"+filePath, nil)
+}
+
+// Resolve the given `filePath` relative to the root, where the `filePath` is a URL path or bare
+// specifier, It returns an absolute file system path, and is used to resolve CSS mixins.
+//
+// @see Resolve()
+func ResolveToFSPath(filePath string, importer string) (string, error) {
+	urlPath, err := Resolve(filePath, importer)
+	if err != nil {
+		return "", err
+	}
+
+	// We need the absolute file system path
+	isRubyGem := false
+	relativePath := strings.TrimPrefix(urlPath, "/node_modules/")
+	if utils.IsRubyGem(relativePath) {
+		gemName, gemPath, err := utils.ResolveRubyGem(relativePath)
+		if err != nil {
+			return "", err
+		}
+
+		isRubyGem = true
+		suffix := utils.RemoveRubygemPrefix(relativePath, gemName)
+		urlPath = filepath.Join(gemPath, suffix)
+	}
+
+	if !isRubyGem {
+		urlPath = path.Join(types.Config.RootPath, urlPath)
+	}
+
+	return urlPath, nil
+}
+
+func returnResolve(filePath string, err error) (string, error) {
+	if debug.Enabled {
+		errStr := ""
+		if err != nil {
+			errStr = err.Error()
+		}
+		debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
+	}
+
+	return filePath, err
 }

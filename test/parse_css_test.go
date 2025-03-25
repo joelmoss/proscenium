@@ -1,9 +1,7 @@
 package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
-	"path/filepath"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -92,77 +90,42 @@ var _ = Describe("Build(parseCss)", func() {
 			})
 
 			Describe("from url()", func() {
-				It("mixin is replaced with defined mixin", func() {
-					Expect(`
-						header {
-							@mixin red from url('/lib/mixins/colors.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/foo.css"))
-				})
-
-				It("bare specifier mixin is resolved", func() {
-					Expect(`
-						header {
-							@mixin red from url('mypackage/colors.mixin.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/foo.css"))
-				})
-
-				Context("mixin from @rubygems/*", func() {
-					It("relative gem is resolved", func() {
-						types.Config.RubyGems = map[string]string{
-							"gem1": filepath.Join(fixturesRoot, "dummy", "vendor", "gem1"),
-						}
-
-						Expect(`
-							header {
-								@mixin red from url('@rubygems/gem1/lib/colors.mixin.css');
-							}
-						`).To(BeParsedTo(`
-							header {
-								color: red;
-							}
-						`, "/foo.css"))
+				EntryPoint("lib/importing/mixins.css", func() {
+					Describe("from absolute url", func() {
+						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`)
+						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`, Unbundle)
 					})
 
-					It("external gem is resolved", func() {
-						types.Config.RubyGems = map[string]string{
-							"gem2": filepath.Join(fixturesRoot, "external", "gem2"),
-						}
-
-						Expect(`
-							header {
-								@mixin red from url('@rubygems/gem2/lib/colors.mixin.css');
-							}
-						`).To(BeParsedTo(`
-							header {
-								color: red;
-							}
-						`, "/foo.css"))
+					Describe("from relative url", func() {
+						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`)
+						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`, Unbundle)
 					})
-				})
 
-				It("relative mixin is resolved", func() {
-					Expect(`
-						header {
-							@mixin red from url('./mixins/colors.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/lib/foo.css"))
-				})
+					Describe("from package", func() {
+						AssertCode(`.mixin3 { content: "pkg/mixin.css"; font-size: 30px; }`)
+						AssertCode(`.mixin3 { content: "pkg/mixin.css"; font-size: 30px; }`, Unbundle)
+					})
 
-				It("nested relative mixin is resolved", func() {})
+					Describe("from internal @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem1", "dummy/vendor")
+						})
+
+						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`)
+						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`, Unbundle)
+					})
+
+					Describe("from external @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem2", "external")
+						})
+
+						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`)
+						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`, Unbundle)
+					})
+
+					PIt("nested relative mixin is resolved", func() {})
+				})
 
 				It("should cache mixin definition", func() {
 					Expect(`

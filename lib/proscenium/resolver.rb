@@ -19,7 +19,16 @@ module Proscenium
       end
 
       self.resolved[path] ||= if (gem = BundledGems.paths.find { |_, v| path.start_with? "#{v}/" })
+                                # If the path is a rubygem, and it is installed with npm via the
+                                # @rubygems scope, then resolve the path to the symlinked location
+                                # in node_modules.
+                                # npm_path = Rails.root.join("node_modules/@rubygems/#{gem.first}")
+                                # if npm_path.symlink?
+                                #   npm_path.realpath.join(path.sub(/^#{gem.last}/, '.')).to_s
+                                #           .delete_prefix(Rails.root.to_s)
+                                # else
                                 path.sub(/^#{gem.last}/, "/node_modules/@rubygems/#{gem.first}")
+                                # end
                               elsif path.start_with?("#{Rails.root}/")
                                 path.delete_prefix Rails.root.to_s
                               else

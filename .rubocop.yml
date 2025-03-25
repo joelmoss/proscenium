@@ -46,6 +46,8 @@ Style/Documentation:
   Enabled: false
 Style/ClassAndModuleChildren:
   Enabled: false
+Style/NegatedIf:
+  Enabled: false
 
 Minitest/EmptyLineBeforeAssertionMethods:
   Enabled: false

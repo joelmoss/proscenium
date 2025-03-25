@@ -1,4 +1,4 @@
-import { one } from "mypackage/treeshake";
+import "pkg";
 import imported from "./imported";
 import "/lib/foo.js"; // app
 import "./foo";
@@ -10,4 +10,3 @@ import styles from "./styles.module.css";
 console.log(styles);
 console.log("lib/gem4/gem4");
 imported();
-one();

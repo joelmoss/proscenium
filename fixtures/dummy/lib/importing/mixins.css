@@ -1,0 +1,25 @@
+/* absolute mixin */
+.mixin1 {
+  @mixin mixin1 from url("/lib/importing/mixin1.css");
+  font-size: 10px;
+}
+/* relative mixin */
+.mixin2 {
+  @mixin mixin2 from url("./mixin2.css");
+  font-size: 20px;
+}
+/* from package */
+.mixin3 {
+  @mixin mixin from url("pkg/mixin.css");
+  font-size: 30px;
+}
+/* from internal @rubygems/* */
+.mixin6 {
+  @mixin mixin from url("@rubygems/gem1/mixin.css");
+  font-size: 60px;
+}
+/* from external @rubygems/* */
+.mixin7 {
+  @mixin mixin from url("@rubygems/gem2/mixin.css");
+  font-size: 70px;
+}

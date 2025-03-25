@@ -17,7 +17,7 @@ import (
 // Each output file is appended with a unique hash to support caching.
 //
 // Note that this function is only used by side loading and the `compute_asset_path` Rails helper,
-// so expects and only supports a full URL path.
+// so expects and only supports a full URL path as the `filePath` argument.
 //
 // Example:
 //
@@ -47,12 +47,14 @@ func BuildToPath(filePath string) (success bool, paths string) {
 	// the keys of the map are the original entrypoints. They need to match the returned paths.
 	mapping := map[string]string{}
 	for _, ep := range entrypoints {
-		relPath := entryPointToRelativePath(ep)
-		if relPath == ep {
-			mapping[ep] = ""
-		} else {
-			mapping[relPath] = ep
-		}
+		mapping[ep] = ""
+
+		// relPath := entryPointToRelativePath(ep)
+		// if relPath == ep {
+		// 	mapping[ep] = ""
+		// } else {
+		// 	mapping[relPath] = ep
+		// }
 	}
 
 	var meta any
@@ -61,13 +63,19 @@ func BuildToPath(filePath string) (success bool, paths string) {
 		return false, string(err.Error())
 	}
 
+	debug.Debug(mapping)
+
 	// Find the output file path for each entrypoint.
 	m := meta.(map[string]any)
 	for output, v := range m["outputs"].(map[string]any) {
-		for k := range v.(map[string]any) {
+		for k, ep := range v.(map[string]any) {
 			if k == "entryPoint" {
-				key := stripBuildHash(strings.TrimPrefix(output, "public/assets/"))
-				mapping[key] = output
+				entryPoint := ep.(string)
+				if _, exists := mapping[entryPoint]; exists {
+					mapping[entryPoint] = output
+				} else {
+					mapping[stripBuildHash(strings.TrimPrefix(output, "public/assets/"))] = output
+				}
 			}
 		}
 	}
@@ -76,6 +84,10 @@ func BuildToPath(filePath string) (success bool, paths string) {
 
 	contents := []string{}
 	for _, ep := range entrypoints {
+		// if mapping[ep] == "" {
+		// 	return false, "Could not resolve \"" + ep + "\""
+		// }
+
 		contents = append(contents, ep+"::"+mapping[ep])
 	}
 

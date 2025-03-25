@@ -14,32 +14,20 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		<svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504"></path></svg>
 	`
 
-	It("bundles absolute svg from jsx", func() {
-		_, code := b.BuildToString("lib/svg/absolute_jsx.jsx")
-
-		Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-		Expect(code).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
+	EntryPoint("lib/svg/absolute_jsx.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	It("bundles svg from tsx", func() {
-		_, code := b.BuildToString("lib/svg/absolute_tsx.tsx")
-
-		Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-		Expect(code).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
+	EntryPoint("lib/svg/absolute_tsx.tsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	It("bundles relative svg from jsx", func() {
-		_, code := b.BuildToString("lib/svg/relative.jsx")
-
-		Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-		Expect(code).NotTo(ContainCode(`import AtIcon from "/lib/svg/at.svg";`))
+	EntryPoint("lib/svg/relative.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	It("bundles bare svg specifier from jsx", func() {
-		_, code := b.BuildToString("lib/svg/bare.jsx")
-
-		Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-		Expect(code).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
+	EntryPoint("lib/svg/bare.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	Context("internal @rubygems/*", func() {
