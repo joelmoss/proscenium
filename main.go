@@ -41,27 +41,6 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 	return C.struct_Result{C.int(0), C.CString(result)}
 }
 
-// Build the given `path` in the `root`.
-//
-// - path - The path to build relative to `root`.
-// - config
-//
-//export build_to_path
-func build_to_path(filePath *C.char, configJson *C.char) C.struct_Result {
-	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
-	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error())}
-	}
-
-	success, result := builder.BuildToPath(C.GoString(filePath))
-
-	if success {
-		return C.struct_Result{C.int(1), C.CString(result)}
-	}
-
-	return C.struct_Result{C.int(0), C.CString(result)}
-}
-
 // Resolve the given `path` relative to the `root`.
 //
 // - path - The path to build relative to `root`.

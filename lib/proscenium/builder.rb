@@ -24,11 +24,6 @@ module Proscenium
         :pointer # Config as JSON.
       ], Result.by_value
 
-      attach_function :build_to_path, [
-        :string, # Path or entry point. Multiple can be given by separating with a semi-colon
-        :pointer # Config as JSON.
-      ], Result.by_value
-
       attach_function :resolve, [
         :string, # path or entry point
         :pointer # Config as JSON.
@@ -61,10 +56,6 @@ module Proscenium
       end
     end
 
-    def self.build_to_path(path, root: nil)
-      new(root:).build_to_path(path)
-    end
-
     def self.build_to_string(path, root: nil, bundle: nil)
       new(root:, bundle:).build_to_string(path)
     end
@@ -92,20 +83,6 @@ module Proscenium
         Bundle: bundle,
         Debug: Proscenium.config.debug
       }.to_json)
-    end
-
-    def build_to_path(path)
-      ActiveSupport::Notifications.instrument('build_to_path.proscenium',
-                                              identifier: path,
-                                              cached: Proscenium.cache.exist?(path)) do
-        Proscenium.cache.fetch path do
-          result = Request.build_to_path(path, @request_config)
-
-          raise BuildError, result[:response] unless result[:success]
-
-          result[:response]
-        end
-      end
     end
 
     def build_to_string(path)

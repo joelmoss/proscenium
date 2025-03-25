@@ -10,18 +10,6 @@ module Proscenium
       end
     end
 
-    def build_to_path(event)
-      path = event.payload[:identifier]
-      cached = event.payload[:cached] ? ' | Cached!' : ''
-      path = CGI.unescape(path) if path.start_with?(/https?%3A%2F%2F/)
-
-      info do
-        message = "  #{color('[Proscenium]', nil, bold: true)} Building (to path) #{path}"
-        message << " (Duration: #{event.duration.round(1)}ms | " \
-                   "Allocations: #{event.allocations}#{cached})"
-      end
-    end
-
     def build_to_string(event)
       path = event.payload[:identifier]
       path = CGI.unescape(path) if path.start_with?(/https?%3A%2F%2F/)

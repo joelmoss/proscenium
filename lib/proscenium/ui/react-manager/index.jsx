@@ -1,14 +1,4 @@
-window.Proscenium = window.Proscenium || { lazyScripts: {} };
 const pathAttribute = "data-proscenium-component-path";
-
-// Find lazyscripts JSON already in the DOM.
-const element = document.querySelector("#prosceniumLazyScripts");
-if (element) {
-  window.Proscenium.lazyScripts = {
-    ...window.Proscenium.lazyScripts,
-    ...JSON.parse(element.text),
-  };
-}
 
 // Find components already in the DOM.
 const elements = document.querySelectorAll(`[${pathAttribute}]`);
@@ -17,12 +7,7 @@ elements.length > 0 && init(elements);
 new MutationObserver((mutationsList) => {
   for (const { addedNodes } of mutationsList) {
     for (const ele of addedNodes) {
-      if (ele.tagName === "SCRIPT" && ele.id === "prosceniumLazyScripts") {
-        window.Proscenium.lazyScripts = {
-          ...window.Proscenium.lazyScripts,
-          ...JSON.parse(ele.text),
-        };
-      } else if (ele.matches(`[${pathAttribute}]`)) {
+      if (ele.matches(`[${pathAttribute}]`)) {
         init([ele]);
       }
     }
@@ -81,12 +66,8 @@ function init(elements) {
     // For testing and simulation of slow connections.
     // const sim = new Promise((resolve) => setTimeout(resolve, 5000));
 
-    if (!window.Proscenium.lazyScripts[path]) {
-      throw `[proscenium/react/manager] Cannot load component ${path} (not found in Proscenium.lazyScripts)`;
-    }
-
     const react = import("@rubygems/proscenium/react-manager/react");
-    const Component = import(window.Proscenium.lazyScripts[path].outpath);
+    const Component = import(path);
 
     const forwardChildren =
       "prosceniumComponentForwardChildren" in element.dataset &&
