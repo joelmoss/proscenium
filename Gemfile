@@ -35,7 +35,6 @@ end
 gem 'gem2', path: './fixtures/external/gem2'
 group :test do
   gem 'capybara'
-  gem 'cuprite'
   gem 'database_cleaner-active_record', require: 'database_cleaner/active_record'
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'

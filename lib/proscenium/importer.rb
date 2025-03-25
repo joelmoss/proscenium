@@ -23,7 +23,7 @@ module Proscenium
       #
       # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
-      # @return [String] the digest of the imported file path if a css module (*.module.css).
+      # @return [String|nil] the digest of the imported file path if a css module (*.module.css).
       def import(filepath = nil, **)
         self.imported ||= {}
 

@@ -51,3 +51,5 @@ Style/NegatedIf:
 
 Minitest/EmptyLineBeforeAssertionMethods:
   Enabled: false
+Minitest/MultipleAssertions:
+  Enabled: false

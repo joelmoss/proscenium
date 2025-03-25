@@ -13,7 +13,7 @@ import (
 // Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
 // See Proscenium::Middleware::Esbuild.
 func BuildToString(filePath string) (success bool, code string) {
-	result := build(filePath, false)
+	result := build(filePath)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])

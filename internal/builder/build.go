@@ -15,10 +15,9 @@ import (
 // Build the given `path`.
 //
 // - path - The path to build relative to `root`. Multiple paths can be separated by a semicolon.
-// - output - The output format. Defaults to `outputToString`. Can also be `outputToPath`.
 //
 //export build
-func build(path string, outputToPath bool) esbuild.BuildResult {
+func build(path string) esbuild.BuildResult {
 	entrypoints := strings.Split(path, ";")
 
 	// Ensure entrypoints are bare specifiers (do not begin with a `/`, `./` or `../`).
@@ -52,9 +51,7 @@ func build(path string, outputToPath bool) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if outputToPath {
-		sourcemap = esbuild.SourceMapLinked
-	} else if strings.HasSuffix(path, ".map") {
+	if strings.HasSuffix(path, ".map") {
 		path = strings.TrimSuffix(path, ".map")
 		entrypoints = []string{path}
 		sourcemap = esbuild.SourceMapExternal
@@ -81,7 +78,6 @@ func build(path string, outputToPath bool) esbuild.BuildResult {
 		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          outputToPath,
 		Target:            esbuild.ES2022,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
@@ -128,10 +124,6 @@ func build(path string, outputToPath bool) esbuild.BuildResult {
 		}
 		buildOptions.Define = definitions
 		buildOptions.Define["global"] = "window"
-
-		if outputToPath {
-			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
-		}
 	}
 
 	return esbuild.Build(buildOptions)

@@ -10,36 +10,6 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   let(:subject) { Proscenium::Builder }
 
-  describe '.build_to_path' do
-    it 'raises on unknown path' do
-      error = assert_raises(Proscenium::Builder::BuildError) do
-        subject.build_to_path('unknown.js')
-      end
-
-      assert_equal 'Could not resolve "unknown.js"', error.message
-    end
-
-    it 'raises on non-bare specifier' do
-      error = assert_raises(Proscenium::Builder::BuildError) do
-        subject.build_to_path('/unknown.js')
-      end
-
-      assert_equal 'Could not resolve "/unknown.js" - Entrypoints must be bare specifiers',
-                   error.message
-    end
-
-    it 'builds multiple files' do
-      exp = %(
-        lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
-        lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
-      ).gsub(/[[:space:]]/, '')
-
-      result = subject.build_to_path('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
-
-      assert_equal exp, result
-    end
-  end
-
   describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
       assert_includes subject.build_to_string('lib/env/env.js'), 'console.log("testtest")'

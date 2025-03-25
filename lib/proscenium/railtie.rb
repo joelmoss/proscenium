@@ -16,10 +16,6 @@ module Proscenium
     config.proscenium.code_splitting = true
     config.proscenium.external_node_modules = false
 
-    # Cache asset paths when building to path. Enabled by default in production.
-    # @see Proscenium::Builder#build_to_path
-    config.proscenium.cache = ActiveSupport::Cache::MemoryStore.new if Rails.env.production?
-
     # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days

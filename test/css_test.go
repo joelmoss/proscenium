@@ -265,8 +265,7 @@ var _ = Describe("BuildToString(css)", func() {
 			var u = "/lib/styles.module.css";
 			var es = document.querySelector("#_330940eb");
 			var el = document.querySelector('link[href="' + u + '"]');
-			var eo = document.querySelector('link[data-original-href="' + u + '"]');
-			if (!es && !el && !eo) {
+			if (!es && !el) {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
 				e.dataset.href = u;
