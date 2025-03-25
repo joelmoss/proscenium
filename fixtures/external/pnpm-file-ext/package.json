@@ -1,0 +1,7 @@
+{
+  "name": "pnpm-file-ext",
+  "version": "1.0.0",
+  "dependencies": {
+    "pkg_dep": "gist:2a1cc7a7c901f508921c7093b749d404"
+  }
+}

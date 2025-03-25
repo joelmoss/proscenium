@@ -61,17 +61,20 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
     context 'npm package path' do
       it 'transforms class names' do
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
-                                                               'mypackage/foo@foo')
+                                                               'pkg/one@pkg_one_module')
 
-        assert_equal [['foo-39337ba7', '/packages/mypackage/foo.module.css']], names
+        assert_equal [
+          ['pkg_one_module-5b960aa1', '/node_modules/pkg/one.module.css']
+        ],
+                     names
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
-                                                       'mypackage/foo@foo')
+                                                       'pkg/one@pkg_one_module')
 
         assert_equal({
-                       '/packages/mypackage/foo.module.css' => { digest: '39337ba7' }
+                       '/node_modules/pkg/one.module.css' => { digest: '5b960aa1' }
                      }, Proscenium::Importer.imported)
       end
     end
@@ -118,9 +121,9 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       it 'should transform npm path' do
-        names = transformer.class_names('mypackage/foo@foo')
+        names = transformer.class_names('pkg/one@pkg_one_module')
 
-        assert_equal [['foo-39337ba7', '/packages/mypackage/foo.module.css']], names
+        assert_equal [['pkg_one_module-5b960aa1', '/node_modules/pkg/one.module.css']], names
       end
 
       it 'should transform gem path' do

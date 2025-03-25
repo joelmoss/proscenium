@@ -1,0 +1,5 @@
+@import "./six.module.css";
+
+.five {
+  content: "/lib/css_all/five.module.css";
+}

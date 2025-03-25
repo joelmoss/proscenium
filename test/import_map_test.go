@@ -96,23 +96,19 @@ var _ = Describe("import maps", func() {
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`
-						import foo from "https://proscenium.test/foo.js";
-					`))
+					Expect(code).To(ContainCode(`import "https://proscenium.test/foo.js";`))
 				})
 			})
 
 			When("value is bare specifier", func() {
 				It("resolves the value", func() {
 					importmap.NewJsonImportMap([]byte(`{
-						"imports": { "foo": "mypackage" }
+						"imports": { "foo": "pkg" }
 					}`))
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`
-						console.log("node_modules/mypackage");
-					`))
+					Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				})
 			})
 
@@ -168,12 +164,12 @@ var _ = Describe("import maps", func() {
 
 		It("resolves to bare module", func() {
 			importmap.NewJsonImportMap([]byte(`{
-				"imports": { "my-package": "mypackage" }
+				"imports": { "my-package": "pkg" }
 			}`))
 
 			_, code := b.BuildToString("lib/import_map/bare_modules.js")
 
-			Expect(code).To(ContainCode(`console.log("node_modules/mypackage");`))
+			Expect(code).To(ContainCode(`console.log("pkg/index.js");`))
 		})
 
 		XIt("scopes", Pending, func() {
@@ -220,7 +216,7 @@ var _ = Describe("import maps", func() {
 
 			_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-			Expect(code).To(ContainCode(`import foo from "/lib/foo.js";`))
+			Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 		})
 
 		// import foo from 'foo'
@@ -233,7 +229,7 @@ var _ = Describe("import maps", func() {
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`import foo from "/lib/foo.js";`))
+					Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				})
 			})
 
@@ -245,7 +241,7 @@ var _ = Describe("import maps", func() {
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`import foo from "/lib/foo.js";`))
+					Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				})
 			})
 
@@ -259,23 +255,19 @@ var _ = Describe("import maps", func() {
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`
-						import foo from "https://proscenium.test/foo.js";
-					`))
+					Expect(code).To(ContainCode(`import "https://proscenium.test/foo.js";`))
 				})
 			})
 
 			When("value is bare specifier", func() {
 				It("resolves the value", func() {
 					importmap.NewJsonImportMap([]byte(`{
-						"imports": { "foo": "mypackage" }
+						"imports": { "foo": "pkg" }
 					}`))
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`
-						import foo from "/packages/mypackage/index.js";
-					`))
+					Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				})
 			})
 
@@ -287,9 +279,7 @@ var _ = Describe("import maps", func() {
 
 					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-					Expect(code).To(ContainCode(`
-						import foo from "/lib/indexes/index.js";
-					`))
+					Expect(code).To(ContainCode(`import "/lib/indexes/index.js";`))
 				})
 			})
 
@@ -300,9 +290,7 @@ var _ = Describe("import maps", func() {
 
 				_, code := b.BuildToString("lib/import_map/bare_specifier.js")
 
-				Expect(code).To(ContainCode(`
-					import foo from "/lib/foo2.js";
-				`))
+				Expect(code).To(ContainCode(`import "/lib/foo2.js";`))
 			})
 		})
 
@@ -335,12 +323,12 @@ var _ = Describe("import maps", func() {
 
 		It("resolves to bare module", func() {
 			importmap.NewJsonImportMap([]byte(`{
-				"imports": { "my-package": "mypackage" }
+				"imports": { "my-package": "pkg" }
 			}`))
 
 			_, code := b.BuildToString("lib/import_map/bare_modules.js")
 
-			Expect(code).To(ContainCode(`import mypackage from "/packages/mypackage/index.js";`))
+			Expect(code).To(ContainCode(`import mypackage from "/node_modules/pkg/index.js";`))
 		})
 	})
 })

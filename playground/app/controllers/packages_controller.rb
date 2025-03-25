@@ -14,6 +14,8 @@ class PackagesController < ActionController::API
   #    client, and unpacked into node_modules. Proscenium ignores this, as it will pull contents
   #    directly from location of the installed gem.
   # 4. Return a valid npm response listing package details, tarball location, and its dependencies.
+  #
+  # See https://wiki.commonjs.org/wiki/Packages/Registry
   def show
     render json: {
       name: package_name,
@@ -96,10 +98,7 @@ class PackagesController < ActionController::API
     {
       'name' => '@rubygems/hue',
       'version' => '0.2.2',
-      'dependencies' => {
-        'style-observer': '^0.0.5',
-        'p-queue': '^8.1.0'
-      }
+      'dependencies' => {}
     }
     # @package_json ||= begin
     #   path = Proscenium::RubyGems.path_for(gem_name, package_version).join('package.json')

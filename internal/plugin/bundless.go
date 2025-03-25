@@ -11,7 +11,10 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-// Bundler plugin that does not bundles everything together.
+// Unbundles the path if it starts with "unbundle:". It resolves the path without the prefix, and to
+// the virtual URL path. Meaning that an NPM package at "node_modules/foo/bar.js" will be reoslved
+// to "/node_modules/foo/bar.js". If the package manager uses symlinks (eg. pnpm), then the path
+// will be resolved to the symlinked path.
 var Bundless = esbuild.Plugin{
 	Name: "bundless",
 	Setup: func(build esbuild.PluginBuild) {
@@ -131,6 +134,7 @@ var Bundless = esbuild.Plugin{
 					return result, nil
 				}
 
+				isBare := utils.ExtractBareModule(result.Path)
 				_, hasExt := utils.HasExtension(result.Path)
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -140,6 +144,13 @@ var Bundless = esbuild.Plugin{
 					// TODO: We're not bundling, but the import may want the CSS as a JS object of class
 					// names. (CSS module), or a constructable stylesheet. We need to handle this case.
 					result.PluginData = types.PluginData{ImportedFromJs: true}
+				}
+
+				if isBare != "" && hasExt {
+					// Bare module with extension, so there is no need to resolve it if we prefix the path
+					// with "/node_modules/".
+					result.Path = "/node_modules/" + result.Path
+					goto FINISH
 				}
 
 				if utils.IsUrl(result.Path) {
@@ -162,7 +173,7 @@ var Bundless = esbuild.Plugin{
 				} else {
 					resolveArgs := cloneResolveArgs(args)
 
-					if utils.IsBareModule(result.Path) {
+					if isBare != "" {
 						// If importer is a RubyGem, then change ResolveDir to the app root. This ensures
 						// that bare imports are resolved relative to the app root, and not the gem root.
 						// Which allows us to use the app's package.json and node_modules dir.

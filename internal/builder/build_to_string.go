@@ -10,7 +10,8 @@ import (
 // Builds the given `filePath`, which should be a full URL path, but without the leading slash, and
 // returns the contents as a string.
 //
-// Only used by the Esbuild middleware. See Proscenium::Middleware::Esbuild.
+// Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
+// See Proscenium::Middleware::Esbuild.
 func BuildToString(filePath string) (success bool, code string) {
 	result := build(filePath, false)
 

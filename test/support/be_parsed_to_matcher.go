@@ -3,7 +3,7 @@ package support
 import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
-	"joelmoss/proscenium/internal/types"
+
 	"runtime"
 	"strings"
 
@@ -26,7 +26,7 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, match
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, types.Config.RootPath, "")
+	matcher.Output, _ = css.ParseCss(matcher.Input, matcher.Path, "")
 	matcher.Output = strings.TrimSpace(matcher.Output)
 
 	defer func() {

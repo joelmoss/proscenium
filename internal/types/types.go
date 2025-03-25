@@ -36,6 +36,9 @@ type ConfigT struct {
 	Bundle              bool
 	ExternalNodeModules bool
 	Environment         Environment
+
+	// For testing
+	UseDevCSSModuleNames bool
 }
 
 var Config = ConfigT{CodeSplitting: true, Bundle: true}

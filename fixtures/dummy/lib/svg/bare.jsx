@@ -1,5 +1,5 @@
-import AtIcon from 'mypackage/at.svg'
+import AtIcon from "pkg/at.svg";
 
 export default () => {
-  return <AtIcon />
-}
+  return <AtIcon />;
+};

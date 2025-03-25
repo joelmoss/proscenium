@@ -1,12 +1,17 @@
 package proscenium_test
 
 import (
+	"fmt"
+	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"testing"
 
@@ -14,6 +19,16 @@ import (
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+type debugType bool
+type bundleType bool
+type unbundleType bool
+type useDevCSSModuleNamesType bool
+
+const Debug = debugType(true)
+const Bundle = bundleType(true)
+const Unbundle = unbundleType(true)
+const UseDevCSSModuleNames = useDevCSSModuleNamesType(true)
 
 var cwd, _ = os.Getwd()
 var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
@@ -33,6 +48,8 @@ var _ = BeforeSuite(func() {
 })
 
 var _ = BeforeEach(func() {
+	fileToAssertCode = ""
+
 	importmap.Reset()
 	types.Config.Reset()
 	types.Config.Environment = types.TestEnv
@@ -49,3 +66,73 @@ var _ = BeforeEach(func() {
 var _ = AfterEach(func() {
 	gock.Off()
 })
+
+var fileToAssertCode = ""
+
+var EntryPoint = func(entryPoint string, container func()) {
+	Describe(fmt.Sprintf("(entrypoint: %s)", entryPoint), func() {
+		BeforeEach(func() {
+			fileToAssertCode = entryPoint
+		})
+
+		AfterEach(func() {
+			fileToAssertCode = ""
+		})
+
+		container()
+	})
+}
+
+var AssertCode = func(expectedCode string, args ...any) {
+	GinkgoHelper()
+
+	description := ""
+	assertArgs := []any{}
+	specArgs := []any{}
+
+	// If second argument is a string, then a test description has been provided as the first
+	// argument. That means expectedCode is the second argument.
+	if len(args) > 0 && reflect.TypeOf(args[0]).Kind() == reflect.String {
+		description = expectedCode
+		expectedCode = args[0].(string)
+		args = args[1:]
+	}
+
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Debug):
+		case t == reflect.TypeOf(Bundle):
+		case t == reflect.TypeOf(Unbundle):
+		case t == reflect.TypeOf(UseDevCSSModuleNames):
+			assertArgs = append(assertArgs, arg)
+		default:
+			specArgs = append(specArgs, arg)
+		}
+	}
+
+	It("resolves", specArgs, func() {
+		if fileToAssertCode == "" {
+			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
+		}
+
+		for _, arg := range args {
+			switch t := reflect.TypeOf(arg); {
+			case t == reflect.TypeOf(Debug):
+				debug.Enable()
+			case t == reflect.TypeOf(Bundle):
+				types.Config.Bundle = true
+			case t == reflect.TypeOf(Unbundle):
+				types.Config.Bundle = false
+			case t == reflect.TypeOf(UseDevCSSModuleNames):
+				types.Config.UseDevCSSModuleNames = true
+			}
+		}
+
+		if description != "" {
+			By(description)
+		}
+
+		_, result := b.BuildToString(fileToAssertCode)
+		Expect(result).To(ContainCode(expectedCode))
+	})
+}

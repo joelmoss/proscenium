@@ -36,6 +36,7 @@ require (
 	github.com/gookit/goutil v0.6.18
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
+	github.com/ije/esbuild-internal v0.25.0
 	github.com/k0kubun/pp/v3 v3.4.1
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mitchellh/mapstructure v1.5.0

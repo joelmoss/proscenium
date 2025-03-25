@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 
@@ -9,113 +10,257 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("b.BuildToString(css)", func() {
-	It("builds plain css", func() {
-		_, result := b.BuildToString("lib/foo.css")
+var _ = Describe("BuildToString(css)", func() {
+	EntryPoint("lib/importing/application.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+			AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
 
-		Expect(result).To(ContainCode(`.body { color: red; }`))
-	})
+			Describe("without extension", func() {
+				AssertCode(`.app_two { content: "/lib/importing/app/two.css"; }`)
+				AssertCode(`@import "/lib/importing/app/two.css";`, Unbundle)
+			})
 
-	It("builds css modules", func() {
-		_, result := b.BuildToString("lib/css_modules/basic.module.css")
-
-		Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
-	})
-
-	It("bundles absolute path import", func() {
-		_, result := b.BuildToString("lib/import_absolute.css")
-
-		Expect(result).To(ContainCode(`.stuff { color: red; }`))
-	})
-
-	It("bundles css module import from css", func() {
-		_, result := b.BuildToString("lib/css_modules/import_css_module.css")
-
-		Expect(result).To(ContainCode(`
-			/* lib/css_modules/basic.module.css */
-			.foo-c3f452b4 { color: red; }
-			/* lib/css_modules/import_css_module.css */
-			.bar { color: blue; }
-		`))
-	})
-
-	It("bundles import of css module from css module with different digest", func() {
-		_, result := b.BuildToString("lib/css_modules/import_css_module.module.css")
-
-		Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
-		Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
-	})
-
-	It("bundles relative path import", func() {
-		_, result := b.BuildToString("lib/import_relative.css")
-
-		Expect(result).To(ContainCode(`
-			/* lib/foo.css */
-			.body { color: red; }
-			/* lib/foo2.css */
-			.body { color: blue; }
-		`))
-	})
-
-	It("bare specifier import is replaced with absolute path", func() {
-		_, result := b.BuildToString("lib/import_npm_module.css")
-
-		Expect(result).To(ContainCode(`.mypackage { color: red; }`))
-		Expect(result).NotTo(ContainCode(`@import "mypackage/styles";`))
-	})
-
-	It("bare specifier import with extension is replaced with absolute path", func() {
-		types.Config.Bundle = false
-		_, result := b.BuildToString("lib/import_npm_module_with_ext.css")
-
-		Expect(result).To(ContainCode(`@import "/packages/mypackage/styles.css"`))
-	})
-
-	Describe("mixins", func() {
-		It("URL is replaced with defined mixin", func() {
-			_, result := b.BuildToString("lib/with_mixin_from_url.css")
-
-			Expect(result).To(ContainCode(`
-				a { color: red; font-size: 20px; }
-			`))
-		})
-
-		It("relative URL is replaced with defined mixin", func() {
-			_, result := b.BuildToString("lib/with_mixin_from_relative_url.css")
-
-			Expect(result).To(ContainCode(`
-				a { color: red; font-size: 20px; }
-			`))
-		})
-
-		Context("internal @rubygems/*", func() {
-			It("replaces relative URL with defined mixin", func() {
-				addGem("gem3", "dummy/vendor")
-
-				_, result := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/styles.module.css")
-
-				Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Describe("without filename", func() {
+				AssertCode(`.app_index { content: "/lib/importing/app/index.css"; }`)
+				AssertCode(`@import "/lib/importing/app/index.css";`, Unbundle)
 			})
 		})
 
-		Context("external @rubygems/*", func() {
-			It("replaces relative URL with defined mixin", func() {
-				addGem("gem4", "external")
+		Describe("import relative path", func() {
+			AssertCode(`.app_three { content: "/lib/importing/app/three.css"; }`)
+			AssertCode(`@import "/lib/importing/app/three.css";`, Unbundle)
 
-				_, result := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/styles.module.css")
+			Describe("without extension", func() {
+				AssertCode(`.app_four { content: "/lib/importing/app/four.css"; }`)
+				AssertCode(`@import "/lib/importing/app/four.css";`, Unbundle)
+			})
 
-				Expect(result).To(ContainCode(`h1 { color: red; }`))
+			Describe("without filename", func() {
+				AssertCode(`.app_five_index { content: "/lib/importing/app/five/index.css"; }`)
+				AssertCode(`@import "/lib/importing/app/five/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("URL", func() {
+			AssertCode(`@import "https://proscenium.test/foo.css";`)
+			AssertCode(`@import "https://proscenium.test/foo.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/package.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pkg_one { content: "pkg/one.css"; }`)
+			AssertCode(`@import "/node_modules/pkg/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pkg_two { content: "pkg/two.css"; }`)
+				AssertCode(`@import "/node_modules/pkg/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pkg_index { content: "pkg/index.css"; }`)
+				AssertCode(`@import "/node_modules/pkg/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+		})
+
+		Describe("import app dependency", func() {
+			AssertCode(`.pnpm_file_one { content: "pnpm-file/one.css"; }`)
+			AssertCode(`.pnpm_file_ext_one { content: "pnpm-file-ext/one.css"; }`)
+			AssertCode(`.pnpm_link_one { content: "pnpm-link/one.css"; }`)
+			AssertCode(`.pnpm_link_ext_one { content: "pnpm-link-ext/one.css"; }`)
+		})
+
+		Describe("import app path", func() {
+			AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_link.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_link_one { content: "pnpm-link/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-link/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_link_two { content: "pnpm-link/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_link_three_index { content: "pnpm-link/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link/three/index.css";`, Unbundle)
 			})
 		})
 	})
 
-	// FIt("handles ?", func() {
-	// 	Expect(BuildToStringToPath("lib/css_mod_import/tab_a.module.css;lib/css_mod_import/tab_b.module.css")).To(ContainCode(`
-	// 		a { color: red; font-size: 20px; }
-	// 	`))
-	// })
+	EntryPoint("lib/importing/pnpm_link_external.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_link_ext_one { content: "pnpm-link-ext/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-link-ext/one.css";`, Unbundle)
 
-	When("importing css module from js", func() {
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_link_ext_two { content: "pnpm-link-ext/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link-ext/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_link_ext_three_index { content: "pnpm-link-ext/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link-ext/three/index.css";`, Unbundle)
+			})
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_file.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_file_one { content: "pnpm-file/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_file_two { content: "pnpm-file/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_file_three_index { content: "pnpm-file/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file/three/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file/dependency.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_file_external.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_file_ext_one { content: "pnpm-file-ext/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file-ext/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_file_ext_two { content: "pnpm-file-ext/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file-ext/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_file_ext_three_index { content: "pnpm-file-ext/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file-ext/three/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file-ext/dependency.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/css_module.css", func() {
+		AssertCode(`.app_one_module-7727b09a { content: "/lib/importing/app/one.module.css"; }`)
+		AssertCode(`@import "/lib/importing/app/one.module.css";`, Unbundle)
+		AssertCode(`
+			.app_one_module-7727b09a__lib-importing-app-one-module-css {
+				content: "/lib/importing/app/one.module.css";
+			}`,
+			UseDevCSSModuleNames,
+		)
+
+		Describe("nested", func() {
+			AssertCode(`.app_two_module-87f68cdb { content: "/lib/importing/app/two.module.css"; }`)
+		})
+
+		Describe("from package", func() {
+			AssertCode(`.pkg_one_module-9047c541 { content: "pkg/one.module.css"; }`)
+			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
+			AssertCode(`
+				.pkg_one_module-9047c541__node_modules--pnpm-pkg-git-https---git-gist-github-com-c3d9087f5f214e1f0d9719e4a7d38474-git-2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module-css {
+					content: "pkg/one.module.css";
+				}`,
+				UseDevCSSModuleNames,
+			)
+		})
+	})
+
+	EntryPoint("lib/importing/unbundling.css", func() {
+		BeforeEach(func() {
+			importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"two.css": "unbundle:/lib/importing/app/two.css"
+					}
+				}`))
+		})
+
+		AssertCode(`@import "/lib/importing/app/one.css";`)
+		AssertCode(`@import "/lib/importing/app/two.css";`)
+	})
+
+	EntryPoint("lib/importing/import_map.css", func() {
+		BeforeEach(func() {
+			importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"one.css": "/lib/importing/app/one.css"
+					}
+				}`))
+		})
+
+		AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+		AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
+	})
+
+	EntryPoint("lib/importing/fonts.css", func() {
+		AssertCode(`url(/somefont.woff2)`)
+		AssertCode(`url(/somefont.woff)`)
+	})
+
+	Context("from @rubygems/*", func() {
+		BeforeEach(func() {
+			addGem("gem_npm", "dummy/vendor")
+			addGem("gem_link", "dummy/vendor")
+			addGem("gem_file", "dummy/vendor")
+		})
+
+		It("builds from npm install", func() {
+			_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.css")
+
+			Expect(code).To(ContainCode(`.myClass {	color: pink; }`))
+		})
+
+		Context("css modules", func() {
+			It("builds from npm install", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+
+				Expect(code).To(ContainCode(`.myClass-549811de { color: pink; }`))
+			})
+
+			It("builds from file:* npm install", func() {
+				_, code := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
+
+				Expect(code).To(ContainCode(`.myClass-be318e6c { color: pink; }`))
+			})
+		})
+
+		Context("css module; dev names", func() {
+			BeforeEach(func() {
+				types.Config.UseDevCSSModuleNames = true
+			})
+
+			It("builds npm install", func() {
+				addGem("gem_npm", "dummy/vendor")
+				_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+
+				Expect(code).To(ContainCode(`
+					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
+						color: pink;
+					}
+				`))
+			})
+		})
+	})
+
+	Describe("importing css module from js", func() {
 		var expectedCode = `
 			var u = "/lib/styles.module.css";
 			var es = document.querySelector("#_330940eb");

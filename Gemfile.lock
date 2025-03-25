@@ -37,6 +37,11 @@ PATH
       rails (>= 7.0.4)
 
 PATH
+  remote: fixtures/dummy/vendor/gem_file
+  specs:
+    gem_file (1.0.0)
+
+PATH
   remote: fixtures/external/gem2
   specs:
     gem2 (0.1.0)
@@ -382,6 +387,7 @@ DEPENDENCIES
   gem3!
   gem4!
   gem5!
+  gem_file!
   gems
   htmlbeautifier
   localhost
@@ -404,5 +410,8 @@ DEPENDENCIES
   view_component
   web-console
 
+RUBY VERSION
+   ruby 3.3.6p108
+
 BUNDLED WITH
-   2.5.22
+   2.6.6

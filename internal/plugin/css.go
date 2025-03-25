@@ -74,7 +74,7 @@ var Css = esbuild.Plugin{
 					}, nil
 				}
 
-				contents, err := css.ParseCssFile(args.Path, types.Config.RootPath, hash)
+				contents, err := css.ParseCssFile(args.Path, hash)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
@@ -96,7 +96,7 @@ var cssOnly = esbuild.Plugin{
 				debug.Debug("cssOnly.OnLoad", args)
 
 				hash := utils.ToDigest(buildUrlPath(args.Path))
-				contents, err := css.ParseCssFile(args.Path, types.Config.RootPath, hash)
+				contents, err := css.ParseCssFile(args.Path, hash)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}

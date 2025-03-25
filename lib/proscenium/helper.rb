@@ -21,7 +21,7 @@ module Proscenium
     # /app/javascript.
     def compute_asset_path(path, options = {})
       if %i[javascript stylesheet].include?(options[:type])
-        path.prepend DEFAULT_RAILS_ASSET_PATHS[options[:type]] unless path.start_with?('./', '../')
+        path.prepend DEFAULT_RAILS_ASSET_PATHS[options[:type]] if !path.start_with?('./', '../')
 
         result = Proscenium::Builder.build_to_path(path)
         return result.split('::').last.delete_prefix 'public'

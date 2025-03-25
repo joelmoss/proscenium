@@ -1,0 +1,5 @@
+/* css module */
+@import "./app/one.module.css";
+
+/* css module from package */
+@import "pkg/one.module.css";

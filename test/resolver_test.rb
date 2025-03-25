@@ -25,7 +25,7 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
 
     context 'bare specifier (NPM package)' do
       it 'resolves' do
-        assert_equal '/packages/mypackage/index.js', subject.resolve('mypackage')
+        assert_equal '/node_modules/pkg/index.js', subject.resolve('pkg')
       end
     end
 
@@ -46,6 +46,17 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
         assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
                      subject.resolve('@rubygems/proscenium/react-manager/index.jsx')
       end
+    end
+
+    it 'resolves css module from file:* npm install' do
+      assert_equal '/node_modules/pkg/one.module.css', subject.resolve('pkg/one.module.css')
+    end
+
+    it 'resolves css module from @rubygems/* and file:* npm install' do
+      assert_equal(
+        '/node_modules/@rubygems/gem_file/index.module.css',
+        subject.resolve('@rubygems/gem_file/index.module.css')
+      )
     end
   end
 end

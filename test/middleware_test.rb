@@ -27,7 +27,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
   end
 
   ['config/foo.js', 'app/views/foo.js', 'lib/foo.js', 'vendor/foo.js',
-   'node_modules/mypackage/index.js'].each do |path|
+   'node_modules/pkg/index.js'].each do |path|
     it "serves from #{path}" do
       get "/#{path}"
 
@@ -63,6 +63,13 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
 
       assert_includes response.body, 'console.log("gem3");'
     end
+
+    # focus
+    # it 'builds from pnpm link' do
+    #   get '/node_modules/@rubygems/gem2/styles.module.css'
+
+    #   assert_includes response.body, '.myClass-330940eb { color: pink; }'
+    # end
 
     context 'un-vendored gem with package.json' do
       it 'serves assets from allowed dirs at /[GEM_NAME]/*' do

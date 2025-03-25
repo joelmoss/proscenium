@@ -2,11 +2,8 @@ package css
 
 import (
 	"joelmoss/proscenium/internal/resolver"
-	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
 )
@@ -34,28 +31,9 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		absPath, err := resolver.Resolve(uri, p.filePath)
+		absPath, err := resolver.ResolveToFSPath(uri, p.filePath)
 		if err != nil {
 			return false
-		}
-
-		// We need the absolute file system path
-
-		isRubyGem := false
-		relativePath := strings.TrimPrefix(absPath, "/node_modules/")
-		if utils.IsRubyGem(relativePath) {
-			gemName, gemPath, err := utils.ResolveRubyGem(relativePath)
-			if err != nil {
-				return false
-			}
-
-			isRubyGem = true
-			suffix := utils.RemoveRubygemPrefix(relativePath, gemName)
-			absPath = filepath.Join(gemPath, suffix)
-		}
-
-		if !isRubyGem {
-			absPath = path.Join(p.rootPath, absPath)
 		}
 
 		if findAndInsertMixin(absPath, mixinIdent) {

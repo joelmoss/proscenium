@@ -12,22 +12,24 @@ import (
 )
 
 var _ = Describe("@rubygems scoped paths", func() {
-	Context("entrypoint", func() {
+	EntryPoint("node_modules/@rubygems/gem1/lib/gem1/gem1.js", func() {
 		It("fails if gem not found", func() {
-			success, result := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+			success, _ := b.BuildToString(fileToAssertCode)
 
 			Expect(success).To(BeFalse())
-			Expect(result).To(ContainSubstring(`Could not resolve Ruby gem \"gem1\"`))
 		})
+
+		AssertCode(`Could not resolve Ruby gem \"gem1\"`)
 	})
 
-	Context("import", func() {
+	EntryPoint("lib/rubygems/vendored.js", func() {
 		It("fails if gem not found", func() {
-			success, result := b.BuildToString("lib/rubygems/vendored.js")
+			success, _ := b.BuildToString(fileToAssertCode)
 
 			Expect(success).To(BeFalse())
-			Expect(result).To(ContainSubstring(`Could not resolve Ruby gem \"gem1\"`))
 		})
+
+		AssertCode(`Could not resolve Ruby gem \"gem1\"`)
 	})
 
 	When("bundle = true", func() {
@@ -37,20 +39,30 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 		Describe("installed via npm", func() {
 			BeforeEach(func() {
-				addGem("gem1", "dummy/vendor")
+				addGem("gem_npm", "dummy/vendor")
+				addGem("gem2", "external")
 			})
 
-			It("resolves bare import which is a dependency of the rubygem", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem1/gem_dependency.js")
-
-				Expect(code).To(ContainCode(`function stringLength(`))
-				Expect(code).To(ContainCode(`stringLength("foo");`))
+			EntryPoint("node_modules/@rubygems/gem_npm/gem_dependency.js", func() {
+				Describe("bare import which is a dependency of the rubygem", func() {
+					AssertCode(`function stringLength(`)
+					AssertCode(`stringLength("foo");`)
+				})
 			})
 
-			It("resolves bare import which is a dependency of the app", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem1/app_dependency.js")
+			EntryPoint("node_modules/@rubygems/gem_npm/app_dependency.js", func() {
+				Describe("bare import which is a dependency of the app", func() {
+					AssertCode(`console.log("pkg/index.js");`)
+				})
+			})
 
-				Expect(code).To(ContainCode(`console.log("node_modules/mypackage");`))
+			EntryPoint("node_modules/@rubygems/gem_npm/index.module.css", func() {
+				AssertCode(`.myClass-549811de { color: pink; }`)
+				AssertCode(`
+					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
+						color: pink;
+					}
+				`, UseDevCSSModuleNames)
 			})
 		})
 
@@ -59,17 +71,17 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem2", "external")
 			})
 
-			It("does not bundle bare import which is a dependency of the rubygem", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem2/gem_dependency.js")
-
-				Expect(code).To(ContainCode(`import stringLength from "string-length";`))
-				Expect(code).To(ContainCode(`stringLength("foo");`))
+			EntryPoint("node_modules/@rubygems/gem2/gem_dependency.js", func() {
+				Describe("does not bundle bare import which is a dependency of the rubygem", func() {
+					AssertCode(`import stringLength from "string-length";`)
+					AssertCode(`stringLength("foo");`)
+				})
 			})
 
-			It("resolves bare import which is a dependency of the app", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem2/app_dependency.js")
-
-				Expect(code).To(ContainCode(`console.log("node_modules/mypackage");`))
+			EntryPoint("node_modules/@rubygems/gem2/app_dependency.js", func() {
+				Describe("resolves bare import which is a dependency of the app", func() {
+					AssertCode(`console.log("pkg/index.js");`)
+				})
 			})
 		})
 
@@ -81,25 +93,19 @@ var _ = Describe("@rubygems scoped paths", func() {
 			It("bundles", func() {
 				_, code := b.BuildToString("lib/rubygems/vendored.js")
 
-				Expect(code).To(ContainCode(`
-					console.log("gem1");
-				`))
+				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
 
 			It("bundles without extension", func() {
 				_, code := b.BuildToString("lib/rubygems/vendored_extensionless.js")
 
-				Expect(code).To(ContainCode(`
-					console.log("gem1");
-				`))
+				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
 
 			It("resolves entry point", func() {
 				_, code := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
 
-				Expect(code).To(ContainCode(`
-					console.log("gem1");
-				`))
+				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
 
 			It("bundles from entrypoint", func() {
@@ -108,7 +114,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
 
-				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
 				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/foo")`))
@@ -127,7 +133,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code := b.BuildToString("lib/gems/gem3.js")
 
-				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
 				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/foo")`))
@@ -213,7 +219,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
 				Expect(code).To(ContainCode(`.name-3ddf717c`))
 
-				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
 				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/foo")`))
@@ -237,7 +243,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
 				Expect(code).To(ContainCode(`.name-3ddf717c`))
 
-				Expect(code).To(ContainCode(`function one() { console.log("one"); }`))
+				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
 				Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/foo")`))
@@ -335,7 +341,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			It("resolves imports", func() {
 				_, code := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
 
-				Expect(code).To(ContainCode(`import { one } from "/packages/mypackage/treeshake.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem3/lib/gem3/imported.js";`))
 				Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/foo.js";`))
@@ -401,7 +407,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
 
-				Expect(code).To(ContainCode(`import { one } from "/packages/mypackage/treeshake.js";`))
+				Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem4/lib/gem4/imported.js";`))
 				Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/foo.js";`))
