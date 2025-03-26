@@ -37,7 +37,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			types.Config.Bundle = true
 		})
 
-		Describe("installed via npm", func() {
+		Describe("installed via npm; internal", func() {
 			BeforeEach(func() {
 				addGem("gem_npm", "dummy/vendor")
 				addGem("gem2", "external")
@@ -66,7 +66,45 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 		})
 
-		Describe("not installed via npm", func() {
+		Describe("installed via npm; external", func() {
+			BeforeEach(func() {
+				addGem("gem_npm_ext", "external")
+				addGem("gem2", "external")
+			})
+
+			EntryPoint("node_modules/@rubygems/gem_npm_ext/gem_dependency.js", func() {
+				Describe("bare import which is a dependency of the rubygem", func() {
+					AssertCode(`function pThrottle(`)
+					AssertCode(`pThrottle("foo");`)
+					AssertCode(`import throttle from "/node_modules/@rubygems/gem_npm_ext/node_modules/p-throttle/index.js";`, Unbundle)
+				})
+			})
+
+			EntryPoint("node_modules/@rubygems/gem_npm_ext/dynamic_gem_dependency.js", func() {
+				Describe("dynamic import of bare module, which has a dependency", func() {
+					AssertCode(`var throttle = import("../../../_asset_chunks/p-throttle-JAOJKAVE.js");`)
+				})
+			})
+
+			EntryPoint("node_modules/@rubygems/gem_npm_ext/app_dependency.js", func() {
+				Describe("bare import which is a dependency of the app", func() {
+					AssertCode(`console.log("pkg/index.js");`)
+					AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
+				})
+			})
+
+			EntryPoint("node_modules/@rubygems/gem_npm_ext/index.module.css", func() {
+				AssertCode(`.myClass-b6ff5121 { color: pink; }`)
+				AssertCode(`.myClass-b6ff5121 { color: pink; }`, Unbundle)
+				AssertCode(`
+					.myClass-b6ff5121__node_modules--rubygems-gem_npm_ext-index-module-css {
+						color: pink;
+					}
+				`, UseDevCSSModuleNames)
+			})
+		})
+
+		Describe("not installed via npm; external", func() {
 			BeforeEach(func() {
 				addGem("gem2", "external")
 			})
@@ -74,13 +112,14 @@ var _ = Describe("@rubygems scoped paths", func() {
 			EntryPoint("node_modules/@rubygems/gem2/gem_dependency.js", func() {
 				Describe("does not bundle bare import which is a dependency of the rubygem", func() {
 					AssertCode(`import stringLength from "string-length";`)
-					AssertCode(`stringLength("foo");`)
+					AssertCode(`import stringLength from "string-length";`, Unbundle)
 				})
 			})
 
 			EntryPoint("node_modules/@rubygems/gem2/app_dependency.js", func() {
 				Describe("resolves bare import which is a dependency of the app", func() {
 					AssertCode(`console.log("pkg/index.js");`)
+					AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
 				})
 			})
 		})

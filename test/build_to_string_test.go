@@ -118,6 +118,11 @@ var _ = Describe("BuildToString", func() {
 		})
 	})
 
+	EntryPoint("pkg/dependency", func() {
+		AssertCode(`console.log("pkg_dep/index.js");`)
+		AssertCode(`import "/node_modules/.pnpm/pkg@git+https+++git@gist.github.com`, Unbundle)
+	})
+
 	EntryPoint("lib/importing/pnpm_link.js", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pnpm-link/one.js");`)

@@ -51,6 +51,8 @@ func (config *ConfigT) Reset() {
 type PluginData = struct {
 	IsResolvingPath bool
 	ImportedFromJs  bool
+	RealPath        string
+	GemPath         string
 }
 
 // The maximum size of an HTTP response body to cache.

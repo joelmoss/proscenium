@@ -106,6 +106,26 @@ var _ = Describe("Build(parseCss)", func() {
 						AssertCode(`.mixin3 { content: "pkg/mixin.css"; font-size: 30px; }`, Unbundle)
 					})
 
+					Describe("from file: package", func() {
+						AssertCode(`.mixin4 { content: "pnpm-file/mixin.css"; font-size: 40px; }`)
+						AssertCode(`.mixin4 { content: "pnpm-file/mixin.css"; font-size: 40px; }`, Unbundle)
+					})
+
+					Describe("from external file: package", func() {
+						AssertCode(`.mixin-pnpm-file-ext { content: "pnpm-file-ext/mixin.css"; font-size: 45px; }`)
+						AssertCode(`.mixin-pnpm-file-ext { content: "pnpm-file-ext/mixin.css"; font-size: 45px; }`, Unbundle)
+					})
+
+					Describe("from link: package", func() {
+						AssertCode(`.mixin5 { content: "pnpm-link/mixin.css"; font-size: 50px; }`)
+						AssertCode(`.mixin5 { content: "pnpm-link/mixin.css"; font-size: 50px; }`, Unbundle)
+					})
+
+					Describe("from external link: package", func() {
+						AssertCode(`.mixin-pnpm-link-ext { content: "pnpm-link-ext/mixin.css"; font-size: 55px; }`)
+						AssertCode(`.mixin-pnpm-link-ext { content: "pnpm-link-ext/mixin.css"; font-size: 55px; }`, Unbundle)
+					})
+
 					Describe("from internal @rubygems/*", func() {
 						BeforeEach(func() {
 							addGem("gem1", "dummy/vendor")
@@ -122,6 +142,20 @@ var _ = Describe("Build(parseCss)", func() {
 
 						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`)
 						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`, Unbundle)
+					})
+
+					Describe("from npm @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem_npm", "dummy/vendor")
+						})
+
+						AssertCode(`.mixin-gem_npm { content: "@rubygems/gem_npm/mixin.css"; font-size: 56px; }`)
+						AssertCode(`.mixin-gem_npm { content: "@rubygems/gem_npm/mixin.css"; font-size: 56px; }`, Unbundle)
+
+						Describe("without extension", func() {
+							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`)
+							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`, Bundle)
+						})
 					})
 
 					PIt("nested relative mixin is resolved", func() {})

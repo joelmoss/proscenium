@@ -7,7 +7,6 @@ import (
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"os"
 	"path"
 	"path/filepath"
 	"reflect"
@@ -75,17 +74,6 @@ func Resolve(filePath string, importer string) (string, error) {
 		pathSuffix := utils.RemoveRubygemPrefix(filePath, gemName)
 
 		if _, ok := utils.HasExtension(filePath); ok {
-			nodeModulePath := filepath.Join(types.Config.RootPath, "node_modules", "@rubygems", gemName)
-			_, err := os.Stat(nodeModulePath)
-			if err == nil {
-				realPath, err := filepath.EvalSymlinks(nodeModulePath)
-				if err != nil {
-					return returnResolve(filePath, err)
-				}
-
-				return returnResolve(strings.TrimPrefix(path.Join(realPath, pathSuffix), types.Config.RootPath), nil)
-			}
-
 			return returnResolve("/node_modules/"+filePath, nil)
 		}
 
@@ -158,6 +146,8 @@ func ResolveToFSPath(filePath string, importer string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	debug.Debug(urlPath)
 
 	// We need the absolute file system path
 	isRubyGem := false

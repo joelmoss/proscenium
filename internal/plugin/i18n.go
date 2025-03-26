@@ -45,7 +45,7 @@ var I18n = esbuild.Plugin{
 				// other environment will pick up changes in the locale file contents without a restart.
 				// TODO: Use goroutines?
 				if types.Config.Environment != types.ProdEnv || jsonContents == nil {
-					var contents = map[string]interface{}{}
+					var contents = map[string]any{}
 
 					for _, path := range *localeFiles {
 						// Get file contents.
@@ -55,7 +55,7 @@ var I18n = esbuild.Plugin{
 						}
 
 						// Parse file contents as YAML.
-						var yamlData map[string]interface{}
+						var yamlData map[string]any
 						err = yaml.Unmarshal([]byte(data), &yamlData)
 						if err != nil {
 							panic(err)

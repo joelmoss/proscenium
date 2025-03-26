@@ -4,9 +4,12 @@ import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/ije/esbuild-internal/helpers"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
@@ -22,6 +25,26 @@ var Bundless = esbuild.Plugin{
 
 		// Resolve with esbuild. Try and avoid this call as much as possible!
 		resolveWithEsbuild := func(args esbuild.OnResolveArgs, onResolveResult *esbuild.OnResolveResult) bool {
+			// If the path is a bare module, and the resolve dir is inside node_modules, then we need to
+			// evaluate any symlinks and resolve the path to the real path. We want the real path to the
+			// module when unbundling, otherwise dependencies of dependencies will not resolve correctly.
+			if utils.IsBareModule(onResolveResult.Path) && helpers.IsInsideNodeModules(args.ResolveDir) {
+				realResolveDir, err := filepath.EvalSymlinks(args.ResolveDir)
+				if err != nil {
+					debug.Debug("EvalSymlinks of ResolveDir failed!", err)
+					return false
+				}
+
+				realImporter, err := filepath.EvalSymlinks(args.Importer)
+				if err != nil {
+					debug.Debug("EvalSymlinks of Importer failed!", err)
+					return false
+				}
+
+				args.ResolveDir = realResolveDir
+				args.Importer = realImporter
+			}
+
 			r := build.Resolve(onResolveResult.Path, esbuild.ResolveOptions{
 				ResolveDir: args.ResolveDir,
 				Importer:   args.Importer,
@@ -55,13 +78,23 @@ var Bundless = esbuild.Plugin{
 
 				debug.Debug("OnResolve(@rubygems/*):begin", args)
 
-				result := esbuild.OnResolveResult{Path: args.Path}
+				result := esbuild.OnResolveResult{
+					Path:       args.Path,
+					PluginData: types.PluginData{},
+				}
 				resolveUnbundledPrefix(&result)
 				result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
 				gemName, gemPath, err := utils.ResolveRubyGem(result.Path)
 				if err != nil {
 					return result, err
+				} else {
+					result.Namespace = "rubygems"
+
+					if pluginData, ok := result.PluginData.(types.PluginData); ok {
+						pluginData.GemPath = gemPath
+						result.PluginData = pluginData
+					}
 				}
 
 				if resolveWithImportMap(&result, args.ResolveDir) {
@@ -73,12 +106,19 @@ var Bundless = esbuild.Plugin{
 				if utils.IsCssImportedFromJs(result.Path, args) {
 					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
 					// the css plugin to return the CSS as a JS object of class names (css module).
-					result.PluginData = types.PluginData{ImportedFromJs: true}
+					if pluginData, ok := result.PluginData.(types.PluginData); ok {
+						pluginData.ImportedFromJs = true
+						result.PluginData = pluginData
+					}
 				}
 
 				// If the path is an entrypoint, then it must be an absolute fileystem path.
 				if args.Kind == esbuild.ResolveEntryPoint {
-					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+					realPath := path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+					if pluginData, ok := result.PluginData.(types.PluginData); ok {
+						pluginData.RealPath = realPath
+						result.PluginData = pluginData
+					}
 				} else {
 					if _, hasExt := utils.HasExtension(result.Path); hasExt {
 						// FIXME: needed?
@@ -111,6 +151,38 @@ var Bundless = esbuild.Plugin{
 				}
 
 				debug.Debug("OnResolve(@rubygems/*):end", result)
+
+				return result, nil
+			})
+
+		// The path from a ruby gem will most likely not be the real FS path, so this will load their
+		// contents while maintaining the virtual path (ie. @rubygems/foo).
+		build.OnLoad(esbuild.OnLoadOptions{Namespace: "rubygems", Filter: ".*"},
+			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+				debug.Debug("OnLoad(rubygems):begin", args)
+
+				realPath := args.PluginData.(types.PluginData).RealPath
+
+				result := esbuild.OnLoadResult{
+					Loader:     esbuild.LoaderDefault,
+					ResolveDir: filepath.Dir(realPath),
+					PluginData: types.PluginData{
+						GemPath: args.PluginData.(types.PluginData).GemPath,
+					},
+				}
+
+				if !utils.PathIsCss(realPath) {
+					// Get file contents.
+					contents, err := os.ReadFile(realPath)
+					if err != nil {
+						panic(err)
+					}
+
+					contentsAsString := string(contents)
+					result.Contents = &contentsAsString
+				}
+
+				debug.Debug("OnLoad(rubygems):end", result)
 
 				return result, nil
 			})
@@ -171,27 +243,54 @@ var Bundless = esbuild.Plugin{
 				if utils.PathIsRelative(result.Path) && hasExt {
 					result.Path = path.Join(args.ResolveDir, result.Path)
 				} else {
+					// Unqualified path! - use esbuild to resolve.
+
+					originalPath := result.Path
 					resolveArgs := cloneResolveArgs(args)
 
-					if isBare != "" {
-						// If importer is a RubyGem, then change ResolveDir to the app root. This ensures
-						// that bare imports are resolved relative to the app root, and not the gem root.
-						// Which allows us to use the app's package.json and node_modules dir.
-						_, _, foundGem := utils.PathIsRubyGem(args.Importer)
-						if foundGem {
-							resolveArgs.ResolveDir = root
-						}
-					}
+					// Bare modules imported from a ruby gem are resolved as follows...
+					// 1. use the unchanged ResolveDir, which will apply for NPM installed modules.
+					// 2. use the gem path as the ResolveDir (if different), which will apply for non-NPM installed modules.
+					// 3. try again using the root as the ResolveDir (if different), which will be the app.
 
-					// Unqualified path! - use esbuild to resolve.
+					// 1
 					ok := resolveWithEsbuild(resolveArgs, &result)
 					if !ok {
 						return result, nil
+					}
+
+					// 2
+					if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
+						resolveArgs.ResolveDir != args.PluginData.(types.PluginData).GemPath {
+						resolveArgs.ResolveDir = args.PluginData.(types.PluginData).GemPath
+						result.Path = originalPath
+
+						if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+							return result, nil
+						}
+					}
+
+					// 3
+					if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
+						resolveArgs.ResolveDir != root {
+						resolveArgs.ResolveDir = root
+						result.Path = originalPath
+
+						if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+							return result, nil
+						}
 					}
 				}
 
 			FINISH:
 
+				if result.Errors != nil {
+					result.Warnings = result.Errors
+					result.Errors = nil
+					result.Path = args.Path
+				}
+
+				// Returned path must be a URL path.
 				if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path); ok {
 					result.Path = gemPath
 				} else if newPath, ok := rootPathToUrlPath(result.Path); ok {

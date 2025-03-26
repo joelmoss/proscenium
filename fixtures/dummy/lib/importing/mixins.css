@@ -13,6 +13,34 @@
   @mixin mixin from url("pkg/mixin.css");
   font-size: 30px;
 }
+/* from file: package */
+.mixin4 {
+  @mixin mixin from url("pnpm-file/mixin.css");
+  font-size: 40px;
+}
+/* from external file: package */
+.mixin-pnpm-file-ext {
+  @mixin mixin from url("pnpm-file-ext/mixin.css");
+  font-size: 45px;
+}
+/* from link: package */
+.mixin5 {
+  @mixin mixin from url("pnpm-link/mixin.css");
+  font-size: 50px;
+}
+/* from external link: package */
+.mixin-pnpm-link-ext {
+  @mixin mixin from url("pnpm-link-ext/mixin.css");
+  font-size: 55px;
+}
+.mixin-gem_npm {
+  @mixin mixin from url("@rubygems/gem_npm/mixin.css");
+  font-size: 56px;
+}
+.mixin-gem_npm_wo_ext {
+  @mixin mixin from url("@rubygems/gem_npm/mixin");
+  font-size: 57px;
+}
 /* from internal @rubygems/* */
 .mixin6 {
   @mixin mixin from url("@rubygems/gem1/mixin.css");
