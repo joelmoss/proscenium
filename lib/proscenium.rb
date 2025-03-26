@@ -42,6 +42,7 @@ module Proscenium
   autoload :Resolver
   autoload :BundledGems
   autoload :RubyGems
+  autoload :Registry
   autoload :UI
 
   class Deprecator
