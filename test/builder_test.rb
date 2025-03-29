@@ -12,7 +12,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
-      assert_includes subject.build_to_string('lib/env/env.js'), 'console.log("testtest")'
+      result = subject.build_to_string('lib/env/env.js')
+      assert_includes result[:response], 'console.log("testtest")'
     end
 
     context 'config.env_vars' do
@@ -20,7 +21,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         Proscenium.config.env_vars << 'USER_NAME'
         ENV['USER_NAME'] = 'joelmoss'
 
-        assert_includes subject.build_to_string('lib/env/extra.js'), 'console.log("joelmoss")'
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
       end
     end
 

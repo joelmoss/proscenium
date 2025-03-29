@@ -10,7 +10,8 @@ module Proscenium
 
     class Result < FFI::Struct
       layout :success, :bool,
-             :response, :string
+             :response, :string,
+             :content_hash, :string
     end
 
     module Request
@@ -88,7 +89,7 @@ module Proscenium
 
         raise BuildError, result[:response] unless result[:success]
 
-        result[:response]
+        result
       end
     end
 
