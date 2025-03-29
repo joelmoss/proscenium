@@ -14,7 +14,6 @@ module Proscenium
     config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
-    config.proscenium.external_node_modules = false
 
     # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
