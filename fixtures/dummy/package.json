@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "@rubygems/gem_npm": "^1.0.0",
+    "@rubygems/gem_npm_ext": "^1.0.0",
     "pkg": "gist:c3d9087f5f214e1f0d9719e4a7d38474",
     "pnpm-file": "file:vendor/pnpm-file",
     "pnpm-file-ext": "file:../external/pnpm-file-ext",

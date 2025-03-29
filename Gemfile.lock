@@ -42,6 +42,11 @@ PATH
     gem_file (1.0.0)
 
 PATH
+  remote: fixtures/dummy/vendor/gem_npm
+  specs:
+    gem_npm (1.0.0)
+
+PATH
   remote: fixtures/external/gem2
   specs:
     gem2 (0.1.0)
@@ -52,6 +57,11 @@ PATH
   specs:
     gem4 (0.1.0)
       rails (>= 7.0.4)
+
+PATH
+  remote: fixtures/external/gem_npm_ext
+  specs:
+    gem_npm_ext (1.0.0)
 
 GEM
   remote: https://rubygems.org/
@@ -378,6 +388,8 @@ DEPENDENCIES
   gem4!
   gem5!
   gem_file!
+  gem_npm!
+  gem_npm_ext!
   gems
   htmlbeautifier
   localhost

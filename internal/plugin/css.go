@@ -23,6 +23,10 @@ var Css = esbuild.Plugin{
 					pluginData = args.PluginData.(types.PluginData)
 				}
 
+				if args.Namespace == "rubygems" && pluginData.RealPath != "" {
+					args.Path = pluginData.RealPath
+				}
+
 				urlPath := buildUrlPath(args.Path)
 				hash := utils.ToDigest(urlPath)
 
