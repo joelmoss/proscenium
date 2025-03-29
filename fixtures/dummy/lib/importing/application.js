@@ -15,3 +15,6 @@ import "./app/four";
 
 /* relative import without filename */
 import "./app/five";
+
+import "..";
+import ".";

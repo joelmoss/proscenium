@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
+	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 
@@ -18,6 +20,17 @@ import (
 //
 //export build
 func build(entryPoint string) esbuild.BuildResult {
+	n, err := replacements.Build()
+	if err != nil {
+		return esbuild.BuildResult{
+			Errors: []esbuild.Message{{
+				Text:   "build npm replacements",
+				Detail: err.Error(),
+			}},
+		}
+	}
+	debug.Debug("%d npm replacements loaded", n)
+
 	// Ensure entrypoint is a bare specifier (does not begin with a `/`, `./` or `../`).
 	if !utils.IsBareSpecifier(entryPoint) {
 		return esbuild.BuildResult{
@@ -28,7 +41,7 @@ func build(entryPoint string) esbuild.BuildResult {
 		}
 	}
 
-	_, err := importmap.Imports()
+	_, err = importmap.Imports()
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
@@ -104,7 +117,7 @@ func build(entryPoint string) esbuild.BuildResult {
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Svg, plugin.Css)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
 
 	if !utils.IsUrl(entryPoint) {
 		definitions, err := buildEnvVars()

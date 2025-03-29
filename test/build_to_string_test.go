@@ -49,7 +49,20 @@ var _ = Describe("BuildToString", func() {
 		AssertCode(`import "/constants.rjs";`, Unbundle)
 	})
 
+	EntryPoint("lib/importing/replacements.js", func() {
+		AssertCode(`= Object.assign;`)
+		AssertCode(`= Object.assign;`, Unbundle)
+	})
+
 	EntryPoint("lib/importing/application.js", func() {
+		Describe("import '..'", func() {
+			AssertCode(`console.log("/lib/index.js");`)
+		})
+
+		Describe("import '.'", func() {
+			AssertCode(`console.log("/lib/importing/index.js");`)
+		})
+
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("/lib/importing/app/one.js");`)
 			AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
