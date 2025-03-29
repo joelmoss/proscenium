@@ -122,7 +122,7 @@ func Resolve(filePath string, importer string) (string, error) {
 		return returnResolve("", errors.New(result.Errors[0].Text))
 	}
 
-	var metadata struct{ Inputs map[string]interface{} }
+	var metadata struct{ Inputs map[string]any }
 	err := json.Unmarshal([]byte(result.Metafile), &metadata)
 	if err != nil {
 		return returnResolve("", err)

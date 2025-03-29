@@ -20,10 +20,21 @@ module Proscenium
     end
 
     def call(env)
-      request = Rack::Request.new(env)
+      request = ActionDispatch::Request.new(env)
 
       return @app.call(env) if !request.get? && !request.head?
-      return @chunk_handler.attempt(request.env) if request.path.match?(%r{^/_asset_chunks/})
+
+      if request.path.match?(%r{^/_asset_chunks/})
+        response = Rack::Response[*@chunk_handler.attempt(request.env)]
+        response.etag = request.path.match(/-\$([a-z0-9]+)\$\./i)[1]
+
+        if request.fresh?(response)
+          response.status = 304
+          response.body = []
+        end
+
+        return response.finish
+      end
 
       attempt(request) || @app.call(env)
     end
@@ -33,17 +44,17 @@ module Proscenium
     def attempt(request)
       return unless (type = find_type(request))
 
-      # file_handler.attempt(request.env) || type.attempt(request)
-
       type.attempt request
     end
 
     def find_type(request)
       pathname = Pathname.new(request.path)
 
-      return RubyGems if pathname.fnmatch?(gems_path_glob, File::FNM_EXTGLOB)
-
-      Esbuild if pathname.fnmatch?(app_path_glob, File::FNM_EXTGLOB)
+      if pathname.fnmatch?(gems_path_glob, File::FNM_EXTGLOB)
+        RubyGems
+      elsif pathname.fnmatch?(app_path_glob, File::FNM_EXTGLOB)
+        Esbuild
+      end
     end
 
     def app_path_glob
@@ -54,18 +65,8 @@ module Proscenium
       "/node_modules/@rubygems/**.{#{file_extensions}}"
     end
 
-    def ui_path_glob
-      "/proscenium/**.{#{file_extensions}}"
-    end
-
     def file_extensions
       @file_extensions ||= FILE_EXTENSIONS.join(',')
     end
-
-    # TODO: handle precompiled assets
-    # def file_handler
-    #   ::ActionDispatch::FileHandler.new Rails.public_path.join('assets').to_s,
-    #                                     headers: { 'X-Proscenium-Middleware' => 'precompiled' }
-    # end
   end
 end

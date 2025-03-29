@@ -55,7 +55,7 @@ var _ = Describe("import maps", func() {
 				})
 			`))
 
-			_, code := b.BuildToString("lib/import_map/as_js.js")
+			_, code, _ := b.BuildToString("lib/import_map/as_js.js")
 
 			Expect(code).To(ContainCode(`console.log("/lib/foo2.js");`))
 		})
@@ -68,7 +68,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "/lib/foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`console.log("/lib/foo.js");`))
 				})
@@ -80,7 +80,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "../foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`console.log("/lib/foo.js");`))
 				})
@@ -94,7 +94,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "https://proscenium.test/foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "https://proscenium.test/foo.js";`))
 				})
@@ -106,7 +106,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "pkg" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				})
@@ -118,7 +118,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "/lib/indexes" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`
 						console.log("lib/indexes/index.js");
@@ -131,7 +131,7 @@ var _ = Describe("import maps", func() {
 					"imports": { "foo": "/lib/foo2" }
 				}`))
 
-				_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+				_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 				Expect(code).To(ContainCode(`console.log("/lib/foo2.js");`))
 			})
@@ -144,7 +144,7 @@ var _ = Describe("import maps", func() {
 					"imports": { "foo/": "./nested/foo/" }
 			}`))
 
-				_, code := b.BuildToString("lib/import_map/path_prefix.js")
+				_, code, _ := b.BuildToString("lib/import_map/path_prefix.js")
 
 				Expect(code).To(ContainCode(`console.log("/lib/import_map/nested/foo/one.js");`))
 			})
@@ -155,7 +155,7 @@ var _ = Describe("import maps", func() {
 				"imports": { "axios": "https://proscenium.test/axios.js" }
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/to_url.js")
+			_, code, _ := b.BuildToString("lib/import_map/to_url.js")
 
 			Expect(code).To(ContainCode(`
 				import axios from "https://proscenium.test/axios.js";
@@ -167,7 +167,7 @@ var _ = Describe("import maps", func() {
 				"imports": { "my-package": "pkg" }
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/bare_modules.js")
+			_, code, _ := b.BuildToString("lib/import_map/bare_modules.js")
 
 			Expect(code).To(ContainCode(`console.log("pkg/index.js");`))
 		})
@@ -184,7 +184,7 @@ var _ = Describe("import maps", func() {
 				}
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/scopes.js")
+			_, code, _ := b.BuildToString("lib/import_map/scopes.js")
 
 			Expect(code).To(ContainCode(`import foo from "/lib/foo4.js";`))
 		})
@@ -204,7 +204,7 @@ var _ = Describe("import maps", func() {
 					})
 				`))
 
-			_, code := b.BuildToString("lib/import_map/as_js.js")
+			_, code, _ := b.BuildToString("lib/import_map/as_js.js")
 
 			Expect(code).To(ContainCode(`import pkg from "/lib/foo2.js";`))
 		})
@@ -214,7 +214,7 @@ var _ = Describe("import maps", func() {
 				"imports": { "foo": "/lib/foo.js" }
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+			_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 			Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 		})
@@ -227,7 +227,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "/lib/foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				})
@@ -239,7 +239,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "../foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "/lib/foo.js";`))
 				})
@@ -253,7 +253,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "https://proscenium.test/foo.js" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "https://proscenium.test/foo.js";`))
 				})
@@ -265,7 +265,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "pkg" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				})
@@ -277,7 +277,7 @@ var _ = Describe("import maps", func() {
 						"imports": { "foo": "/lib/indexes" }
 					}`))
 
-					_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+					_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 					Expect(code).To(ContainCode(`import "/lib/indexes/index.js";`))
 				})
@@ -288,7 +288,7 @@ var _ = Describe("import maps", func() {
 					"imports": { "foo": "/lib/foo2" }
 				}`))
 
-				_, code := b.BuildToString("lib/import_map/bare_specifier.js")
+				_, code, _ := b.BuildToString("lib/import_map/bare_specifier.js")
 
 				Expect(code).To(ContainCode(`import "/lib/foo2.js";`))
 			})
@@ -301,7 +301,7 @@ var _ = Describe("import maps", func() {
 					"imports": { "foo/": "./nested/foo/" }
 			}`))
 
-				_, code := b.BuildToString("lib/import_map/path_prefix.js")
+				_, code, _ := b.BuildToString("lib/import_map/path_prefix.js")
 
 				Expect(code).To(ContainCode(`
 					import foo from "/lib/import_map/nested/foo/one.js";
@@ -314,7 +314,7 @@ var _ = Describe("import maps", func() {
 				"imports": { "axios": "https://proscenium.test/axios.js" }
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/to_url.js")
+			_, code, _ := b.BuildToString("lib/import_map/to_url.js")
 
 			Expect(code).To(ContainCode(`
 				import axios from "https://proscenium.test/axios.js";
@@ -326,7 +326,7 @@ var _ = Describe("import maps", func() {
 				"imports": { "my-package": "pkg" }
 			}`))
 
-			_, code := b.BuildToString("lib/import_map/bare_modules.js")
+			_, code, _ := b.BuildToString("lib/import_map/bare_modules.js")
 
 			Expect(code).To(ContainCode(`import mypackage from "/node_modules/pkg/index.js";`))
 		})

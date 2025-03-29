@@ -14,23 +14,18 @@ import (
 
 // Build the given `path`.
 //
-// - path - The path to build relative to `root`. Multiple paths can be separated by a semicolon.
+// - path - The path to build relative to `root`.
 //
 //export build
-func build(path string) esbuild.BuildResult {
-	entrypoints := strings.Split(path, ";")
-
-	// Ensure entrypoints are bare specifiers (do not begin with a `/`, `./` or `../`).
-	for i, entrypoint := range entrypoints {
-		if !utils.IsBareSpecifier(entrypoint) {
-			return esbuild.BuildResult{
-				Errors: []esbuild.Message{{
-					Text:   fmt.Sprintf("Could not resolve %q", entrypoint),
-					Detail: "Entrypoints must be bare specifiers",
-				}},
-			}
+func build(entryPoint string) esbuild.BuildResult {
+	// Ensure entrypoint is a bare specifier (does not begin with a `/`, `./` or `../`).
+	if !utils.IsBareSpecifier(entryPoint) {
+		return esbuild.BuildResult{
+			Errors: []esbuild.Message{{
+				Text:   fmt.Sprintf("Could not resolve %q", entryPoint),
+				Detail: "Entrypoints must be bare specifiers",
+			}},
 		}
-		entrypoints[i] = entrypoint
 	}
 
 	_, err := importmap.Imports()
@@ -51,21 +46,20 @@ func build(path string) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if strings.HasSuffix(path, ".map") {
-		path = strings.TrimSuffix(path, ".map")
-		entrypoints = []string{path}
+	if strings.HasSuffix(entryPoint, ".map") {
+		entryPoint = strings.TrimSuffix(entryPoint, ".map")
 		sourcemap = esbuild.SourceMapExternal
 	}
 
 	buildOptions := esbuild.BuildOptions{
-		EntryPoints:       entrypoints,
+		EntryPoints:       []string{entryPoint},
 		Splitting:         types.Config.CodeSplitting,
 		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
-		ChunkNames:        "_asset_chunks/[name]-[hash]",
+		ChunkNames:        "_asset_chunks/[name]-$[hash]$",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
 		JSXDev:            types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
@@ -112,7 +106,7 @@ func build(path string) esbuild.BuildResult {
 
 	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Svg, plugin.Css)
 
-	if !utils.IsUrl(path) {
+	if !utils.IsUrl(entryPoint) {
 		definitions, err := buildEnvVars()
 		if err != nil {
 			return esbuild.BuildResult{

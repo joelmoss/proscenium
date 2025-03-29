@@ -258,7 +258,7 @@ var _ = Describe("BuildToString", func() {
 					"/lib/foo.js": "/lib/foo2.js"
 				}
 			}`))
-			_, code := b.BuildToString("lib/foo.js")
+			_, code, _ := b.BuildToString("lib/foo.js")
 
 			Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
 		})
@@ -271,7 +271,7 @@ func BenchmarkBuildToString(bm *testing.B) {
 	types.Config.Environment = types.TestEnv
 
 	for bm.Loop() {
-		success, result := b.BuildToString("lib/foo.js")
+		success, result, _ := b.BuildToString("lib/foo.js")
 
 		if !success {
 			panic("Build failed: " + result)

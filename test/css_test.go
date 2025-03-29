@@ -223,20 +223,20 @@ var _ = Describe("BuildToString(css)", func() {
 		})
 
 		It("builds from npm install", func() {
-			_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.css")
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.css")
 
 			Expect(code).To(ContainCode(`.myClass {	color: pink; }`))
 		})
 
 		Context("css modules", func() {
 			It("builds from npm install", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
 
 				Expect(code).To(ContainCode(`.myClass-549811de { color: pink; }`))
 			})
 
 			It("builds from file:* npm install", func() {
-				_, code := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
 
 				Expect(code).To(ContainCode(`.myClass-be318e6c { color: pink; }`))
 			})
@@ -249,7 +249,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 			It("builds npm install", func() {
 				addGem("gem_npm", "dummy/vendor")
-				_, code := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
 
 				Expect(code).To(ContainCode(`
 					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
@@ -290,13 +290,13 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result := b.BuildToString("lib/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_css_module.js")
 
 				Expect(result).To(ContainCode(expectedCode))
 			})
 
 			It("import relative css module from js", func() {
-				_, result := b.BuildToString("lib/import_relative_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
 
 				Expect(result).To(ContainCode(expectedCode))
 			})
@@ -308,13 +308,13 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("import relative css module from js", func() {
-				_, result := b.BuildToString("lib/import_relative_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
 
 				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result := b.BuildToString("lib/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_css_module.js")
 
 				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
@@ -322,7 +322,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 		When("importing css module from css module", func() {
 			It("should bundle with different digest", func() {
-				_, result := b.BuildToString("lib/css_modules/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
 
 				Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
@@ -335,7 +335,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result := b.BuildToString("lib/rubygems/internal_import_css_module.js")
+				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js")
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem1/styles.module.css";`))
 				Expect(result).To(ContainCode(`var es = document.querySelector("#_3f751f91");`))
@@ -349,7 +349,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result := b.BuildToString("lib/rubygems/external_import_css_module.js")
+				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js")
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem2/styles.module.css";`))
 				Expect(result).To(ContainCode(`var es = document.querySelector("#_e789966c");`))
