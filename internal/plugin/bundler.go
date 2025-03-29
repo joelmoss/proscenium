@@ -3,6 +3,7 @@ package plugin
 import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
+	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
@@ -243,6 +244,13 @@ var Bundler = esbuild.Plugin{
 						resolveArgs := cloneResolveArgs(args)
 
 						if utils.IsBareModule(result.Path) {
+							// replace some npm modules with browser native APIs
+							if replacement, ok := replacements.Get(result.Path); ok {
+								result.Namespace = "replacement"
+								result.PluginData = replacement
+								goto FINISH
+							}
+
 							// If importer is a RubyGem...
 							//
 							// ...and that gem is NOT installed to node_modules, then change ResolveDir to the app
@@ -285,13 +293,7 @@ var Bundler = esbuild.Plugin{
 
 				if unbundled {
 					result.External = true
-
-					// if gemName, gemPath, foundGem := utils.PathIsRubyGem(result.Path); foundGem {
-					// 	suffix := strings.TrimPrefix(result.Path, gemPath)
-					// 	result.Path = "/node_modules/" + types.RubyGemsScope + gemName + suffix
-					// } else {
 					result.Path = strings.TrimPrefix(result.Path, root)
-					// }
 				}
 
 				debug.Debug("OnResolve(.*):end", result)

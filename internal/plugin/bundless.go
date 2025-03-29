@@ -2,6 +2,7 @@ package plugin
 
 import (
 	"joelmoss/proscenium/internal/debug"
+	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
@@ -243,6 +244,16 @@ var Bundless = esbuild.Plugin{
 				if utils.PathIsRelative(result.Path) && hasExt {
 					result.Path = path.Join(args.ResolveDir, result.Path)
 				} else {
+					if isBare != "" {
+						// replace some npm modules with browser native APIs
+						if replacement, ok := replacements.Get(result.Path); ok {
+							result.External = false
+							result.Namespace = "replacement"
+							result.PluginData = replacement
+							goto FINISH
+						}
+					}
+
 					// Unqualified path! - use esbuild to resolve.
 
 					originalPath := result.Path
