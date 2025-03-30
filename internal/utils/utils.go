@@ -204,3 +204,14 @@ func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
 
 	return "", false
 }
+
+func ApplyQueryString(path string) string {
+	if types.Config.QueryString == "" {
+		return path
+	}
+
+	if strings.Contains(path, "?") {
+		return path + "&" + types.Config.QueryString
+	}
+	return path + "?" + types.Config.QueryString
+}

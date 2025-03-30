@@ -23,11 +23,13 @@ import (
 type debugType bool
 type bundleType bool
 type unbundleType bool
+type queryStringType bool
 type useDevCSSModuleNamesType bool
 
 const Debug = debugType(true)
 const Bundle = bundleType(true)
 const Unbundle = unbundleType(true)
+const QueryString = queryStringType(true)
 const UseDevCSSModuleNames = useDevCSSModuleNamesType(true)
 
 var cwd, _ = os.Getwd()
@@ -103,6 +105,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 		case t == reflect.TypeOf(Debug):
 		case t == reflect.TypeOf(Bundle):
 		case t == reflect.TypeOf(Unbundle):
+		case t == reflect.TypeOf(QueryString):
 		case t == reflect.TypeOf(UseDevCSSModuleNames):
 			assertArgs = append(assertArgs, arg)
 		default:
@@ -123,6 +126,8 @@ var AssertCode = func(expectedCode string, args ...any) {
 				types.Config.Bundle = true
 			case t == reflect.TypeOf(Unbundle):
 				types.Config.Bundle = false
+			case t == reflect.TypeOf(QueryString):
+				types.Config.QueryString = "v1"
 			case t == reflect.TypeOf(UseDevCSSModuleNames):
 				types.Config.UseDevCSSModuleNames = true
 			}

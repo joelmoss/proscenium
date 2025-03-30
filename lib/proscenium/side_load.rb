@@ -40,6 +40,9 @@ module Proscenium
           opts[:preload_links_header] = false if fragments
           opts[:data] ||= {}
 
+          if Proscenium.config.cache_query_string.present?
+            path += "?#{Proscenium.config.cache_query_string}"
+          end
           out << helpers.stylesheet_link_tag(path, extname: false, **opts)
         end
 
@@ -67,6 +70,10 @@ module Proscenium
 
           opts = opts[:js].is_a?(Hash) ? opts[:js] : {}
           opts[:preload_links_header] = false if fragments
+
+          if Proscenium.config.cache_query_string.present?
+            path += "?#{Proscenium.config.cache_query_string}"
+          end
           out << helpers.javascript_include_tag(path, extname: false, **opts)
         end
 

@@ -144,15 +144,6 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
 
       assert_equal 'public, max-age=2592000', response.headers['Cache-Control']
     end
-
-    it 'should propogate cache_query_string' do
-      skip 'TODO'
-
-      Proscenium.config.cache_query_string = 'v1'
-      get '/lib/query_cache.js?v1'
-
-      assert_includes response.body, 'console.log("/lib/query_cache.js")'
-    end
   end
 
   private

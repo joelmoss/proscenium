@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 class Proscenium::HelperTest < ActionDispatch::IntegrationTest
+  after do
+    Proscenium.config.cache_query_string = nil
+  end
+
   describe '#css_module' do
     it 'transforms class names beginning with @' do
       page = Capybara::Node::Simple.new(CssmHelperController.render(:index))
@@ -40,6 +44,21 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       assert_dom 'script[src="/app/views/pages/_side.js"]'
       assert_dom 'script[src="/app/views/layouts/bare.js"]'
       assert_dom 'script[src="/app/views/bare_pages/include_assets.js"]'
+    end
+  end
+
+  describe 'with cache_query_string' do
+    it 'includes side loaded assets' do
+      Proscenium.config.cache_query_string = 'v1'
+      get '/include_assets'
+
+      assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css?v1"]'
+      assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css?v1"]'
+      assert_dom 'link[rel="stylesheet"][href="/app/views/layouts/bare.css?v1"]'
+      assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css?v1"]'
+      assert_dom 'script[src="/app/views/pages/_side.js?v1"]'
+      assert_dom 'script[src="/app/views/layouts/bare.js?v1"]'
+      assert_dom 'script[src="/app/views/bare_pages/include_assets.js?v1"]'
     end
   end
 

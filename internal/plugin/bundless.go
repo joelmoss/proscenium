@@ -308,6 +308,8 @@ var Bundless = esbuild.Plugin{
 					result.Path = newPath
 				}
 
+				result.Path = utils.ApplyQueryString(result.Path)
+
 				debug.Debug("OnResolve:end", result)
 
 				return result, nil

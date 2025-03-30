@@ -79,6 +79,7 @@ module Proscenium
         CodeSplitting: Proscenium.config.code_splitting,
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
+        QueryString: cache_query_string,
         Debug: Proscenium.config.debug
       }.to_json)
     end
@@ -113,8 +114,7 @@ module Proscenium
     end
 
     def cache_query_string
-      q = Proscenium.config.cache_query_string
-      q ? "--cache-query-string #{q}" : nil
+      Proscenium.config.cache_query_string.presence || ''
     end
 
     def gem_root

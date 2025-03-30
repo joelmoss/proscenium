@@ -128,7 +128,7 @@ var Bundler = esbuild.Plugin{
 				}
 
 				if unbundled {
-					result.Path = "/node_modules/" + result.Path
+					result.Path = utils.ApplyQueryString("/node_modules/" + result.Path)
 					result.External = true
 				} else if hasExt {
 					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
@@ -275,10 +275,6 @@ var Bundler = esbuild.Plugin{
 									resolveArgs.ResolveDir = root
 								}
 							}
-
-							if types.Config.ExternalNodeModules {
-								unbundled = true
-							}
 						}
 
 						// Unqualified path! - use esbuild to resolve.
@@ -293,7 +289,7 @@ var Bundler = esbuild.Plugin{
 
 				if unbundled {
 					result.External = true
-					result.Path = strings.TrimPrefix(result.Path, root)
+					result.Path = utils.ApplyQueryString(strings.TrimPrefix(result.Path, root))
 				}
 
 				debug.Debug("OnResolve(.*):end", result)

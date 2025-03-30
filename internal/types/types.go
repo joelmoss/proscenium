@@ -22,20 +22,20 @@ func (e Environment) String() string {
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
 // - RubyGems - Map of bundle ruby gem names and paths.
+// - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
-// - ExternalNodeModules? - externalise everything under /node_modules/
 // - Bundle?
 // - Debug?
 type ConfigT struct {
-	RootPath            string
-	GemPath             string
-	EnvVars             map[string]string
-	RubyGems            map[string]string
-	Debug               bool
-	CodeSplitting       bool
-	Bundle              bool
-	ExternalNodeModules bool
-	Environment         Environment
+	RootPath      string
+	GemPath       string
+	EnvVars       map[string]string
+	RubyGems      map[string]string
+	Debug         bool
+	CodeSplitting bool
+	QueryString   string
+	Bundle        bool
+	Environment   Environment
 
 	// For testing
 	UseDevCSSModuleNames bool

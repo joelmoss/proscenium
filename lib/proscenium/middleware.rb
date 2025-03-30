@@ -26,7 +26,11 @@ module Proscenium
 
       if request.path.match?(%r{^/_asset_chunks/})
         response = Rack::Response[*@chunk_handler.attempt(request.env)]
-        response.etag = request.path.match(/-\$([a-z0-9]+)\$\./i)[1]
+        response.etag = request.path.match(/-\$([a-z0-9]+)\$/i)[1]
+
+        if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
+          response.cache! Proscenium.config.cache_max_age
+        end
 
         if request.fresh?(response)
           response.status = 304

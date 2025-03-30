@@ -66,6 +66,7 @@ var _ = Describe("BuildToString", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("/lib/importing/app/one.js");`)
 			AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
+			AssertCode(`import "/lib/importing/app/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("/lib/importing/app/two.js");`)
@@ -103,6 +104,7 @@ var _ = Describe("BuildToString", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pkg/one.js");`)
 			AssertCode(`import "/node_modules/pkg/one.js";`, Unbundle)
+			AssertCode(`import "/node_modules/pkg/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("pkg/two.js");`)
@@ -224,6 +226,7 @@ var _ = Describe("BuildToString", func() {
 		})
 
 		AssertCode(`import "/lib/importing/app/one.js";`)
+		AssertCode(`import "/lib/importing/app/one.js?v1";`, QueryString)
 		AssertCode(`import "/lib/importing/app/two.js";`)
 		AssertCode(`import "/lib/importing/app/three.js";`)
 	})
