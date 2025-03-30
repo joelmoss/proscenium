@@ -3,6 +3,8 @@ package proscenium_test
 import (
 	"joelmoss/proscenium/internal/importmap"
 	r "joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/types"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -87,7 +89,7 @@ var _ = Describe("Resolve", func() {
 		It("resolves relative path with importer", func() {
 			addGem("gem3", "dummy/vendor")
 
-			importer := "/Users/joelmoss/dev/proscenium/fixtures/dummy/vendor/gem3/lib/gem3/styles.module.css"
+			importer := filepath.Join(types.Config.RootPath, "/vendor/gem3/lib/gem3/styles.module.css")
 			Expect(r.Resolve("./red.css", importer)).To(Equal(
 				"/node_modules/@rubygems/gem3/lib/gem3/red.css",
 			))
@@ -114,7 +116,7 @@ var _ = Describe("Resolve", func() {
 		It("resolves relative path with importer", func() {
 			addGem("gem4", "external")
 
-			importer := "/Users/joelmoss/dev/proscenium/fixtures/external/gem4/lib/gem4/styles.module.css"
+			importer := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 			Expect(r.Resolve("./red.css", importer)).To(Equal(
 				"/node_modules/@rubygems/gem4/lib/gem4/red.css",
 			))
