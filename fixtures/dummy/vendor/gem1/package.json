@@ -1,11 +1,8 @@
 {
   "name": "gem1",
   "version": "1.0.0",
-  "description": "",
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "open-props": "^1.5.1"
+    "open-props": "^1.5.1",
+    "string-length": "^6.0.0"
   }
 }

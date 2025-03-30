@@ -9,9 +9,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("b.Build(i18n)", func() {
+var _ = Describe("b.BuildToString(i18n)", func() {
 	It("exports json", func() {
-		Expect(b.Build("lib/i18n/benchmark/index.js")).To(ContainCode(`
+		_, code, _ := b.BuildToString("lib/i18n/benchmark/index.js")
+
+		Expect(code).To(ContainCode(`
 			{ first_name: "Joel", foo: { bar: { baz: 1 } }, last_name: "Moss" }
 		`))
 	})
@@ -22,10 +24,10 @@ func BenchmarkI18n(bm *testing.B) {
 	bm.ResetTimer()
 
 	for i := 0; i < bm.N; i++ {
-		result := b.Build("lib/i18n/benchmark/index.js")
+		success, result, _ := b.BuildToString("lib/i18n/benchmark/index.js")
 
-		if len(result.Errors) > 0 {
-			panic("Build failed: " + result.Errors[0].Text)
+		if !success {
+			panic("Build failed: " + result)
 		}
 	}
 }

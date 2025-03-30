@@ -1,5 +1,9 @@
 package types
 
+var Debug = false
+
+const RubyGemsScope = "@rubygems/"
+
 type Environment uint8
 
 // The environment (1 = development, 2 = test, 3 = production)
@@ -17,21 +21,24 @@ func (e Environment) String() string {
 // - GemPath - Proscenium gem root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
-// - Engines- Map of Rails engine names and paths.
+// - RubyGems - Map of bundle ruby gem names and paths.
+// - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
-// - ExternalNodeModules? - externalise everything under /node_modules/
 // - Bundle?
 // - Debug?
 type ConfigT struct {
-	RootPath            string
-	GemPath             string
-	Engines             map[string]string
-	EnvVars             map[string]string
-	Debug               bool
-	CodeSplitting       bool
-	Bundle              bool
-	ExternalNodeModules bool
-	Environment         Environment
+	RootPath      string
+	GemPath       string
+	EnvVars       map[string]string
+	RubyGems      map[string]string
+	Debug         bool
+	CodeSplitting bool
+	QueryString   string
+	Bundle        bool
+	Environment   Environment
+
+	// For testing
+	UseDevCSSModuleNames bool
 }
 
 var Config = ConfigT{CodeSplitting: true, Bundle: true}
@@ -44,6 +51,8 @@ func (config *ConfigT) Reset() {
 type PluginData = struct {
 	IsResolvingPath bool
 	ImportedFromJs  bool
+	RealPath        string
+	GemPath         string
 }
 
 // The maximum size of an HTTP response body to cache.

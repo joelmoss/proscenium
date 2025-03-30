@@ -3,8 +3,6 @@ module Gem4
     # isolate_namespace Gem4
     engine_name 'gem4'
 
-    config.proscenium.engines[:gem4] = root
-
     initializer 'gem4.autoload' do
       # ActiveSupport::Dependencies.autoload_paths << "#{root}/app"
 

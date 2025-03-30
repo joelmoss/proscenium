@@ -10,7 +10,8 @@ module Proscenium
 
     class Result < FFI::Struct
       layout :success, :bool,
-             :response, :string
+             :response, :string,
+             :content_hash, :string
     end
 
     module Request
@@ -21,11 +22,6 @@ module Proscenium
 
       attach_function :build_to_string, [
         :string, # Path or entry point.
-        :pointer # Config as JSON.
-      ], Result.by_value
-
-      attach_function :build_to_path, [
-        :string, # Path or entry point. Multiple can be given by separating with a semi-colon
         :pointer # Config as JSON.
       ], Result.by_value
 
@@ -44,6 +40,7 @@ module Proscenium
         @error = JSON.parse(error, strict: true).deep_transform_keys(&:underscore)
 
         msg = @error['text']
+        msg << ' - ' << @error['detail'] if @error['detail'].is_a?(String)
         if (location = @error['location'])
           msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
         end
@@ -60,12 +57,8 @@ module Proscenium
       end
     end
 
-    def self.build_to_path(path, root: nil)
-      new(root:).build_to_path(path)
-    end
-
-    def self.build_to_string(path, root: nil, bundle: nil)
-      new(root:, bundle:).build_to_string(path)
+    def self.build_to_string(path, root: nil)
+      new(root:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
@@ -77,34 +70,18 @@ module Proscenium
       Request.reset_config
     end
 
-    def initialize(root: nil, bundle: nil)
-      bundle = Proscenium.config.bundle if bundle.nil?
-
+    def initialize(root: nil)
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
-        Engines: Proscenium.config.engines,
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
-        ExternalNodeModules: Proscenium.config.external_node_modules,
-        Bundle: bundle,
+        RubyGems: Proscenium::BundledGems.paths,
+        Bundle: Proscenium.config.bundle,
+        QueryString: cache_query_string,
         Debug: Proscenium.config.debug
       }.to_json)
-    end
-
-    def build_to_path(path)
-      ActiveSupport::Notifications.instrument('build_to_path.proscenium',
-                                              identifier: path,
-                                              cached: Proscenium.cache.exist?(path)) do
-        Proscenium.cache.fetch path do
-          result = Request.build_to_path(path, @request_config)
-
-          raise BuildError, result[:response] unless result[:success]
-
-          result[:response]
-        end
-      end
     end
 
     def build_to_string(path)
@@ -113,7 +90,7 @@ module Proscenium
 
         raise BuildError, result[:response] unless result[:success]
 
-        result[:response]
+        result
       end
     end
 
@@ -137,8 +114,7 @@ module Proscenium
     end
 
     def cache_query_string
-      q = Proscenium.config.cache_query_string
-      q ? "--cache-query-string #{q}" : nil
+      Proscenium.config.cache_query_string.presence || ''
     end
 
     def gem_root

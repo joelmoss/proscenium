@@ -3,84 +3,105 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	. "joelmoss/proscenium/test/support"
+	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("b.Build(svg)", func() {
+var _ = Describe("b.BuildToString(svg)", func() {
 	svgContent := `
 		<svg aria-hidden="true" focusable="false" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="currentColor" d="M504"></path></svg>
 	`
 
-	When("importing absolute svg from jsx", func() {
-		It("bundles", func() {
-			result := b.Build("lib/svg/absolute_jsx.jsx")
-
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
-		})
+	EntryPoint("lib/svg/absolute_jsx.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	When("importing svg from tsx", func() {
-		It("bundles", func() {
-			result := b.Build("lib/svg/absolute_tsx.tsx")
-
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
-		})
+	EntryPoint("lib/svg/absolute_tsx.tsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	When("importing relative svg from jsx", func() {
-		It("bundles", func() {
-			result := b.Build("lib/svg/relative.jsx")
-
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-			Expect(result).NotTo(ContainCode(`import AtIcon from "/lib/svg/at.svg";`))
-		})
+	EntryPoint("lib/svg/relative.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	When("importing bare svg specifier from jsx", func() {
-		It("bundles", func() {
-			result := b.Build("lib/svg/bare.jsx")
-
-			Expect(result).NotTo(ContainCode(`import AtIcon from "/public/at.svg";`))
-			Expect(result).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
-		})
+	EntryPoint("lib/svg/bare.jsx", func() {
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
-	When("importing svg from css", func() {
-		It("should not bundle", func() {
-			Expect(b.Build("lib/svg.css")).To(ContainCode(`
-					url(/hue/icons/angle-right-regular.svg)`,
+	Context("internal @rubygems/*", func() {
+		BeforeEach(func() {
+			addGem("gem1", "dummy/vendor")
+		})
+
+		It("bundles", func() {
+			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.jsx")
+
+			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem1/at.svg";`))
+		})
+
+		It("resolves, but does not bundle from css", func() {
+			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.css")
+
+			Expect(code).To(ContainCode(`
+				url(/node_modules/@rubygems/gem1/at.svg)`,
 			))
 		})
 	})
 
-	When("importing remote svg from jsx", func() {
-		It("should bundle", func() {
-			MockURL("/at.svg", svgContent)
+	Context("external @rubygems/*", func() {
+		BeforeEach(func() {
+			addGem("gem2", "external")
+		})
 
-			result := b.Build("lib/svg/remote.jsx")
+		It("bundles", func() {
+			_, code, _ := b.BuildToString("lib/svg/external_rubygem.jsx")
 
-			Expect(result).To(ContainCode(`
-					var svg = /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
-				`))
+			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem2/at.svg";`))
+		})
+
+		It("resolves, but does not bundle from css", func() {
+			_, code, _ := b.BuildToString("lib/svg/external_rubygem.css")
+
+			Expect(code).To(ContainCode(`
+				url(/node_modules/@rubygems/gem2/at.svg)`,
+			))
 		})
 	})
 
-	// When("importing remote svg from css", func() {
-	// 	PIt("should not bundle or encode; leave as is", func() {
-	// 		var re = regexp.MustCompile(`^https?://.+(^\.svg)`)
-	// 		Expect(re.MatchString("https://sdfsdf.jsvg")).To(BeTrue())
-	// 	})
+	It("does not bundle svg from css", func() {
+		_, code, _ := b.BuildToString("lib/svg/svg.css")
 
-	// 	PIt("should not bundle or encode; leave as is", func() {
-	// 		MockURL("/at.svg", svgContent)
+		Expect(code).To(ContainCode(`
+			url(/hue/icons/angle-right-regular.svg)`,
+		))
+	})
 
-	// 		result := b.Build("lib/svg/remote.css")
+	It("bundles remote svg from jsx", func() {
+		MockURL("/at.svg", svgContent)
 
-	// 		Expect(result).To(ContainCode(`background-image: url(https://proscenium.test/at.svg);`))
-	// 	})
-	// })
+		_, code, _ := b.BuildToString("lib/svg/remote.jsx")
+
+		Expect(code).To(ContainCode(`
+			var svg = /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
+		`))
+	})
+
+	When("importing remote svg from css", func() {
+		PIt("should not bundle or encode; leave as is", func() {
+			var re = regexp.MustCompile(`^https?://.+(^\.svg)`)
+			Expect(re.MatchString("https://sdfsdf.jsvg")).To(BeTrue())
+		})
+
+		PIt("should not bundle or encode; leave as is", func() {
+			MockURL("/at.svg", svgContent)
+
+			_, code, _ := b.BuildToString("lib/svg/remote.css")
+
+			Expect(code).To(ContainCode(`background-image: url(https://proscenium.test/at.svg);`))
+		})
+	})
 })

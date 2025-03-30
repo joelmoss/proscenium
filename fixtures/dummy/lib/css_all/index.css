@@ -1,0 +1,64 @@
+/* absolute import */
+@import "/lib/css_all/one.css";
+
+/* absolute import without extension */
+@import "/lib/css_all/two";
+
+/* relative import */
+@import "./three.css";
+
+/* relative import without extension */
+@import "./four";
+
+@import "https://proscenium.test/foo.css";
+
+/* package */
+@import "pkg/one.css";
+
+/* package without extension */
+@import "pkg/two";
+
+/* css module from package */
+@import "pkg/three.module.css";
+
+/* css module */
+@import "./five.module.css";
+
+/* unbundle:* */
+@import "unbundle:./five.css";
+@import "six.css"; /* unbundled from import map */
+
+@font-face {
+  font-family: SomeFont;
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+  src: local("SomeFont"), url("/somefont.woff2") format("woff2"),
+    url("/somefont.woff") format("woff");
+}
+
+/* absolute mixin */
+.mixin1 {
+  @mixin mixin1 from url("/lib/css_all/mixin1.css");
+  font-size: 10px;
+}
+/* relative mixin */
+.mixin2 {
+  @mixin mixin2 from url("./mixin2.css");
+  font-size: 20px;
+}
+/* from package */
+.mixin3 {
+  @mixin mixin from url("pkg/mixin.css");
+  font-size: 30px;
+}
+/* from internal @rubygems/* */
+.mixin6 {
+  @mixin mixin from url("@rubygems/gem1/mixin.css");
+  font-size: 60px;
+}
+/* from external @rubygems/* */
+.mixin7 {
+  @mixin mixin from url("@rubygems/gem2/mixin.css");
+  font-size: 70px;
+}

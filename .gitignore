@@ -27,6 +27,8 @@
 !/fixtures/dummy/storage/.keep
 /playground/storage/*
 !/playground/storage/.keep
+/playground/public/tarballs/*
+!/playground/public/tarballs/.keep
 
 /fixtures/dummy/public/assets
 /playground/public/assets

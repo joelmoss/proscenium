@@ -6,7 +6,6 @@ module Proscenium::Phlex::AssetInclusions
   end
 
   def include_javascripts
-    comment { '[PROSCENIUM_LAZY_SCRIPTS]' }
     comment { '[PROSCENIUM_JAVASCRIPTS]' }
   end
 

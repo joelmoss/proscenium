@@ -4,39 +4,44 @@ import (
 	"fmt"
 	"strings"
 
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
+	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-type Output uint8
-
-const (
-	OutputToString Output = iota + 1
-	OutputToPath
-)
-
-// Build the given `path` in the `config.RootPath`.
+// Build the given `path`.
 //
 // - path - The path to build relative to `root`.
-// - config
-//   - RootPath - The working directory, usually Rails root.
-//   - GemPath - Proscenium gem root.
-//   - Environment - The environment (1 = development, 2 = test, 3 = production)
-//   - EnvVars - Map of environment variables.
-//   - Engines- Map of Rails engine names and paths.
-//   - CodeSpitting?
-//   - Bundle?
-//   - Debug?
 //
 //export build
-func Build(path string, args ...Output) esbuild.BuildResult {
-	entrypoints := strings.Split(path, ";")
+func build(entryPoint string) esbuild.BuildResult {
+	n, err := replacements.Build()
+	if err != nil {
+		return esbuild.BuildResult{
+			Errors: []esbuild.Message{{
+				Text:   "build npm replacements",
+				Detail: err.Error(),
+			}},
+		}
+	}
+	debug.Debug("%d npm replacements loaded", n)
 
-	_, err := importmap.Imports()
+	// Ensure entrypoint is a bare specifier (does not begin with a `/`, `./` or `../`).
+	if !utils.IsBareSpecifier(entryPoint) {
+		return esbuild.BuildResult{
+			Errors: []esbuild.Message{{
+				Text:   fmt.Sprintf("Could not resolve %q", entryPoint),
+				Detail: "Entrypoints must be bare specifiers",
+			}},
+		}
+	}
+
+	_, err = importmap.Imports()
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
@@ -44,11 +49,6 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 				Detail: err.Error(),
 			}},
 		}
-	}
-
-	output := OutputToString
-	if len(args) > 0 {
-		output = args[0]
 	}
 
 	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
@@ -59,23 +59,20 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 	}
 
 	sourcemap := esbuild.SourceMapNone
-	if output == OutputToPath {
-		sourcemap = esbuild.SourceMapLinked
-	} else if strings.HasSuffix(path, ".map") {
-		path = strings.TrimSuffix(path, ".map")
-		entrypoints = []string{path}
+	if strings.HasSuffix(entryPoint, ".map") {
+		entryPoint = strings.TrimSuffix(entryPoint, ".map")
 		sourcemap = esbuild.SourceMapExternal
 	}
 
 	buildOptions := esbuild.BuildOptions{
-		EntryPoints:       entrypoints,
+		EntryPoints:       []string{entryPoint},
 		Splitting:         types.Config.CodeSplitting,
 		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          logLevel,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",
-		ChunkNames:        "_asset_chunks/[name]-[hash]",
+		ChunkNames:        "_asset_chunks/[name]-$[hash]$",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
 		JSXDev:            types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
@@ -88,7 +85,6 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Metafile:          output == OutputToPath,
 		Target:            esbuild.ES2022,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
@@ -101,9 +97,6 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 			"nesting": false,
 		},
 
-		// TODO: Will using aliases instead of import map be faster?
-		// Alias: map[string]string{"foo/sdf.js": "./lib/foo.js"},
-
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still
 		// uses CJS.
@@ -111,21 +104,22 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 	}
 
 	buildOptions.Plugins = []esbuild.Plugin{
+		plugin.Http,
 		plugin.I18n,
 		plugin.Rjs(),
-		plugin.Ui,
 	}
 
 	if types.Config.Bundle {
 		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
 	} else {
+		buildOptions.PreserveSymlinks = true
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Svg, plugin.Css)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
 
-	if !utils.IsUrl(path) {
+	if !utils.IsUrl(entryPoint) {
 		definitions, err := buildEnvVars()
 		if err != nil {
 			return esbuild.BuildResult{
@@ -137,10 +131,6 @@ func Build(path string, args ...Output) esbuild.BuildResult {
 		}
 		buildOptions.Define = definitions
 		buildOptions.Define["global"] = "window"
-
-		if output == OutputToPath {
-			buildOptions.EntryNames = "[dir]/[name]$[hash]$"
-		}
 	}
 
 	return esbuild.Build(buildOptions)

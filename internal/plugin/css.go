@@ -3,6 +3,7 @@ package plugin
 import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"strings"
@@ -13,25 +14,20 @@ import (
 var Css = esbuild.Plugin{
 	Name: "Css",
 	Setup: func(build esbuild.PluginBuild) {
-		root := build.InitialOptions.AbsWorkingDir
-
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[cssPlugin.onLoad] args:", args)
+				debug.Debug("OnLoad:begin", args)
 
 				var pluginData types.PluginData
 				if args.PluginData != nil {
 					pluginData = args.PluginData.(types.PluginData)
 				}
 
-				urlPath := strings.TrimPrefix(args.Path, root)
-				for k, v := range types.Config.Engines {
-					if strings.HasPrefix(args.Path, v+pathSep) {
-						urlPath = pathSep + k + strings.TrimPrefix(args.Path, v)
-						break
-					}
+				if args.Namespace == "rubygems" && pluginData.RealPath != "" {
+					args.Path = pluginData.RealPath
 				}
 
+				urlPath := buildUrlPath(args.Path)
 				hash := utils.ToDigest(urlPath)
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
@@ -44,10 +40,7 @@ var Css = esbuild.Plugin{
 						// User has requested only the CSS module names be returned.
 						contents = cssModulesProxyTemplate(hash)
 					} else {
-						cssResult := cssBuild(CssBuildOptions{
-							Path: urlPath[1:],
-							Root: root,
-						})
+						cssResult := cssBuild(urlPath[1:])
 
 						if len(cssResult.Errors) != 0 {
 							return esbuild.OnLoadResult{
@@ -58,17 +51,17 @@ var Css = esbuild.Plugin{
 
 						contents = strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
 						contents = `
-							const existingStyle = document.querySelector('#_` + hash + `');
-							const existingLink = document.querySelector('link[href="` + urlPath + `"]');
-							const existingOriginalLink = document.querySelector('link[data-original-href="` + urlPath + `"]');
-							if (!existingStyle && !existingLink && !existingOriginalLink) {
+							const u = '` + urlPath + `';
+							const es = document.querySelector('#_` + hash + `');
+							const el = document.querySelector('link[href="' + u + '"]');
+							if (!es && !el) {
 								const e = document.createElement('style');
 								e.id = '_` + hash + `';
-								e.dataset.href = '` + urlPath + `';
+								e.dataset.href = u;
 								e.dataset.prosceniumStyle = true;
 								e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
-								const pStyleEle = document.head.querySelector('[data-proscenium-style]');
-								pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
+								const ps = document.head.querySelector('[data-proscenium-style]');
+								ps ? document.head.insertBefore(e, ps) : document.head.appendChild(e);
 							}
 						`
 
@@ -79,20 +72,19 @@ var Css = esbuild.Plugin{
 
 					return esbuild.OnLoadResult{
 						Contents:   &contents,
-						ResolveDir: root,
+						ResolveDir: types.Config.RootPath,
 						Loader:     esbuild.LoaderJS,
 					}, nil
 				}
 
-				contents, err := css.ParseCssFile(args.Path, root, hash)
+				contents, err := css.ParseCssFile(args.Path, hash)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
 
 				return esbuild.OnLoadResult{
-					Contents:   &contents,
-					Loader:     esbuild.LoaderCSS,
-					PluginData: types.PluginData{},
+					Contents: &contents,
+					Loader:   esbuild.LoaderCSS,
 				}, nil
 			})
 	},
@@ -101,72 +93,52 @@ var Css = esbuild.Plugin{
 var cssOnly = esbuild.Plugin{
 	Name: "cssOnly",
 	Setup: func(build esbuild.PluginBuild) {
-		root := build.InitialOptions.AbsWorkingDir
-
 		// Parse CSS files.
 		build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
-				// pp.Println("[cssOnly] filter(.css$)", args)
+				debug.Debug("cssOnly.OnLoad", args)
 
-				urlPath := strings.TrimPrefix(args.Path, root)
-				for k, v := range types.Config.Engines {
-					if strings.HasPrefix(args.Path, v+pathSep) {
-						urlPath = pathSep + k + strings.TrimPrefix(args.Path, v)
-						break
-					}
-				}
-
-				hash := utils.ToDigest(urlPath)
-
-				contents, err := css.ParseCssFile(args.Path, root, hash)
+				hash := utils.ToDigest(buildUrlPath(args.Path))
+				contents, err := css.ParseCssFile(args.Path, hash)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
 
 				return esbuild.OnLoadResult{
-					Contents:   &contents,
-					Loader:     esbuild.LoaderCSS,
-					PluginData: types.PluginData{},
+					Contents: &contents,
+					Loader:   esbuild.LoaderCSS,
 				}, nil
 			})
 	},
 }
 
+func buildUrlPath(path string) string {
+	gemName, gemPath, found := utils.PathIsRubyGem(path)
+	if found {
+		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(path, gemPath)
+	} else {
+		return strings.TrimPrefix(path, types.Config.RootPath)
+	}
+}
+
 func cssModulesProxyTemplate(hash string) string {
 	return `
     export default new Proxy( {}, {
-      get(target, prop, receiver) {
-        if (prop in target || typeof prop === 'symbol') {
-          return Reflect.get(target, prop, receiver);
-        } else {
-          return prop + '-` + hash + `';
-        }
+      get(t, p, r) {
+        return p in t || typeof p === 'symbol' ? Reflect.get(t, p, r) : p + '-` + hash + `';
       }
     });
 	`
 }
 
-type CssBuildOptions struct {
-	Path  string // The path to build relative to `root`.
-	Root  string
-	Debug bool
-}
-
-// Build the given `path` in the `root`.
-//
-//export build
-func cssBuild(options CssBuildOptions) esbuild.BuildResult {
-	minify := !options.Debug && types.Config.Environment == types.ProdEnv
-
-	logLevel := esbuild.LogLevelSilent
-	if options.Debug {
-		logLevel = esbuild.LogLevelDebug
-	}
+// Build the given `urlPath`
+func cssBuild(urlPath string) esbuild.BuildResult {
+	minify := types.Config.Environment == types.ProdEnv
 
 	return esbuild.Build(esbuild.BuildOptions{
-		EntryPoints:       []string{options.Path},
-		AbsWorkingDir:     options.Root,
-		LogLevel:          logLevel,
+		EntryPoints:       []string{urlPath},
+		AbsWorkingDir:     types.Config.RootPath,
+		LogLevel:          esbuild.LogLevelSilent,
 		LogLimit:          1,
 		Outdir:            "public/assets",
 		Outbase:           "./",

@@ -1,0 +1,3 @@
+@define-mixin mixin2 {
+  content: "/lib/importing/mixin2.css";
+}

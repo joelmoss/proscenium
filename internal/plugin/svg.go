@@ -21,8 +21,6 @@ var Svg = api.Plugin{
 	Setup: func(build api.PluginBuild) {
 		build.OnLoad(api.OnLoadOptions{Filter: `.*`, Namespace: "svgFromJsx"},
 			func(args api.OnLoadArgs) (api.OnLoadResult, error) {
-				// pp.Println("[svg] namespace(svgFromJsx)", args)
-
 				contents, _, err := func() (string, string, error) {
 					if utils.IsUrl(args.Path) {
 						return DownloadURL(args.Path, true)

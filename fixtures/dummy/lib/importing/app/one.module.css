@@ -1,0 +1,5 @@
+@import "./two.module.css";
+
+.app_one_module {
+  content: "/lib/importing/app/one.module.css";
+}

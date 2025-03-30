@@ -10,21 +10,10 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   let(:subject) { Proscenium::Builder }
 
-  context '.build_to_path' do
-    it 'builds multiple files' do
-      exp = %(
-        lib/code_splitting/son.js::public/assets/lib/code_splitting/son$LAGMAD6O$.js;
-        lib/code_splitting/daughter.js::public/assets/lib/code_splitting/daughter$7JJ2HGHC$.js
-      ).gsub(/[[:space:]]/, '')
-
-      assert_equal exp,
-                   subject.build_to_path('lib/code_splitting/son.js;lib/code_splitting/daughter.js')
-    end
-  end
-
-  context '.build_to_string' do
+  describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
-      assert_includes subject.build_to_string('lib/env/env.js'), 'console.log("testtest")'
+      result = subject.build_to_string('lib/env/env.js')
+      assert_includes result[:response], 'console.log("testtest")'
     end
 
     context 'config.env_vars' do
@@ -32,24 +21,32 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         Proscenium.config.env_vars << 'USER_NAME'
         ENV['USER_NAME'] = 'joelmoss'
 
-        assert_includes subject.build_to_string('lib/env/extra.js'), 'console.log("joelmoss")'
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
       end
     end
 
-    context 'unknown path' do
-      it 'raise' do
-        error = assert_raises(Proscenium::Builder::BuildError) do
-          subject.build_to_string('unknown.js')
-        end
-
-        assert_equal 'Could not resolve "unknown.js"', error.message
+    it 'raises on unknown path' do
+      error = assert_raises(Proscenium::Builder::BuildError) do
+        subject.build_to_string('unknown.js')
       end
+
+      assert_equal 'Could not resolve "unknown.js"', error.message
+    end
+
+    it 'raises on non-bare specifier' do
+      error = assert_raises(Proscenium::Builder::BuildError) do
+        subject.build_to_string('/unknown.js')
+      end
+
+      assert_equal 'Could not resolve "/unknown.js" - Entrypoints must be bare specifiers',
+                   error.message
     end
   end
 
-  context '.resolve' do
+  describe '.resolve' do
     it 'resolves value' do
-      assert_equal '/packages/mypackage/index.js', subject.resolve('mypackage')
+      assert_equal '/node_modules/pkg/index.js', subject.resolve('pkg')
     end
   end
 end

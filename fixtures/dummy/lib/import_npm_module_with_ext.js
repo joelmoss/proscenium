@@ -1,0 +1,1 @@
+import "mypackage/index.js";

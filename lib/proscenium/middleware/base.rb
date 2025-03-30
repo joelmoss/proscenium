@@ -77,23 +77,25 @@ module Proscenium
         end
       end
 
-      def render_response(content)
+      def render_response(result)
+        content = result[:response]
+
         response = Rack::Response.new
-        response.write content
-        response.content_type = content_type
         response['X-Proscenium-Middleware'] = name
         response.set_header 'SourceMap', "#{@request.path_info}.map"
+        response.content_type = content_type
+        response.etag = result[:content_hash]
 
         if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
           response.cache! Proscenium.config.cache_max_age
         end
 
-        cache_proc = Proscenium.config.cache_middleware_response
-        if cache_proc.is_a?(Proc) && cache_proc.call(path_to_build)
-          response.cache! Proscenium.config.cache_max_age
+        if @request.fresh?(response)
+          response.status = 304
+          response.body = []
+        else
+          response.write content
         end
-
-        yield response if block_given?
 
         response.finish
       end

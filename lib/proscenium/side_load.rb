@@ -4,7 +4,6 @@ module Proscenium
   class SideLoad
     JS_COMMENT = '<!-- [PROSCENIUM_JAVASCRIPTS] -->'
     CSS_COMMENT = '<!-- [PROSCENIUM_STYLESHEETS] -->'
-    LAZY_COMMENT = '<!-- [PROSCENIUM_LAZY_SCRIPTS] -->'
 
     module Controller
       def self.included(child)
@@ -35,28 +34,16 @@ module Proscenium
 
         return if !fragments && !included_comment
 
-        imports = Proscenium::Importer.imported.dup
-        paths_to_build = []
-        Proscenium::Importer.each_stylesheet(delete: true) do |x, _|
-          paths_to_build << x.delete_prefix('/')
-        end
-
-        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'))
-
         out = []
-        result.split(';').each do |x|
-          inpath, outpath = x.split('::')
-          inpath.prepend '/'
-          outpath.delete_prefix! 'public'
-
-          next unless imports.key?(inpath)
-
-          import = imports[inpath]
-          opts = import[:css].is_a?(Hash) ? import[:css] : {}
+        Proscenium::Importer.each_stylesheet(delete: true) do |path, opts|
+          opts = opts[:css].is_a?(Hash) ? opts[:css] : {}
           opts[:preload_links_header] = false if fragments
           opts[:data] ||= {}
-          opts[:data][:original_href] = inpath
-          out << helpers.stylesheet_link_tag(outpath, extname: false, **opts)
+
+          if Proscenium.config.cache_query_string.present?
+            path += "?#{Proscenium.config.cache_query_string}"
+          end
+          out << helpers.stylesheet_link_tag(path, extname: false, **opts)
         end
 
         if fragments
@@ -70,60 +57,30 @@ module Proscenium
         return if response_body.nil?
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
-        imports = Proscenium::Importer.imported.dup
-        paths_to_build = []
-        Proscenium::Importer.each_javascript(delete: true) do |x, _|
-          paths_to_build << x.delete_prefix('/')
-        end
-
-        result = Proscenium::Builder.build_to_path(paths_to_build.join(';'))
-
-        included_js_comment = response_body.first.include?(JS_COMMENT)
-        included_lazy_comment = response_body.first.include?(LAZY_COMMENT)
+        included_comment = response_body.first.include?(JS_COMMENT)
         fragments = if (fragment_header = request.headers['X-Fragment'])
                       fragment_header.split
                     end
 
-        if fragments || included_js_comment
-          out = []
-          scripts = {}
-          result.split(';').each do |x|
-            inpath, outpath = x.split('::')
-            inpath.prepend '/'
-            outpath.delete_prefix! 'public'
+        return if !fragments && !included_comment
 
-            next unless imports.key?(inpath)
+        out = []
+        Proscenium::Importer.each_javascript(delete: true) do |path, opts|
+          next if opts.delete(:lazy)
 
-            if (import = imports[inpath]).delete(:lazy)
-              scripts[inpath] = import.merge(outpath:)
-            else
-              opts = import[:js].is_a?(Hash) ? import[:js] : {}
-              opts[:preload_links_header] = false if fragments
-              out << helpers.javascript_include_tag(outpath, extname: false, **opts)
-            end
+          opts = opts[:js].is_a?(Hash) ? opts[:js] : {}
+          opts[:preload_links_header] = false if fragments
+
+          if Proscenium.config.cache_query_string.present?
+            path += "?#{Proscenium.config.cache_query_string}"
           end
-
-          if fragments
-            response_body.first.prepend out.join.html_safe
-          elsif included_js_comment
-            response_body.first.gsub! JS_COMMENT, out.join.html_safe
-          end
-        end
-
-        return if !fragments && !included_lazy_comment
-
-        lazy_script = ''
-        if scripts.present?
-          lazy_script = helpers.content_tag 'script', type: 'application/json',
-                                                      id: 'prosceniumLazyScripts' do
-            scripts.to_json.html_safe
-          end
+          out << helpers.javascript_include_tag(path, extname: false, **opts)
         end
 
         if fragments
-          response_body.first.prepend lazy_script
-        elsif included_lazy_comment
-          response_body.first.gsub! LAZY_COMMENT, lazy_script
+          response_body.first.prepend out.join.html_safe
+        elsif included_comment
+          response_body.first.gsub! JS_COMMENT, out.join.html_safe
         end
       end
     end

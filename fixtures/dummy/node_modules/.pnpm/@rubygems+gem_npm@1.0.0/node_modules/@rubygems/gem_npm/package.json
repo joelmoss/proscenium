@@ -1,0 +1,7 @@
+{
+  "name": "@rubygems/gem_npm",
+  "version": "1.0.0",
+  "dependencies": {
+    "string-length": "^6.0.0"
+  }
+}

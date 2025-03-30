@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 
@@ -9,134 +10,296 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var _ = Describe("b.Build(css)", func() {
-	Describe("plain css", func() {
-		It("should build", func() {
-			Expect(b.Build("lib/foo.css")).To(ContainCode(`.body { color: red; }`))
-		})
-	})
+var _ = Describe("BuildToString(css)", func() {
+	EntryPoint("lib/importing/application.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+			AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
 
-	Describe("css module", func() {
-		path := "lib/css_modules/basic.module.css"
+			Describe("without extension", func() {
+				AssertCode(`.app_two { content: "/lib/importing/app/two.css"; }`)
+				AssertCode(`@import "/lib/importing/app/two.css";`, Unbundle)
+			})
 
-		It("should build", func() {
-			Expect(b.Build(path)).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
-		})
-	})
-
-	When("importing absolute path", func() {
-		It("should bundle", func() {
-			Expect(b.Build("lib/import_absolute.css")).To(ContainCode(`.stuff { color: red; }`))
-		})
-	})
-
-	When("importing css module from css", func() {
-		It("should bundle", func() {
-			Expect(b.Build("lib/css_modules/import_css_module.css")).To(ContainCode(`
-			/* lib/css_modules/basic.module.css */
-			.foo-c3f452b4 { color: red; }
-			/* lib/css_modules/import_css_module.css */
-			.bar { color: blue; }
-			`))
-		})
-	})
-
-	When("importing css module from css module", func() {
-		It("should bundle with different digest", func() {
-			result := b.Build("lib/css_modules/import_css_module.module.css")
-
-			Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
-			Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
-		})
-	})
-
-	When("importing relative path", func() {
-		It("should bundle", func() {
-			Expect(b.Build("lib/import_relative.css")).To(ContainCode(`
-			/* lib/foo.css */
-			.body { color: red; }
-			/* lib/foo2.css */
-			.body { color: blue; }
-			`))
-		})
-	})
-
-	When("importing bare specifier", func() {
-		It("is replaced with absolute path", func() {
-			result := b.Build("lib/import_npm_module.css")
-
-			Expect(result).To(ContainCode(`.mypackage { color: red; }`))
-			Expect(result).NotTo(ContainCode(`@import "mypackage/styles";`))
-		})
-	})
-
-	When("importing bare specifier with extension", func() {
-		It("is replaced with absolute path", func() {
-			types.Config.Bundle = false
-			result := b.Build("lib/import_npm_module_with_ext.css")
-
-			Expect(result).To(ContainCode(`@import "/packages/mypackage/styles.css"`))
-		})
-	})
-
-	Describe("mixins", func() {
-		When("from URL", func() {
-			It("is replaced with defined mixin", func() {
-				Expect(b.Build("lib/with_mixin_from_url.css")).To(ContainCode(`
-						a { color: red; font-size: 20px; }
-					`))
+			Describe("without filename", func() {
+				AssertCode(`.app_index { content: "/lib/importing/app/index.css"; }`)
+				AssertCode(`@import "/lib/importing/app/index.css";`, Unbundle)
 			})
 		})
 
-		When("from relative URL", func() {
-			It("is replaced with defined mixin", func() {
-				Expect(b.Build("lib/with_mixin_from_relative_url.css")).To(ContainCode(`
-					a { color: red; font-size: 20px; }
+		Describe("import relative path", func() {
+			AssertCode(`.app_three { content: "/lib/importing/app/three.css"; }`)
+			AssertCode(`@import "/lib/importing/app/three.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.app_four { content: "/lib/importing/app/four.css"; }`)
+				AssertCode(`@import "/lib/importing/app/four.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.app_five_index { content: "/lib/importing/app/five/index.css"; }`)
+				AssertCode(`@import "/lib/importing/app/five/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("URL", func() {
+			AssertCode(`@import "https://proscenium.test/foo.css";`)
+			AssertCode(`@import "https://proscenium.test/foo.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/package.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pkg_one { content: "pkg/one.css"; }`)
+			AssertCode(`@import "/node_modules/pkg/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pkg_two { content: "pkg/two.css"; }`)
+				AssertCode(`@import "/node_modules/pkg/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pkg_index { content: "pkg/index.css"; }`)
+				AssertCode(`@import "/node_modules/pkg/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+		})
+
+		Describe("import app dependency", func() {
+			AssertCode(`.pnpm_file_one { content: "pnpm-file/one.css"; }`)
+			AssertCode(`.pnpm_file_ext_one { content: "pnpm-file-ext/one.css"; }`)
+			AssertCode(`.pnpm_link_one { content: "pnpm-link/one.css"; }`)
+			AssertCode(`.pnpm_link_ext_one { content: "pnpm-link-ext/one.css"; }`)
+		})
+
+		Describe("import app path", func() {
+			AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_link.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_link_one { content: "pnpm-link/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-link/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_link_two { content: "pnpm-link/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_link_three_index { content: "pnpm-link/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link/three/index.css";`, Unbundle)
+			})
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_link_external.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_link_ext_one { content: "pnpm-link-ext/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-link-ext/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_link_ext_two { content: "pnpm-link-ext/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link-ext/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_link_ext_three_index { content: "pnpm-link-ext/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-link-ext/three/index.css";`, Unbundle)
+			})
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_file.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_file_one { content: "pnpm-file/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_file_two { content: "pnpm-file/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_file_three_index { content: "pnpm-file/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file/three/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file/dependency.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/pnpm_file_external.css", func() {
+		Describe("import absolute path", func() {
+			AssertCode(`.pnpm_file_ext_one { content: "pnpm-file-ext/one.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file-ext/one.css";`, Unbundle)
+
+			Describe("without extension", func() {
+				AssertCode(`.pnpm_file_ext_two { content: "pnpm-file-ext/two.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file-ext/two.css";`, Unbundle)
+			})
+
+			Describe("without filename", func() {
+				AssertCode(`.pnpm_file_ext_three_index { content: "pnpm-file-ext/three/index.css"; }`)
+				AssertCode(`@import "/node_modules/pnpm-file-ext/three/index.css";`, Unbundle)
+			})
+		})
+
+		Describe("import pkg dependency", func() {
+			AssertCode(`.pkg_dep_index { content: "pkg_dep/index.css"; }`)
+			AssertCode(`@import "/node_modules/pnpm-file-ext/dependency.css";`, Unbundle)
+		})
+	})
+
+	EntryPoint("lib/importing/css_module.css", func() {
+		AssertCode(`.app_one_module-7727b09a { content: "/lib/importing/app/one.module.css"; }`)
+		AssertCode(`@import "/lib/importing/app/one.module.css";`, Unbundle)
+		AssertCode(`
+			.app_one_module-7727b09a__lib-importing-app-one-module-css {
+				content: "/lib/importing/app/one.module.css";
+			}`,
+			UseDevCSSModuleNames,
+		)
+
+		Describe("nested", func() {
+			AssertCode(`.app_two_module-87f68cdb { content: "/lib/importing/app/two.module.css"; }`)
+		})
+
+		Describe("from package", func() {
+			AssertCode(`.pkg_one_module-9047c541 { content: "pkg/one.module.css"; }`)
+			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
+			AssertCode(`
+				.pkg_one_module-9047c541__node_modules--pnpm-pkg-git-https---git-gist-github-com-c3d9087f5f214e1f0d9719e4a7d38474-git-2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module-css {
+					content: "pkg/one.module.css";
+				}`,
+				UseDevCSSModuleNames,
+			)
+		})
+	})
+
+	EntryPoint("lib/importing/unbundling.css", func() {
+		BeforeEach(func() {
+			importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"two.css": "unbundle:/lib/importing/app/two.css"
+					}
+				}`))
+		})
+
+		AssertCode(`@import "/lib/importing/app/one.css";`)
+		AssertCode(`@import "/lib/importing/app/two.css";`)
+	})
+
+	EntryPoint("lib/importing/import_map.css", func() {
+		BeforeEach(func() {
+			importmap.NewJsonImportMap([]byte(`{
+					"imports": {
+						"one.css": "/lib/importing/app/one.css"
+					}
+				}`))
+		})
+
+		AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
+		AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
+	})
+
+	EntryPoint("lib/importing/fonts.css", func() {
+		AssertCode(`url(/somefont.woff2)`)
+		AssertCode(`url(/somefont.woff)`)
+	})
+
+	Context("from @rubygems/*", func() {
+		BeforeEach(func() {
+			addGem("gem_npm", "dummy/vendor")
+			addGem("gem_link", "dummy/vendor")
+			addGem("gem_file", "dummy/vendor")
+		})
+
+		It("builds from npm install", func() {
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.css")
+
+			Expect(code).To(ContainCode(`.myClass {	color: pink; }`))
+		})
+
+		Context("css modules", func() {
+			It("builds from npm install", func() {
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+
+				Expect(code).To(ContainCode(`.myClass-549811de { color: pink; }`))
+			})
+
+			It("builds from file:* npm install", func() {
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
+
+				Expect(code).To(ContainCode(`.myClass-be318e6c { color: pink; }`))
+			})
+		})
+
+		Context("css module; dev names", func() {
+			BeforeEach(func() {
+				types.Config.UseDevCSSModuleNames = true
+			})
+
+			It("builds npm install", func() {
+				addGem("gem_npm", "dummy/vendor")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+
+				Expect(code).To(ContainCode(`
+					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
+						color: pink;
+					}
 				`))
 			})
 		})
 	})
 
-	// FIt("handles ?", func() {
-	// 	Expect(BuildToPath("lib/css_mod_import/tab_a.module.css;lib/css_mod_import/tab_b.module.css")).To(ContainCode(`
-	// 		a { color: red; font-size: 20px; }
-	// 	`))
-	// })
-
-	When("importing css module from js", func() {
+	Describe("importing css module from js", func() {
 		var expectedCode = `
-			var existingStyle = document.querySelector("#_330940eb");
-			var existingLink = document.querySelector('link[href="/lib/styles.module.css"]');
-			var existingOriginalLink = document.querySelector('link[data-original-href="/lib/styles.module.css"]');
-			if (!existingStyle && !existingLink && !existingOriginalLink) {
+			var u = "/lib/styles.module.css";
+			var es = document.querySelector("#_330940eb");
+			var el = document.querySelector('link[href="' + u + '"]');
+			if (!es && !el) {
 				const e = document.createElement("style");
 				e.id = "_330940eb";
-				e.dataset.href = "/lib/styles.module.css";
+				e.dataset.href = u;
 				e.dataset.prosceniumStyle = true;
 				e.appendChild(document.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
 			.myClass-330940eb {
         color: pink;
       }` + "`" + `));
-				const pStyleEle = document.head.querySelector("[data-proscenium-style]");
-				pStyleEle ? document.head.insertBefore(e, pStyleEle) : document.head.appendChild(e);
+				const ps = document.head.querySelector("[data-proscenium-style]");
+				ps ? document.head.insertBefore(e, ps) : document.head.appendChild(e);
 			}
 			var styles_default = new Proxy({}, {
-				get(target, prop, receiver) {
-					if (prop in target || typeof prop === "symbol") {
-						return Reflect.get(target, prop, receiver);
-					} else {
-						return prop + "-330940eb";
-					}
+				get(t, p, r) {
+					return p in t || typeof p === "symbol" ? Reflect.get(t, p, r) : p + "-330940eb";
 				}
 			});
 		`
 
-		It("includes stylesheet and proxies class names", func() {
-			Expect(b.Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
-		})
+		When("Bundle = true", func() {
+			BeforeEach(func() {
+				types.Config.Bundle = true
+			})
 
-		It("import relative css module from js", func() {
-			Expect(b.Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
+			It("includes stylesheet and proxies class names", func() {
+				_, result, _ := b.BuildToString("lib/import_css_module.js")
+
+				Expect(result).To(ContainCode(expectedCode))
+			})
+
+			It("import relative css module from js", func() {
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
+
+				Expect(result).To(ContainCode(expectedCode))
+			})
 		})
 
 		When("Bundle = false", func() {
@@ -145,20 +308,52 @@ var _ = Describe("b.Build(css)", func() {
 			})
 
 			It("import relative css module from js", func() {
-				Expect(b.Build("lib/import_relative_css_module.js")).To(ContainCode(expectedCode))
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
+
+				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				Expect(b.Build("lib/import_css_module.js")).To(ContainCode(expectedCode))
+				_, result, _ := b.BuildToString("lib/import_css_module.js")
+
+				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
 		})
 
 		When("importing css module from css module", func() {
 			It("should bundle with different digest", func() {
-				result := b.Build("lib/css_modules/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
 
 				Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
 				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
+			})
+		})
+
+		Context("internal @rubygems/*", func() {
+			BeforeEach(func() {
+				addGem("gem1", "dummy/vendor")
+			})
+
+			It("includes stylesheet and proxies class names", func() {
+				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js")
+
+				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem1/styles.module.css";`))
+				Expect(result).To(ContainCode(`var es = document.querySelector("#_3f751f91");`))
+				Expect(result).To(ContainCode(`.myClass-3f751f91 { color: pink; }`))
+			})
+		})
+
+		Context("external @rubygems/*", func() {
+			BeforeEach(func() {
+				addGem("gem2", "external")
+			})
+
+			It("includes stylesheet and proxies class names", func() {
+				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js")
+
+				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem2/styles.module.css";`))
+				Expect(result).To(ContainCode(`var es = document.querySelector("#_e789966c");`))
+				Expect(result).To(ContainCode(`.myClass-e789966c { color: pink; }`))
 			})
 		})
 	})

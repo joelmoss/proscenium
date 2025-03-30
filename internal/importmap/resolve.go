@@ -1,6 +1,7 @@
 package importmap
 
 import (
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"log"
@@ -35,7 +36,6 @@ func Resolve(specifier string, resolveDir string) (string, error) {
 	} else if len(imports) == 0 {
 		return specifier, nil
 	}
-
 	resolveDir = strings.TrimPrefix(resolveDir, types.Config.RootPath)
 	normalizedImports := make(map[string]importEntry)
 
@@ -59,10 +59,7 @@ func Resolve(specifier string, resolveDir string) (string, error) {
 		normalizedImports[key] = importEntry{value, keyHasTrailingSlash, valueHasTrailingSlash}
 	}
 
-	// if types.Config.Debug {
-	// 	log.Printf("[proscenium] importmap match? `%v` in `%v` from `%v`",
-	// 		specifier, resolveDir, normalizedImports)
-	// }
+	debug.Debug("[proscenium] importmap match?", specifier, resolveDir)
 
 	// Sort the keys of the normalized imports by longest first.
 	importKeys := make([]string, 0, len(normalizedImports))
@@ -100,6 +97,8 @@ func Resolve(specifier string, resolveDir string) (string, error) {
 	}()
 
 	if found {
+		debug.Debug("[proscenium] importmap match! `%v` => `%v`", specifier, matchedPath)
+
 		if types.Config.Debug {
 			log.Printf("[proscenium] importmap match! `%v` => `%v`", specifier, matchedPath)
 		}

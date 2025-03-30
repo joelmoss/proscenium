@@ -2,11 +2,8 @@ package css
 
 import (
 	"joelmoss/proscenium/internal/resolver"
-	"joelmoss/proscenium/internal/types"
 	"os"
-	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
 )
@@ -34,27 +31,9 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		absPath, err := resolver.Resolve(uri, p.filePath)
+		absPath, err := resolver.ResolveToFSPath(uri, p.filePath)
 		if err != nil {
 			return false
-		}
-
-		// We need the absolute file system path
-
-		engineMatch := false
-		for k, v := range types.Config.Engines {
-			if strings.HasPrefix(absPath, v+pathSep) {
-				engineMatch = true
-				break
-			} else if strings.HasPrefix(absPath, pathSep+k+pathSep) {
-				absPath = filepath.Join(v, strings.TrimPrefix(absPath, pathSep+k+pathSep))
-				engineMatch = true
-				break
-			}
-		}
-
-		if !engineMatch {
-			absPath = path.Join(p.rootPath, absPath)
 		}
 
 		if findAndInsertMixin(absPath, mixinIdent) {

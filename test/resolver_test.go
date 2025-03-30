@@ -3,6 +3,8 @@ package proscenium_test
 import (
 	"joelmoss/proscenium/internal/importmap"
 	r "joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/types"
+	"path/filepath"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -34,7 +36,91 @@ var _ = Describe("Resolve", func() {
 	})
 
 	It("resolves bare specifier", func() {
-		Expect(r.Resolve("mypackage", "")).To(Equal("/packages/mypackage/index.js"))
+		Expect(r.Resolve("pkg", "")).To(Equal("/node_modules/pkg/index.js"))
+	})
+
+	It("resolves file:* pnpm install", func() {
+		Expect(r.Resolve("pnpm-file/one.css", "")).To(
+			Equal("/node_modules/pnpm-file/one.css"),
+		)
+	})
+
+	It("resolves external file:* pnpm install", func() {
+		Expect(r.Resolve("pnpm-file-ext/one.css", "")).To(
+			Equal("/node_modules/pnpm-file-ext/one.css"),
+		)
+	})
+
+	It("resolves link:* pnpm install", func() {
+		Expect(r.Resolve("pnpm-link/one.css", "")).To(
+			Equal("/node_modules/pnpm-link/one.css"),
+		)
+	})
+
+	It("resolves external link:* pnpm install", func() {
+		Expect(r.Resolve("pnpm-link-ext/one.css", "")).To(
+			Equal("/node_modules/pnpm-link-ext/one.css"),
+		)
+	})
+
+	It("resolves @rubygems/* file:* pnpm install", func() {
+		addGem("gem_file", "dummy/vendor")
+
+		Expect(r.Resolve("@rubygems/gem_file/index.module.css", "")).To(
+			Equal("/node_modules/@rubygems/gem_file/index.module.css"),
+		)
+	})
+
+	Context("relative @rubygems/*", func() {
+		It("resolves gem", func() {
+			addGem("gem1", "dummy/vendor")
+
+			Expect(r.Resolve("@rubygems/gem1/index.js", "")).To(Equal(
+				"/node_modules/@rubygems/gem1/index.js",
+			))
+		})
+
+		It("resolves gem without file extension", func() {
+			addGem("gem1", "dummy/vendor")
+
+			Expect(r.Resolve("@rubygems/gem1", "")).To(Equal("/node_modules/@rubygems/gem1/index.js"))
+		})
+
+		It("resolves relative path with importer", func() {
+			addGem("gem3", "dummy/vendor")
+
+			importer := filepath.Join(types.Config.RootPath, "/vendor/gem3/lib/gem3/styles.module.css")
+			Expect(r.Resolve("./red.css", importer)).To(Equal(
+				"/node_modules/@rubygems/gem3/lib/gem3/red.css",
+			))
+		})
+	})
+
+	Context("external @rubygems/*", func() {
+		It("resolves gem", func() {
+			addGem("gem2", "external")
+
+			Expect(r.Resolve("@rubygems/gem2/lib/gem2/gem2.js", "")).To(Equal(
+				"/node_modules/@rubygems/gem2/lib/gem2/gem2.js",
+			))
+		})
+
+		It("resolves gem without file extension", func() {
+			addGem("gem2", "external")
+
+			Expect(r.Resolve("@rubygems/gem2/lib/gem2/gem2", "")).To(Equal(
+				"/node_modules/@rubygems/gem2/lib/gem2/gem2.js",
+			))
+		})
+
+		It("resolves relative path with importer", func() {
+			addGem("gem4", "external")
+
+			importer := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+			Expect(r.Resolve("./red.css", importer)).To(Equal(
+				"/node_modules/@rubygems/gem4/lib/gem4/red.css",
+			))
+		})
 	})
 
 	It("resolves directory to its index file", func() {

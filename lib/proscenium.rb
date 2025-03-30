@@ -40,6 +40,9 @@ module Proscenium
   autoload :Builder
   autoload :Importer
   autoload :Resolver
+  autoload :BundledGems
+  autoload :RubyGems
+  autoload :Registry
   autoload :UI
 
   class Deprecator
@@ -64,10 +67,6 @@ module Proscenium
   class << self
     def config
       @config ||= Railtie.config.proscenium
-    end
-
-    def cache
-      @cache ||= config.cache || ActiveSupport::Cache::NullStore.new
     end
 
     def ui_path

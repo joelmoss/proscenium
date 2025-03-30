@@ -15,7 +15,7 @@ class Proscenium::UI::Form::Fields::CheckboxTest < ActiveSupport::TestCase
     view
     imports = Proscenium::Importer.imported.keys
 
-    assert_equal ['/proscenium/form.css'], imports
+    assert_equal ['/node_modules/@rubygems/proscenium/form.css'], imports
   end
 
   it 'has an unchecked checkbox input' do

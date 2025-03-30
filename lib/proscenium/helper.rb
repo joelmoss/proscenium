@@ -21,10 +21,8 @@ module Proscenium
     # /app/javascript.
     def compute_asset_path(path, options = {})
       if %i[javascript stylesheet].include?(options[:type])
-        path.prepend DEFAULT_RAILS_ASSET_PATHS[options[:type]] unless path.start_with?('./', '../')
-
-        result = Proscenium::Builder.build_to_path(path)
-        return result.split('::').last.delete_prefix 'public'
+        path.prepend DEFAULT_RAILS_ASSET_PATHS[options[:type]] if !path.start_with?('./', '../')
+        return path
       end
 
       super
@@ -61,16 +59,12 @@ module Proscenium
     def include_stylesheets
       SideLoad::CSS_COMMENT.html_safe
     end
-    alias side_load_stylesheets include_stylesheets
-    deprecate side_load_stylesheets: 'Use `include_stylesheets` instead', deprecator: Deprecator.new
 
     # Includes all javascripts that have been imported and side loaded.
     #
     # @return [String] the HTML tags for the javascripts.
     def include_javascripts
-      (SideLoad::LAZY_COMMENT + SideLoad::JS_COMMENT).html_safe
+      SideLoad::JS_COMMENT.html_safe
     end
-    alias side_load_javascripts include_javascripts
-    deprecate side_load_javascripts: 'Use `include_javascripts` instead', deprecator: Deprecator.new
   end
 end

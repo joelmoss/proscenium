@@ -4,6 +4,7 @@ package main
 struct Result {
 	int success;
 	char* response;
+	char* contentHash;
 };
 */
 import "C"
@@ -29,37 +30,16 @@ func reset_config() {
 func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error())}
+		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
-	success, result := builder.BuildToString(C.GoString(filePath))
+	success, result, contentHash := builder.BuildToString(C.GoString(filePath))
 
 	if success {
-		return C.struct_Result{C.int(1), C.CString(result)}
+		return C.struct_Result{C.int(1), C.CString(result), C.CString(contentHash)}
 	}
 
-	return C.struct_Result{C.int(0), C.CString(result)}
-}
-
-// Build the given `path` in the `root`.
-//
-// - path - The path to build relative to `root`.
-// - config
-//
-//export build_to_path
-func build_to_path(filePath *C.char, configJson *C.char) C.struct_Result {
-	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
-	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error())}
-	}
-
-	success, result := builder.BuildToPath(C.GoString(filePath))
-
-	if success {
-		return C.struct_Result{C.int(1), C.CString(result)}
-	}
-
-	return C.struct_Result{C.int(0), C.CString(result)}
+	return C.struct_Result{C.int(0), C.CString(result), C.CString("")}
 }
 
 // Resolve the given `path` relative to the `root`.
@@ -71,15 +51,15 @@ func build_to_path(filePath *C.char, configJson *C.char) C.struct_Result {
 func resolve(filePath *C.char, configJson *C.char) C.struct_Result {
 	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error())}
+		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
 	resolvedPath, err := resolver.Resolve(C.GoString(filePath), "")
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(string(err.Error()))}
+		return C.struct_Result{C.int(0), C.CString(string(err.Error())), C.CString("")}
 	}
 
-	return C.struct_Result{C.int(1), C.CString(resolvedPath)}
+	return C.struct_Result{C.int(1), C.CString(resolvedPath), C.CString("")}
 }
 
 func main() {}

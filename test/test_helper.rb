@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 ENV['RAILS_ENV'] = 'test'
+ENV['PROSCENIUM_TESTS'] = '1'
 
 require_relative '../fixtures/dummy/config/environment'
 require 'rails/test_help'

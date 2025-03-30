@@ -89,44 +89,77 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 			})
 
-			Describe("url", func() {
-				It("mixin is replaced with defined mixin", func() {
-					Expect(`
-						header {
-							@mixin red from url('/lib/mixins/colors.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/foo.css"))
-				})
+			Describe("from url()", func() {
+				EntryPoint("lib/importing/mixins.css", func() {
+					Describe("from absolute url", func() {
+						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`)
+						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`, Unbundle)
+					})
 
-				It("bare specifier mixin is resolved", func() {
-					Expect(`
-						header {
-							@mixin red from url('mypackage/colors.mixin.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/foo.css"))
-				})
+					Describe("from relative url", func() {
+						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`)
+						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`, Unbundle)
+					})
 
-				It("relative mixin is resolved", func() {
-					Expect(`
-						header {
-							@mixin red from url('./mixins/colors.css');
-						}
-					`).To(BeParsedTo(`
-						header {
-							color: red;
-						}
-					`, "/lib/foo.css"))
-				})
+					Describe("from package", func() {
+						AssertCode(`.mixin3 { content: "pkg/mixin.css"; font-size: 30px; }`)
+						AssertCode(`.mixin3 { content: "pkg/mixin.css"; font-size: 30px; }`, Unbundle)
+					})
 
-				It("nested relative mixin is resolved", func() {})
+					Describe("from file: package", func() {
+						AssertCode(`.mixin4 { content: "pnpm-file/mixin.css"; font-size: 40px; }`)
+						AssertCode(`.mixin4 { content: "pnpm-file/mixin.css"; font-size: 40px; }`, Unbundle)
+					})
+
+					Describe("from external file: package", func() {
+						AssertCode(`.mixin-pnpm-file-ext { content: "pnpm-file-ext/mixin.css"; font-size: 45px; }`)
+						AssertCode(`.mixin-pnpm-file-ext { content: "pnpm-file-ext/mixin.css"; font-size: 45px; }`, Unbundle)
+					})
+
+					Describe("from link: package", func() {
+						AssertCode(`.mixin5 { content: "pnpm-link/mixin.css"; font-size: 50px; }`)
+						AssertCode(`.mixin5 { content: "pnpm-link/mixin.css"; font-size: 50px; }`, Unbundle)
+					})
+
+					Describe("from external link: package", func() {
+						AssertCode(`.mixin-pnpm-link-ext { content: "pnpm-link-ext/mixin.css"; font-size: 55px; }`)
+						AssertCode(`.mixin-pnpm-link-ext { content: "pnpm-link-ext/mixin.css"; font-size: 55px; }`, Unbundle)
+					})
+
+					Describe("from internal @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem1", "dummy/vendor")
+						})
+
+						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`)
+						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`, Unbundle)
+					})
+
+					Describe("from external @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem2", "external")
+						})
+
+						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`)
+						AssertCode(`.mixin7 { content: "@rubygems/gem2/mixin.css"; font-size: 70px; }`, Unbundle)
+					})
+
+					Describe("from npm @rubygems/*", func() {
+						BeforeEach(func() {
+							addGem("gem_npm", "dummy/vendor")
+						})
+
+						AssertCode(`.mixin-gem_npm { content: "@rubygems/gem_npm/mixin.css"; font-size: 56px; }`)
+						AssertCode(`.mixin-gem_npm { content: "@rubygems/gem_npm/mixin.css"; font-size: 56px; }`, Unbundle)
+
+						Describe("without extension", func() {
+							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`)
+							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`, Bundle)
+						})
+					})
+
+					PIt("nested relative mixin is resolved", func() {})
+				})
 
 				It("should cache mixin definition", func() {
 					Expect(`

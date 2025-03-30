@@ -1,1 +1,2 @@
-import foo from './foo'
+import foo4 from "./foo4";
+foo4();

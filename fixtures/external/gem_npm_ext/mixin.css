@@ -1,0 +1,3 @@
+@define-mixin mixin {
+  content: "@rubygems/gem_npm_ext/mixin.css";
+}

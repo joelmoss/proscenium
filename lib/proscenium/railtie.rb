@@ -14,41 +14,14 @@ module Proscenium
     config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
-    config.proscenium.external_node_modules = false
 
-    # Cache asset paths when building to path. Enabled by default in production.
-    # @see Proscenium::Builder#build_to_path
-    config.proscenium.cache = ActiveSupport::Cache::MemoryStore.new if Rails.env.production?
-
-    # TODO: implement!
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
-
-    # A proc that will be given the path to build, and should return a boolean indicating whether to
-    # cache the response.
-    #
-    # Example:
-    #   cache_middleware_response = ->(path) { path.start_with?('node_modules/') }
-    config.proscenium.cache_middleware_response = nil
 
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
     # defined means a faster build, as esbuild will have less to do.
     config.proscenium.env_vars = Set.new
-
-    # Rails engines to expose and allow Proscenium to serve their assets.
-    #
-    # A Rails engine that has assets, can add Proscenium as a gem dependency, and then add itself
-    # to this list. Proscenium will then serve the engine's assets at the URL path beginning with
-    # the engine name.
-    #
-    # Example:
-    #   class Gem1::Engine < ::Rails::Engine
-    #     config.proscenium.engines[:gem1] = root
-    #   end
-    config.proscenium.engines = {
-      proscenium: Proscenium.ui_path
-    }
 
     config.action_dispatch.rescue_templates = {
       'Proscenium::Builder::BuildError' => 'build_error'

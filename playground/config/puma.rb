@@ -30,7 +30,7 @@ threads_count = ENV.fetch('RAILS_MAX_THREADS', 3)
 threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-port ENV.fetch('PORT', 3000)
+port ENV.fetch('PORT', 3001)
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
@@ -40,8 +40,9 @@ plugin :tmp_restart
 pidfile ENV['PIDFILE'] if ENV['PIDFILE']
 
 if ENV['RAILS_ENV'] == 'development'
-  cert = File.expand_path('./proscenium.test.pem')
-  key = File.expand_path('./proscenium.test-key.pem')
+  # cert = File.expand_path('./proscenium.test.pem')
+  # key = File.expand_path('./proscenium.test-key.pem')
+  # ssl_bind '127.0.0.1', '3000', { key:, cert:, verify_mode: 'none' }
 
-  ssl_bind '127.0.0.1', '3001', { key:, cert:, verify_mode: 'none' }
+  # ssl_bind '127.0.0.1', '3000'
 end
