@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Proscenium::HelperTest < ActionDispatch::IntegrationTest
-  after do
+  before do
     Proscenium.config.cache_query_string = nil
   end
 

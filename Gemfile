@@ -9,7 +9,7 @@ gemspec
 
 gem 'amazing_print'
 gem 'debug'
-gem 'rails', '~> 7.0'
+gem 'rails', '~> 8.0'
 
 # Playground
 gem 'appraisal'
