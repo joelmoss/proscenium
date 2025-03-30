@@ -1,12 +1,11 @@
 # frozen_string_literal: true
 
 module Proscenium
-  # rubocop:disable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
   module Monkey
     module TemplateRenderer
       private
 
-      def render_template(view, template, layout_name, locals) # rubocop:disable Metrics/*
+      def render_template(view, template, layout_name, locals)
         result = super
         return result if !view.controller || !Proscenium.config.side_load
 
@@ -91,5 +90,4 @@ module Proscenium
       end
     end
   end
-  # rubocop:enable Metrics/AbcSize, Metrics/CyclomaticComplexity, Metrics/PerceivedComplexity
 end
