@@ -1,17 +1,16 @@
-lockfileVersion: '9.0'
+lockfileVersion: "9.0"
 
 settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
 importers:
-
   .:
     dependencies:
-      '@rubygems/gem_npm':
+      "@rubygems/gem_npm":
         specifier: ^1.0.0
         version: 1.0.0
-      '@rubygems/gem_npm_ext':
+      "@rubygems/gem_npm_ext":
         specifier: ^1.0.0
         version: 1.0.0
       pkg:
@@ -34,61 +33,98 @@ importers:
         version: 18.3.1
 
 packages:
+  "@rubygems/gem_npm@1.0.0":
+    resolution:
+      {
+        integrity: sha512-MxE3EnWxoblz1xyeGRFNnWaNDJNzIhUA9zwRonJIBNdz+aMRFJTuLSfon6AegHkQWO2wyT6WbTBgmLe0OdyHdg==,
+        tarball: http://registry.proscenium.test:3001/proscenium_registry_tarballs/@rubygems/gem_npm/gem_npm-1.0.0.tgz,
+      }
 
-  '@rubygems/gem_npm@1.0.0':
-    resolution: {integrity: sha512-MxE3EnWxoblz1xyeGRFNnWaNDJNzIhUA9zwRonJIBNdz+aMRFJTuLSfon6AegHkQWO2wyT6WbTBgmLe0OdyHdg==, tarball: http://registry.proscenium.test:3001/tarballs/@rubygems/gem_npm/gem_npm-1.0.0.tgz}
-
-  '@rubygems/gem_npm_ext@1.0.0':
-    resolution: {integrity: sha512-oLpDzOh1TeB73QNfImSfqlbvwhiwh1aTwvhrF5sTzxOcQukj8HHLZKZw4fGIFg1AMYdCAip0vtemj8ocNHmDCg==, tarball: http://registry.proscenium.test:3001/tarballs/@rubygems/gem_npm_ext/gem_npm_ext-1.0.0.tgz}
+  "@rubygems/gem_npm_ext@1.0.0":
+    resolution:
+      {
+        integrity: sha512-oLpDzOh1TeB73QNfImSfqlbvwhiwh1aTwvhrF5sTzxOcQukj8HHLZKZw4fGIFg1AMYdCAip0vtemj8ocNHmDCg==,
+        tarball: http://registry.proscenium.test:3001/proscenium_registry_tarballs/@rubygems/gem_npm_ext/gem_npm_ext-1.0.0.tgz,
+      }
 
   ansi-regex@6.1.0:
-    resolution: {integrity: sha512-7HSX4QQb4CspciLpVFwyRe79O3xsIZDDLER21kERQ71oaPodF8jL725AgJMFAYbooIqolJoRLuM81SpeUkpkvA==}
-    engines: {node: '>=12'}
+    resolution:
+      {
+        integrity: sha512-7HSX4QQb4CspciLpVFwyRe79O3xsIZDDLER21kERQ71oaPodF8jL725AgJMFAYbooIqolJoRLuM81SpeUkpkvA==,
+      }
+    engines: { node: ">=12" }
 
   js-tokens@4.0.0:
-    resolution: {integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==}
+    resolution:
+      {
+        integrity: sha512-RdJUflcE3cUzKiMqQgsCu06FPu9UdIJO0beYbPhHN4k6apgJtifcoCtT9bcxOpYBtpD2kCM6Sbzg4CausW/PKQ==,
+      }
 
   loose-envify@1.4.0:
-    resolution: {integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==}
+    resolution:
+      {
+        integrity: sha512-lyuxPGr/Wfhrlem2CL/UcnUc1zcqKAImBDzukY7Y5F/yQiNdko6+fRLevlw1HgMySw7f611UIY408EtxRSoK3Q==,
+      }
     hasBin: true
 
   p-throttle@7.0.0:
-    resolution: {integrity: sha512-aio0v+S0QVkH1O+9x4dHtD4dgCExACcL+3EtNaGqC01GBudS9ijMuUsmN8OVScyV4OOp0jqdLShZFuSlbL/AsA==}
-    engines: {node: '>=18'}
+    resolution:
+      {
+        integrity: sha512-aio0v+S0QVkH1O+9x4dHtD4dgCExACcL+3EtNaGqC01GBudS9ijMuUsmN8OVScyV4OOp0jqdLShZFuSlbL/AsA==,
+      }
+    engines: { node: ">=18" }
 
-  pkg@git+https://git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git#2a499df3143c5637ebaa3be5c4b983ebc094aeff:
-    resolution: {commit: 2a499df3143c5637ebaa3be5c4b983ebc094aeff, repo: git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git, type: git}
+  ? pkg@git+https://git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git#2a499df3143c5637ebaa3be5c4b983ebc094aeff
+  : resolution:
+      {
+        commit: 2a499df3143c5637ebaa3be5c4b983ebc094aeff,
+        repo: git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git,
+        type: git,
+      }
     version: 0.0.0
 
-  pkg_dep@git+https://git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git#5c9d0080dc3c3990ebb0bd940e4075cad4fc759f:
-    resolution: {commit: 5c9d0080dc3c3990ebb0bd940e4075cad4fc759f, repo: git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git, type: git}
+  ? pkg_dep@git+https://git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git#5c9d0080dc3c3990ebb0bd940e4075cad4fc759f
+  : resolution:
+      {
+        commit: 5c9d0080dc3c3990ebb0bd940e4075cad4fc759f,
+        repo: git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git,
+        type: git,
+      }
     version: 0.0.0
 
   pnpm-file-ext@file:../external/pnpm-file-ext:
-    resolution: {directory: ../external/pnpm-file-ext, type: directory}
+    resolution: { directory: ../external/pnpm-file-ext, type: directory }
 
   pnpm-file@file:vendor/pnpm-file:
-    resolution: {directory: vendor/pnpm-file, type: directory}
+    resolution: { directory: vendor/pnpm-file, type: directory }
 
   react@18.3.1:
-    resolution: {integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==}
-    engines: {node: '>=0.10.0'}
+    resolution:
+      {
+        integrity: sha512-wS+hAgJShR0KhEvPJArfuPVN1+Hz1t0Y6n5jLrGQbkb4urgPE/0Rve+1kMB1v/oWgHgm4WIcV+i7F2pTVj+2iQ==,
+      }
+    engines: { node: ">=0.10.0" }
 
   string-length@6.0.0:
-    resolution: {integrity: sha512-1U361pxZHEQ+FeSjzqRpV+cu2vTzYeWeafXFLykiFlv4Vc0n3njgU8HrMbyik5uwm77naWMuVG8fhEF+Ovb1Kg==}
-    engines: {node: '>=16'}
+    resolution:
+      {
+        integrity: sha512-1U361pxZHEQ+FeSjzqRpV+cu2vTzYeWeafXFLykiFlv4Vc0n3njgU8HrMbyik5uwm77naWMuVG8fhEF+Ovb1Kg==,
+      }
+    engines: { node: ">=16" }
 
   strip-ansi@7.1.0:
-    resolution: {integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==}
-    engines: {node: '>=12'}
+    resolution:
+      {
+        integrity: sha512-iq6eVVI64nQQTRYq2KtEg2d2uU7LElhTJwsH4YzIHZshxlgZms/wIc4VoDQTlG/IvVIrBKG06CrZnp0qv7hkcQ==,
+      }
+    engines: { node: ">=12" }
 
 snapshots:
-
-  '@rubygems/gem_npm@1.0.0':
+  "@rubygems/gem_npm@1.0.0":
     dependencies:
       string-length: 6.0.0
 
-  '@rubygems/gem_npm_ext@1.0.0':
+  "@rubygems/gem_npm_ext@1.0.0":
     dependencies:
       p-throttle: 7.0.0
 
@@ -102,11 +138,12 @@ snapshots:
 
   p-throttle@7.0.0: {}
 
-  pkg@git+https://git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git#2a499df3143c5637ebaa3be5c4b983ebc094aeff:
-    dependencies:
+  ? pkg@git+https://git@gist.github.com:c3d9087f5f214e1f0d9719e4a7d38474.git#2a499df3143c5637ebaa3be5c4b983ebc094aeff
+  : dependencies:
       pkg_dep: git+https://git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git#5c9d0080dc3c3990ebb0bd940e4075cad4fc759f
 
-  pkg_dep@git+https://git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git#5c9d0080dc3c3990ebb0bd940e4075cad4fc759f: {}
+  ? pkg_dep@git+https://git@gist.github.com:2a1cc7a7c901f508921c7093b749d404.git#5c9d0080dc3c3990ebb0bd940e4075cad4fc759f
+  : {}
 
   pnpm-file-ext@file:../external/pnpm-file-ext:
     dependencies:

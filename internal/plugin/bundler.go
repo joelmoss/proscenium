@@ -132,17 +132,6 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				} else if hasExt {
 					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
-
-					// In order for module resolution to be correct, we need to return a path that is within
-					// the node_modules directory. If we don't, any dependencies of the rubygem will not
-					// resolve correctly. But the files are actually in the gem's directory.
-					// resolveArgs := cloneResolveArgs(args)
-					// resolveArgs.ResolveDir = path.Join(root, "/node_modules/@rubygems", gemName)
-					// result.Path = "." + strings.TrimPrefix(result.Path, gemPath)
-					// ok := resolveWithEsbuild(resolveArgs, &result)
-					// if !ok {
-					// 	return result, nil
-					// }
 				}
 
 				debug.Debug("OnResolve(@rubygems/*):end", result)

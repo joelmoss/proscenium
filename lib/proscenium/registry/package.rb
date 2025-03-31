@@ -61,7 +61,8 @@ class Proscenium::Registry
     end
 
     def tarball_path
-      @tarball_path ||= Rails.public_path.join("tarballs/@rubygems/#{gem_name}/#{tarball_name}.tgz")
+      @tarball_path ||= Rails.public_path.join('proscenium_registry_tarballs')
+                             .join("@rubygems/#{gem_name}/#{tarball_name}.tgz")
     end
 
     def create_tarball
