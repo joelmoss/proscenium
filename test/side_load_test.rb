@@ -57,7 +57,6 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
                    '/app/views/layouts/bare.js' => { sideloaded: true },
                    '/app/views/layouts/bare.css' => { sideloaded: true },
                    '/app/views/pages/_side.js' => { sideloaded: true },
-                   '/app/views/pages/_side.module.css' => { sideloaded: true, digest: '08ab1f89' },
                    '/app/views/pages/_side_layout.css' => { sideloaded: true }
                  }, Proscenium::Importer.imported)
   end

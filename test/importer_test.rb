@@ -85,14 +85,14 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
     end
 
     context '.module.css and .css' do
-      it 'sideloads css module' do
+      it 'does not sideload css module' do
         mock_files 'app/views/user.rb', 'app/views/user.css', 'app/views/user.module.css' do
           subject.sideload Rails.root.join('app/views/user.rb')
         end
 
-        assert_equal({ '/app/views/user.module.css' => {
-                       sideloaded: true, digest: 'ab65a4fd'
-                     } }, subject.imported)
+        assert_not_equal({ '/app/views/user.module.css' => {
+                           sideloaded: true, digest: 'ab65a4fd'
+                         } }, subject.imported)
       end
     end
   end

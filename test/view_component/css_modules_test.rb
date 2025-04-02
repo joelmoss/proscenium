@@ -17,7 +17,7 @@ class Proscenium::ViewComponent::CssModulesTest < ActiveSupport::TestCase
 
       assert_equal({
                      '/app/components/view_component/css_module_helper_component.module.css' => {
-                       sideloaded: true, digest: '03d622d6'
+                       digest: '03d622d6'
                      }
                    }, Proscenium::Importer.imported)
     end

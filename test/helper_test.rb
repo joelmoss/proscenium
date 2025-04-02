@@ -37,8 +37,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     it 'includes side loaded assets' do
       get '/include_assets'
 
-      assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css"]'
-      assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css"]'
       assert_dom 'link[rel="stylesheet"][href="/app/views/layouts/bare.css"]'
       assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css"]'
       assert_dom 'script[src="/app/views/pages/_side.js"]'
@@ -52,7 +50,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       Proscenium.config.cache_query_string = 'v1'
       get '/include_assets'
 
-      assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css?v1"]'
       assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css?v1"]'
       assert_dom 'link[rel="stylesheet"][href="/app/views/layouts/bare.css?v1"]'
       assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css?v1"]'
@@ -150,7 +147,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
         BarePagesController.sideload_assets false
         get '/include_assets?sideload_partial_assets=true'
 
-        assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css"]'
         assert_dom 'script[src="/app/views/pages/_side.js"]'
       ensure
         BarePagesController.sideload_assets nil
@@ -161,7 +157,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       it 'does not include template view assets' do
         get '/include_assets?sideload_view_assets=false'
 
-        assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/layouts/bare.css"]'
         assert_dom 'script[src="/app/views/pages/_side.js"]'
@@ -173,7 +168,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       it 'does not include template layout assets' do
         get '/include_assets?sideload_layout_assets=false'
 
-        assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css"]'
         assert_dom 'script[src="/app/views/pages/_side.js"]'
@@ -197,7 +191,6 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       it 'does not include partial layout assets' do
         get '/include_assets?sideload_partial_layout_assets=false'
 
-        assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side.module.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/layouts/bare.css"]'
         assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css"]'
         assert_dom 'script[src="/app/views/pages/_side.js"]'

@@ -72,7 +72,8 @@ module Proscenium
       end
 
       def sideload_css(filepath, **)
-        _sideload(filepath, CSS_EXTENSIONS, **)
+        # _sideload(filepath, CSS_EXTENSIONS, **)
+        _sideload(filepath, ['.css'], **)
       end
 
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
