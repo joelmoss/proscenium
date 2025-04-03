@@ -58,8 +58,8 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
         end
 
         assert_equal({
-                       '/app/views/user.js' => { sideloaded: true },
-                       '/app/views/user.css' => { sideloaded: true }
+                       '/app/views/user.js' => {},
+                       '/app/views/user.css' => {}
                      }, subject.imported)
       end
     end
@@ -80,7 +80,7 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
           subject.sideload Rails.root.join('app/views/user.rb')
         end
 
-        assert_equal({ '/app/views/user.css' => { sideloaded: true } }, subject.imported)
+        assert_equal({ '/app/views/user.css' => {} }, subject.imported)
       end
     end
 
@@ -90,9 +90,8 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
           subject.sideload Rails.root.join('app/views/user.rb')
         end
 
-        assert_not_equal({ '/app/views/user.module.css' => {
-                           sideloaded: true, digest: 'ab65a4fd'
-                         } }, subject.imported)
+        assert_not_equal({ '/app/views/user.module.css' => { digest: 'ab65a4fd' } },
+                         subject.imported)
       end
     end
   end

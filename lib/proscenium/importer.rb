@@ -24,17 +24,23 @@ module Proscenium
       # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import.
       #   Should be the actual asset file, eg. app.css, some/component.js.
       # @return [String|nil] the digest of the imported file path if a css module (*.module.css).
-      def import(filepath = nil, **)
+      def import(filepath = nil, sideloaded: false, **)
         self.imported ||= {}
 
         filepath = "/node_modules/#{filepath}" if filepath.start_with?('@rubygems/')
         css_module = filepath.end_with?('.module.css')
 
         unless self.imported.key?(filepath)
-          # ActiveSupport::Notifications.instrument('sideload.proscenium', identifier: value)
-
-          self.imported[filepath] = { ** }
-          self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+          if sideloaded
+            ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
+                                                                           sideloaded: do
+              self.imported[filepath] = { ** }
+              self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+            end
+          else
+            self.imported[filepath] = { ** }
+            self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+          end
         end
 
         css_module ? self.imported[filepath][:digest] : nil
@@ -87,11 +93,11 @@ module Proscenium
           raise ArgumentError, "`filepath` (#{filepath}) must be a `Pathname`, and an absolute path"
         end
 
-        filepath = filepath.sub_ext('')
+        # filepath = filepath.sub_ext('')
 
         extensions.find do |x|
           if (fp = filepath.sub_ext(x)).exist?
-            import(Resolver.resolve(fp.to_s), sideloaded: true, **options)
+            import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)
           end
         end
       end

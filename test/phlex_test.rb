@@ -10,8 +10,8 @@ class Proscenium::PhlexTest < ActiveSupport::TestCase
     render Phlex::SideLoadView.new
 
     assert_equal({
-                   '/app/components/phlex/side_load_view.css' => { sideloaded: true },
-                   '/app/components/phlex/side_load_view.js' => { sideloaded: true }
+                   '/app/components/phlex/side_load_view.css' => {},
+                   '/app/components/phlex/side_load_view.js' => {}
                  }, Proscenium::Importer.imported)
   end
 
@@ -19,9 +19,9 @@ class Proscenium::PhlexTest < ActiveSupport::TestCase
     render Phlex::NestedSideLoadView.new
 
     assert_equal({
-                   '/app/components/phlex/nested_side_load_view.css' => { sideloaded: true },
-                   '/app/components/phlex/side_load_view.css' => { sideloaded: true },
-                   '/app/components/phlex/side_load_view.js' => { sideloaded: true }
+                   '/app/components/phlex/nested_side_load_view.css' => {},
+                   '/app/components/phlex/side_load_view.css' => {},
+                   '/app/components/phlex/side_load_view.js' => {}
                  }, Proscenium::Importer.imported)
   end
 end

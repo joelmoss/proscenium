@@ -9,8 +9,8 @@ class Proscenium::ViewComponentTest < ActiveSupport::TestCase
     render_inline ViewComponent::FirstComponent.new
 
     assert_equal({
-                   '/app/components/view_component/first_component.js' => { sideloaded: true },
-                   '/app/components/view_component/first_component.css' => { sideloaded: true }
+                   '/app/components/view_component/first_component.js' => {},
+                   '/app/components/view_component/first_component.css' => {}
                  }, Proscenium::Importer.imported)
   end
 end

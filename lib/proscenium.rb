@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
-# require 'zeitwerk'
-
-# loader = Zeitwerk::Loader.for_gem
-# loader.inflector.inflect 'ui' => 'UI'
-# loader.ignore "#{__dir__}/proscenium/ext"
-# loader.ignore "#{__dir__}/proscenium/libs"
-# loader.setup
+require 'active_support'
 
 module Proscenium
   extend ActiveSupport::Autoload

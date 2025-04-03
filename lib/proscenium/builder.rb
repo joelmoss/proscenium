@@ -85,7 +85,7 @@ module Proscenium
     end
 
     def build_to_string(path)
-      ActiveSupport::Notifications.instrument('build_to_string.proscenium', identifier: path) do
+      ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
         result = Request.build_to_string(path, @request_config)
 
         raise BuildError, result[:response] unless result[:success]

@@ -37,10 +37,10 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :home
 
     assert_equal({
-                   '/app/views/layouts/bare.js' => { sideloaded: true },
-                   '/app/views/layouts/bare.css' => { sideloaded: true },
-                   '/app/views/bare_pages/home.js' => { sideloaded: true },
-                   '/app/views/bare_pages/home.css' => { sideloaded: true }
+                   '/app/views/layouts/bare.js' => {},
+                   '/app/views/layouts/bare.css' => {},
+                   '/app/views/bare_pages/home.js' => {},
+                   '/app/views/bare_pages/home.css' => {}
                  }, Proscenium::Importer.imported)
   end
 
@@ -54,10 +54,10 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :sideloadpartial
 
     assert_equal({
-                   '/app/views/layouts/bare.js' => { sideloaded: true },
-                   '/app/views/layouts/bare.css' => { sideloaded: true },
-                   '/app/views/pages/_side.js' => { sideloaded: true },
-                   '/app/views/pages/_side_layout.css' => { sideloaded: true }
+                   '/app/views/layouts/bare.js' => {},
+                   '/app/views/layouts/bare.css' => {},
+                   '/app/views/pages/_side.js' => {},
+                   '/app/views/pages/_side_layout.css' => {}
                  }, Proscenium::Importer.imported)
   end
 
@@ -67,10 +67,10 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     assert_equal({
                    '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
                    '/node_modules/@rubygems/gem1/app/components/flash/component.jsx' => {
-                     sideloaded: true, lazy: true
+                     lazy: true
                    },
-                   '/app/views/layouts/bare.js' => { sideloaded: true },
-                   '/app/views/layouts/bare.css' => { sideloaded: true }
+                   '/app/views/layouts/bare.js' => {},
+                   '/app/views/layouts/bare.css' => {}
                  }, Proscenium::Importer.imported)
   end
 
@@ -80,10 +80,10 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     assert_equal({
                    '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
                    '/node_modules/@rubygems/gem2/app/components/flash/component.jsx' => {
-                     sideloaded: true, lazy: true
+                     lazy: true
                    },
-                   '/app/views/layouts/bare.js' => { sideloaded: true },
-                   '/app/views/layouts/bare.css' => { sideloaded: true }
+                   '/app/views/layouts/bare.js' => {},
+                   '/app/views/layouts/bare.css' => {}
                  }, Proscenium::Importer.imported)
   end
 end
