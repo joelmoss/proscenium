@@ -27,9 +27,9 @@ module Proscenium
       def css_module_string(name)
         if (path = Pathname.new(context.path).sub_ext('.module.css')).exist?
           tname = Transformer.new(path).class_name!(name, name.dup).first
-          "Proscenium::CssModule::Name.new(:@#{name}, '#{tname}')"
+          "Proscenium::CssModule::Name.new(:@#{name}, '#{tname}', #{path})"
         else
-          "Proscenium::CssModule::Name.new(:@#{name}, css_module(:#{name}))"
+          "Proscenium::CssModule::Name.new(:@#{name}, css_module(:#{name}), nil)"
         end
       end
     end

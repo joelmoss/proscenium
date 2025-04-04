@@ -24,7 +24,7 @@ module Proscenium
 
     def after_template
       self.class.resolved_css_module_paths.each do |path|
-        Proscenium::Importer.import path
+        Proscenium::Importer.import path, sideloaded: true
       end
 
       super

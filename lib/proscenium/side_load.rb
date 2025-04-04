@@ -86,7 +86,8 @@ module Proscenium
     end
 
     class << self
-      # Side loads the class, and its super classes that respond to `.source_path`.
+      # Side loads assets for the class, and its super classes that respond to `.source_path`, which
+      # should return a Pathname of the class source file.
       #
       # Set the `abstract_class` class variable to true in any class, and it will not be side
       # loaded.
@@ -128,6 +129,16 @@ module Proscenium
           klass = klass.superclass
         end
 
+        # All regular CSS files (*.css) are ancestrally sideloaded. However, the first CSS module
+        # in the ancestry is also sideloaded in addition to the regular CSS files. This is because
+        # the CSS module digest will be different for each file, so we only sideload the first CSS
+        # module.
+        css_imports.each do |it|
+          break if Importer.sideload_css_module(it, **options).present?
+        end
+
+        # Sideload regular CSS files in reverse order.
+        #
         # The reason why we sideload CSS after JS is because the order of CSS is important.
         # Basically, the layout should be loaded before the view so that CSS cascading works in the
         # right direction.

@@ -78,13 +78,17 @@ module Proscenium
       end
 
       def sideload_css(filepath, **)
-        # _sideload(filepath, CSS_EXTENSIONS, **)
         _sideload(filepath, ['.css'], **)
+      end
+
+      def sideload_css_module(filepath, **)
+        _sideload(filepath, ['.module.css'], **)
       end
 
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
       # @param extensions [Array<String>] Supported file extensions to sideload.
       # @param options [Hash] Options to pass to `import`.
+      # @return [Array<String>] The imported file paths.
       # @raise [ArgumentError] if `filepath` is not an absolute file system path.
       private def _sideload(filepath, extensions, **options) # rubocop:disable Style/AccessModifierDeclarations
         return unless Proscenium.config.side_load
@@ -93,13 +97,18 @@ module Proscenium
           raise ArgumentError, "`filepath` (#{filepath}) must be a `Pathname`, and an absolute path"
         end
 
-        # filepath = filepath.sub_ext('')
+        # Ensures extensions with more than one dot are handled correctly.
+        filepath = filepath.sub_ext('')
+
+        sideloaded = []
 
         extensions.find do |x|
           if (fp = filepath.sub_ext(x)).exist?
-            import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)
+            sideloaded << import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)
           end
         end
+
+        sideloaded
       end
 
       def each_stylesheet(delete: false)

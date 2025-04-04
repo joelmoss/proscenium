@@ -16,9 +16,12 @@ module Proscenium::CssModule
   end
 
   class Name
-    def initialize(name, transform)
+    attr_reader :path
+
+    def initialize(name, transform, path = nil)
       @name = name
       @transform = transform
+      @path = path
     end
 
     def to_s
