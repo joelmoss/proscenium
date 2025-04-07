@@ -23,6 +23,7 @@ module Proscenium
     end
 
     def after_template
+      self.class.resolved_css_module_paths ||= Concurrent::Set.new
       self.class.resolved_css_module_paths.each do |path|
         Proscenium::Importer.import path, sideloaded: true
       end
@@ -66,6 +67,8 @@ module Proscenium
     def process_attributes(**attributes)
       if attributes.key?(:class) && (attributes[:class] = tokens(attributes[:class])).include?('@')
         names = attributes[:class].is_a?(Array) ? attributes[:class] : attributes[:class].split
+
+        self.class.resolved_css_module_paths ||= Concurrent::Set.new
 
         attributes[:class] = cssm.class_names(*names).map do |name, path|
           self.class.resolved_css_module_paths << path if path
