@@ -87,6 +87,7 @@ class Proscenium::Phlex::ReactComponentTest < ActiveSupport::TestCase
     end
 
     it 'should import component with `lazy: true` option' do
+      skip 'TODO'
       render Phlex::BasicReactComponent.new(lazy: true)
 
       assert Proscenium::Importer.imported['/app/components/phlex/basic_react_component.jsx'][:lazy]

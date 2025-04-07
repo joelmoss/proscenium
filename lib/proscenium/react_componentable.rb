@@ -46,7 +46,6 @@ module Proscenium
     class_methods do
       def sideload(options)
         Importer.import manager, **options, js: { type: 'module' }
-        Importer.sideload source_path, lazy: true, **options
       end
     end
 

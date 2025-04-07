@@ -65,10 +65,8 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :vendored_gem
 
     assert_equal({
+                   '/node_modules/@rubygems/gem1/app/components/flash/component.jsx' => {},
                    '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
-                   '/node_modules/@rubygems/gem1/app/components/flash/component.jsx' => {
-                     lazy: true
-                   },
                    '/app/views/layouts/bare.js' => {},
                    '/app/views/layouts/bare.css' => {}
                  }, Proscenium::Importer.imported)
@@ -78,10 +76,8 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     BarePagesController.render :external_gem
 
     assert_equal({
+                   '/node_modules/@rubygems/gem2/app/components/flash/component.jsx' => {},
                    '/proscenium/react-manager/index.jsx' => { js: { type: 'module' } },
-                   '/node_modules/@rubygems/gem2/app/components/flash/component.jsx' => {
-                     lazy: true
-                   },
                    '/app/views/layouts/bare.js' => {},
                    '/app/views/layouts/bare.css' => {}
                  }, Proscenium::Importer.imported)

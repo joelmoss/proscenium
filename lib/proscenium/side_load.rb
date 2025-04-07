@@ -92,8 +92,8 @@ module Proscenium
       # Set the `abstract_class` class variable to true in any class, and it will not be side
       # loaded.
       #
-      # If the class responds to `.sideload`, it will be called instead of the regular side loading.
-      # You can use this to customise what is side loaded.
+      # If the class responds to `.sideload`, it will be called after the regular side loading. You
+      # can use this to customise what is side loaded.
       def sideload_inheritance_chain(obj, options)
         return unless Proscenium.config.side_load
 
@@ -117,14 +117,14 @@ module Proscenium
 
         klass = obj.class
         while klass.respond_to?(:source_path) && klass.source_path && !klass.abstract_class
-          if klass.respond_to?(:sideload)
-            klass.sideload options
-          elsif options[:css] == false
+          if options[:css] == false
             Importer.sideload klass.source_path, **options
           else
             Importer.sideload_js klass.source_path, **options
             css_imports << klass.source_path
           end
+
+          klass.sideload options if klass.respond_to?(:sideload)
 
           klass = klass.superclass
         end
