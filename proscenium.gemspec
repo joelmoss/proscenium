@@ -33,5 +33,5 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'literal', '~> 1.0'
   spec.add_dependency 'phonelib', '~> 0.10.3'
   spec.add_dependency 'railties', ['>= 7.1.0', '< 9.0']
-  spec.add_dependency 'ruby-next', '~> 1.0.1'
+  spec.add_dependency 'ruby-next', '~> 1.1.1'
 end
