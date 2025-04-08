@@ -3,7 +3,6 @@
 require_relative 'boot'
 
 require 'rails'
-require 'active_record/railtie'
 require 'active_model/railtie'
 require 'action_controller/railtie'
 require 'action_view/railtie'
@@ -12,11 +11,9 @@ require 'action_view/railtie'
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
 
-# require 'proscenium'
-
 module Playground
   class Application < Rails::Application
-    config.load_defaults Rails::VERSION::STRING.to_f
+    config.load_defaults 8.0
 
     # Please, add to the `ignore` list any other `lib` subdirectories that do
     # not contain `.rb` files, or that should not be reloaded or eager loaded.
@@ -24,11 +21,11 @@ module Playground
     # config.autoload_lib(ignore: %w[assets tasks])
 
     # Autoload Proscenium
-    lib = Proscenium.root / 'lib'
-    config.autoload_paths << lib.to_s
-    config.eager_load_paths << lib.to_s
-    ignored = %w[ext libs tasks view_component]
-    Rails.autoloaders.main.ignore(Array.wrap(ignored).map { lib / 'proscenium' / _1 })
+    # lib = Proscenium.root / 'lib'
+    # config.autoload_paths << lib.to_s
+    # config.eager_load_paths << lib.to_s
+    # ignored = %w[ext libs tasks view_component]
+    # Rails.autoloaders.main.ignore(Array.wrap(ignored).map { lib / 'proscenium' / _1 })
 
     config.autoload_paths << "#{root}/app/views"
     config.autoload_paths << "#{root}/app/components"

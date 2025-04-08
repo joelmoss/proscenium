@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'literal'
-
 module Proscenium::UI
   # Helpers to aid in building forms and associated inputs with built-in styling, and inspired by
   # Rails form helpers and SimpleForm.

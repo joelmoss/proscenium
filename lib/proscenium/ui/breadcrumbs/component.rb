@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require 'literal'
-
 module Proscenium::UI
   class Breadcrumbs::Component < Component
     extend Literal::Properties

@@ -48,8 +48,6 @@ module Proscenium
 
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
-      # app.middleware.insert_after ActionDispatch::Static, Rack::ETag, 'no-cache'
-      # app.middleware.insert_after ActionDispatch::Static, Rack::ConditionalGet
     end
 
     initializer 'proscenium.sideloading' do
@@ -74,17 +72,6 @@ module Proscenium
         app.middleware.insert_after(ActionDispatch::Static, ActionDispatch::Static,
                                     root.join('public').to_s, index:, headers:)
       end
-    end
-  end
-end
-
-if Rails.gem_version < Gem::Version.new('7.1.0')
-  class ActionDispatch::DebugView
-    def initialize(assigns)
-      tpl_path = Proscenium::Railtie.root.join('lib', 'proscenium', 'templates').to_s
-      paths = [RESCUES_TEMPLATE_PATH, tpl_path]
-      lookup_context = ActionView::LookupContext.new(paths)
-      super(lookup_context, assigns, nil)
     end
   end
 end

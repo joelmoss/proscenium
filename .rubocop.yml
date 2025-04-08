@@ -4,10 +4,6 @@ plugins:
   - rubocop-rake
   - rubocop-minitest
 
-inherit_mode:
-  merge:
-    - Exclude
-
 AllCops:
   TargetRubyVersion: 3.2
   NewCops: enable
