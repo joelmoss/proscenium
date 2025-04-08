@@ -30,7 +30,7 @@ threads_count = ENV.fetch('RAILS_MAX_THREADS', 3)
 threads threads_count, threads_count
 
 # Specifies the `port` that Puma will listen on to receive requests; default is 3000.
-port ENV.fetch('PORT', 3001)
+port ENV.fetch('PORT', 3000)
 
 # Allow puma to be restarted by `bin/rails restart` command.
 plugin :tmp_restart
@@ -39,10 +39,12 @@ plugin :tmp_restart
 # In other environments, only set the PID file if requested.
 pidfile ENV['PIDFILE'] if ENV['PIDFILE']
 
+# For development you can use SSL with a self-signed certificate.
+# Install https://github.com/FiloSottile/mkcert and run `mkcert ...` to generate a
+# wildcard cert for local development.
 if ENV['RAILS_ENV'] == 'development'
-  # cert = File.expand_path('./proscenium.test.pem')
-  # key = File.expand_path('./proscenium.test-key.pem')
-  # ssl_bind '127.0.0.1', '3000', { key:, cert:, verify_mode: 'none' }
+  cert = File.expand_path('./ssl/proscenium.test.pem')
+  key = File.expand_path('./ssl/proscenium.test-key.pem')
 
-  # ssl_bind '127.0.0.1', '3000'
+  ssl_bind '127.0.0.1', ENV.fetch('SSL_PORT', '3001'), { key:, cert:, verify_mode: 'none' }
 end
