@@ -32,12 +32,12 @@ group :development do
   gem 'web-console'
 end
 # gem 'gem2'
-gem 'gem2', path: './fixtures/external/gem2'
 group :test do
   gem 'capybara'
   gem 'database_cleaner-active_record', require: 'database_cleaner/active_record'
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'
+  gem 'gem2', path: './fixtures/external/gem2'
   gem 'gem3', path: './fixtures/dummy/vendor/gem3'
   gem 'gem4', path: './fixtures/external/gem4'
   gem 'gem5', path: './fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5'
