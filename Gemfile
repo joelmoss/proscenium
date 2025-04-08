@@ -7,19 +7,22 @@ ruby '3.3.6'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
-gem 'amazing_print'
-gem 'debug'
 gem 'rails', '~> 8.0'
 
 # Playground
-gem 'appraisal'
 gem 'gems'
 gem 'htmlbeautifier'
 gem 'phlexible'
 gem 'phlex-markdown', github: 'phlex-ruby/phlex-markdown'
 gem 'rouge'
 
+group :development, :test do
+  gem 'amazing_print'
+  gem 'debug'
+end
+
 group :development do
+  gem 'appraisal'
   gem 'benchmark-ips'
   gem 'localhost'
   gem 'puma'
@@ -31,7 +34,7 @@ group :development do
   gem 'sqlite3'
   gem 'web-console'
 end
-# gem 'gem2'
+
 group :test do
   gem 'capybara'
   gem 'database_cleaner-active_record', require: 'database_cleaner/active_record'
