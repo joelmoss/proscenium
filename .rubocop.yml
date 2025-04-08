@@ -11,6 +11,8 @@ AllCops:
   Exclude:
     - "lib/proscenium/ext/**/*"
     - "playground/tmp/**/*"
+    - "playground/vendor/**/*"
+    - "playground/node_modules/**/*"
     - "fixtures/dummy/node_modules/**/*"
     - "fixtures/dummy/vendor/**/*"
     - "fixtures/external/**/*"
