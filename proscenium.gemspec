@@ -29,6 +29,7 @@ Gem::Specification.new do |spec|
 
   spec.add_dependency 'countries', '~> 7.1.0'
   spec.add_dependency 'ffi', '~> 1.17.0'
+  spec.add_dependency 'gems', '~> 1.3.0'
   spec.add_dependency 'literal', '~> 1.0'
   spec.add_dependency 'phlex-rails', '~> 1.2'
   spec.add_dependency 'phonelib', '~> 0.10.3'

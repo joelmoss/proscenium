@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require 'gems'
+
 class Proscenium::Registry
   class RubyGemPackage < Package
     def version = spec['version']

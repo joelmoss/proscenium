@@ -15,6 +15,8 @@ module Proscenium
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
 
+    config.proscenium.ensure_loaded = :raise
+
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
 
