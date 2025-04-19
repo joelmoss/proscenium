@@ -38,11 +38,6 @@ Rails.application.routes.draw do
     end
   end
 
-  scope defaults: { format: 'json' }, constraints: { subdomain: 'registry' } do
-    get '' => 'packages#index'
-    get ':package(/:version)' => 'packages#show', package: %r{[^/]+(/[^/]+)?}, version: %r{[^/]+}
-  end
-
   # Fixture routes
   get 'users' => 'users#new'
 
