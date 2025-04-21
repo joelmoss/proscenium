@@ -1,37 +1,22 @@
 # Ignore the default SQLite database.
 /fixtures/dummy/db/*.sqlite3
 /fixtures/dummy/db/*.sqlite3-*
-/playground/db/*.sqlite3
-/playground/db/*.sqlite3-*
 
 # Ignore all logfiles and tempfiles.
 /fixtures/dummy/log/*
 /fixtures/dummy/tmp/*
 !/fixtures/dummy/log/.keep
 !/fixtures/dummy/tmp/.keep
-/playground/log/*
-/playground/tmp/*
-!/playground/log/.keep
-!/playground/tmp/.keep
 
 # Ignore pidfiles, but keep the directory.
 /fixtures/dummy/tmp/pids/*
 !/fixtures/dummy/tmp/pids/
 !/fixtures/dummy/tmp/pids/.keep
-/playground/tmp/pids/*
-!/playground/tmp/pids/
-!/playground/tmp/pids/.keep
 
 # Ignore uploaded files in development.
 /fixtures/dummy/storage/*
 !/fixtures/dummy/storage/.keep
-/playground/storage/*
-!/playground/storage/.keep
-/playground/public/proscenium_registry_tarballs/*
-!/playground/public/proscenium_registry_tarballs/.keep
-
 /fixtures/dummy/public/assets
-/playground/public/assets
 
 /.bundle/
 /.yardoc

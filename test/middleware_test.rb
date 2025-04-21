@@ -131,12 +131,6 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     ).squish
   end
 
-  it 'serves proscenium/* runtime libs direct from lib/proscenium/ui' do
-    get '/node_modules/@rubygems/proscenium/test.js'
-
-    assert_includes response.body, 'console.log("proscenium/test.js")'
-  end
-
   context 'cache_query_string' do
     it 'should set cache header ' do
       Proscenium.config.cache_query_string = 'v1'

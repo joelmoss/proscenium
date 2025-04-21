@@ -37,7 +37,6 @@ module Proscenium
   autoload :Importer
   autoload :Resolver
   autoload :BundledGems
-  autoload :UI
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
@@ -61,14 +60,6 @@ module Proscenium
   class << self
     def config
       @config ||= Railtie.config.proscenium
-    end
-
-    def ui_path
-      @ui_path ||= Railtie.root.join('lib', 'proscenium', 'ui')
-    end
-
-    def ui_path_regex
-      @ui_path_regex ||= Regexp.new("^#{Proscenium.ui_path}/")
     end
 
     def root

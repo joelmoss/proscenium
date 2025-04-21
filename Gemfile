@@ -7,10 +7,8 @@ ruby '3.4.2'
 # Specify your gem's dependencies in proscenium.gemspec
 gemspec
 
-group :development, :test do
-  gem 'amazing_print'
-  gem 'debug'
-end
+gem 'amazing_print'
+gem 'debug'
 
 group :development do
   gem 'appraisal'

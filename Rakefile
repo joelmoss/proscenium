@@ -3,9 +3,6 @@
 require 'bundler/setup'
 require 'bundler/gem_tasks'
 
-APP_RAKEFILE = File.expand_path('playground/Rakefile', __dir__)
-load 'rails/tasks/engine.rake'
-
 CLOBBER.include 'pkg'
 
 task default: %i[test rubocop]
