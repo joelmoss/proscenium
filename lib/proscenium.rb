@@ -1,10 +1,12 @@
 # frozen_string_literal: true
 
-require 'active_support'
+require 'zeitwerk'
+require 'proscenium/railtie'
+
+loader = Zeitwerk::Loader.for_gem
+loader.setup
 
 module Proscenium
-  extend ActiveSupport::Autoload
-
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
 
@@ -19,22 +21,6 @@ module Proscenium
 
   # Environment variables that should always be passed to the builder.
   DEFAULT_ENV_VARS = Set['RAILS_ENV', 'NODE_ENV'].freeze
-
-  autoload :SourcePath
-  autoload :Utils
-  autoload :Monkey
-  autoload :Middleware
-  autoload :EnsureLoaded
-  autoload :SideLoad
-  autoload :CssModule
-  autoload :ReactComponentable
-  autoload :ViewComponent
-  autoload :Phlex
-  autoload :Helper
-  autoload :Builder
-  autoload :Importer
-  autoload :Resolver
-  autoload :BundledGems
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
@@ -65,5 +51,3 @@ module Proscenium
     end
   end
 end
-
-require 'proscenium/railtie'

@@ -4,12 +4,6 @@ require 'phlex-rails'
 
 module Proscenium
   class Phlex < ::Phlex::HTML
-    extend ActiveSupport::Autoload
-
-    autoload :CssModules
-    autoload :ReactComponent
-    autoload :AssetInclusions
-
     include Proscenium::SourcePath
     include CssModules
     include AssetInclusions

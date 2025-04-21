@@ -1,12 +1,6 @@
 # frozen_string_literal: true
 
 class Proscenium::ViewComponent < ViewComponent::Base
-  extend ActiveSupport::Autoload
-
-  autoload :Sideload
-  autoload :ReactComponent
-  autoload :CssModules
-
   include Proscenium::SourcePath
   include CssModules
 
