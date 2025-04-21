@@ -1,8 +1,6 @@
 # frozen_string_literal: true
 
 require 'active_support'
-require 'active_record/type' # needed by Literal, even though we're not using ActiveRecord
-require 'literal'
 
 module Proscenium
   extend ActiveSupport::Autoload
