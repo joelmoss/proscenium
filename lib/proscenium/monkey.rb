@@ -9,15 +9,8 @@ module Proscenium
         result = super
         return result if !view.controller || !Proscenium.config.side_load
 
-        renderable = template.instance_variable_get(:@renderable)
-
-        to_sideload = if Object.const_defined?(:ViewComponent) &&
-                         template.is_a?(ActionView::Template::Renderable) &&
-                         renderable.class < ::ViewComponent::Base &&
-                         renderable.class.format == :html
-                        renderable
-                      elsif template.respond_to?(:virtual_path) &&
-                            template.respond_to?(:type) && template.type == :html
+        to_sideload = if template.respond_to?(:virtual_path) &&
+                         template.respond_to?(:type) && template.type == :html
                         template
                       end
         if to_sideload

@@ -28,7 +28,6 @@ module Proscenium
   autoload :SideLoad
   autoload :CssModule
   autoload :ReactComponentable
-  autoload :ViewComponent
   autoload :Phlex
   autoload :Helper
   autoload :Builder

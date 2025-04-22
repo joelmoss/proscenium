@@ -49,7 +49,6 @@
 - [JSX](#jsx)
 - [JSON](#json)
 - [Phlex Support](#phlex-support)
-- [ViewComponent Support](#viewcomponent-support)
 - [Cache Busting](#cache-busting)
 - [rjs is back!](#rjs-is-back)
 - [Resolution](#resolution)
@@ -767,49 +766,6 @@ end
 
 ```html
 <h1 class="user_name-ABCD1234 title">Joel Moss</h1>
-```
-
-## ViewComponent Support
-
-[ViewComponent](https://viewcomponent.org/) iA framework for creating reusable, testable & encapsulated view components, built to integrate seamlessly with Ruby on Rails. Proscenium works perfectly with ViewComponent, with support for side-loading, CSS modules, and more. Simply write your ViewComponent classes and inherit from `Proscenium::ViewComponent`.
-
-```ruby
-class MyView < Proscenium::ViewComponent
-  def call
-    tag.h1 'Hello World'
-  end
-end
-```
-
-### Side-loading
-
-Any ViewComponent class that inherits `Proscenium::ViewComponent` will automatically be [side-loaded](#side-loading).
-
-### CSS Modules
-
-[CSS Modules](#css-modules) are fully supported in ViewComponent classes, with access to the [`css_module` helper](#in-your-views) if you need it.
-
-```ruby
-# /app/components/user_component.rb
-class UserComponent < Proscenium::ViewComponent
-  def view_template
-    div.h1 @user.name, class: css_module(:user_name)
-  end
-end
-```
-
-```css
-/* # /app/components/user_component.module.css */
-.userName {
-  color: red;
-  font-size: 50px;
-}
-```
-
-The view above will be rendered something like this:
-
-```html
-<h1 class="user_name-ABCD1234">Joel Moss</h1>
 ```
 
 ## Cache Busting
