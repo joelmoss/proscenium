@@ -4,6 +4,7 @@ require 'zeitwerk'
 require 'proscenium/railtie'
 
 loader = Zeitwerk::Loader.for_gem
+loader.ignore "#{__dir__}/proscenium/core_ext/object/css_module_ivars.rb"
 loader.setup
 
 module Proscenium
