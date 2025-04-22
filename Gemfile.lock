@@ -149,7 +149,7 @@ GEM
       rack-test (>= 0.6.3)
       regexp_parser (>= 1.5, < 3.0)
       xpath (~> 3.2)
-    concurrent-ruby (1.3.5)
+    concurrent-ruby (1.3.4)
     connection_pool (2.5.1)
     crass (1.0.6)
     database_cleaner-active_record (2.2.0)
@@ -191,7 +191,6 @@ GEM
     matrix (0.4.2)
     maxitest (6.0.0)
       minitest (>= 5.20.0, < 5.26.0)
-    method_source (1.1.0)
     mini_mime (1.1.5)
     minitest (5.25.5)
     minitest-focus (1.4.0)
@@ -333,10 +332,6 @@ GEM
       parser (>= 3.3.0)
     uri (1.0.3)
     useragent (0.16.11)
-    view_component (3.21.0)
-      activesupport (>= 5.2.0, < 8.1)
-      concurrent-ruby (~> 1.0)
-      method_source (~> 1.0)
     websocket-driver (0.7.7)
       base64
       websocket-extensions (>= 0.1.0)
@@ -378,7 +373,6 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rake
   sqlite3
-  view_component
 
 BUNDLED WITH
    2.6.8

@@ -34,5 +34,4 @@ group :test do
   gem 'minitest-spec-rails'
   gem 'phlex-testing-capybara'
   gem 'sqlite3'
-  gem 'view_component'
 end

@@ -11,7 +11,7 @@ module Proscenium
       # The HTML tag to use as the wrapping element for the component. You can reassign this in your
       # component class to use a different tag:
       #
-      #   class MyComponent < Proscenium::ViewComponent::ReactComponent
+      #   class MyComponent < Proscenium::Phlex::ReactComponent
       #     self.root_tag = :span
       #   end
       #
