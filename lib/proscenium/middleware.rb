@@ -2,8 +2,14 @@
 
 module Proscenium
   class Middleware
+    extend ActiveSupport::Autoload
+
     # Error when the build command fails.
     class BuildError < StandardError; end
+
+    autoload :Base
+    autoload :Esbuild
+    autoload :RubyGems
 
     def initialize(app)
       @app = app

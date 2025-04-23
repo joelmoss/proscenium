@@ -31,5 +31,4 @@ Gem::Specification.new do |spec|
   spec.add_dependency 'phlex-rails', '~> 1.2'
   spec.add_dependency 'rails', ['>= 7.1.0', '< 9.0']
   spec.add_dependency 'ruby-next', '~> 1.1.1'
-  spec.add_dependency 'zeitwerk', '~> 2.7.2'
 end

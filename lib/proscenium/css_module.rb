@@ -1,6 +1,11 @@
 # frozen_string_literal: true
 
 module Proscenium::CssModule
+  extend ActiveSupport::Autoload
+
+  autoload :Path
+  autoload :Transformer
+
   class TransformError < StandardError
     def initialize(name, additional_msg = nil)
       msg = "Failed to transform CSS module `#{name}`"
