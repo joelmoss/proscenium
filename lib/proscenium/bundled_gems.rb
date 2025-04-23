@@ -13,7 +13,7 @@ module Proscenium
         bundle = {}
         specs.each do |s|
           bundle[s.name] = if s.name == 'proscenium'
-                             Pathname(s.full_gem_path).join('lib/proscenium').to_s
+                             Pathname(s.full_gem_path).join('lib/proscenium/ui').to_s
                            else
                              s.full_gem_path
                            end
