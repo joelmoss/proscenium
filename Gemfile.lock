@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.19.0.beta15)
+    proscenium (0.19.0.beta16)
       ffi (~> 1.17.0)
       phlex-rails (~> 1.2)
       rails (>= 7.1.0, < 9.0)
