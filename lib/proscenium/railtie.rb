@@ -33,6 +33,11 @@ module Proscenium
       end
     end
 
+    initializer 'proscenium.debugging' do
+      tpl_path = root.join('lib', 'proscenium', 'templates').to_s
+      ActionDispatch::DebugView::RESCUES_TEMPLATE_PATHS << tpl_path
+    end
+
     initializer 'proscenium.middleware' do |app|
       app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
     end
