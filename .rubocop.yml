@@ -18,7 +18,11 @@ AllCops:
 
 Layout/LineLength:
   Max: 100
+Layout/LeadingCommentSpace:
+  AllowRBSInlineAnnotation: true
 
+Lint/MissingSuper:
+  Enabled: false
 Lint/ConstantDefinitionInBlock:
   Exclude:
     - "test/**/*"

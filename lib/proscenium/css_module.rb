@@ -5,6 +5,7 @@ module Proscenium::CssModule
 
   autoload :Path
   autoload :Transformer
+  autoload :Rewriter
 
   class TransformError < StandardError
     def initialize(name, additional_msg = nil)
@@ -12,24 +13,6 @@ module Proscenium::CssModule
       msg << ' - ' << additional_msg if additional_msg
 
       super(msg)
-    end
-  end
-
-  class Name
-    attr_reader :path
-
-    def initialize(name, transform, path = nil)
-      @name = name
-      @transform = transform
-      @path = path
-    end
-
-    def to_s
-      @transform
-    end
-
-    def to_sym
-      @name
     end
   end
 

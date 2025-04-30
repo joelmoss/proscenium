@@ -1,44 +1,76 @@
 # frozen_string_literal: true
 
-require 'ruby-next/language'
-require 'proscenium/core_ext/object/css_module_ivars'
+require 'prism'
+require 'require-hooks/setup'
 
 module Proscenium
   module CssModule
-    class Rewriter < RubyNext::Language::Rewriters::Text
-      NAME = 'proscenium-css-module'
-
-      def rewrite(source)
-        source = source.gsub(/%i\[((@[\w@ ]+)|([\w@ ]+ @[\w@ ]+))\]/) do |_|
-          arr = ::Regexp.last_match(1).split.map do |x|
-            x.start_with?('@') ? css_module_string(x[1..]) : ":#{x}"
-          end
-          "[#{arr.join(',')}]"
-        end
-
-        source.gsub(/:@([\w]+)/) do |_|
-          context.track!(self)
-          css_module_string(::Regexp.last_match(1))
+    class Rewriter
+      def self.init(include: [], exclude: [])
+        RequireHooks.source_transform(
+          patterns: include,
+          exclude_patterns: exclude
+        ) do |path, source|
+          source ||= File.read(path)
+          Processor.call(source)
         end
       end
 
-      private
+      class Processor < Prism::Visitor
+        def self.call(source)
+          visitor = new
+          visitor.visit(Prism.parse(source).value)
 
-      def css_module_string(name)
-        if (path = Pathname.new(context.path).sub_ext('.module.css')).exist?
-          tname = Transformer.new(path).class_name!(name, name.dup).first
-          "Proscenium::CssModule::Name.new(:@#{name}, '#{tname}', #{path})"
-        else
-          "Proscenium::CssModule::Name.new(:@#{name}, css_module(:#{name}), nil)"
+          buffer = source.dup
+          annotations = visitor.annotations
+          annotations.sort_by!(&:first)
+
+          annotations.reverse_each do |offset, action|
+            case action
+            when :start
+              buffer.insert(offset, 'class_names(*')
+            when :end
+              buffer.insert(offset, ')')
+            else
+              raise 'Invalid annotation'
+            end
+          end
+
+          buffer
+        end
+
+        def initialize
+          @annotations = []
+        end
+
+        PREFIX = '@'
+
+        attr_reader :annotations
+
+        def visit_assoc_node(node)
+          # Skip if the key is not a symbol or string
+          return if %i[symbol_node string_node].exclude?(node.key.type)
+
+          return if node.key.type == :symbol_node && node.key.value != 'class'
+          return if node.key.type == :string_node && node.key.content != 'class'
+
+          value = node.value
+          type = value.type
+
+          if (type == :symbol_node && value.value.start_with?(PREFIX)) ||
+             (type == :array_node && value.elements.any? { |it| it.value.start_with?(PREFIX) })
+            build_annotation value
+          end
+        end
+
+        def build_annotation(value)
+          location = value.location
+
+          @annotations <<
+            [location.start_character_offset, :start] <<
+            [location.end_character_offset, :end]
         end
       end
     end
   end
 end
-
-RubyNext::Language.send :include_patterns=, []
-RubyNext::Language.include_patterns << "#{Rails.root.join('app', 'components')}/*.rb"
-RubyNext::Language.include_patterns << "#{Rails.root.join('app', 'views')}/*.rb"
-RubyNext::Language.rewriters = [Proscenium::CssModule::Rewriter]
-
-require 'ruby-next/language/runtime'
