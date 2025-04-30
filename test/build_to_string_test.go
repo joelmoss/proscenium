@@ -100,6 +100,10 @@ var _ = Describe("BuildToString", func() {
 		AssertCode(`import "https://proscenium.test/foo.js";`, Unbundle)
 	})
 
+	EntryPoint("lib/importing/dynamic.js", func() {
+		AssertCode(`import("/lib/foo.js?v1");`, QueryString, Unbundle)
+	})
+
 	EntryPoint("lib/importing/package.js", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pkg/one.js");`)
