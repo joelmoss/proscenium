@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Phlex::Plain < Proscenium::Phlex
-  def initialize(class_name) # rubocop:disable Lint/MissingSuper
+  def initialize(class_name)
     @class_name = class_name
   end
 
