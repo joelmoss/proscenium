@@ -2,8 +2,6 @@
 
 module Proscenium
   module Phlex::CssModules
-    include Proscenium::CssModule
-
     def self.included(base)
       base.extend CssModule::Path
       base.extend ClassMethods

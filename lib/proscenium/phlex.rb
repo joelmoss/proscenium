@@ -11,6 +11,7 @@ module Proscenium
     autoload :AssetInclusions
 
     include Proscenium::SourcePath
+    include Proscenium::CssModule
     include CssModules
     include AssetInclusions
 
