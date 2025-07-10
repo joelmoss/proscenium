@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'rails'
-require 'proscenium/log_subscriber'
 
 ENV['RAILS_ENV'] = Rails.env
 
@@ -11,6 +10,7 @@ module Proscenium
 
     config.proscenium = ActiveSupport::OrderedOptions.new
     config.proscenium.debug = false
+    config.proscenium.logging = true
     config.proscenium.bundle = true
     config.proscenium.side_load = true
     config.proscenium.code_splitting = true
@@ -28,6 +28,11 @@ module Proscenium
     }
 
     config.after_initialize do |_app|
+      if config.proscenium.logging
+        require 'proscenium/log_subscriber'
+        Proscenium::LogSubscriber.attach_to :proscenium
+      end
+
       ActiveSupport.on_load(:action_view) do
         include Proscenium::Helper
       end

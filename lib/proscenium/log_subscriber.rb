@@ -36,5 +36,3 @@ module Proscenium
     end
   end
 end
-
-Proscenium::LogSubscriber.attach_to :proscenium
