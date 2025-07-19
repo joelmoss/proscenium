@@ -1,11 +1,8 @@
 # frozen_string_literal: true
 
-class Phlex::Plain < Proscenium::Phlex
-  def initialize(class_name)
-    @class_name = class_name
-  end
-
+class Phlex::Plain
+  include Proscenium::SourcePath
   def view_template
-    div(class: @class_name) { 'Hello' }
+    div
   end
 end

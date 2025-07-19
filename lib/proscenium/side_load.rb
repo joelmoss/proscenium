@@ -116,7 +116,8 @@ module Proscenium
         css_imports = []
 
         klass = obj.class
-        while klass.respond_to?(:source_path) && klass.source_path && !klass.abstract_class
+        while klass.respond_to?(:source_path) && klass.source_path &&
+              (klass.respond_to?(:abstract_class) ? !klass.abstract_class : true)
           if options[:css] == false
             Importer.sideload klass.source_path, **options
           else

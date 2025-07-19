@@ -3,10 +3,7 @@ PATH
   specs:
     proscenium (0.19.0.beta19)
       ffi (~> 1.17.0)
-      phlex-rails (~> 1.2)
-      prism
       rails (>= 7.1.0, < 9.0)
-      require-hooks (~> 0.2)
 
 PATH
   remote: fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5
@@ -215,13 +212,6 @@ GEM
     parser (3.3.8.0)
       ast (~> 2.4.1)
       racc
-    phlex (1.11.0)
-    phlex-rails (1.2.2)
-      phlex (>= 1.10, < 2)
-      railties (>= 6.1, < 9)
-    phlex-testing-capybara (0.1.0)
-      capybara (~> 3.38)
-      phlex (>= 0.5)
     pp (0.6.2)
       prettyprint
     prettyprint (0.2.0)
@@ -275,7 +265,6 @@ GEM
     regexp_parser (2.10.0)
     reline (0.6.1)
       io-console (~> 0.5)
-    require-hooks (0.2.2)
     rubocop (1.75.3)
       json (~> 2.3)
       language_server-protocol (~> 3.17.0.2)
@@ -352,7 +341,6 @@ DEPENDENCIES
   maxitest
   minitest-focus
   minitest-spec-rails
-  phlex-testing-capybara
   proscenium!
   rubocop-minitest
   rubocop-packaging

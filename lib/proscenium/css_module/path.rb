@@ -18,7 +18,8 @@ module Proscenium
       unless @css_module_path
         klass = superclass
 
-        while klass.respond_to?(:css_module_path) && !klass.abstract_class
+        while klass.respond_to?(:css_module_path) &&
+              (klass.respond_to?(:abstract_class) ? !klass.abstract_class : true)
           break if (@css_module_path = klass.css_module_path)
 
           klass = klass.superclass
