@@ -3,7 +3,7 @@ module joelmoss/proscenium
 go 1.24
 
 require (
-	github.com/evanw/esbuild v0.25.7
+	github.com/evanw/esbuild v0.25.8
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/onsi/ginkgo/v2 v2.23.4
 	github.com/peterbourgon/diskv v2.0.1+incompatible
