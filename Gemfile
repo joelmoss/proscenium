@@ -32,6 +32,5 @@ group :test do
   gem 'maxitest'
   gem 'minitest-focus'
   gem 'minitest-spec-rails'
-  gem 'phlex-testing-capybara'
   gem 'sqlite3'
 end

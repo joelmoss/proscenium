@@ -28,8 +28,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'ffi', '~> 1.17.0'
-  spec.add_dependency 'phlex-rails', '~> 1.2'
-  spec.add_dependency 'prism'
   spec.add_dependency 'rails', ['>= 7.1.0', '< 9.0']
-  spec.add_dependency 'require-hooks', '~> 0.2'
 end
