@@ -5,6 +5,8 @@ require 'bundler/gem_tasks'
 
 CLOBBER.include 'pkg'
 
+# See https://github.com/techknowlogick/xgo
+
 task default: %i[test rubocop]
 task release: %i[build push]
 
