@@ -6,17 +6,17 @@
 >
 > - _the part of a theatre stage in front of the curtain._
 
-**_Proscenium_** treats your frontend and client-side code as first class citizens of your Rails app, and assumes a "fast by default" internet. It bundles and minifies JavaScript (+ JSX), TypeScript (+TSX) and CSS in real time, on demand, and with zero configuration.
+**_Proscenium_** treats your frontend and client-side code as first class citizens of your Rails app, and assumes a "fast by default" internet. It bundles and minifies JavaScript (+JSX), TypeScript (+TSX) and CSS in real time, on demand, and with zero configuration.
 
 **The highlights:**
 
 - Fast, real-time bundling, tree-shaking, code-splitting and minification of Javascript (.js,.jsx), Typescript (.ts,.tsx) and CSS (.css).
 - NO JavaScript runtime needed (eg. Node) - just the browser!
 - NO build step or pre-compilation.
-- NO additional process or server - Just run `rails s`!
+- NO additional process or server - Just run `rails server`!
 - Transforms newer JavaScript and CSS syntax to older syntax for older browsers.
 - Deep integration with Rails.
-- Automatically side-load your layouts, views, and partials.
+- Automatically side-load JS and CSS for your layouts, views, and partials.
 - Import from NPM, URL's, and locally.
 - Server-side import map support.
 - CSS Modules & mixins.
@@ -75,15 +75,15 @@ gem 'proscenium'
 
 Please note that Proscenium is designed solely for use with Rails.
 
-Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be bundled, transformed, and minified [in production] in real time.
+Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be transformed, bundled, and minified [in production] in real time.
 
 ## Client-Side Code Anywhere
 
-Proscenium believes that your frontend code is just as important as your backend code, and is not an afterthought - they should be first class citizens of your Rails app. So instead of having to throw all your JS and CSS into a "app/assets" directory, and then requiring a separate process to compile or bundle, just put them wherever you want within your app, and just run Rails!
+Proscenium believes that your frontend code is just as important as your backend code, and is not an afterthought - they should be first class citizens of your Rails app. So instead of having to throw all your JS and CSS into a "app/assets" directory, and then requiring a separate process to compile or bundle, you can simply put them wherever you want within your app, and just run Rails!
 
 For example, if you have some JS that is required by your `app/views/users/index.html.erb` view, just create a JS file alongside it at `app/views/users/index.js`. Or if you have some CSS that is used by your entire application, put it in `app/views/layouts/application.css` and load it alongside your layout. Maybe you have a few JS utility functions, so put them in `lib/utils.js`.
 
-Simply put your JS(X) and CSS anywhere you want, and they will be served by your Rails app from the location where you placed them.
+Simply put your JS(X) and CSS anywhere you want, and they will be served by your Rails app from the same location where you placed them.
 
 Using the examples above...
 
@@ -95,15 +95,15 @@ Using the examples above...
 
 ## Side Loading
 
-Proscenium is best experienced when your assets are automtically side loaded.
+Proscenium is best experienced when your assets are automatically side loaded.
 
 ### The Problem
 
-With Rails you would typically declaratively load your JavaScript and CSS assets using the `javascript_include_tag` and `stylesheet_link_tag` helpers.
+With Rails you would typically load your JavaScript and CSS assets declaratively using the `javascript_include_tag` and `stylesheet_link_tag` helpers.
 
-For example, you may have top-level "application" CSS located in a file at `/app/assets/stylesheets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/javascript/application.js`.
+For example, you may have top-level "application" styles located in a file at `/app/assets/stylesheets/application.css`. Likewise, you may have some global JavaScript located in a file at `/app/javascript/application.js`.
 
-You would manually and declaratively include those two files in your application layout, something like this:
+You would manually and declaratively include those two files in each of your layouts, something like this:
 
 ```erb
 <%# /app/views/layouts/application.html.erb %>
@@ -141,7 +141,9 @@ The main problem is that you have to keep track of all these assets, and make su
 
 When side loading your JavaScript, Typescript and CSS with Proscenium, they are automatically included alongside your views, partials, layouts, and components, and only when needed.
 
-Side loading works by looking for a JS/TS/CSS file with the same name as your view, partial, layout or component. For example, if you have a view at `app/views/users/index.html.erb`, then Proscenium will look for a JS/TS/CSS file at `app/views/users/index.js`, `app/views/users/index.ts` or `app/views/users/index.css`. If it finds one, it will include it in the HTML for that view.
+Side loading works by looking for a JS/TS/CSS file with the same name as your view, partial, layout or component. For example, if you have a view at `app/views/users/index.html.erb`, then Proscenium will look for a JS and CSS file at `app/views/users/index.js` (or TypeScript with a .ts extension) and `app/views/users/index.css`. If it finds one, it will automatically include it in the HTML for that view. And only for that view.
+
+This allows you to keep your assets organized alongside the views, partials, and components that use them, without having to manually track and include them. It also means only the assets that are needed are included.
 
 JSX is also supported for JavaScript and Typescript. Simply use the `.jsx` or `.tsx` extension instead of `.js` or `.ts`.
 
@@ -271,6 +273,14 @@ Then just import as normal:
 ```js
 import React from "react";
 ```
+
+Or if you don't want any bundling at all, simply turn it off application-wide:
+
+```ruby
+config.proscenium.bundle = false
+```
+
+This will mean every asset and import will be loaded independently.
 
 ## Import Maps
 
@@ -440,8 +450,6 @@ one();
 ```
 
 ### Code Splitting
-
-> Available in `>=0.10.0`.
 
 [Side loaded](#side-loading) assets are automatically code split. This means that if you have a file that is imported and used imported several times, and by different files, it will be split off into a separate file.
 
@@ -681,8 +689,6 @@ console.log(version);
 ```
 
 ## Cache Busting
-
-> _COMING SOON_
 
 By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
 
