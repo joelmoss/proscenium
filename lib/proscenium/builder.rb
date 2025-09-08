@@ -16,6 +16,7 @@ module Proscenium
 
     module Request
       extend FFI::Library
+
       ffi_lib Pathname.new(__dir__).join('ext/proscenium').to_s
 
       enum :environment, [:development, 1, :test, :production]

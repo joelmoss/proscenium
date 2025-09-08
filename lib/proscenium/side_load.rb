@@ -134,7 +134,7 @@ module Proscenium
         # in the ancestry is also sideloaded in addition to the regular CSS files. This is because
         # the CSS module digest will be different for each file, so we only sideload the first CSS
         # module.
-        css_imports.each do |it|
+        css_imports.each do |it| # rubocop:disable Style/ItAssignment
           break if Importer.sideload_css_module(it, **options).present?
         end
 
@@ -143,7 +143,7 @@ module Proscenium
         # The reason why we sideload CSS after JS is because the order of CSS is important.
         # Basically, the layout should be loaded before the view so that CSS cascading works in the
         # right direction.
-        css_imports.reverse_each do |it|
+        css_imports.reverse_each do |it| # rubocop:disable Style/ItAssignment
           Importer.sideload_css it, **options
         end
       end

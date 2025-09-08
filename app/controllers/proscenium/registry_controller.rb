@@ -55,7 +55,7 @@ class Proscenium::RegistryController < ActionController::Base
   end
 
   def package_params
-    @package_params ||= params.expect(:package).then do |it|
+    @package_params ||= params.expect(:package).then do |it| # rubocop:disable Style/ItAssignment
       unless (res = it.gsub('%2F', '/').match(%r{^@rubygems/([\w\-_]+)/?([\w\-._]+)?$}))
         raise PackageNotFoundError, it
       end
