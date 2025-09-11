@@ -13,10 +13,6 @@ module Proscenium
 
     def initialize(app)
       @app = app
-
-      chunks_path = Rails.public_path.join('assets').to_s
-      headers = Rails.application.config.public_file_server.headers || {}
-      @chunk_handler = ::ActionDispatch::FileHandler.new(chunks_path, headers:)
     end
 
     def call(env)
@@ -24,23 +20,19 @@ module Proscenium
 
       return @app.call(env) if !request.get? && !request.head?
 
+      # If this is a request for an asset chunk, we want to serve it with a very long
+      # cache lifetime, since these are content-hashed and will never change.
       if request.path.match?(%r{^/_asset_chunks/})
-        response = Rack::Response[*@chunk_handler.attempt(request.env)]
-        response.etag = request.path.match(/-\$([a-z0-9]+)\$/i)[1]
-
-        if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
-          response.cache! Proscenium.config.cache_max_age
-        end
-
-        if request.fresh?(response)
-          response.status = 304
-          response.body = []
-        end
-
-        return response.finish
+        ::ActionDispatch::FileHandler.new(
+          Rails.public_path.join('assets').to_s,
+          headers: {
+            'Cache-Control' => "public, max-age=#{100.years}, immutable",
+            'etag' => request.path.match(/-\$([a-z0-9]+)\$/i)[1]
+          }
+        ).attempt(env) || @app.call(env)
+      else
+        attempt(request) || @app.call(env)
       end
-
-      attempt(request) || @app.call(env)
     end
 
     private
