@@ -14,7 +14,7 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 		_, code, _ := b.BuildToString("lib/i18n/benchmark/index.js")
 
 		Expect(code).To(ContainCode(`
-			{ first_name: "Joel", foo: { bar: { baz: 1 } }, last_name: "Moss" }
+			{ firstName: "Joel", foo: { bar: { baz: 1 } }, lastName: "Moss" }
 		`))
 	})
 })

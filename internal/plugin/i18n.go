@@ -5,6 +5,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"os"
 	"path/filepath"
+	"strings"
 
 	esbuild "github.com/evanw/esbuild/pkg/api"
 	"github.com/peterbourgon/mergemap"
@@ -74,7 +75,58 @@ var I18n = esbuild.Plugin{
 					jsonContents = &c
 				}
 
-				contentsAsString := string(*jsonContents)
+				// Transform all JSON object keys to camelCase.
+				var data any
+				if err := json.Unmarshal(*jsonContents, &data); err != nil {
+					return esbuild.OnLoadResult{}, err
+				}
+
+				toCamel := func(s string) string {
+					// Split on underscore, hyphen, or space.
+					parts := strings.FieldsFunc(s, func(r rune) bool {
+						return r == '_' || r == '-' || r == ' '
+					})
+					if len(parts) == 0 {
+						return s
+					}
+					for i := range parts {
+						if parts[i] == "" {
+							continue
+						}
+						if i == 0 {
+							parts[i] = strings.ToLower(parts[i][:1]) + parts[i][1:]
+						} else {
+							parts[i] = strings.ToUpper(parts[i][:1]) + parts[i][1:]
+						}
+					}
+					return strings.Join(parts, "")
+				}
+
+				var transform func(any) any
+				transform = func(v any) any {
+					switch vt := v.(type) {
+					case map[string]any:
+						out := make(map[string]any, len(vt))
+						for k, val := range vt {
+							out[toCamel(k)] = transform(val)
+						}
+						return out
+					case []any:
+						for i, elem := range vt {
+							vt[i] = transform(elem)
+						}
+						return vt
+					default:
+						return v
+					}
+				}
+
+				data = transform(data)
+				b, err := json.Marshal(data)
+				if err != nil {
+					return esbuild.OnLoadResult{}, err
+				}
+				contentsAsString := string(b)
 
 				return esbuild.OnLoadResult{
 					Contents: &contentsAsString,
