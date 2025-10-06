@@ -13,7 +13,7 @@ module Proscenium
                          template.respond_to?(:type) && template.type == :html
                         template
                       end
-        if to_sideload
+        if to_sideload && view.controller.respond_to?(:sideload_assets_options)
           options = view.controller.sideload_assets_options
           layout = find_layout(layout_name, locals.keys, [formats.first])
           sideload_template_assets layout, view.controller, options if layout
@@ -53,7 +53,8 @@ module Proscenium
         return result if !view.controller || !Proscenium.config.side_load
 
         if template.respond_to?(:identifier) &&
-           template.respond_to?(:type) && template.type == :html
+           template.respond_to?(:type) && template.type == :html &&
+           view.controller.respond_to?(:sideload_assets_options)
           options = view.controller.sideload_assets_options
           sideload_template_assets layout, options if layout
           sideload_template_assets template, options
