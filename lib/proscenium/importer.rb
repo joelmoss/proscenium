@@ -98,7 +98,7 @@ module Proscenium
         end
 
         # Ensures extensions with more than one dot are handled correctly.
-        filepath = filepath.sub_ext('')
+        filepath = filepath.sub_ext('').sub_ext('')
 
         sideloaded = []
 

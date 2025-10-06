@@ -9,7 +9,7 @@ module Proscenium
         result = super
         return result if !view.controller || !Proscenium.config.side_load
 
-        to_sideload = if template.respond_to?(:virtual_path) &&
+        to_sideload = if template.respond_to?(:identifier) &&
                          template.respond_to?(:type) && template.type == :html
                         template
                       end
@@ -40,7 +40,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload Rails.root.join("app/views/#{tpl.virtual_path}"), **options
+        Importer.sideload Pathname.new(tpl.identifier), **options
       end
     end
 
@@ -52,7 +52,7 @@ module Proscenium
 
         return result if !view.controller || !Proscenium.config.side_load
 
-        if template.respond_to?(:virtual_path) &&
+        if template.respond_to?(:identifier) &&
            template.respond_to?(:type) && template.type == :html
           options = view.controller.sideload_assets_options
           sideload_template_assets layout, options if layout
@@ -79,7 +79,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload Rails.root.join("app/views/#{tpl.virtual_path}"), **options
+        Importer.sideload Pathname.new(tpl.identifier), **options
       end
     end
   end
