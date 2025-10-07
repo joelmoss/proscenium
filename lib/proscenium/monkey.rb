@@ -24,6 +24,8 @@ module Proscenium
       end
 
       def sideload_template_assets(tpl, controller, options)
+        return unless (tpl_path = Pathname.new(tpl.identifier)).file?
+
         options = {} if options.nil?
         options = { js: options, css: options } unless options.is_a?(Hash)
 
@@ -40,7 +42,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload Pathname.new(tpl.identifier), **options
+        Importer.sideload tpl_path, **options
       end
     end
 
@@ -64,6 +66,8 @@ module Proscenium
       end
 
       def sideload_template_assets(tpl, options)
+        return unless (tpl_path = Pathname.new(tpl.identifier)).file?
+
         options = {} if options.nil?
         options = { js: options, css: options } unless options.is_a?(Hash)
 
@@ -80,7 +84,7 @@ module Proscenium
           options[k] = controller.instance_eval(&options[k]) if options[k].is_a?(Proc)
         end
 
-        Importer.sideload Pathname.new(tpl.identifier), **options
+        Importer.sideload tpl_path, **options
       end
     end
   end
