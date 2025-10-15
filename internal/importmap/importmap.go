@@ -71,11 +71,12 @@ func (im *ImportMap) parse() error {
 
 // Parses the given import map `contents` as JSON or JS (`contentType`).
 func (im *ImportMap) parseContents(contents []byte, contentType contentType) error {
-	if contentType == JsonType {
+	switch contentType {
+	case JsonType:
 		if err := json.Unmarshal(contents, &im); err != nil {
 			return wrapError(err)
 		}
-	} else if contentType == JavascriptType {
+	case JavascriptType:
 		vm := goja.New()
 		jsFn, jsErr := vm.RunString(string(contents))
 		if jsErr != nil {

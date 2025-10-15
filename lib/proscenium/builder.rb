@@ -80,6 +80,7 @@ module Proscenium
         CodeSplitting: Proscenium.config.code_splitting,
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
+        Aliases: Proscenium.config.aliases,
         QueryString: cache_query_string,
         Debug: Proscenium.config.debug
       }.to_json)

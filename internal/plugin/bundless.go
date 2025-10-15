@@ -98,6 +98,10 @@ var Bundless = esbuild.Plugin{
 					}
 				}
 
+				if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+					result.Path = aliasedPath
+				}
+
 				if resolveWithImportMap(&result, args.ResolveDir) {
 					resolveUnbundledPrefix(&result)
 				} else {
@@ -201,6 +205,13 @@ var Bundless = esbuild.Plugin{
 				result := esbuild.OnResolveResult{Path: args.Path, External: true}
 
 				resolveUnbundledPrefix(&result)
+
+				if utils.IsBareModule(result.Path) {
+					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+						result.Path = aliasedPath
+					}
+				}
+
 				if resolveWithImportMap(&result, args.ResolveDir) {
 					resolveUnbundledPrefix(&result)
 				} else {
@@ -306,6 +317,12 @@ var Bundless = esbuild.Plugin{
 					result.Path = gemPath
 				} else if newPath, ok := rootPathToUrlPath(result.Path); ok {
 					result.Path = newPath
+				}
+
+				if filepath.IsAbs(result.Path) {
+					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+						result.Path, _ = strings.CutPrefix(aliasedPath, "unbundle:")
+					}
 				}
 
 				result.Path = utils.ApplyQueryString(result.Path)

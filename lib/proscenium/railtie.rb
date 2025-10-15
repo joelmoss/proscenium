@@ -18,6 +18,8 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
 
+    config.proscenium.aliases = {}
+
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
     # defined means a faster build, as esbuild will have less to do.

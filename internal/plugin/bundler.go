@@ -14,14 +14,6 @@ import (
 	esbuild "github.com/evanw/esbuild/pkg/api"
 )
 
-type esbuildResolveResult struct {
-	Path        string
-	SideEffects esbuild.SideEffects
-	External    bool
-}
-
-var pathSep = string(filepath.Separator)
-
 // Bundler plugin that bundles everything together.
 var Bundler = esbuild.Plugin{
 	Name: "bundler",
@@ -86,6 +78,10 @@ var Bundler = esbuild.Plugin{
 				gemName, gemPath, err := utils.ResolveRubyGem(result.Path)
 				if err != nil {
 					return result, err
+				}
+
+				if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+					result.Path = aliasedPath
 				}
 
 				if resolveWithImportMap(&result, args.ResolveDir) {
@@ -174,6 +170,14 @@ var Bundler = esbuild.Plugin{
 					unbundled = true
 				}
 
+				// Map aliases for only bare paths. Aliases for all other paths are handled at the end -
+				// once we have a full absolute path.
+				if utils.IsBareModule(result.Path) {
+					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+						result.Path = aliasedPath
+					}
+				}
+
 				if resolveWithImportMap(&result, args.ResolveDir) {
 					if resolveUnbundledPrefix(&result) {
 						unbundled = true
@@ -205,8 +209,6 @@ var Bundler = esbuild.Plugin{
 					result.Path = path.Join(root, result.Path)
 				}
 
-				// If we have reached here, then the path is relative or a bare specifier.
-
 				if shouldBeExternal {
 					// It's external, so pass it through for esbuild to resolve.
 					result.External = true
@@ -219,6 +221,8 @@ var Bundler = esbuild.Plugin{
 					if path.IsAbs(result.Path) && hasExt {
 						goto FINISH
 					}
+
+					// If we have reached here, then the path is relative or a bare specifier.
 
 					// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
 					// that can get expensive. Also, by not returning the path, we let esbuild handle
@@ -275,6 +279,17 @@ var Bundler = esbuild.Plugin{
 				}
 
 			FINISH:
+
+				if filepath.IsAbs(result.Path) {
+					if aliasedPath, exists := utils.HasAlias(strings.TrimPrefix(result.Path, root)); exists {
+						if after, ok := strings.CutPrefix(aliasedPath, "unbundle:"); ok {
+							result.Path = after
+							unbundled = true
+						} else {
+							result.Path = filepath.Join(root, aliasedPath)
+						}
+					}
+				}
 
 				if unbundled {
 					result.External = true

@@ -21,7 +21,8 @@ func (e Environment) String() string {
 // - GemPath - Proscenium gem root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
-// - RubyGems - Map of bundle ruby gem names and paths.
+// - RubyGems - Map of bundled ruby gem names and paths.
+// - Aliases - Map of aliases.
 // - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
 // - Bundle?
@@ -31,6 +32,7 @@ type ConfigT struct {
 	GemPath       string
 	EnvVars       map[string]string
 	RubyGems      map[string]string
+	Aliases       map[string]string
 	Debug         bool
 	CodeSplitting bool
 	QueryString   string

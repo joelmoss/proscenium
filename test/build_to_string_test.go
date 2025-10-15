@@ -248,6 +248,132 @@ var _ = Describe("BuildToString", func() {
 		AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
 	})
 
+	Describe("aliases", func() {
+		EntryPoint("lib/aliases/absolute_paths.js", func() {
+			Describe("to unbundle: prefix", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"/lib/foo2.js": "unbundle:/lib/foo3.js",
+					}
+				})
+
+				AssertCode(`import foo from "/lib/foo3.js";`)
+				AssertCode(`import foo from "/lib/foo3.js";`, Unbundle)
+			})
+
+			Describe("to absolute path", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"/lib/foo2.js": "/lib/foo3.js",
+					}
+				})
+
+				AssertCode(`console.log("/lib/foo3.js");`)
+				AssertCode(`import foo from "/lib/foo3.js";`, Unbundle)
+			})
+		})
+
+		EntryPoint("lib/aliases/relative_paths.js", func() {
+			Describe("to unbundle: prefix", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"/lib/foo2.js": "unbundle:/lib/foo3.js",
+					}
+				})
+
+				AssertCode(`import "/lib/foo3.js";`)
+				AssertCode(`import "/lib/foo3.js";`, Unbundle)
+			})
+
+			Describe("to absolute path", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"/lib/foo2.js": "/lib/foo3.js",
+					}
+				})
+
+				AssertCode(`console.log("/lib/foo3.js");`)
+				AssertCode(`import "/lib/foo3.js";`, Unbundle)
+			})
+		})
+
+		EntryPoint("lib/aliases/bare.js", func() {
+			Describe("bare to unbundle: prefix", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"bare": "unbundle:/lib/foo.js",
+					}
+				})
+
+				AssertCode(`import foo from "/lib/foo.js";`)
+				AssertCode(`import foo from "/lib/foo.js";`, Unbundle)
+			})
+
+			Describe("bare to absolute path", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"bare": "/lib/foo4.js",
+					}
+				})
+
+				AssertCode(`console.log("/lib/foo4.js");`)
+				AssertCode(`import foo from "/lib/foo4.js";`, Unbundle)
+			})
+		})
+
+		// EntryPoint("lib/aliases/packages.js", func() {
+		// 	Describe("catches all with package prefix", func() {
+		// 		BeforeEach(func() {
+		// 			types.Config.Aliases = map[string]string{
+		// 				"pkg/*": "unbundle:pkg/*",
+		// 			}
+		// 		})
+
+		// 		AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`)
+		// 		AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
+		// 	})
+		// })
+
+		EntryPoint("lib/aliases/url.js", func() {
+			BeforeEach(func() {
+				types.Config.Aliases = map[string]string{
+					"msw": "https://esm.sh/msw@1.3.2?bundle&dev",
+				}
+			})
+
+			AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`)
+			AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`, Unbundle)
+		})
+
+		EntryPoint("lib/aliases/rubygems.js", func() {
+			Describe("bare to unbundle: prefix", func() {
+				BeforeEach(func() {
+					addGem("gem2", "external")
+
+					types.Config.Aliases = map[string]string{
+						"@rubygems/gem2": "unbundle:@rubygems/gem2/lib/gem2/gem2.js",
+					}
+				})
+
+				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`)
+				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
+			})
+
+			Describe("@rubygems scope", func() {
+				BeforeEach(func() {
+					addGem("gem2", "external")
+
+					types.Config.Aliases = map[string]string{
+						"@rubygems/gem2": "@rubygems/gem2/lib/gem2/gem2.js",
+					}
+				})
+
+				AssertCode(`console.log("gem2");`)
+				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
+			})
+		})
+	})
+
 	EntryPoint("lib/env_vars.js", func() {
 		Describe("proscenium.env.* variables", func() {
 			AssertCode(`console.log("testtest");`)

@@ -107,6 +107,16 @@ func RemoveRubygemPrefix(path string, gemName string) string {
 	return strings.TrimPrefix(path, types.RubyGemsScope+gemName)
 }
 
+func HasAlias(path string) (string, bool) {
+	if len(types.Config.Aliases) > 0 {
+		if aliasedPath, exists := types.Config.Aliases[path]; exists {
+			return aliasedPath, true
+		}
+	}
+
+	return "", false
+}
+
 // Returns an empty string if the path is not a bare module.
 func ExtractBareModule(path string) string {
 	if !IsBareModule(path) {
