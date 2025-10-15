@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    proscenium (0.20.1)
+    proscenium (0.21.0)
       ffi (~> 1.17.0)
       rails (>= 7.1.0, < 9.0)
 
