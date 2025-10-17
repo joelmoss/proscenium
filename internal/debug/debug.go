@@ -2,6 +2,7 @@ package debug
 
 import (
 	"fmt"
+	"joelmoss/proscenium/internal/types"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -17,7 +18,7 @@ func Enable() {
 }
 
 func Debug(args ...any) {
-	if Enabled {
+	if types.Config.Debug || Enabled {
 		cwd, _ := os.Getwd()
 		_, fn, line, _ := runtime.Caller(1)
 
