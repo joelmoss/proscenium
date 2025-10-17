@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/replacements"
@@ -20,7 +19,7 @@ import (
 //
 //export build
 func build(entryPoint string) esbuild.BuildResult {
-	n, err := replacements.Build()
+	_, err := replacements.Build()
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
@@ -29,7 +28,6 @@ func build(entryPoint string) esbuild.BuildResult {
 			}},
 		}
 	}
-	debug.Debug("%d npm replacements loaded", n)
 
 	// Ensure entrypoint is a bare specifier (does not begin with a `/`, `./` or `../`).
 	if !utils.IsBareSpecifier(entryPoint) {

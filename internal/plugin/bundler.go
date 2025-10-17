@@ -81,6 +81,7 @@ var Bundler = esbuild.Plugin{
 				}
 
 				if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+					debug.FDebug("OnResolve(@rubygems/*):alias", result.Path, aliasedPath)
 					result.Path = aliasedPath
 				}
 
@@ -174,6 +175,7 @@ var Bundler = esbuild.Plugin{
 				// once we have a full absolute path.
 				if utils.IsBareModule(result.Path) {
 					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
+						debug.FDebug("OnResolve(.*):aliasBefore", result.Path, aliasedPath)
 						result.Path = aliasedPath
 					}
 				}
@@ -281,12 +283,16 @@ var Bundler = esbuild.Plugin{
 			FINISH:
 
 				if filepath.IsAbs(result.Path) {
-					if aliasedPath, exists := utils.HasAlias(strings.TrimPrefix(result.Path, root)); exists {
+					relPath := strings.TrimPrefix(result.Path, root)
+					if aliasedPath, exists := utils.HasAlias(relPath); exists {
+
 						if after, ok := strings.CutPrefix(aliasedPath, "unbundle:"); ok {
 							result.Path = after
+							debug.FDebug("OnResolve(.*):aliasAfter", relPath, result.Path)
 							unbundled = true
 						} else {
 							result.Path = filepath.Join(root, aliasedPath)
+							debug.FDebug("OnResolve(.*):aliasAfter", relPath, result.Path)
 						}
 					}
 				}
