@@ -14,7 +14,7 @@ var Http = esbuild.Plugin{
 			func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 				// SVG files imported from JSX should be downloaded and bundled as JSX with the svgFromJsx
 				// namespace.
-				if utils.IsImportedFromJsx(args.Path, args) {
+				if utils.IsSvgImportedFromJsx(args.Path, args) {
 					return esbuild.OnResolveResult{
 						Path:      args.Path,
 						Namespace: "svgFromJsx",

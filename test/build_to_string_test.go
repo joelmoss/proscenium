@@ -335,14 +335,16 @@ var _ = Describe("BuildToString", func() {
 		// })
 
 		EntryPoint("lib/aliases/url.js", func() {
-			BeforeEach(func() {
-				types.Config.Aliases = map[string]string{
-					"msw": "https://esm.sh/msw@1.3.2?bundle&dev",
-				}
-			})
+			Describe("bare to url", func() {
+				BeforeEach(func() {
+					types.Config.Aliases = map[string]string{
+						"msw": "https://esm.sh/msw@1.3.2?bundle&dev",
+					}
+				})
 
-			AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`)
-			AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`, Unbundle)
+				AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`)
+				AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`, Unbundle)
+			})
 		})
 
 		EntryPoint("lib/aliases/rubygems.js", func() {

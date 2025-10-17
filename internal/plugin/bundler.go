@@ -166,10 +166,8 @@ var Bundler = esbuild.Plugin{
 					result.External = true
 				}
 
-				unbundled := resolveUnbundledPrefix(&result)
-				if args.With["unbundle"] == "true" {
-					unbundled = true
-				}
+				unbundled := false
+				isCssImportedFromJs := false
 
 				// Map aliases for only bare paths. Aliases for all other paths are handled at the end -
 				// once we have a full absolute path.
@@ -177,7 +175,22 @@ var Bundler = esbuild.Plugin{
 					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 						debug.Debug("OnResolve(.*):aliasBefore", result.Path, aliasedPath)
 						result.Path = aliasedPath
+
+						if utils.IsUrl(result.Path) {
+							if utils.IsSvgImportedFromJsx(result.Path, args) {
+								result.Namespace = "svgFromJsx"
+							} else {
+								result.External = true
+							}
+
+							goto FINISH
+						}
 					}
+				}
+
+				unbundled = resolveUnbundledPrefix(&result)
+				if args.With["unbundle"] == "true" {
+					unbundled = true
 				}
 
 				if resolveWithImportMap(&result, args.ResolveDir) {
@@ -188,7 +201,6 @@ var Bundler = esbuild.Plugin{
 					return result, nil
 				}
 
-				isCssImportedFromJs := false
 				if utils.IsCssImportedFromJs(result.Path, args) {
 					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
 					// the css plugin to return the CSS as a JS object of class names (css module).
@@ -284,10 +296,17 @@ var Bundler = esbuild.Plugin{
 
 				if filepath.IsAbs(result.Path) {
 					relPath := strings.TrimPrefix(result.Path, root)
+
 					if aliasedPath, exists := utils.HasAlias(relPath); exists {
 						if after, ok := strings.CutPrefix(aliasedPath, "unbundle:"); ok {
-							result.Path = after
+							aliasedPath = after
 							unbundled = true
+						}
+
+						if utils.IsUrl(aliasedPath) {
+							unbundled = false
+							result.Path = aliasedPath
+							result.External = true
 						} else {
 							result.Path = filepath.Join(root, aliasedPath)
 						}
