@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
-  NotIncludedError = Class.new(StandardError)
+  NotIncludedError = Class.new(Error)
 
   module EnsureLoaded
     def self.included(child)

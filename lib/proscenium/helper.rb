@@ -11,18 +11,9 @@ module Proscenium
       end
     end
 
-    # Overriden to allow regular use of javascript_include_tag and stylesheet_link_tag, while still
-    # building with Proscenium. It's important to note that `include_assets` will not call this, as
-    # those asset paths all begin with a slash, which the Rails asset helpers do not pass through to
-    # here.
-    #
-    # If the given `path` is a bare path (does not start with `./` or `../`), then we use
-    # Rails default conventions, and serve CSS from /app/assets/stylesheets and JS from
-    # /app/javascript.
     def compute_asset_path(path, options = {})
       if %i[javascript stylesheet].include?(options[:type])
-        path.prepend DEFAULT_RAILS_ASSET_PATHS[options[:type]] if !path.start_with?('./', '../')
-        return path
+        return Proscenium::Manifest[path] || "/#{path}"
       end
 
       super

@@ -68,8 +68,10 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          logLevel,
 		LogLimit:          1,
-		Outdir:            "public/assets",
+		Outdir:            types.Config.OutputDir,
 		Outbase:           "./",
+		EntryNames:        "[dir]/[name]-$[hash]$",
+		AssetNames:        "[dir]/[name]-$[hash]$",
 		ChunkNames:        "_asset_chunks/[name]-$[hash]$",
 		Format:            esbuild.FormatESModule,
 		JSX:               esbuild.JSXAutomatic,
@@ -78,12 +80,12 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 		MinifyIdentifiers: minify,
 		MinifySyntax:      minify,
 		Bundle:            true,
-		ResolveExtensions: []string{".tsx", ".ts", ".jsx", ".js", ".mjs", ".css", ".json"},
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             true,
 		Sourcemap:         sourcemap,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Target:            esbuild.ES2022,
+		Metafile:          true,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
 		Loader: map[string]esbuild.Loader{
@@ -128,8 +130,8 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 			}
 		}
 		buildOptions.Define = definitions
+		buildOptions.Define["proscenium.env.PRECOMPILED"] = "false"
 		buildOptions.Define["global"] = "window"
-
 	}
 
 	qstr := cacheQueryString

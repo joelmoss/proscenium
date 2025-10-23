@@ -26,6 +26,7 @@ module Proscenium
   autoload :Utils
   autoload :Monkey
   autoload :Middleware
+  autoload :Manifest
   autoload :EnsureLoaded
   autoload :SideLoad
   autoload :CssModule
@@ -44,7 +45,20 @@ module Proscenium
     end
   end
 
-  class PathResolutionFailed < StandardError
+  class Error < StandardError; end
+
+  class MissingAssetError < Error
+    def initialize(path)
+      super
+      @path = path
+    end
+
+    def message
+      "The asset '#{@path}' was not found."
+    end
+  end
+
+  class PathResolutionFailed < Error
     def initialize(path)
       @path = path
       super

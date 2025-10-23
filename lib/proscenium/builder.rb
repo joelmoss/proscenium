@@ -4,14 +4,17 @@ require 'ffi'
 
 module Proscenium
   class Builder
-    class CompileError < StandardError; end
-
     ENVIRONMENTS = { development: 1, test: 2, production: 3 }.freeze
 
     class Result < FFI::Struct
       layout :success, :bool,
              :response, :string,
              :content_hash, :string
+    end
+
+    class CompileResult < FFI::Struct
+      layout :success, :bool,
+             :messages, :string
     end
 
     module Request
@@ -32,10 +35,14 @@ module Proscenium
         :pointer # Config as JSON.
       ], Result.by_value
 
+      attach_function :compile, [
+        :pointer # Config as JSON.
+      ], CompileResult.by_value
+
       attach_function :reset_config, [], :void
     end
 
-    class BuildError < StandardError
+    class BuildError < Error
       attr_reader :error
 
       def initialize(error)
@@ -51,7 +58,7 @@ module Proscenium
       end
     end
 
-    class ResolveError < StandardError
+    class ResolveError < Error
       attr_reader :error_msg, :path
 
       def initialize(path, error_msg)
@@ -67,6 +74,10 @@ module Proscenium
       new(root:).resolve(path)
     end
 
+    def self.compile(root: nil)
+      new(root:).compile
+    end
+
     # Intended for tests only.
     def self.reset_config!
       Request.reset_config
@@ -75,6 +86,7 @@ module Proscenium
     def initialize(root: nil)
       @request_config = FFI::MemoryPointer.from_string({
         RootPath: (root || Rails.root).to_s,
+        OutputDir: "public#{Proscenium.config.output_dir}",
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
         EnvVars: env_vars,
@@ -82,6 +94,7 @@ module Proscenium
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
         Aliases: Proscenium.config.aliases,
+        Precompile: Proscenium.config.precompile,
         QueryString: Proscenium.config.cache_query_string.presence || '',
         Debug: Proscenium.config.debug
       }.to_json)
@@ -105,6 +118,11 @@ module Proscenium
 
         result[:response]
       end
+    end
+
+    def compile
+      result = Request.compile(@request_config)
+      result[:success]
     end
 
     private

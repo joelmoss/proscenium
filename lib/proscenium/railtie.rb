@@ -17,8 +17,10 @@ module Proscenium
     config.proscenium.ensure_loaded = :raise
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
-
     config.proscenium.aliases = {}
+
+    config.proscenium.output_dir = '/assets'
+    config.proscenium.precompile = Set.new
 
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are
@@ -29,7 +31,13 @@ module Proscenium
       'Proscenium::Builder::BuildError' => 'build_error'
     }
 
-    config.after_initialize do |_app|
+    config.after_initialize do |app|
+      config.proscenium.output_path ||=
+        Pathname.new(File.join(app.config.paths['public'].first, app.config.proscenium.output_dir))
+      config.proscenium.manifest_path = config.proscenium.output_path.join('.manifest.json')
+
+      Proscenium::Manifest.load!
+
       if config.proscenium.logging
         require 'proscenium/log_subscriber'
         Proscenium::LogSubscriber.attach_to :proscenium
@@ -64,6 +72,10 @@ module Proscenium
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
+    end
+
+    rake_tasks do
+      load 'proscenium/railties/compile.rake'
     end
   end
 end

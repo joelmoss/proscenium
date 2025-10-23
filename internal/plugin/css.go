@@ -35,8 +35,9 @@ var Css = esbuild.Plugin{
 				// module, it exports a plain object of class names.
 				if pluginData.ImportedFromJs {
 					contents := ""
+					isCssModule := utils.PathIsCssModule(args.Path)
 
-					if utils.PathIsCssModule(args.Path) && args.With["type"] == "cssmodulenames" {
+					if isCssModule && args.With["type"] == "cssmodulenames" {
 						// User has requested only the CSS module names be returned.
 						contents = cssModulesProxyTemplate(hash)
 					} else {
@@ -65,7 +66,7 @@ var Css = esbuild.Plugin{
 							}
 						`
 
-						if utils.PathIsCssModule(args.Path) {
+						if isCssModule {
 							contents = contents + cssModulesProxyTemplate(hash)
 						}
 					}
@@ -140,7 +141,7 @@ func cssBuild(urlPath string) esbuild.BuildResult {
 		AbsWorkingDir:     types.Config.RootPath,
 		LogLevel:          esbuild.LogLevelSilent,
 		LogLimit:          1,
-		Outdir:            "public/assets",
+		Outdir:            types.Config.OutputDir,
 		Outbase:           "./",
 		MinifyWhitespace:  minify,
 		MinifyIdentifiers: minify,

@@ -19,20 +19,24 @@ func (e Environment) String() string {
 
 // - RootPath - The working directory, usually Rails root.
 // - GemPath - Proscenium gem root.
+// - OutputDir - Output directory where assets are built or pre-compiled to, relative to the Rails root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
 // - RubyGems - Map of bundled ruby gem names and paths.
 // - Aliases - Map of aliases.
+// - Precompile - Map of glob patterns to precompile.
 // - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
 // - Bundle?
 // - Debug?
 type ConfigT struct {
 	RootPath      string
+	OutputDir     string
 	GemPath       string
 	EnvVars       map[string]string
 	RubyGems      map[string]string
 	Aliases       map[string]string
+	Precompile    []string
 	Debug         bool
 	CodeSplitting bool
 	QueryString   string

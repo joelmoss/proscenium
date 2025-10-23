@@ -5,18 +5,6 @@ module Proscenium
     class Base
       include ActiveSupport::Benchmarkable
 
-      # Error when the result of the build returns an error. For example, when esbuild returns
-      # errors.
-      class CompileError < StandardError
-        attr_reader :detail, :file
-
-        def initialize(args)
-          @detail = args[:detail]
-          @file = args[:file]
-          super("Failed to build '#{args[:file]}' -- #{detail}")
-        end
-      end
-
       def self.attempt(request)
         new(request).renderable!&.attempt
       end

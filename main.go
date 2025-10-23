@@ -5,6 +5,10 @@ struct Result {
 	int success;
 	char* response;
 	char* contentHash;
+	};
+struct CompileResult {
+	int success;
+	char* messages;
 };
 */
 import "C"
@@ -24,6 +28,7 @@ func reset_config() {
 // Build the given `path` using the `config`.
 //
 // - path - The path to build relative to `root`.
+// - cache_query_string - The current query string used for cache busting, taken from the URL.
 // - config
 //
 //export build_to_string
@@ -60,6 +65,26 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_Result {
 	}
 
 	return C.struct_Result{C.int(1), C.CString(resolvedPath), C.CString("")}
+}
+
+// Compile assets using the given `config`.
+//
+// - config
+//
+//export compile
+func compile(configJson *C.char) C.struct_CompileResult {
+	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	if err != nil {
+		return C.struct_CompileResult{C.int(0), C.CString("")}
+	}
+
+	success, messages := builder.Compile()
+
+	if success {
+		return C.struct_CompileResult{C.int(1), C.CString(messages)}
+	}
+
+	return C.struct_CompileResult{C.int(0), C.CString(messages)}
 }
 
 func main() {}

@@ -4,7 +4,7 @@ module Proscenium
   class Middleware
     extend ActiveSupport::Autoload
 
-    class BuildError < StandardError; end
+    class BuildError < Error; end
 
     autoload :Base
     autoload :Esbuild
@@ -24,7 +24,7 @@ module Proscenium
       # cache lifetime, since these are content-hashed and will never change.
       if request.path.match?(CHUNKS_PATH)
         ::ActionDispatch::FileHandler.new(
-          Rails.public_path.join('assets').to_s,
+          Proscenium.config.output_path.to_s,
           headers: {
             'Cache-Control' => "public, max-age=#{100.years}, immutable",
             'etag' => request.path.match(/-\$([a-z0-9]+)\$/i)[1]

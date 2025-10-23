@@ -43,7 +43,7 @@ module Proscenium
           if Proscenium.config.cache_query_string.present?
             path += "?#{Proscenium.config.cache_query_string}"
           end
-          out << helpers.stylesheet_link_tag(path, extname: false, **opts)
+          out << helpers.stylesheet_link_tag(path.delete_prefix('/'), extname: false, **opts)
         end
 
         if fragments
@@ -74,7 +74,7 @@ module Proscenium
           if Proscenium.config.cache_query_string.present?
             path += "?#{Proscenium.config.cache_query_string}"
           end
-          out << helpers.javascript_include_tag(path, extname: false, **opts)
+          out << helpers.javascript_include_tag(path.delete_prefix('/'), extname: false, **opts)
         end
 
         if fragments

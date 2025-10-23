@@ -3,7 +3,7 @@
 require 'rubygems/package'
 
 class Proscenium::RegistryController < ActionController::Base
-  class PackageNotFoundError < StandardError
+  class PackageNotFoundError < Proscenium::Error
     def initialize(name)
       super(<<-TEXT)
         Package `#{name}` is not valid, or does not exist; only Ruby gems are supported via the
@@ -12,7 +12,7 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
-  class PackageNotInstalledError < StandardError
+  class PackageNotInstalledError < Proscenium::Error
     def initialize(name)
       super("Package `#{name}` is not found in your bundle; have you installed the Ruby gem?")
     end

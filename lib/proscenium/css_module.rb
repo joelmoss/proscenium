@@ -7,7 +7,7 @@ module Proscenium::CssModule
   autoload :Transformer
   autoload :Rewriter
 
-  class TransformError < StandardError
+  class TransformError < Proscenium::Error
     def initialize(name, additional_msg = nil)
       msg = "Failed to transform CSS module `#{name}`"
       msg << ' - ' << additional_msg if additional_msg

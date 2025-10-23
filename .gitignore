@@ -17,6 +17,7 @@
 /fixtures/dummy/storage/*
 !/fixtures/dummy/storage/.keep
 /fixtures/dummy/public/assets
+/fixtures/dummy/public/proscenium_compiled_assets
 
 /.bundle/
 /.yardoc

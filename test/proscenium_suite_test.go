@@ -59,6 +59,7 @@ var _ = BeforeEach(func() {
 	_, filename, _, _ := runtime.Caller(0)
 	root := path.Dir(filename)
 	types.Config.RootPath = path.Join(root, "..", "fixtures", "dummy")
+	types.Config.OutputDir = "public/assets"
 	types.Config.GemPath = path.Join(root, "..")
 
 	// Currently only used by the SVG plugin
