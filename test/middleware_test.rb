@@ -10,6 +10,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
 
   before do
     Proscenium.config.cache_query_string = false
+    Proscenium.config.bundle = true
     Proscenium::Importer.reset
     Proscenium::Resolver.reset
   end
@@ -132,11 +133,33 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
   end
 
   context 'cache_query_string' do
-    it 'should set cache header ' do
+    it 'sets cache header ' do
       Proscenium.config.cache_query_string = 'v1'
       get '/lib/query_cache.js'
 
       assert_equal 'public, max-age=2592000', response.headers['Cache-Control']
+    end
+
+    it 'use query string config' do
+      Proscenium.config.bundle = false
+      Proscenium.config.cache_query_string = 'v2'
+
+      get '/lib/query_cache.js'
+
+      assert_includes response.body, %(
+        import foo from "/lib/foo.js?v2";
+      ).squish
+    end
+
+    it 'passes through existing query string' do
+      Proscenium.config.bundle = false
+      Proscenium.config.cache_query_string = 'v2'
+
+      get '/lib/query_cache.js?v1'
+
+      assert_includes response.body, %(
+        import foo from "/lib/foo.js?v1";
+      ).squish
     end
   end
 

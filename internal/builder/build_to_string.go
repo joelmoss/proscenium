@@ -12,8 +12,13 @@ import (
 //
 // Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
 // See Proscenium::Middleware::Esbuild.
-func BuildToString(filePath string) (success bool, code string, contentHash string) {
-	result := build(filePath)
+func BuildToString(filePath string, cacheQueryString ...string) (success bool, code string, contentHash string) {
+	var queryString string
+	if len(cacheQueryString) > 0 {
+		queryString = cacheQueryString[0]
+	}
+
+	result := build(filePath, queryString)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])

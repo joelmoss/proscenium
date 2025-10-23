@@ -23,6 +23,7 @@ module Proscenium
 
       attach_function :build_to_string, [
         :string, # Path or entry point.
+        :string, # cache_query_string.
         :pointer # Config as JSON.
       ], Result.by_value
 
@@ -58,8 +59,8 @@ module Proscenium
       end
     end
 
-    def self.build_to_string(path, root: nil)
-      new(root:).build_to_string(path)
+    def self.build_to_string(path, cache_query_string: '', root: nil)
+      new(root:).build_to_string(path, cache_query_string:)
     end
 
     def self.resolve(path, root: nil)
@@ -81,14 +82,14 @@ module Proscenium
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
         Aliases: Proscenium.config.aliases,
-        QueryString: cache_query_string,
+        QueryString: Proscenium.config.cache_query_string.presence || '',
         Debug: Proscenium.config.debug
       }.to_json)
     end
 
-    def build_to_string(path)
+    def build_to_string(path, cache_query_string: '')
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
-        result = Request.build_to_string(path, @request_config)
+        result = Request.build_to_string(path, cache_query_string, @request_config)
 
         raise BuildError, result[:response] unless result[:success]
 
@@ -113,10 +114,6 @@ module Proscenium
     def env_vars
       ENV['NODE_ENV'] = ENV.fetch('RAILS_ENV', nil)
       ENV.slice(*Proscenium.config.env_vars + Proscenium::DEFAULT_ENV_VARS)
-    end
-
-    def cache_query_string
-      Proscenium.config.cache_query_string.presence || ''
     end
 
     def gem_root

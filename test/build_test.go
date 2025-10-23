@@ -5,7 +5,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-var assertCommonBuildBehaviour = func(build func(string) (bool, string, string)) {
+var assertCommonBuildBehaviour = func(build func(string, ...string) (bool, string, string)) {
 	It("fails on unknown entrypoint", func() {
 		success, result, _ := build("unknown.js")
 

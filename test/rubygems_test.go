@@ -77,6 +77,18 @@ var _ = Describe("@rubygems scoped paths", func() {
 					AssertCode(`function pThrottle(`)
 					AssertCode(`pThrottle("foo");`)
 					AssertCode(`import throttle from "/node_modules/@rubygems/gem_npm_ext/node_modules/p-throttle/index.js";`, Unbundle)
+					AssertCode(`import throttle from "/node_modules/@rubygems/gem_npm_ext/node_modules/p-throttle/index.js?v1";`, Unbundle, QueryString)
+
+					It("passes through query string", func() {
+						types.Config.Bundle = false
+						types.Config.QueryString = "v2"
+
+						_, result, _ := b.BuildToString(fileToAssertCode, "v1")
+
+						Expect(result).To(ContainCode(`
+							import throttle from "/node_modules/@rubygems/gem_npm_ext/node_modules/p-throttle/index.js?v1";
+						`))
+					})
 				})
 			})
 
@@ -90,6 +102,18 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Describe("bare import which is a dependency of the app", func() {
 					AssertCode(`console.log("pkg/index.js");`)
 					AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
+					AssertCode(`import "/node_modules/pkg/index.js?v1";`, Unbundle, QueryString)
+
+					It("passes through query string", func() {
+						types.Config.Bundle = false
+						types.Config.QueryString = "v2"
+
+						_, result, _ := b.BuildToString(fileToAssertCode, "v1")
+
+						Expect(result).To(ContainCode(`
+							import "/node_modules/pkg/index.js?v1";
+						`))
+					})
 				})
 			})
 
@@ -113,6 +137,16 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Describe("does not bundle bare import which is a dependency of the rubygem", func() {
 					AssertCode(`import stringLength from "string-length";`)
 					AssertCode(`import stringLength from "string-length";`, Unbundle)
+					AssertCode(`import stringLength from "string-length";`, Unbundle, QueryString)
+
+					It("ignores query string from URL", func() {
+						types.Config.Bundle = false
+						types.Config.QueryString = "v2"
+
+						_, result, _ := b.BuildToString(fileToAssertCode, "v1")
+
+						Expect(result).To(ContainCode(`import stringLength from "string-length";`))
+					})
 				})
 			})
 
@@ -120,6 +154,16 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Describe("resolves bare import which is a dependency of the app", func() {
 					AssertCode(`console.log("pkg/index.js");`)
 					AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
+					AssertCode(`import "/node_modules/pkg/index.js?v1";`, Unbundle, QueryString)
+
+					It("passes through query string", func() {
+						types.Config.Bundle = false
+						types.Config.QueryString = "v2"
+
+						_, result, _ := b.BuildToString(fileToAssertCode, "v1")
+
+						Expect(result).To(ContainCode(`import "/node_modules/pkg/index.js?v1";`))
+					})
 				})
 			})
 		})
@@ -196,17 +240,39 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			When("unbundle:* in import map", func() {
-				It("unbundles", func() {
+				BeforeEach(func() {
 					importmap.NewJsonImportMap([]byte(`{
 						"imports": {
 							"@rubygems/gem1/": "unbundle:@rubygems/gem1/"
 						}
 					}`))
+				})
 
+				It("unbundles", func() {
 					_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
+					`))
+				})
+
+				It("use query string config", func() {
+					types.Config.QueryString = "v1"
+
+					_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js?v1";
+					`))
+				})
+
+				It("passes through query string", func() {
+					types.Config.QueryString = "v2"
+
+					_, code, _ := b.BuildToString("lib/rubygems/vendored.js", "v1")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js?v1";
 					`))
 				})
 			})
@@ -215,6 +281,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css")
 
 				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2)`))
+			})
+
+			It("appends query string", func() {
+				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css", "v1")
+
+				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2?v1)`))
 			})
 		})
 
@@ -341,6 +413,26 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem4", "external")
 			})
 
+			It("uses QueryString config", func() {
+				types.Config.QueryString = "v2"
+
+				_, result, _ := b.BuildToString("lib/rubygems/vendored.js")
+
+				Expect(result).To(ContainCode(`
+					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js?v2";
+				`))
+			})
+
+			It("passes through query string", func() {
+				types.Config.QueryString = "v2"
+
+				_, result, _ := b.BuildToString("lib/rubygems/vendored.js", "v1")
+
+				Expect(result).To(ContainCode(`
+					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js?v1";
+				`))
+			})
+
 			It("bundles", func() {
 				_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
 
@@ -401,6 +493,26 @@ var _ = Describe("@rubygems scoped paths", func() {
 		Describe("outside root", func() {
 			BeforeEach(func() {
 				addGem("gem2", "external")
+			})
+
+			It("uses QueryString config", func() {
+				types.Config.QueryString = "v2"
+
+				_, result, _ := b.BuildToString("lib/rubygems/external.js")
+
+				Expect(result).To(ContainCode(`
+					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js?v2";
+				`))
+			})
+
+			It("passes through query string", func() {
+				types.Config.QueryString = "v2"
+
+				_, result, _ := b.BuildToString("lib/rubygems/external.js", "v1")
+
+				Expect(result).To(ContainCode(`
+					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js?v1";
+				`))
 			})
 
 			It("bundles", func() {

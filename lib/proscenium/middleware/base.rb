@@ -40,6 +40,17 @@ module Proscenium
         @path_to_build ||= @request.path[1..]
       end
 
+      def cache_query_string
+        @cache_query_string ||= begin
+          params = @request.query_parameters
+          if params.one? && params.first[0] != '' && params.first[1].nil?
+            params.keys.first
+          else
+            Proscenium.config.cache_query_string
+          end
+        end.presence || ''
+      end
+
       def sourcemap?
         @request.path.ends_with?('.map')
       end
@@ -86,7 +97,7 @@ module Proscenium
         response.content_type = content_type
         response.etag = result[:content_hash]
 
-        if Proscenium.config.cache_query_string && Proscenium.config.cache_max_age
+        if !cache_query_string.blank? && Proscenium.config.cache_max_age
           response.cache! Proscenium.config.cache_max_age
         end
 

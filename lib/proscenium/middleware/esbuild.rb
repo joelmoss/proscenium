@@ -20,7 +20,7 @@ module Proscenium
       end
 
       def attempt
-        render_response Builder.build_to_string(path_to_build)
+        render_response Builder.build_to_string(path_to_build, cache_query_string:)
       rescue Builder::CompileError => e
         raise self.class::CompileError, { file: @request.fullpath, detail: e.message }, caller
       end

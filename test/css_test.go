@@ -15,15 +15,18 @@ var _ = Describe("BuildToString(css)", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
 			AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
+			AssertCode(`@import "/lib/importing/app/one.css?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`.app_two { content: "/lib/importing/app/two.css"; }`)
 				AssertCode(`@import "/lib/importing/app/two.css";`, Unbundle)
+				AssertCode(`@import "/lib/importing/app/two.css?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("without filename", func() {
 				AssertCode(`.app_index { content: "/lib/importing/app/index.css"; }`)
 				AssertCode(`@import "/lib/importing/app/index.css";`, Unbundle)
+				AssertCode(`@import "/lib/importing/app/index.css?v1";`, Unbundle, QueryString)
 			})
 		})
 
@@ -45,6 +48,7 @@ var _ = Describe("BuildToString(css)", func() {
 		Describe("URL", func() {
 			AssertCode(`@import "https://proscenium.test/foo.css";`)
 			AssertCode(`@import "https://proscenium.test/foo.css";`, Unbundle)
+			AssertCode(`@import "https://proscenium.test/foo.css";`, Unbundle, QueryString)
 		})
 	})
 
@@ -52,6 +56,7 @@ var _ = Describe("BuildToString(css)", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`.pkg_one { content: "pkg/one.css"; }`)
 			AssertCode(`@import "/node_modules/pkg/one.css";`, Unbundle)
+			AssertCode(`@import "/node_modules/pkg/one.css?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`.pkg_two { content: "pkg/two.css"; }`)
@@ -161,6 +166,7 @@ var _ = Describe("BuildToString(css)", func() {
 	EntryPoint("lib/importing/css_module.css", func() {
 		AssertCode(`.app_one_module-7727b09a { content: "/lib/importing/app/one.module.css"; }`)
 		AssertCode(`@import "/lib/importing/app/one.module.css";`, Unbundle)
+		AssertCode(`@import "/lib/importing/app/one.module.css?v1";`, Unbundle, QueryString)
 		AssertCode(`
 			.app_one_module-7727b09a__lib-importing-app-one-module-css {
 				content: "/lib/importing/app/one.module.css";
@@ -175,6 +181,7 @@ var _ = Describe("BuildToString(css)", func() {
 		Describe("from package", func() {
 			AssertCode(`.pkg_one_module-9047c541 { content: "pkg/one.module.css"; }`)
 			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
+			AssertCode(`@import "/node_modules/pkg/one.module.css?v1";`, Unbundle, QueryString)
 			AssertCode(`
 				.pkg_one_module-9047c541__node_modules--pnpm-pkg-git-https---git-gist-github-com-c3d9087f5f214e1f0d9719e4a7d38474-git-2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module-css {
 					content: "pkg/one.module.css";
@@ -195,6 +202,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 		AssertCode(`@import "/lib/importing/app/one.css";`)
 		AssertCode(`@import "/lib/importing/app/two.css";`)
+		AssertCode(`@import "/lib/importing/app/two.css?v1";`, QueryString)
 	})
 
 	EntryPoint("lib/importing/import_map.css", func() {
@@ -208,6 +216,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 		AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
 		AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
+		AssertCode(`@import "/lib/importing/app/one.css?v1";`, Unbundle, QueryString)
 	})
 
 	EntryPoint("lib/importing/fonts.css", func() {

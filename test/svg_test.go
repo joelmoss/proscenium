@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"regexp"
 
@@ -77,6 +78,15 @@ var _ = Describe("b.BuildToString(svg)", func() {
 
 		Expect(code).To(ContainCode(`
 			url(/hue/icons/angle-right-regular.svg)`,
+		))
+	})
+
+	It("appends query string", func() {
+		types.Config.QueryString = "v1"
+		_, code, _ := b.BuildToString("lib/svg/svg.css")
+
+		Expect(code).To(ContainCode(`
+			url(/hue/icons/angle-right-regular.svg?v1)`,
 		))
 	})
 

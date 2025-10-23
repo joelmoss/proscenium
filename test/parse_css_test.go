@@ -94,6 +94,7 @@ var _ = Describe("Build(parseCss)", func() {
 					Describe("from absolute url", func() {
 						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`)
 						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`, Unbundle)
+						AssertCode(`.mixin1 { content: "/lib/css_all/mixin1.css"; font-size: 10px; }`, Unbundle, QueryString)
 					})
 
 					Describe("from relative url", func() {
