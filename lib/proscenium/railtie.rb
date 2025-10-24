@@ -65,9 +65,5 @@ module Proscenium
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
     end
-
-    rake_tasks do
-      load 'proscenium/railties/compile.rake'
-    end
   end
 end
