@@ -130,12 +130,13 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 		buildOptions.Define = definitions
 		buildOptions.Define["global"] = "window"
 
-		qstr := cacheQueryString
-		if qstr == "" {
-			qstr = types.Config.QueryString
-		}
-		buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "\"" + qstr + "\""
 	}
+
+	qstr := cacheQueryString
+	if qstr == "" {
+		qstr = types.Config.QueryString
+	}
+	buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "\"" + qstr + "\""
 
 	return esbuild.Build(buildOptions)
 }
