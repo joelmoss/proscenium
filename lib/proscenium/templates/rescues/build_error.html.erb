@@ -19,8 +19,8 @@
 
 <%= @exception.error['location']['line'].to_s.rjust 5 %> │    <%= @exception.error['location']['line_text'] %>
       │    <%= (@exception.error['location']['length'] > 1 ? "~" * @exception.error['location']['length'] : "^").rjust(@exception.error['location']['column'] + @exception.error['location']['length']) %>
-<%- if @exception.error['location']['suggestion'].present? -%>    + │    <%= @exception.error['location']['suggestion'].rjust(@exception.error['location']['column'] + 1) %>
-<% else %> <%- end -%>
+<%- if @exception.error['location']['suggestion'].present? %>    + │    <%= @exception.error['location']['suggestion'].rjust(@exception.error['location']['column'] + 1) %>
+<% else %> <%- end %>
 </pre>
       </div>
     </div>

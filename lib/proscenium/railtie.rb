@@ -46,7 +46,10 @@ module Proscenium
     end
 
     initializer 'proscenium.middleware' do |app|
-      app.middleware.insert_after ActionDispatch::Static, Proscenium::Middleware
+      unless config.proscenium.logging
+        app.middleware.insert_before Rails::Rack::Logger, Proscenium::Middleware::SilenceRequest
+      end
+      app.middleware.insert_before ActionDispatch::ActionableExceptions, Proscenium::Middleware
     end
 
     initializer 'proscenium.sideloading' do
@@ -61,6 +64,10 @@ module Proscenium
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
       end
+    end
+
+    rake_tasks do
+      load 'proscenium/railties/compile.rake'
     end
   end
 end

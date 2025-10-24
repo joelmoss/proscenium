@@ -5,9 +5,6 @@ require 'active_support'
 module Proscenium
   extend ActiveSupport::Autoload
 
-  FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
-                     'ts.map', 'tsx.map', 'css.map'].freeze
-
   # Default paths for Rails assets. Used by the `compute_asset_path` helper to maintain Rails
   # default conventions of where JS and CSS files are located.
   DEFAULT_RAILS_ASSET_PATHS = {
@@ -15,7 +12,12 @@ module Proscenium
     javascript: 'app/javascript/'
   }.freeze
 
+  FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
+                     'ts.map', 'tsx.map', 'css.map'].freeze
   ALLOWED_DIRECTORIES = 'app,lib,config,vendor,node_modules'
+  APP_PATH_GLOB = "/{#{ALLOWED_DIRECTORIES}}/**.{#{FILE_EXTENSIONS.join(',')}}".freeze
+  GEMS_PATH_GLOB = "/node_modules/@rubygems/**.{#{FILE_EXTENSIONS.join(',')}}".freeze
+  CHUNKS_PATH = %r{^/_asset_chunks/}
 
   # Environment variables that should always be passed to the builder.
   DEFAULT_ENV_VARS = Set['RAILS_ENV', 'NODE_ENV'].freeze
