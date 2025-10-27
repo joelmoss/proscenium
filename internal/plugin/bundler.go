@@ -134,8 +134,15 @@ func Bundler(cacheQueryString string) esbuild.Plugin {
 					}
 
 					if unbundled {
-						result.Path = utils.ApplyQueryString("/node_modules/"+result.Path, cacheQueryString)
 						result.External = true
+
+						if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path); ok {
+							result.Path = gemPath
+						} else {
+							result.Path = "/node_modules/" + result.Path
+						}
+
+						result.Path = utils.ApplyQueryString(result.Path, cacheQueryString)
 					} else if hasExt {
 						result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 					}
@@ -337,7 +344,14 @@ func Bundler(cacheQueryString string) esbuild.Plugin {
 					}
 
 					if result.External {
-						result.Path = utils.ApplyQueryString(strings.TrimPrefix(result.Path, root), cacheQueryString)
+						// Returned path must be a URL path.
+						if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path); ok {
+							result.Path = gemPath
+						} else if rootPath, ok := rootPathToUrlPath(result.Path); ok {
+							result.Path = rootPath
+						}
+
+						result.Path = utils.ApplyQueryString(result.Path, cacheQueryString)
 					}
 
 					debug.Debug("OnResolve(.*):end", result)

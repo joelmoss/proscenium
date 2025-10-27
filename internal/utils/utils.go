@@ -33,7 +33,7 @@ func HasExtension(name string) (extension string, found bool) {
 }
 
 func IsBareModule(name string) bool {
-	return !path.IsAbs(name) && !PathIsRelative(name)
+	return !strings.HasPrefix(name, "unbundle:") && !path.IsAbs(name) && !PathIsRelative(name)
 }
 
 var IsBareSpecifier = IsBareModule
