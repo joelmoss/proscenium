@@ -136,7 +136,12 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 	if qstr == "" {
 		qstr = types.Config.QueryString
 	}
-	buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "\"" + qstr + "\""
+
+	if qstr == "" {
+		buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "undefined"
+	} else {
+		buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "\"" + qstr + "\""
+	}
 
 	return esbuild.Build(buildOptions)
 }
