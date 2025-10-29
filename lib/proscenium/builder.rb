@@ -43,26 +43,28 @@ module Proscenium
     end
 
     class BuildError < Error
-      attr_reader :error
+      attr_reader :error, :path
 
-      def initialize(error)
-        @error = JSON.parse(error, strict: true).deep_transform_keys(&:underscore)
+      def initialize(path, error)
+        @path = path
+        @error = JSON.parse(error, strict: true)
 
-        msg = @error['text']
-        msg << ' - ' << @error['detail'] if @error['detail'].is_a?(String)
-        if (location = @error['location'])
-          msg << " at #{location['file']}:#{location['line']}:#{location['column']}"
+        msg = @error['Text']
+        msg << ' - ' << @error['Detail'] if @error['Detail'].is_a?(String)
+        if (location = @error['Location'])
+          msg << " at #{location['File']}:#{location['Line']}:#{location['Column']}"
         end
 
-        super(msg)
+        super("Failed to build #{path} - #{msg}")
       end
     end
 
     class ResolveError < Error
-      attr_reader :error_msg, :path
+      attr_reader :path
 
-      def initialize(path, error_msg)
-        super("Failed to resolve '#{path}' -- #{error_msg}")
+      def initialize(path, msg)
+        @path = path
+        super("Failed to resolve #{path} - #{msg}")
       end
     end
 
@@ -94,7 +96,9 @@ module Proscenium
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
         Aliases: Proscenium.config.aliases,
+        EsBuildAliases: Proscenium.config.esbuild_aliases,
         Precompile: Proscenium.config.precompile,
+        External: Proscenium.config.external,
         QueryString: Proscenium.config.cache_query_string.presence || '',
         Debug: Proscenium.config.debug
       }.to_json)
@@ -104,7 +108,7 @@ module Proscenium
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
         result = Request.build_to_string(path, cache_query_string, @request_config)
 
-        raise BuildError, result[:response] unless result[:success]
+        raise BuildError.new(path, result[:response]) unless result[:success]
 
         result
       end

@@ -101,16 +101,15 @@ func Resolve(filePath string, importer string) (string, error) {
 	}
 
 	result := esbuild.Build(esbuild.BuildOptions{
-		EntryPoints:       []string{filePath},
-		AbsWorkingDir:     rootPath,
-		Format:            esbuild.FormatESModule,
-		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
-		ResolveExtensions: []string{".tsx", ".ts", ".jsx", ".js", ".mjs", ".css", ".json"},
-		Write:             false,
-		Metafile:          true,
-		LogLevel:          logLevel,
-		LogLimit:          1,
-		PreserveSymlinks:  true,
+		EntryPoints:      []string{filePath},
+		AbsWorkingDir:    rootPath,
+		Format:           esbuild.FormatESModule,
+		Conditions:       []string{types.Config.Environment.String(), "proscenium"},
+		Write:            false,
+		Metafile:         true,
+		LogLevel:         logLevel,
+		LogLimit:         1,
+		PreserveSymlinks: true,
 
 		// The Esbuild default places browser before module, but we're building for modern browsers
 		// which support esm. So we prioritise that. Some libraries export a "browser" build that still

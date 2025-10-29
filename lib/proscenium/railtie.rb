@@ -18,9 +18,10 @@ module Proscenium
     config.proscenium.cache_query_string = Rails.env.production? && ENV.fetch('REVISION', nil)
     config.proscenium.cache_max_age = 2_592_000 # 30 days
     config.proscenium.aliases = {}
-
-    config.proscenium.output_dir = '/assets'
+    config.proscenium.esbuild_aliases = {}
+    config.proscenium.external = Set['*.rjs', '*.gif', '*.jpg', '*.png', '*.woff2', '*.woff']
     config.proscenium.precompile = Set.new
+    config.proscenium.output_dir = '/assets'
 
     # List of environment variable names that should be passed to the builder, which will then be
     # passed to esbuild's `Define` option. Being explicit about which environment variables are

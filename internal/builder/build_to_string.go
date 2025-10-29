@@ -2,6 +2,7 @@ package builder
 
 import (
 	"encoding/json"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
@@ -12,6 +13,13 @@ import (
 )
 
 var entrypointRegex = regexp.MustCompile(`(?i)(.+)\-\$[a-z0-9]+\$(\.[a-z]+(?:\.map)?)$`)
+var extensionMap = map[string]string{
+	".jsx": ".js",
+	".ts":  ".js",
+	".tsx": ".js",
+	".mjs": ".js",
+	".cjs": ".js",
+}
 
 // Builds the given `filePath`, which should be a full URL path, but without the leading slash, and
 // returns the contents as a string.
@@ -32,7 +40,7 @@ func BuildToString(filePath string, cacheQueryString ...string) (success bool, c
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])
 		if err != nil {
-			return false, string(err.Error()), ""
+			return buildError(string(err.Error()))
 		}
 
 		return false, string(j), ""
@@ -40,12 +48,22 @@ func BuildToString(filePath string, cacheQueryString ...string) (success bool, c
 
 	nonSourceMapFile, isSourceMap := strings.CutSuffix(filePath, ".map")
 
+	filePathWithRealExt := filePath
+	ext := path.Ext(nonSourceMapFile)
+	if mappedExt, ok := extensionMap[ext]; ok {
+		filePathWithRealExt = strings.TrimSuffix(nonSourceMapFile, ext) + mappedExt
+
+		if isSourceMap {
+			filePathWithRealExt = filePathWithRealExt + ".map"
+		}
+	}
+
 	if len(result.OutputFiles) == 1 {
 		output = result.OutputFiles[0]
 	} else {
 		for _, out := range result.OutputFiles {
 			substrs := entrypointRegex.FindAllStringSubmatch(out.Path, -1)[0]
-			if pathPrefix+filePath == substrs[1]+substrs[2] {
+			if pathPrefix+filePathWithRealExt == substrs[1]+substrs[2] {
 				output = out
 				break
 			}
@@ -55,7 +73,7 @@ func BuildToString(filePath string, cacheQueryString ...string) (success bool, c
 			var metadata struct{ Outputs map[string]any }
 			err := json.Unmarshal([]byte(result.Metafile), &metadata)
 			if err != nil {
-				return false, err.Error(), ""
+				return buildError(err.Error())
 			}
 
 			var epPath string
@@ -76,7 +94,10 @@ func BuildToString(filePath string, cacheQueryString ...string) (success bool, c
 		}
 	}
 
-	// debug.FDebug(filePath, result.OutputFiles, output.Path)
+	if output.Path == "" {
+		debug.FDebug(filePath, result.OutputFiles)
+		return buildError("Could not find output file.")
+	}
 
 	contents := string(output.Contents)
 
@@ -106,4 +127,15 @@ func findOutputPathForEntryPoint(filePath string, metadata struct{ Outputs map[s
 	}
 
 	return ""
+}
+
+func buildError(msg string) (bool, string, string) {
+	message := esbuild.Message{Text: msg}
+
+	j, err := json.Marshal(message)
+	if err != nil {
+		return false, string(err.Error()), ""
+	}
+
+	return false, string(j), ""
 }

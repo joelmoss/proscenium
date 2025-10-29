@@ -31,7 +31,7 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         subject.build_to_string('unknown.js')
       end
 
-      assert_equal 'Could not resolve "unknown.js"', error.message
+      assert_equal 'Failed to build unknown.js - Could not resolve "unknown.js"', error.message
     end
 
     it 'raises on non-bare specifier' do
@@ -39,7 +39,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         subject.build_to_string('/unknown.js')
       end
 
-      assert_equal 'Could not resolve "/unknown.js" - Entrypoints must be bare specifiers',
+      assert_equal 'Failed to build /unknown.js - Could not resolve "/unknown.js" - ' \
+                   'Entrypoints must be bare specifiers',
                    error.message
     end
   end

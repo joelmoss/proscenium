@@ -25,30 +25,36 @@ func (e Environment) String() string {
 // - RubyGems - Map of bundled ruby gem names and paths.
 // - Aliases - Map of aliases.
 // - Precompile - Map of glob patterns to precompile.
+// - External - List of paths or glob patterns to treat as external.
 // - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
 // - Bundle?
 // - Debug?
 type ConfigT struct {
-	RootPath      string
-	OutputDir     string
-	GemPath       string
-	EnvVars       map[string]string
-	RubyGems      map[string]string
-	Aliases       map[string]string
-	Precompile    []string
-	Debug         bool
-	CodeSplitting bool
-	QueryString   string
-	Bundle        bool
-	Environment   Environment
+	RootPath       string
+	OutputDir      string
+	GemPath        string
+	EnvVars        map[string]string
+	RubyGems       map[string]string
+	Aliases        map[string]string
+	EsBuildAliases map[string]string
+	Precompile     []string
+	External       []string
+	Debug          bool
+	CodeSplitting  bool
+	QueryString    string
+	Bundle         bool
+	Environment    Environment
 
 	// For testing
 	UseDevCSSModuleNames bool
 }
 
 var Config = ConfigT{CodeSplitting: true, Bundle: true}
-var zeroConfig = &ConfigT{CodeSplitting: true, Bundle: true}
+var zeroConfig = &ConfigT{
+	CodeSplitting: true,
+	Bundle:        true,
+}
 
 func (config *ConfigT) Reset() {
 	*config = *zeroConfig
