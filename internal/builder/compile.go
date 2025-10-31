@@ -128,7 +128,6 @@ func Compile() (bool, string) {
 	}
 
 	os.WriteFile(types.Config.RootPath+"/"+types.Config.OutputDir+"/.manifest.json", []byte(result.Metafile), 0644)
-	// fmt.Printf("%s", esbuild.AnalyzeMetafile(result.Metafile, esbuild.AnalyzeMetafileOptions{Verbose: true}))
 
 	return true, string(messages)
 }

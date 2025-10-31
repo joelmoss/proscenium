@@ -50,6 +50,10 @@ var Css = esbuild.Plugin{
 							}, fmt.Errorf("%s", cssResult.Errors[0].Text)
 						}
 
+						if len(cssResult.OutputFiles) > 1 {
+							return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
+						}
+
 						contents = strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
 						contents = `
 							const u = '` + urlPath + `';
