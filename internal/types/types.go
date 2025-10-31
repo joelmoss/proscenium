@@ -31,20 +31,18 @@ func (e Environment) String() string {
 // - Bundle?
 // - Debug?
 type ConfigT struct {
-	RootPath       string
-	OutputDir      string
-	GemPath        string
-	EnvVars        map[string]string
-	RubyGems       map[string]string
-	Aliases        map[string]string
-	EsBuildAliases map[string]string
-	Precompile     []string
-	External       []string
-	Debug          bool
-	CodeSplitting  bool
-	QueryString    string
-	Bundle         bool
-	Environment    Environment
+	RootPath      string
+	OutputDir     string
+	GemPath       string
+	EnvVars       map[string]string
+	RubyGems      map[string]string
+	Aliases       map[string]string
+	Precompile    []string
+	Debug         bool
+	CodeSplitting bool
+	QueryString   string
+	Bundle        bool
+	Environment   Environment
 
 	// For testing
 	UseDevCSSModuleNames bool

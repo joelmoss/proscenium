@@ -86,7 +86,6 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 		LegalComments:     esbuild.LegalCommentsNone,
 		Target:            esbuild.ES2022,
 		Metafile:          true,
-		Alias:             types.Config.EsBuildAliases,
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
 		Loader: map[string]esbuild.Loader{
@@ -111,7 +110,7 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 	}
 
 	if types.Config.Bundle {
-		buildOptions.External = types.Config.External
+		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler(cacheQueryString))
 	} else {
 		buildOptions.PreserveSymlinks = true

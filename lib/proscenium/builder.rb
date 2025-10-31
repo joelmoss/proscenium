@@ -96,9 +96,7 @@ module Proscenium
         RubyGems: Proscenium::BundledGems.paths,
         Bundle: Proscenium.config.bundle,
         Aliases: Proscenium.config.aliases,
-        EsBuildAliases: Proscenium.config.esbuild_aliases,
         Precompile: Proscenium.config.precompile,
-        External: Proscenium.config.external,
         QueryString: Proscenium.config.cache_query_string.presence || '',
         Debug: Proscenium.config.debug
       }.to_json)
