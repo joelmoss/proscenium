@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 
@@ -182,32 +181,6 @@ var _ = Describe("BuildToString(css)", func() {
 				UseDevCSSModuleNames,
 			)
 		})
-	})
-
-	EntryPoint("lib/importing/unbundling.css", func() {
-		BeforeEach(func() {
-			importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"two.css": "unbundle:/lib/importing/app/two.css"
-					}
-				}`))
-		})
-
-		AssertCode(`@import "/lib/importing/app/one.css";`)
-		AssertCode(`@import "/lib/importing/app/two.css";`)
-	})
-
-	EntryPoint("lib/importing/import_map.css", func() {
-		BeforeEach(func() {
-			importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"one.css": "/lib/importing/app/one.css"
-					}
-				}`))
-		})
-
-		AssertCode(`.app_one { content: "/lib/importing/app/one.css"; }`)
-		AssertCode(`@import "/lib/importing/app/one.css";`, Unbundle)
 	})
 
 	EntryPoint("lib/importing/fonts.css", func() {

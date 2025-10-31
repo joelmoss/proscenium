@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"path/filepath"
@@ -195,24 +194,6 @@ var _ = Describe("@rubygems scoped paths", func() {
 				})
 			})
 
-			When("unbundle:* in import map", func() {
-				BeforeEach(func() {
-					importmap.NewJsonImportMap([]byte(`{
-						"imports": {
-							"@rubygems/gem1/": "unbundle:@rubygems/gem1/"
-						}
-					}`))
-				})
-
-				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
-
-					Expect(code).To(ContainCode(`
-						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
-					`))
-				})
-			})
-
 			It("does not bundle fonts", func() {
 				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css")
 
@@ -327,22 +308,6 @@ var _ = Describe("@rubygems scoped paths", func() {
 				})
 			})
 
-			Describe("unbundle:* in import map", func() {
-				It("unbundles", func() {
-					importmap.NewJsonImportMap([]byte(`{
-						"imports": {
-							"@rubygems/gem2/": "unbundle:@rubygems/gem2/"
-						}
-					}`))
-
-					_, code, _ := b.BuildToString("lib/rubygems/external.js")
-
-					Expect(code).To(ContainCode(`
-						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
-					`))
-				})
-			})
-
 			It("does not bundle fonts", func() {
 				_, code, _ := b.BuildToString("lib/rubygems/external_fonts.css")
 
@@ -385,18 +350,6 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`
 					console.log("gem1");
 				`))
-			})
-
-			It("rubygem is resolved before import map", func() {
-				importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"@rubygems/gem3/lib/gem3/console.js": "/lib/foo.js",
-					}
-				}`))
-
-				_, code, _ := b.BuildToString("lib/rubygems/gem3.js")
-
-				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
 			})
 
 			It("resolves imports", func() {
@@ -447,18 +400,6 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`
 					console.log("gem2");
 				`))
-			})
-
-			It("rubygem is resolved before import map", func() {
-				importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"@rubygems/gem2/lib/gem2/console.js": "/lib/foo.js",
-					}
-				}`))
-
-				_, code, _ := b.BuildToString("lib/rubygems/gem2.js")
-
-				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
 			})
 
 			It("resolves import", func() {

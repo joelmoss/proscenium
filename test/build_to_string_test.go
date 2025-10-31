@@ -2,15 +2,12 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
-	. "joelmoss/proscenium/test/support"
 	"path"
 	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
-	. "github.com/onsi/gomega"
 )
 
 // Describe("nested", func() {
@@ -214,33 +211,6 @@ var _ = Describe("BuildToString", func() {
 		})
 	})
 
-	EntryPoint("lib/importing/unbundling.js", func() {
-		BeforeEach(func() {
-			importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"three.js": "unbundle:/lib/importing/app/three.js"
-					}
-				}`))
-		})
-
-		AssertCode(`import "/lib/importing/app/one.js";`)
-		AssertCode(`import "/lib/importing/app/two.js";`)
-		AssertCode(`import "/lib/importing/app/three.js";`)
-	})
-
-	EntryPoint("lib/importing/import_map.js", func() {
-		BeforeEach(func() {
-			importmap.NewJsonImportMap([]byte(`{
-					"imports": {
-						"one.js": "/lib/importing/app/one.js"
-					}
-				}`))
-		})
-
-		AssertCode(`console.log("/lib/importing/app/one.js");`)
-		AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
-	})
-
 	Describe("aliases", func() {
 		EntryPoint("lib/aliases/absolute_paths.js", func() {
 			Describe("to unbundle: prefix", func() {
@@ -392,17 +362,6 @@ var _ = Describe("BuildToString", func() {
 		})
 
 		assertCommonBuildBehaviour(b.BuildToString)
-
-		It("does not build entrypoint with import map", func() {
-			importmap.NewJsonImportMap([]byte(`{
-				"imports": {
-					"/lib/foo.js": "/lib/foo2.js"
-				}
-			}`))
-			_, code, _ := b.BuildToString("lib/foo.js")
-
-			Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
-		})
 	})
 })
 

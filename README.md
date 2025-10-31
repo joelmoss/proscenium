@@ -18,7 +18,6 @@
 - Deep integration with Rails.
 - Automatically side-load JS and CSS for your layouts, views, and partials.
 - Import from NPM, URL's, and locally.
-- Server-side import map support.
 - CSS Modules & mixins.
 - Source maps.
 
@@ -30,7 +29,6 @@
 - [Side Loading](#side-loading)
 - [Importing](#importing-assets)
   - [Local Imports](#local-imports)
-- [Import Maps](#import-maps)
 - [Source Maps](#source-maps)
 - [SVG](#svg)
 - [Environment Variables](#environment-variables)
@@ -258,13 +256,11 @@ Sometimes you don't want to bundle an import. For example, you want to ensure th
 import React from "react" with { unbundle: 'true' };
 ```
 
-You can also unbundle entries in your [import map](#import-maps) using an `unbundle:` prefix, which ensures that all imports of a particular path are always unbundled:
+You can also unbundle entries in [`aliases`](#aliases) using an `unbundle:` prefix, which ensures that all imports of a particular path are always unbundled:
 
-```json
-{
-  "imports": {
-    "react": "unbundle:react"
-  }
+```ruby
+config.proscenium.aliases = {
+  "react": "unbundle:react"
 }
 ```
 
@@ -281,55 +277,6 @@ config.proscenium.bundle = false
 ```
 
 This will mean every asset and import will be loaded independently.
-
-## Import Maps
-
-> **[WIP]**
-
-[Import maps](https://developer.mozilla.org/en-US/docs/Web/HTML/Element/script/type/importmap) for both JS and CSS is supported out of the box, and works with no regard to the browser being used. This is because the import map is parsed and resolved by Proscenium on the server, instead of by the browser. This is faster, and also allows you to use import maps in browsers that do not support them yet.
-
-If you are not familiar with import maps, think of them as a way to define aliases.
-
-Just create `config/import_map.json` and specify the imports you want to use. For example:
-
-```json
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.2.0",
-    "start": "/lib/start.js",
-    "common": "/lib/common.css",
-    "@radix-ui/colors/": "https://esm.sh/@radix-ui/colors@0.1.8/"
-  }
-}
-```
-
-Using the above import map, we can do...
-
-```js
-import { useCallback } from "react";
-import startHere from "start";
-import styles from "common";
-```
-
-and for CSS...
-
-```css
-@import "common";
-@import "@radix-ui/colors/blue.css";
-```
-
-You can also write your import map in JavaScript instead of JSON. So instead of `config/import_map.json`, create `config/import_map.js`, and define an anonymous function. This function accepts a single `environment` argument.
-
-```js
-(env) => ({
-  imports: {
-    react:
-      env === "development"
-        ? "https://esm.sh/react@18.2.0?dev"
-        : "https://esm.sh/react@18.2.0",
-  },
-});
-```
 
 ## Source Maps
 

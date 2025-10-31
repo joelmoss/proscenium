@@ -1,7 +1,6 @@
 package proscenium_test
 
 import (
-	"joelmoss/proscenium/internal/importmap"
 	r "joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
 	"path/filepath"
@@ -133,36 +132,6 @@ var _ = Describe("Resolve", func() {
 		result, _ := r.Resolve("/lib/foo2", "")
 
 		Expect(result).To(Equal("/lib/foo2.js"))
-	})
-
-	Describe("with import map", func() {
-		It("resolves from import map", func() {
-			importmap.NewJsonImportMap([]byte(`{
-				"imports": {
-					"foo": "/lib/foo.js",
-					"bar": "https://some.com/bar.js"
-				}
-			}`))
-
-			Expect(r.Resolve("foo", "")).To(Equal("/lib/foo.js"))
-			Expect(r.Resolve("bar", "")).To(Equal("https://some.com/bar.js"))
-		})
-
-		It("resolves directory to its index file", func() {
-			importmap.NewJsonImportMap([]byte(`{
-				"imports": { "foo": "/lib/indexes" }
-			}`))
-
-			Expect(r.Resolve("foo", "")).To(Equal("/lib/indexes/index.js"))
-		})
-
-		It("resolves file without extension", func() {
-			importmap.NewJsonImportMap([]byte(`{
-				"imports": { "foo": "/lib/foo2" }
-			}`))
-
-			Expect(r.Resolve("foo", "")).To(Equal("/lib/foo2.js"))
-		})
 	})
 })
 

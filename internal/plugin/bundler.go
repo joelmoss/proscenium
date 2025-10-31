@@ -2,7 +2,6 @@ package plugin
 
 import (
 	"joelmoss/proscenium/internal/debug"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
@@ -83,14 +82,7 @@ var Bundler = esbuild.Plugin{
 				if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 					debug.Debug("OnResolve(@rubygems/*):alias", result.Path, aliasedPath)
 					result.Path = aliasedPath
-				}
-
-				if resolveWithImportMap(&result, args.ResolveDir) {
-					if resolveUnbundledPrefix(&result) {
-						unbundled = true
-					}
-				} else {
-					return result, nil
+					unbundled = resolveUnbundledPrefix(&result)
 				}
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -196,14 +188,6 @@ var Bundler = esbuild.Plugin{
 				unbundled = resolveUnbundledPrefix(&result)
 				if args.With["unbundle"] == "true" {
 					unbundled = true
-				}
-
-				if resolveWithImportMap(&result, args.ResolveDir) {
-					if resolveUnbundledPrefix(&result) {
-						unbundled = true
-					}
-				} else {
-					return result, nil
 				}
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -359,33 +343,4 @@ func resolveUnbundledPrefix(result *esbuild.OnResolveResult) bool {
 	}
 
 	return false
-}
-
-// Resolves the `result.Path` using the import map.
-//
-// Returns true if the path was resolved by the import map.
-// Returns false if the path was not resolved by the import map.
-// Returns false if the path was resolved by the import map, but is a URL.
-func resolveWithImportMap(result *esbuild.OnResolveResult, resolveDir string) bool {
-	resolvedImport, imErr := importmap.Resolve(result.Path, resolveDir)
-
-	if imErr == nil {
-		result.Path = resolvedImport
-
-		if utils.IsUrl(result.Path) {
-			result.External = true
-			return false
-		}
-	} else {
-		result.PluginName = "importmap"
-		result.Errors = []esbuild.Message{{
-			Text:     imErr.Error(),
-			Location: &esbuild.Location{File: importmap.FilePath()},
-			Detail:   imErr,
-		}}
-
-		return false
-	}
-
-	return true
 }

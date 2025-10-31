@@ -100,12 +100,7 @@ var Bundless = esbuild.Plugin{
 
 				if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 					result.Path = aliasedPath
-				}
-
-				if resolveWithImportMap(&result, args.ResolveDir) {
 					resolveUnbundledPrefix(&result)
-				} else {
-					return result, nil
 				}
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -209,13 +204,8 @@ var Bundless = esbuild.Plugin{
 				if utils.IsBareModule(result.Path) {
 					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 						result.Path = aliasedPath
+						resolveUnbundledPrefix(&result)
 					}
-				}
-
-				if resolveWithImportMap(&result, args.ResolveDir) {
-					resolveUnbundledPrefix(&result)
-				} else {
-					return result, nil
 				}
 
 				isBare := utils.ExtractBareModule(result.Path)
@@ -230,14 +220,14 @@ var Bundless = esbuild.Plugin{
 					result.PluginData = types.PluginData{ImportedFromJs: true}
 				}
 
+				if utils.IsUrl(result.Path) {
+					goto FINISH
+				}
+
 				if isBare != "" && hasExt {
 					// Bare module with extension, so there is no need to resolve it if we prefix the path
 					// with "/node_modules/".
 					result.Path = "/node_modules/" + result.Path
-					goto FINISH
-				}
-
-				if utils.IsUrl(result.Path) {
 					goto FINISH
 				}
 
@@ -333,8 +323,8 @@ var Bundless = esbuild.Plugin{
 
 // Converts an absolute file system path that begins with the root, to a URL path.
 func rootPathToUrlPath(fsPath string) (urlPath string, found bool) {
-	if strings.HasPrefix(fsPath, types.Config.RootPath) {
-		return strings.TrimPrefix(fsPath, types.Config.RootPath), true
+	if after, ok := strings.CutPrefix(fsPath, types.Config.RootPath); ok {
+		return after, true
 	}
 
 	return "", false

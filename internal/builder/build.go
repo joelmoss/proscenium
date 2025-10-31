@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
@@ -35,16 +34,6 @@ func build(entryPoint string) esbuild.BuildResult {
 			Errors: []esbuild.Message{{
 				Text:   fmt.Sprintf("Could not resolve %q", entryPoint),
 				Detail: "Entrypoints must be bare specifiers",
-			}},
-		}
-	}
-
-	_, err = importmap.Imports()
-	if err != nil {
-		return esbuild.BuildResult{
-			Errors: []esbuild.Message{{
-				Text:   "Failed to parse importmap",
-				Detail: err.Error(),
 			}},
 		}
 	}

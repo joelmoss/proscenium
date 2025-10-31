@@ -2,7 +2,6 @@ package builder
 
 import (
 	"encoding/json"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
@@ -33,11 +32,6 @@ func Compile() (bool, string) {
 		return compileError("build npm replacements", err.Error())
 	}
 
-	_, err = importmap.Imports()
-	if err != nil {
-		return compileError("Failed to parse importmap", err.Error())
-
-	}
 	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
 
 	logLevel := esbuild.LogLevelInfo

@@ -158,4 +158,4 @@ to this:
 
 ## In Conclusion
 
-What you now have is the powerful ability to serve your client side code from anywhere in your Rails app, along with minified, tree-shaken and source-mapped code, support for import maps, and importing from NPM, and [so much more](https://github.com/joelmoss/proscenium).
+What you now have is the powerful ability to serve your client side code from anywhere in your Rails app, along with minified, tree-shaken and source-mapped code, and importing from NPM, and [so much more](https://github.com/joelmoss/proscenium).

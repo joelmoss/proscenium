@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"joelmoss/proscenium/internal/debug"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
@@ -31,16 +30,6 @@ func Resolve(filePath string, importer string) (string, error) {
 	rootPath := types.Config.RootPath
 
 	debug.Debug("Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
-
-	// Look for a match in the import map
-	filePath, imErr := importmap.Resolve(filePath, rootPath)
-	if imErr != nil {
-		return returnResolve(filePath, imErr)
-	} else if path.IsAbs(filePath) {
-		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve(filePath, nil)
-		}
-	}
 
 	if utils.IsUrl(filePath) {
 		return returnResolve(filePath, nil)

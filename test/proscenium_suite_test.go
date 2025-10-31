@@ -4,7 +4,6 @@ import (
 	"fmt"
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/debug"
-	"joelmoss/proscenium/internal/importmap"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
@@ -50,7 +49,6 @@ var _ = BeforeSuite(func() {
 var _ = BeforeEach(func() {
 	fileToAssertCode = ""
 
-	importmap.Reset()
 	types.Config.Reset()
 	types.Config.Environment = types.TestEnv
 
