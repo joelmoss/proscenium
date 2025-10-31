@@ -214,23 +214,3 @@ func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
 
 	return "", false
 }
-
-func ApplyQueryString(path string, cacheQueryString string) string {
-	if IsBareModule(path) || IsUrl(path) {
-		return path
-	}
-
-	if cacheQueryString == "" && types.Config.QueryString == "" {
-		return path
-	}
-
-	qstr := cacheQueryString
-	if qstr == "" {
-		qstr = types.Config.QueryString
-	}
-
-	if strings.Contains(path, "?") {
-		return path + "&" + qstr
-	}
-	return path + "?" + qstr
-}

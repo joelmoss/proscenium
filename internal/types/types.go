@@ -26,7 +26,6 @@ func (e Environment) String() string {
 // - Aliases - Map of aliases.
 // - Precompile - Map of glob patterns to precompile.
 // - External - List of paths or glob patterns to treat as external.
-// - QueryString - The query string to append to the file name. Primarily used for cache busting.
 // - CodeSplitting?
 // - Bundle?
 // - Debug?
@@ -40,7 +39,6 @@ type ConfigT struct {
 	Precompile    []string
 	Debug         bool
 	CodeSplitting bool
-	QueryString   string
 	Bundle        bool
 	Environment   Environment
 

@@ -48,7 +48,6 @@
   - [Typescript Caveats](#typescript-caveats)
 - [JSX](#jsx)
 - [JSON](#json)
-- [Cache Busting](#cache-busting)
 - [rjs is back!](#rjs-is-back)
 - [Resolution](#resolution)
 - [Thanks](#thanks)
@@ -690,26 +689,6 @@ In addition to the default export, there are also named exports for each top-lev
 ```javascript
 import { version } from "./package.json";
 console.log(version);
-```
-
-## Cache Busting
-
-By default, all assets are not cached by the browser. But if in production, you populate the `REVISION` env variable, all CSS and JS URL's will be appended with its value as a query string, and the `Cache-Control` response header will be set to `public` and a max-age of 30 days.
-
-For example, if you set `REVISION=v1`, URL's will be appended with `?v1`: `/my/imported/file.js?v1`.
-
-It is assumed that the `REVISION` env var will be unique between deploys. If it isn't, then assets will continue to be cached as the same version between deploys. I recommend you assign a version number or to use the Git commit hash of the deploy. Just make sure it is unique for each deploy.
-
-You can set the `cache_query_string` config option directly to define any query string you wish:
-
-```ruby
-Rails.application.config.proscenium.cache_query_string = 'my-cache-busting-version-string'
-```
-
-The cache is set with a `max-age` of 30 days. You can customise this with the `cache_max_age` config option:
-
-```ruby
-Rails.application.config.proscenium.cache_max_age = 12.months.to_i
 ```
 
 ## rjs is back

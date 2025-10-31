@@ -156,7 +156,7 @@ func cssBuild(urlPath string) esbuild.BuildResult {
 		Write:             false,
 		Sourcemap:         esbuild.SourceMapNone,
 		LegalComments:     esbuild.LegalCommentsNone,
-		Plugins:           []esbuild.Plugin{Bundler(""), Svg, cssOnly},
+		Plugins:           []esbuild.Plugin{Bundler, Svg, cssOnly},
 		Target:            esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS  esting is transformed for browsers that don't support it.

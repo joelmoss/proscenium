@@ -28,17 +28,16 @@ func reset_config() {
 // Build the given `path` using the `config`.
 //
 // - path - The path to build relative to `root`.
-// - cache_query_string - The current query string used for cache busting, taken from the URL.
 // - config
 //
 //export build_to_string
-func build_to_string(filePath *C.char, cacheQueryString *C.char, configJson *C.char) C.struct_Result {
+func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
 	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
-	success, result, contentHash := builder.BuildToString(C.GoString(filePath), C.GoString(cacheQueryString))
+	success, result, contentHash := builder.BuildToString(C.GoString(filePath))
 
 	if success {
 		return C.struct_Result{C.int(1), C.CString(result), C.CString(contentHash)}

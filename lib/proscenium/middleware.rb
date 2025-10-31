@@ -20,13 +20,10 @@ module Proscenium
 
       return @app.call(env) if !request.get? && !request.head?
 
-      # If this is a request for an asset chunk, we want to serve it with a very long
-      # cache lifetime, since these are content-hashed and will never change.
       if request.path.match?(CHUNKS_PATH)
         ::ActionDispatch::FileHandler.new(
           Proscenium.config.output_path.to_s,
           headers: {
-            'Cache-Control' => "public, max-age=#{100.years}, immutable",
             'etag' => request.path.match(/-\$([a-z0-9]+)\$/i)[1]
           }
         ).attempt(env) || @app.call(env)

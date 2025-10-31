@@ -66,7 +66,6 @@ var _ = Describe("BuildToString", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("/lib/importing/app/one.js");`)
 			AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
-			AssertCode(`import "/lib/importing/app/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("/lib/importing/app/two.js");`)
@@ -100,44 +99,19 @@ var _ = Describe("BuildToString", func() {
 		AssertCode(`import "https://proscenium.test/foo.js";`, Unbundle)
 	})
 
-	EntryPoint("lib/importing/dynamic.js", func() {
-		AssertCode(`import("/lib/foo.js?v1");`, QueryString, Unbundle)
-	})
-
-	EntryPoint("lib/cache_query_string/regular.js", func() {
-		It("uses QueryString config", func() {
-			types.Config.Bundle = false
-			types.Config.QueryString = "v2"
-
-			_, result, _ := b.BuildToString(fileToAssertCode)
-			Expect(result).To(ContainCode(`import "/lib/foo.js?v2";`))
-		})
-
-		It("passes through query string", func() {
-			types.Config.Bundle = false
-			types.Config.QueryString = "v2"
-
-			_, result, _ := b.BuildToString(fileToAssertCode, "v1")
-			Expect(result).To(ContainCode(`import "/lib/foo.js?v1";`))
-		})
-	})
-
 	EntryPoint("lib/importing/package.js", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pkg/one.js");`)
 			AssertCode(`import "/node_modules/pkg/one.js";`, Unbundle)
-			AssertCode(`import "/node_modules/pkg/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("pkg/two.js");`)
 				AssertCode(`import "/node_modules/pkg/two.js";`, Unbundle)
-				AssertCode(`import "/node_modules/pkg/two.js?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("without filename", func() {
 				AssertCode(`console.log("pkg/index.js");`)
 				AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
-				AssertCode(`import "/node_modules/pkg/index.js?v1";`, Unbundle, QueryString)
 			})
 		})
 
@@ -160,27 +134,21 @@ var _ = Describe("BuildToString", func() {
 	EntryPoint("pkg/dependency", func() {
 		AssertCode(`console.log("pkg_dep/index.js");`)
 		AssertCode(`import "/node_modules/.pnpm/pkg@git+https+++git@gist.github.com`, Unbundle)
-		AssertCode(`
-			import "/node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg_dep/index.js?v1";
-		`, Unbundle, QueryString)
 	})
 
 	EntryPoint("lib/importing/pnpm_link.js", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pnpm-link/one.js");`)
 			AssertCode(`import "/node_modules/pnpm-link/one.js";`, Unbundle)
-			AssertCode(`import "/node_modules/pnpm-link/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("pnpm-link/two.js");`)
 				AssertCode(`import "/node_modules/pnpm-link/two.js";`, Unbundle)
-				AssertCode(`import "/node_modules/pnpm-link/two.js?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("without filename", func() {
 				AssertCode(`console.log("pnpm-link/three/index.js");`)
 				AssertCode(`import "/node_modules/pnpm-link/three/index.js";`, Unbundle)
-				AssertCode(`import "/node_modules/pnpm-link/three/index.js?v1";`, Unbundle, QueryString)
 			})
 		})
 	})
@@ -206,7 +174,6 @@ var _ = Describe("BuildToString", func() {
 		Describe("import absolute path", func() {
 			AssertCode(`console.log("pnpm-file/one.js");`)
 			AssertCode(`import "/node_modules/pnpm-file/one.js";`, Unbundle)
-			AssertCode(`import "/node_modules/pnpm-file/one.js?v1";`, Unbundle, QueryString)
 
 			Describe("without extension", func() {
 				AssertCode(`console.log("pnpm-file/two.js");`)
@@ -222,7 +189,6 @@ var _ = Describe("BuildToString", func() {
 		Describe("import pkg dependency", func() {
 			AssertCode(`console.log("pkg_dep/index.js");`)
 			AssertCode(`import "/node_modules/pnpm-file/dependency.js";`, Unbundle)
-			AssertCode(`import "/node_modules/pnpm-file/dependency.js?v1";`, Unbundle, QueryString)
 		})
 	})
 
@@ -258,7 +224,6 @@ var _ = Describe("BuildToString", func() {
 		})
 
 		AssertCode(`import "/lib/importing/app/one.js";`)
-		AssertCode(`import "/lib/importing/app/one.js?v1";`, QueryString)
 		AssertCode(`import "/lib/importing/app/two.js";`)
 		AssertCode(`import "/lib/importing/app/three.js";`)
 	})
@@ -274,7 +239,6 @@ var _ = Describe("BuildToString", func() {
 
 		AssertCode(`console.log("/lib/importing/app/one.js");`)
 		AssertCode(`import "/lib/importing/app/one.js";`, Unbundle)
-		AssertCode(`import "/lib/importing/app/one.js?v1";`, Unbundle, QueryString)
 	})
 
 	Describe("aliases", func() {
@@ -288,7 +252,6 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`import foo from "/lib/foo3.js";`)
 				AssertCode(`import foo from "/lib/foo3.js";`, Unbundle)
-				AssertCode(`import foo from "/lib/foo3.js?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("to absolute path", func() {
@@ -337,7 +300,6 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`import foo from "/lib/foo.js";`)
 				AssertCode(`import foo from "/lib/foo.js";`, Unbundle)
-				AssertCode(`import foo from "/lib/foo.js?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("bare to absolute path", func() {
@@ -375,7 +337,6 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`)
 				AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`, Unbundle)
-				AssertCode(`import "https://esm.sh/msw@1.3.2?bundle&dev";`, Unbundle, QueryString)
 			})
 		})
 
@@ -391,7 +352,6 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`)
 				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
-				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js?v1";`, Unbundle, QueryString)
 			})
 
 			Describe("@rubygems scope", func() {
@@ -405,7 +365,6 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`console.log("gem2");`)
 				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
-				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js?v1";`, Unbundle, QueryString)
 			})
 		})
 	})

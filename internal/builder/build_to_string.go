@@ -26,16 +26,11 @@ var extensionMap = map[string]string{
 //
 // Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
 // See Proscenium::Middleware::Esbuild.
-func BuildToString(filePath string, cacheQueryString ...string) (success bool, code string, contentHash string) {
+func BuildToString(filePath string) (success bool, code string, contentHash string) {
 	var pathPrefix = types.Config.RootPath + "/" + types.Config.OutputDir + "/"
 	var output esbuild.OutputFile
 
-	var queryString string
-	if len(cacheQueryString) > 0 {
-		queryString = cacheQueryString[0]
-	}
-
-	result := build(filePath, queryString)
+	result := build(filePath)
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])

@@ -26,7 +26,6 @@ module Proscenium
 
       attach_function :build_to_string, [
         :string, # Path or entry point.
-        :string, # cache_query_string.
         :pointer # Config as JSON.
       ], Result.by_value
 
@@ -68,8 +67,8 @@ module Proscenium
       end
     end
 
-    def self.build_to_string(path, cache_query_string: '', root: nil)
-      new(root:).build_to_string(path, cache_query_string:)
+    def self.build_to_string(path, root: nil)
+      new(root:).build_to_string(path)
     end
 
     def self.resolve(path, root: nil)
@@ -97,14 +96,13 @@ module Proscenium
         Bundle: Proscenium.config.bundle,
         Aliases: Proscenium.config.aliases,
         Precompile: Proscenium.config.precompile,
-        QueryString: Proscenium.config.cache_query_string.presence || '',
         Debug: Proscenium.config.debug
       }.to_json)
     end
 
-    def build_to_string(path, cache_query_string: '')
+    def build_to_string(path)
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
-        result = Request.build_to_string(path, cache_query_string, @request_config)
+        result = Request.build_to_string(path, @request_config)
 
         raise BuildError.new(path, result[:response]) unless result[:success]
 

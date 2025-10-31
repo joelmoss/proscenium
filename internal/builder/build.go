@@ -18,7 +18,7 @@ import (
 // - path - The path to build relative to `root`.
 //
 //export build
-func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
+func build(entryPoint string) esbuild.BuildResult {
 	_, err := replacements.Build()
 	if err != nil {
 		return esbuild.BuildResult{
@@ -111,10 +111,10 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 
 	if types.Config.Bundle {
 		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler(cacheQueryString))
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
 	} else {
 		buildOptions.PreserveSymlinks = true
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless(cacheQueryString))
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
 	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
@@ -132,17 +132,6 @@ func build(entryPoint string, cacheQueryString string) esbuild.BuildResult {
 		buildOptions.Define = definitions
 		buildOptions.Define["proscenium.env.PRECOMPILED"] = "false"
 		buildOptions.Define["global"] = "window"
-	}
-
-	qstr := cacheQueryString
-	if qstr == "" {
-		qstr = types.Config.QueryString
-	}
-
-	if qstr == "" {
-		buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "undefined"
-	} else {
-		buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "\"" + qstr + "\""
 	}
 
 	return esbuild.Build(buildOptions)

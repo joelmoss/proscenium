@@ -93,10 +93,10 @@ func Compile() (bool, string) {
 
 	if types.Config.Bundle {
 		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler(""))
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
 	} else {
 		buildOptions.PreserveSymlinks = true
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless(""))
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
 	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
