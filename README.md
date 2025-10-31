@@ -50,6 +50,7 @@
 - [JSON](#json)
 - [rjs is back!](#rjs-is-back)
 - [Resolution](#resolution)
+- [Pre-compilation](#precompilation)
 - [Thanks](#thanks)
 - [Development](#development)
 
@@ -704,6 +705,28 @@ So a file at `/app/views/users/index.js` will be served from `https://localhost:
 You can continue to access any file in the `/public` directory as you normally would. Proscenium will not process files in the `/public` directory.
 
 If requesting a file that exists in a root directory and the public directory, the file in the public directory will be served. For example, if you have a file at `/lib/foo.js` and `/public/lib/foo.js`, and you request `/lib/foo.js`, the file in the public directory (`/public/lib/foo.js`) will be served.
+
+## Pre-compilation
+
+Proscenium is designed to bundle and minify your frontend code in real time, on demand, with no build step or pre-compilation needed. However, if you want to pre-compile your assets for production deployment, you can do so using the `assets:precompile` Rake task.
+
+```bash
+rails assets:precompile
+```
+
+Be sure to specify a `Set` of paths which you want to pre-compile via the `config.proscenium.precompile` configuration option. Each path should be a glob pattern that matches the files which are your entry points. Don't include paths that are not entry points. For example:
+
+```ruby
+Rails.configuration.proscenium.precompile = Set[
+  "./app/components/**/*.js",
+  "./app/components/**/*.jsx",
+  "./app/views/**/*.js",
+  "./app/views/**/*.css",
+  "./app/views/**/*.module.css"
+]
+```
+
+This will bundle, code split, tree shake, and compile all your JS, TS, JSX, TSX and CSS files and place them in the `public/assets` directory, ready to be served in production.
 
 ## Thanks
 
