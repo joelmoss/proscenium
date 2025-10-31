@@ -56,7 +56,15 @@ module Proscenium
       unless config.proscenium.logging
         app.middleware.insert_before Rails::Rack::Logger, Proscenium::Middleware::SilenceRequest
       end
-      app.middleware.insert_before ActionDispatch::Callbacks, Proscenium::Middleware
+
+      # Ensure the middleware is inserted as early as possible.
+      if app.config.consider_all_requests_local
+        app.middleware.insert_before ActionDispatch::ActionableExceptions, Proscenium::Middleware
+      elsif app.config.reloading_enabled?
+        app.middleware.insert_before ActionDispatch::Reloader, Proscenium::Middleware
+      else
+        app.middleware.insert_before ActionDispatch::Callbacks, Proscenium::Middleware
+      end
     end
 
     initializer 'proscenium.sideloading' do
