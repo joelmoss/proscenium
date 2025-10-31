@@ -48,6 +48,7 @@
 - [JSON](#json)
 - [rjs is back!](#rjs-is-back)
 - [Resolution](#resolution)
+- [Aliases](#aliases)
 - [Pre-compilation](#precompilation)
 - [Thanks](#thanks)
 - [Development](#development)
@@ -652,6 +653,24 @@ So a file at `/app/views/users/index.js` will be served from `https://localhost:
 You can continue to access any file in the `/public` directory as you normally would. Proscenium will not process files in the `/public` directory.
 
 If requesting a file that exists in a root directory and the public directory, the file in the public directory will be served. For example, if you have a file at `/lib/foo.js` and `/public/lib/foo.js`, and you request `/lib/foo.js`, the file in the public directory (`/public/lib/foo.js`) will be served.
+
+## Aliases
+
+You can define import aliases via the `config.proscenium.aliases` config option. This allows you to create shorter or more meaningful import paths.
+
+```ruby
+config.proscenium.aliases = {
+  "utils": "/lib/utils.js",
+  "components": "/app/components"
+}
+```
+
+You can then import using the alias:
+
+```js
+import utils from "utils";
+import Header from "components/header";
+```
 
 ## Pre-compilation
 
