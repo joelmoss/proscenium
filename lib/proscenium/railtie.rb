@@ -74,7 +74,7 @@ module Proscenium
     end
 
     rake_tasks do
-      load 'proscenium/railties/compile.rake'
+      load 'proscenium/railties/assets.rake'
     end
   end
 end
