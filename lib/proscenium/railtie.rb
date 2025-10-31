@@ -56,7 +56,7 @@ module Proscenium
       unless config.proscenium.logging
         app.middleware.insert_before Rails::Rack::Logger, Proscenium::Middleware::SilenceRequest
       end
-      app.middleware.insert_before ActionDispatch::ActionableExceptions, Proscenium::Middleware
+      app.middleware.insert_before ActionDispatch::Callbacks, Proscenium::Middleware
     end
 
     initializer 'proscenium.sideloading' do
