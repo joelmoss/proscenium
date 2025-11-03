@@ -3,15 +3,16 @@ module joelmoss/proscenium
 go 1.24.0
 
 require (
-	github.com/evanw/esbuild v0.25.11
+	github.com/evanw/esbuild v0.25.12
 	github.com/k0kubun/pp v3.0.1+incompatible
-	github.com/onsi/ginkgo/v2 v2.26.0
+	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/sergi/go-diff v1.4.0
 )
 
 require (
 	github.com/Masterminds/semver/v3 v3.4.0 // indirect
+	github.com/chzyer/readline v1.5.1 // indirect
 	github.com/dlclark/regexp2 v1.11.5 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-sourcemap/sourcemap v2.1.4+incompatible // indirect
@@ -20,6 +21,7 @@ require (
 	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/google/pprof v0.0.0-20251007162407-5df77e3f7d1d // indirect
 	github.com/h2non/parth v0.0.0-20190131123155-b4df798d6542 // indirect
+	github.com/ianlancetaylor/demangle v0.0.0-20250417193237-f615e6bd150b // indirect
 	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -35,7 +37,7 @@ require (
 require (
 	4d63.com/collapsewhitespace v0.0.0-20190109064012-23971e8e1f30
 	github.com/MakeNowJust/heredoc v1.0.0
-	github.com/dop251/goja v0.0.0-20251008123653-cf18d89f3cf6
+	github.com/dop251/goja v0.0.0-20251103141225-af2ceb9156d7
 	github.com/gregjones/httpcache v0.0.0-20190611155906-901d90724c79
 	github.com/h2non/gock v1.2.0
 	github.com/ije/esbuild-internal v0.25.11
