@@ -99,7 +99,7 @@ func build(entryPoint string) esbuild.BuildResult {
 	}
 
 	if types.Config.Bundle {
-		buildOptions.External = []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"}
+		buildOptions.External = types.Config.External
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
 	} else {
 		buildOptions.PreserveSymlinks = true

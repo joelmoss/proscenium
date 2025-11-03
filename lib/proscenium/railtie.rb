@@ -16,6 +16,7 @@ module Proscenium
     config.proscenium.code_splitting = true
     config.proscenium.ensure_loaded = :raise
     config.proscenium.aliases = {}
+    config.proscenium.external = Set['*.rjs', '*.gif', '*.jpg', '*.png', '*.woff2', '*.woff']
     config.proscenium.precompile = Set.new
     config.proscenium.output_dir = '/assets'
 
@@ -54,6 +55,9 @@ module Proscenium
       unless config.proscenium.logging
         app.middleware.insert_before Rails::Rack::Logger, Proscenium::Middleware::SilenceRequest
       end
+
+      app.middleware.insert_after Rack::Sendfile, Proscenium::Middleware::Vendor
+      app.middleware.insert_after Rack::Sendfile, Proscenium::Middleware::Chunks
 
       # Ensure the middleware is inserted as early as possible.
       if app.config.consider_all_requests_local

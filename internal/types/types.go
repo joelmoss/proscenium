@@ -24,6 +24,7 @@ func (e Environment) String() string {
 // - EnvVars - Map of environment variables.
 // - RubyGems - Map of bundled ruby gem names and paths.
 // - Aliases - Map of aliases.
+// - External - Map of external paths - passed directly to esbuild's `external` option.
 // - Precompile - Map of glob patterns to precompile.
 // - External - List of paths or glob patterns to treat as external.
 // - CodeSplitting?
@@ -36,6 +37,7 @@ type ConfigT struct {
 	EnvVars       map[string]string
 	RubyGems      map[string]string
 	Aliases       map[string]string
+	External      []string
 	Precompile    []string
 	Debug         bool
 	CodeSplitting bool

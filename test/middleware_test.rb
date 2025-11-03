@@ -26,8 +26,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     end
   end
 
-  ['config/foo.js', 'app/views/foo.js', 'lib/foo.js', 'vendor/foo.js',
-   'node_modules/pkg/index.js'].each do |path|
+  ['config/foo.js', 'app/views/foo.js', 'lib/foo.js', 'node_modules/pkg/index.js'].each do |path|
     it "serves from #{path}" do
       get "/#{path}"
 

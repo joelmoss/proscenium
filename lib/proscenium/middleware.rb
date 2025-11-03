@@ -9,6 +9,8 @@ module Proscenium
     autoload :Base
     autoload :Esbuild
     autoload :RubyGems
+    autoload :Vendor
+    autoload :Chunks
     autoload :SilenceRequest
 
     def initialize(app)
@@ -20,19 +22,7 @@ module Proscenium
 
       return @app.call(env) if !request.get? && !request.head?
 
-      if request.path.match?(CHUNKS_PATH)
-        # If this is a request for an asset chunk, we want to serve it with a very long
-        # cache lifetime, since these are content-hashed and will never change.
-        ::ActionDispatch::FileHandler.new(
-          Proscenium.config.output_path.to_s,
-          headers: {
-            'Cache-Control' => "public, max-age=#{100.years}, immutable",
-            'etag' => request.path.match(/-\$([a-z0-9]+)\$/i)[1]
-          }
-        ).attempt(env) || @app.call(env)
-      else
-        attempt(request) || @app.call(env)
-      end
+      attempt(request) || @app.call(env)
     end
 
     private
@@ -40,7 +30,7 @@ module Proscenium
     def attempt(request)
       return unless (type = find_type(request))
 
-      type.attempt request
+      type.attempt(request)
     end
 
     def find_type(request)
