@@ -16,6 +16,7 @@ module Proscenium
           Proscenium.config.output_path.to_s,
           headers: {
             'X-Proscenium-Middleware' => 'chunks',
+            'SourceMap' => "#{request.path}.map",
             'Cache-Control' => "public, max-age=#{100.years}, immutable",
             'ETag' => request.path.match(/-\$([a-z0-9]+)\$/i)[1]
           }

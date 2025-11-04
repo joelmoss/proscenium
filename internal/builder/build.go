@@ -45,11 +45,7 @@ func build(entryPoint string) esbuild.BuildResult {
 		logLevel = esbuild.LogLevelDebug
 	}
 
-	sourcemap := esbuild.SourceMapNone
-	if strings.HasSuffix(entryPoint, ".map") {
-		entryPoint = strings.TrimSuffix(entryPoint, ".map")
-		sourcemap = esbuild.SourceMapExternal
-	}
+	entryPoint = strings.TrimSuffix(entryPoint, ".map")
 
 	buildOptions := esbuild.BuildOptions{
 		EntryPoints:       []string{entryPoint},
@@ -71,7 +67,7 @@ func build(entryPoint string) esbuild.BuildResult {
 		Bundle:            true,
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             true,
-		Sourcemap:         sourcemap,
+		Sourcemap:         esbuild.SourceMapExternal,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Target:            esbuild.ES2022,
 		Metafile:          true,

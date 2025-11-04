@@ -45,6 +45,7 @@ func BuildToString(filePath string) (success bool, code string, contentHash stri
 
 	filePathWithRealExt := filePath
 	ext := path.Ext(nonSourceMapFile)
+
 	if mappedExt, ok := extensionMap[ext]; ok {
 		filePathWithRealExt = strings.TrimSuffix(nonSourceMapFile, ext) + mappedExt
 
@@ -56,11 +57,31 @@ func BuildToString(filePath string) (success bool, code string, contentHash stri
 	if len(result.OutputFiles) == 1 {
 		output = result.OutputFiles[0]
 	} else {
-		for _, out := range result.OutputFiles {
-			substrs := entrypointRegex.FindAllStringSubmatch(out.Path, -1)[0]
-			if pathPrefix+filePathWithRealExt == substrs[1]+substrs[2] {
-				output = out
-				break
+		if len(result.OutputFiles) == 2 {
+			if isSourceMap {
+				// Get the source map file.
+				if strings.HasSuffix(result.OutputFiles[0].Path, ".map") {
+					output = result.OutputFiles[0]
+				} else if strings.HasSuffix(result.OutputFiles[1].Path, ".map") {
+					output = result.OutputFiles[1]
+				}
+			} else {
+				// Get the non-source map file.
+				if !strings.HasSuffix(result.OutputFiles[0].Path, ".map") {
+					output = result.OutputFiles[0]
+				} else if !strings.HasSuffix(result.OutputFiles[1].Path, ".map") {
+					output = result.OutputFiles[1]
+				}
+			}
+		}
+
+		if output.Path == "" {
+			for _, out := range result.OutputFiles {
+				substrs := entrypointRegex.FindAllStringSubmatch(out.Path, -1)[0]
+				if pathPrefix+filePathWithRealExt == substrs[1]+substrs[2] {
+					output = out
+					break
+				}
 			}
 		}
 

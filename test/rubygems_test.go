@@ -81,7 +81,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			EntryPoint("node_modules/@rubygems/gem_npm_ext/dynamic_gem_dependency.js", func() {
 				Describe("dynamic import of bare module, which has a dependency", func() {
-					AssertCode(`var throttle = import("../../../_asset_chunks/p-throttle-$SGOQLHFR$.js");`)
+					AssertCode(`var throttle = import("../../../_asset_chunks/p-throttle-$62BRJHIB$.js");`)
 				})
 			})
 
