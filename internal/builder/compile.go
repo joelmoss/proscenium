@@ -58,7 +58,7 @@ func Compile() (bool, string) {
 		Bundle:            true,
 		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
 		Write:             true,
-		Sourcemap:         esbuild.SourceMapExternal,
+		Sourcemap:         esbuild.SourceMapLinked,
 		LegalComments:     esbuild.LegalCommentsNone,
 		Target:            esbuild.ES2022,
 		Metafile:          true,
