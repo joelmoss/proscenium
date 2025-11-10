@@ -43,6 +43,7 @@ func Compile() (bool, string) {
 		EntryPoints:       types.Config.Precompile,
 		Splitting:         types.Config.CodeSplitting,
 		AbsWorkingDir:     types.Config.RootPath,
+		AbsPaths:          esbuild.MetafileAbsPath,
 		LogLevel:          logLevel,
 		Outdir:            types.Config.OutputDir,
 		Outbase:           "./",

@@ -45,7 +45,7 @@ module Proscenium
 
     class_methods do
       def sideload(options)
-        Importer.import manager, **options, js: { type: 'module' }
+        Importer.import Resolver.resolve(manager.to_s), **options, js: { type: 'module' }
       end
     end
 

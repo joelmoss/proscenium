@@ -12,16 +12,26 @@ module Proscenium
     end
 
     def load!
+      public_path = Rails.configuration.paths['public'].first
       self.manifest = {}
       self.loaded = false
 
       if Proscenium.config.manifest_path.exist?
         self.loaded = true
 
-        JSON.parse(Proscenium.config.manifest_path.read)['outputs'].each do |output_path, details|
+        JSON.parse(Proscenium.config.manifest_path.read)['outputs'].each do |outpath, details|
           next if !details.key?('entryPoint')
 
-          manifest[details['entryPoint']] = "/#{output_path.delete_prefix('public/')}"
+          outpath = outpath.delete_prefix "#{public_path}/"
+
+          ep = details['entryPoint']
+          ep = if (gem = BundledGems.paths.find { |_, v| ep.start_with? "#{v}/" })
+                 "@rubygems/#{gem[0]}#{ep.delete_prefix(gem[1])}"
+               else
+                 ep.delete_prefix(Rails.root.to_s)
+               end
+
+          manifest[ep] = "/#{outpath}"
         end
       end
 
@@ -34,7 +44,7 @@ module Proscenium
     end
 
     def [](key)
-      loaded? ? manifest[key] : "/#{key}"
+      loaded? ? manifest[key] : nil
     end
   end
 end

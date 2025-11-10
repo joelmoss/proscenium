@@ -159,13 +159,11 @@ func ResolveToFSPath(filePath string, importer string) (string, error) {
 }
 
 func returnResolve(filePath string, err error) (string, error) {
-	if debug.Enabled {
-		errStr := ""
-		if err != nil {
-			errStr = err.Error()
-		}
-		debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
+	errStr := ""
+	if err != nil {
+		errStr = err.Error()
 	}
+	debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
 
 	return filePath, err
 }

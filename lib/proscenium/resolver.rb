@@ -19,11 +19,13 @@ module Proscenium
       end
 
       self.resolved[path] ||= if (gem = BundledGems.paths.find { |_, v| path.start_with? "#{v}/" })
-                                path.sub(/^#{gem.last}/, "/node_modules/@rubygems/#{gem.first}")
+                                vpath = path.sub(/^#{gem.last}/, "@rubygems/#{gem.first}")
+                                Proscenium::Manifest[vpath] || "/node_modules/#{vpath}"
                               elsif path.start_with?("#{Rails.root}/")
-                                path.delete_prefix Rails.root.to_s
+                                vpath = path.delete_prefix(Rails.root.to_s)
+                                Proscenium::Manifest[vpath] || vpath
                               else
-                                Builder.resolve path
+                                Proscenium::Manifest[path] || Builder.resolve(path)
                               end
     end
   end
