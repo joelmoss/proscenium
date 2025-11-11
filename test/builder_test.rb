@@ -47,7 +47,10 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   describe '.resolve' do
     it 'resolves value' do
-      assert_equal '/node_modules/pkg/index.js', subject.resolve('pkg')
+      assert_equal [
+        '/node_modules/pkg/index.js',
+        Proscenium.root.join('fixtures/dummy/node_modules/pkg/index.js').to_s
+      ], subject.resolve('pkg')
     end
   end
 end

@@ -158,7 +158,7 @@ func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	}
 }
 
-func (x *cssTokenizer) log(msg string, args ...interface{}) {
+func (x *cssTokenizer) log(msg string, args ...any) {
 	if !debug {
 		return
 	}
@@ -184,7 +184,7 @@ func (x *cssTokenizer) logOutput(output string) {
 	log.Printf(" %s> %#v", indent, fmt.Sprint(output))
 }
 
-func (x *cssTokenizer) logToken(args ...interface{}) {
+func (x *cssTokenizer) logToken(args ...any) {
 	if !debug {
 		return
 	}

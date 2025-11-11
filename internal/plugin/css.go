@@ -6,9 +6,11 @@ import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"path/filepath"
 	"strings"
 
 	esbuild "github.com/ije/esbuild-internal/api"
+	"github.com/ije/esbuild-internal/ast"
 )
 
 var Css = esbuild.Plugin{
@@ -27,53 +29,50 @@ var Css = esbuild.Plugin{
 					args.Path = pluginData.RealPath
 				}
 
-				urlPath := buildUrlPath(args.Path)
-				hash := utils.ToDigest(urlPath)
+				isCssModule := utils.PathIsCssModule(args.Path)
 
 				// If stylesheet is imported from JS, then we return JS code that appends the stylesheet
 				// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
 				// module, it exports a plain object of class names.
-				if pluginData.ImportedFromJs {
-					contents := ""
-					isCssModule := utils.PathIsCssModule(args.Path)
+				if pluginData.ImportedFromJs && isCssModule {
+					urlPath := buildUrlPath(args.Path)
+					cssResult := cssBuild(urlPath[1:])
+					if len(cssResult.Errors) != 0 {
+						return esbuild.OnLoadResult{
+							Errors:   cssResult.Errors,
+							Warnings: cssResult.Warnings,
+						}, fmt.Errorf("%s", cssResult.Errors[0].Text)
+					}
 
-					if isCssModule && args.With["type"] == "cssmodulenames" {
-						// User has requested only the CSS module names be returned.
-						contents = cssModulesProxyTemplate(hash)
-					} else {
-						cssResult := cssBuild(urlPath[1:])
+					if len(cssResult.OutputFiles) > 1 {
+						return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
+					}
 
-						if len(cssResult.Errors) != 0 {
-							return esbuild.OnLoadResult{
-								Errors:   cssResult.Errors,
-								Warnings: cssResult.Warnings,
-							}, fmt.Errorf("%s", cssResult.Errors[0].Text)
-						}
+					hash := ast.CssLocalHash(args.Path)
+					hashIdent := hash
+					if !build.InitialOptions.MinifyIdentifiers {
+						relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
+						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
+					}
 
-						if len(cssResult.OutputFiles) > 1 {
-							return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
-						}
-
-						contents = strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
-						contents = `
+					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
+					contents = `
+							const d = document;
 							const u = '` + urlPath + `';
-							const es = document.querySelector('#_` + hash + `');
-							const el = document.querySelector('link[href="' + u + '"]');
+							const es = d.querySelector('#_` + hash + `');
+							const el = d.querySelector('link[href="' + u + '"]');
 							if (!es && !el) {
-								const e = document.createElement('style');
+								const e = d.createElement('style');
 								e.id = '_` + hash + `';
 								e.dataset.href = u;
 								e.dataset.prosceniumStyle = true;
-								e.appendChild(document.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
-								const ps = document.head.querySelector('[data-proscenium-style]');
-								ps ? document.head.insertBefore(e, ps) : document.head.appendChild(e);
+								e.appendChild(d.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
+								const ps = d.head.querySelector('[data-proscenium-style]');
+								ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
 							}
-						`
+							` + cssModulesProxyTemplate(hashIdent)
 
-						if isCssModule {
-							contents = contents + cssModulesProxyTemplate(hash)
-						}
-					}
+					debug.Debug("OnLoad:end", args)
 
 					return esbuild.OnLoadResult{
 						Contents:   &contents,
@@ -82,14 +81,19 @@ var Css = esbuild.Plugin{
 					}, nil
 				}
 
-				contents, err := css.ParseCssFile(args.Path, hash)
+				contents, err := css.ParseCssFile(args.Path)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
 
+				loader := esbuild.LoaderCSS
+				if isCssModule {
+					loader = esbuild.LoaderLocalCSS
+				}
+
 				return esbuild.OnLoadResult{
 					Contents: &contents,
-					Loader:   esbuild.LoaderCSS,
+					Loader:   loader,
 				}, nil
 			})
 	},
@@ -103,15 +107,19 @@ var cssOnly = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				debug.Debug("cssOnly.OnLoad", args)
 
-				hash := utils.ToDigest(buildUrlPath(args.Path))
-				contents, err := css.ParseCssFile(args.Path, hash)
+				contents, err := css.ParseCssFile(args.Path)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
 
+				loader := esbuild.LoaderCSS
+				if utils.PathIsCssModule(args.Path) {
+					loader = esbuild.LoaderLocalCSS
+				}
+
 				return esbuild.OnLoadResult{
 					Contents: &contents,
-					Loader:   esbuild.LoaderCSS,
+					Loader:   loader,
 				}, nil
 			})
 	},
@@ -130,7 +138,7 @@ func cssModulesProxyTemplate(hash string) string {
 	return `
     export default new Proxy( {}, {
       get(t, p, r) {
-        return p in t || typeof p === 'symbol' ? Reflect.get(t, p, r) : p + '-` + hash + `';
+        return p in t || typeof p === 'symbol' ? Reflect.get(t, p, r) : p + '_` + hash + `';
       }
     });
 	`
@@ -141,23 +149,24 @@ func cssBuild(urlPath string) esbuild.BuildResult {
 	minify := types.Config.Environment == types.ProdEnv
 
 	return esbuild.Build(esbuild.BuildOptions{
-		EntryPoints:       []string{urlPath},
-		AbsWorkingDir:     types.Config.RootPath,
-		LogLevel:          esbuild.LogLevelSilent,
-		LogLimit:          1,
-		Outdir:            types.Config.OutputDir,
-		Outbase:           "./",
-		MinifyWhitespace:  minify,
-		MinifyIdentifiers: minify,
-		MinifySyntax:      minify,
-		Bundle:            true,
-		External:          []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
-		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
-		Write:             false,
-		Sourcemap:         esbuild.SourceMapNone,
-		LegalComments:     esbuild.LegalCommentsNone,
-		Plugins:           []esbuild.Plugin{Bundler, Svg, cssOnly},
-		Target:            esbuild.ES2022,
+		EntryPoints:                 []string{urlPath},
+		AbsWorkingDir:               types.Config.RootPath,
+		LogLevel:                    esbuild.LogLevelSilent,
+		LogLimit:                    1,
+		Outdir:                      types.Config.OutputDir,
+		Outbase:                     "./",
+		MinifyWhitespace:            minify,
+		MinifyIdentifiers:           minify,
+		MinifySyntax:                minify,
+		DeterministicLocalCSSNaming: true,
+		Bundle:                      true,
+		External:                    []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
+		Conditions:                  []string{types.Config.Environment.String(), "proscenium"},
+		Write:                       false,
+		Sourcemap:                   esbuild.SourceMapNone,
+		LegalComments:               esbuild.LegalCommentsNone,
+		Plugins:                     []esbuild.Plugin{Bundler, Svg, cssOnly},
+		Target:                      esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS  esting is transformed for browsers that don't support it.
 			"nesting": false,

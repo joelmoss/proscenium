@@ -22,12 +22,12 @@ import (
 type debugType bool
 type bundleType bool
 type unbundleType bool
-type useDevCSSModuleNamesType bool
+type asProduction bool
 
 const Debug = debugType(true)
 const Bundle = bundleType(true)
 const Unbundle = unbundleType(true)
-const UseDevCSSModuleNames = useDevCSSModuleNamesType(true)
+const Production = asProduction(true)
 
 var cwd, _ = os.Getwd()
 var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
@@ -102,7 +102,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 		case t == reflect.TypeOf(Debug):
 		case t == reflect.TypeOf(Bundle):
 		case t == reflect.TypeOf(Unbundle):
-		case t == reflect.TypeOf(UseDevCSSModuleNames):
+		case t == reflect.TypeOf(Production):
 			assertArgs = append(assertArgs, arg)
 		default:
 			specArgs = append(specArgs, arg)
@@ -122,8 +122,8 @@ var AssertCode = func(expectedCode string, args ...any) {
 				types.Config.Bundle = true
 			case t == reflect.TypeOf(Unbundle):
 				types.Config.Bundle = false
-			case t == reflect.TypeOf(UseDevCSSModuleNames):
-				types.Config.UseDevCSSModuleNames = true
+			case t == reflect.TypeOf(Production):
+				types.Config.Environment = types.ProdEnv
 			}
 		}
 

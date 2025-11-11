@@ -43,6 +43,7 @@ module Proscenium
       self.loaded = false
     end
 
+    # FIXME: If the output entry has a `cssBundle`, that also should be included.
     def [](key)
       loaded? ? manifest[key] : nil
     end

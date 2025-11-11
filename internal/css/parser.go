@@ -1,8 +1,6 @@
 package css
 
 import (
-	"strings"
-
 	"github.com/riking/cssparse/tokenizer"
 )
 
@@ -24,12 +22,6 @@ type cssParser struct {
 	// The nesting level of each `:local` declaration, where each element is a pair of integers. The
 	// first is the nesting level, and the second is 0 (ident) or 1 (function).
 	localRuleLevels [][2]int
-
-	// The hash value of the path. This is used to generate unique class names.
-	pathHash string
-
-	// Is the path a CSS module?
-	isModule bool
 }
 
 func (p *cssParser) parse() (string, error) {
@@ -96,27 +88,6 @@ func (p *cssParser) nextToken() *tokenizer.Token {
 	return token
 }
 
-// Iterate over all tokens until we find a token matching `tokenType`. Returns the matching token
-// and all tokens until that point. If `appendToOutput` is true, the token values will be appended
-// to the output.
-func (p *cssParser) outputUntilTokenType(tokenType tokenizer.TokenType, appendToOutput bool) (*tokenizer.Token, []*tokenizer.Token) {
-	var tokensUntil []*tokenizer.Token
-
-	for {
-		token := p.nextToken()
-
-		if token == nil || token.Type == tokenType {
-			return token, tokensUntil
-		}
-
-		tokensUntil = append(tokensUntil, token)
-
-		if appendToOutput {
-			p.append(token.Render())
-		}
-	}
-}
-
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
 // Returning false from that function will break from the iteration.
 func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token, nesting int) bool) {
@@ -134,7 +105,7 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token, nesting int
 // `handleNextTokenUntilFunc` as an optional first argument, which is used to determine whether we
 // should stop handling tokens. The function receives the current token, and should return true if
 // it should stop handling tokens.
-func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
+func (p *cssParser) handleNextToken(args ...any) (string, bool) {
 	token := p.nextToken()
 	if token == nil {
 		return "", false
@@ -150,7 +121,8 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 
 	switch token.Type {
 	case tokenizer.TokenAtKeyword:
-		if token.Value == "define-mixin" {
+		switch token.Value {
+		case "define-mixin":
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
 				return token.Render(), true
@@ -159,7 +131,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 			p.mixins[p.filePath+"#"+key] = def
 
 			return "", true
-		} else if token.Value == "mixin" {
+		case "mixin":
 			var mixinIdent, uri string
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
@@ -197,172 +169,7 @@ func (p *cssParser) handleNextToken(args ...interface{}) (string, bool) {
 				return original + t.Render(), true
 			}
 		}
-
-	case tokenizer.TokenDelim:
-		if p.isModule && token.Value == "." {
-			nextT := p.nextToken()
-
-			if nextT.Type == tokenizer.TokenIdent {
-				// Return the unhashed class name if we are in a global rule.
-				gcount := len(p.globalRuleLevels)
-				if gcount > 0 {
-					glevel := p.globalRuleLevels[gcount-1]
-
-					if glevel[1] == 0 {
-						return "." + nextT.Value, true
-					}
-				}
-
-				p.tokens.log(".%s is module", nextT.Value)
-				return "." + cssModuleClassName(nextT.Value, p.pathHash), true
-			}
-		}
-
-	case tokenizer.TokenColon:
-		if p.isModule {
-			nextT := p.nextToken()
-
-			if nextT.Type == tokenizer.TokenFunction && nextT.Value == "local" {
-				untilV, tokensUntil := p.outputUntilTokenType(tokenizer.TokenCloseParen, false)
-				if untilV == nil {
-					return "", false
-				}
-
-				var containsClass bool
-				var className string
-				for _, t := range tokensUntil {
-					if t.Type == tokenizer.TokenDelim && t.Value == "." {
-						containsClass = true
-					} else if containsClass && t.Type == tokenizer.TokenIdent {
-						className = t.Value
-					}
-				}
-
-				if !containsClass {
-					panic("local() must contain a class name")
-				}
-
-				p.append("." + cssModuleClassName(className, p.pathHash))
-
-				untilV, _ = p.outputUntilTokenType(tokenizer.TokenOpenBrace, true)
-				if untilV == nil {
-					return "", false
-				}
-
-				p.tokens.log(":local is opened")
-
-				p.append(untilV.Value)
-
-				p.localRuleLevels = append(p.localRuleLevels, [2]int{p.tokens.nesting, 1})
-
-				token = p.nextToken()
-			} else if nextT.Type == tokenizer.TokenFunction && nextT.Value == "global" {
-				untilV, tokensUntil := p.outputUntilTokenType(tokenizer.TokenCloseParen, true)
-				if untilV == nil {
-					return "", false
-				}
-
-				var containsClass bool
-				for _, t := range tokensUntil {
-					if t.Type == tokenizer.TokenDelim && t.Value == "." {
-						containsClass = true
-					}
-				}
-
-				if !containsClass {
-					panic("global() must contain a class name")
-				}
-
-				untilV, _ = p.outputUntilTokenType(tokenizer.TokenOpenBrace, true)
-				if untilV == nil {
-					return "", false
-				}
-
-				p.tokens.log(":global() is opened at %v", p.tokens.nesting)
-
-				p.append(untilV.Value)
-
-				p.globalRuleLevels = append(p.globalRuleLevels, [2]int{p.tokens.nesting, 1})
-
-				token = p.nextToken()
-			} else if nextT.Type == tokenizer.TokenIdent && nextT.Value == "local" {
-				untilV, tokensUntil := p.outputUntilTokenType(tokenizer.TokenOpenBrace, false)
-				if untilV == nil {
-					return "", false
-				}
-
-				var tmpOutput string
-				var containsClass bool
-				for _, t := range tokensUntil {
-					if t.Type == tokenizer.TokenDelim && t.Value == "." {
-						containsClass = true
-					}
-
-					if containsClass && t.Type == tokenizer.TokenIdent {
-						tmpOutput += cssModuleClassName(t.Value, p.pathHash)
-					} else {
-						tmpOutput += t.Value
-					}
-				}
-
-				tmpOutput += untilV.Value
-
-				// A class ident may not be present for the local rule, so we need to check for one. If
-				// none is found we treat all children as local.
-				if !containsClass {
-					p.tokens.log(":local is opened")
-
-					// No class is present, all children are local.
-					p.localRuleLevels = append(p.localRuleLevels, [2]int{p.tokens.nesting, 0})
-				} else {
-					p.tokens.log(":local is opened")
-					// p.output += "." + className + p.pathHash + untilV.Value
-					p.append(strings.TrimSpace(tmpOutput))
-				}
-
-				token = p.nextToken()
-			} else if nextT.Type == tokenizer.TokenIdent && nextT.Value == "global" {
-				untilV, tokensUntil := p.outputUntilTokenType(tokenizer.TokenOpenBrace, false)
-				if untilV == nil {
-					return "", false
-				}
-
-				var tmpOutput string
-				var containsClass bool
-				for _, t := range tokensUntil {
-					if t.Type == tokenizer.TokenDelim && t.Value == "." {
-						containsClass = true
-					}
-
-					tmpOutput += t.Value
-				}
-
-				tmpOutput += untilV.Value
-
-				// A class ident may not be present for the global rule, so we need to check for one. If
-				// none is found we treat all children as global.
-				if !containsClass {
-					// No class is present, all children are global.
-					p.globalRuleLevels = append(p.globalRuleLevels, [2]int{p.tokens.nesting, 0})
-					p.tokens.log(":global is opened at %v", p.tokens.nesting)
-
-					token = p.nextToken()
-
-				} else {
-					p.tokens.log(":global is opened at %v", p.tokens.nesting)
-					p.append(strings.TrimSpace(tmpOutput))
-					token = p.nextToken()
-				}
-
-			} else {
-				return token.Render() + nextT.Render(), true
-			}
-		}
 	}
 
 	return token.Render(), true
-}
-
-func cssModuleClassName(name string, hash string) string {
-	return name + "-" + hash
 }

@@ -12,6 +12,12 @@ module Proscenium
              :content_hash, :string
     end
 
+    class ResolveResult < FFI::Struct
+      layout :success, :bool,
+             :url_path, :string,
+             :abs_path, :string
+    end
+
     class CompileResult < FFI::Struct
       layout :success, :bool,
              :messages, :string
@@ -32,7 +38,7 @@ module Proscenium
       attach_function :resolve, [
         :string, # path or entry point
         :pointer # Config as JSON.
-      ], Result.by_value
+      ], ResolveResult.by_value
 
       attach_function :compile, [
         :pointer # Config as JSON.
@@ -115,9 +121,9 @@ module Proscenium
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         result = Request.resolve(path, @request_config)
 
-        raise ResolveError.new(path, result[:response]) unless result[:success]
+        raise ResolveError.new(path, result[:url_path]) unless result[:success]
 
-        result[:response]
+        [result[:url_path], result[:abs_path]]
       end
     end
 

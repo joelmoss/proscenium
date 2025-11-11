@@ -158,27 +158,26 @@ var _ = Describe("BuildToString(css)", func() {
 	})
 
 	EntryPoint("lib/importing/css_module.css", func() {
-		AssertCode(`.app_one_module-7727b09a { content: "/lib/importing/app/one.module.css"; }`)
+		AssertCode(`.app_one_module_0b3293c7{content:"/lib/importing/app/one.module.css"}`, Production)
 		AssertCode(`@import "/lib/importing/app/one.module.css";`, Unbundle)
 		AssertCode(`
-			.app_one_module-7727b09a__lib-importing-app-one-module-css {
+			.app_one_module_0b3293c7_lib-importing-app-one-module {
 				content: "/lib/importing/app/one.module.css";
 			}`,
-			UseDevCSSModuleNames,
 		)
 
 		Describe("nested", func() {
-			AssertCode(`.app_two_module-87f68cdb { content: "/lib/importing/app/two.module.css"; }`)
+			AssertCode(`.app_two_module_de28557c{content:"/lib/importing/app/two.module.css"}`, Production)
+			AssertCode(`.app_two_module_de28557c_lib-importing-app-two-module { content: "/lib/importing/app/two.module.css"; }`)
 		})
 
 		Describe("from package", func() {
-			AssertCode(`.pkg_one_module-9047c541 { content: "pkg/one.module.css"; }`)
+			AssertCode(`.pkg_one_module_1742dae2{content:"pkg/one.module.css"}`, Production)
 			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
 			AssertCode(`
-				.pkg_one_module-9047c541__node_modules--pnpm-pkg-git-https---git-gist-github-com-c3d9087f5f214e1f0d9719e4a7d38474-git-2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module-css {
+				.pkg_one_module_1742dae2_node_modules--pnpm-pkg_git_https___git_gist-github-com_c3d9087f5f214e1f0d9719e4a7d38474-git_2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module {
 					content: "pkg/one.module.css";
 				}`,
-				UseDevCSSModuleNames,
 			)
 		})
 	})
@@ -205,13 +204,13 @@ var _ = Describe("BuildToString(css)", func() {
 			It("builds from npm install", func() {
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
 
-				Expect(code).To(ContainCode(`.myClass-549811de { color: pink; }`))
+				Expect(code).To(ContainCode(`.myClass_125b3fe9_vendor-gem_npm-index-module { color: pink; }`))
 			})
 
 			It("builds from file:* npm install", func() {
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
 
-				Expect(code).To(ContainCode(`.myClass-be318e6c { color: pink; }`))
+				Expect(code).To(ContainCode(`.myClass_dbc84b0b_vendor-gem_file-index-module { color: pink; }`))
 			})
 		})
 
@@ -222,10 +221,11 @@ var _ = Describe("BuildToString(css)", func() {
 
 			It("builds npm install", func() {
 				addGem("gem_npm", "dummy/vendor")
+
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
 
 				Expect(code).To(ContainCode(`
-					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
+					.myClass_125b3fe9_vendor-gem_npm-index-module {
 						color: pink;
 					}
 				`))
@@ -235,24 +235,25 @@ var _ = Describe("BuildToString(css)", func() {
 
 	Describe("importing css module from js", func() {
 		var expectedCode = `
+			var d = document;
 			var u = "/lib/styles.module.css";
-			var es = document.querySelector("#_330940eb");
-			var el = document.querySelector('link[href="' + u + '"]');
+			var es = d.querySelector("#_0d45f40a");
+			var el = d.querySelector('link[href="' + u + '"]');
 			if (!es && !el) {
-				const e = document.createElement("style");
-				e.id = "_330940eb";
+				const e = d.createElement("style");
+				e.id = "_0d45f40a";
 				e.dataset.href = u;
 				e.dataset.prosceniumStyle = true;
-				e.appendChild(document.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
-			.myClass-330940eb {
-        color: pink;
-      }` + "`" + `));
-				const ps = document.head.querySelector("[data-proscenium-style]");
-				ps ? document.head.insertBefore(e, ps) : document.head.appendChild(e);
+				e.appendChild(d.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
+					.myClass_0d45f40a_lib-styles-module {
+						color: pink;
+					}` + "`" + `));
+				const ps = d.head.querySelector("[data-proscenium-style]");
+				ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
 			}
 			var styles_default = new Proxy({}, {
 				get(t, p, r) {
-					return p in t || typeof p === "symbol" ? Reflect.get(t, p, r) : p + "-330940eb";
+					return p in t || typeof p === "symbol" ? Reflect.get(t, p, r) : p + "_0d45f40a_lib-styles-module";
 				}
 			});
 		`
@@ -260,6 +261,12 @@ var _ = Describe("BuildToString(css)", func() {
 		When("Bundle = true", func() {
 			BeforeEach(func() {
 				types.Config.Bundle = true
+			})
+
+			It("non css module", func() {
+				_, result, _ := b.BuildToString("app/components/css_import.js")
+
+				Expect(result).To(ContainCode(`var css_import_default = {};`))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
@@ -297,8 +304,8 @@ var _ = Describe("BuildToString(css)", func() {
 			It("should bundle with different digest", func() {
 				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
 
-				Expect(result).To(ContainCode(`.foo-c3f452b4 { color: red; }`))
-				Expect(result).To(ContainCode(`.bar-60bd820c { color: blue; }`))
+				Expect(result).To(ContainCode(`.foo_3977965b_lib-css_modules-basic-module { color: red; }`))
+				Expect(result).To(ContainCode(`.bar_24efbaab_lib-css_modules-import_css_module-module { color: blue; }`))
 			})
 		})
 
@@ -311,8 +318,8 @@ var _ = Describe("BuildToString(css)", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js")
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem1/styles.module.css";`))
-				Expect(result).To(ContainCode(`var es = document.querySelector("#_3f751f91");`))
-				Expect(result).To(ContainCode(`.myClass-3f751f91 { color: pink; }`))
+				Expect(result).To(ContainCode(`var es = d.querySelector("#_f8ab1250");`))
+				Expect(result).To(ContainCode(`.myClass_f8ab1250_vendor-gem1-styles-module { color: pink; }`))
 			})
 		})
 
@@ -325,8 +332,8 @@ var _ = Describe("BuildToString(css)", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js")
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem2/styles.module.css";`))
-				Expect(result).To(ContainCode(`var es = document.querySelector("#_e789966c");`))
-				Expect(result).To(ContainCode(`.myClass-e789966c { color: pink; }`))
+				Expect(result).To(ContainCode(`var es = d.querySelector("#_b0eba875");`))
+				Expect(result).To(ContainCode(`.myClass_b0eba875_---external-gem2-styles-module { color: pink; }`))
 			})
 		})
 	})

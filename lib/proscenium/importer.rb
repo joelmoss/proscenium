@@ -35,18 +35,24 @@ module Proscenium
             ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
                                                                            sideloaded: do
               self.imported[filepath] = { ** }
-              self.imported[filepath][:digest] ||= Utils.digest(filepath) if css_module
 
-              if self.imported[filepath][:digest].is_a?(Proc)
-                self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+              if css_module
+                self.imported[filepath][:digest] ||= Utils.css_module_digest(filepath)
+
+                if self.imported[filepath][:digest].is_a?(Proc) # rubocop:disable Metrics/BlockNesting
+                  self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+                end
               end
             end
           else
             self.imported[filepath] = { ** }
-            self.imported[filepath][:digest] ||= Utils.digest(filepath) if css_module
 
-            if self.imported[filepath][:digest].is_a?(Proc)
-              self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+            if css_module
+              self.imported[filepath][:digest] ||= Utils.css_module_digest(filepath)
+
+              if self.imported[filepath][:digest].is_a?(Proc) # rubocop:disable Metrics/BlockNesting
+                self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+              end
             end
           end
         end
@@ -114,11 +120,11 @@ module Proscenium
           next unless (fp = filepath.sub_ext(x)).exist?
 
           sideloaded << if extensions.include?('.module.css')
-                          manifest_path, non_manifest_path = Resolver.resolve(fp.to_s,
-                                                                              as_array: true)
+                          manifest_path, non_manifest_path, abs_path =
+                            Resolver.resolve(fp.to_s, as_array: true)
                           import(manifest_path || non_manifest_path,
                                  sideloaded: filepath,
-                                 digest: -> { Utils.digest non_manifest_path },
+                                 digest: -> { Utils.css_module_digest abs_path },
                                  **options)
                         else
                           import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)

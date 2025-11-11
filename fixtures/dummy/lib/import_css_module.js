@@ -1,2 +1,2 @@
-import styles from '/lib/styles.module.css'
-console.log(styles)
+import styles from "/lib/styles.module.css";
+console.log(styles);

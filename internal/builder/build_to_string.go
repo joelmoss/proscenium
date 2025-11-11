@@ -41,6 +41,8 @@ func BuildToString(filePath string) (success bool, code string, contentHash stri
 		return false, string(j), ""
 	}
 
+	// debug.FDebug("BuildToString:result", result)
+
 	nonSourceMapFile, isSourceMap := strings.CutSuffix(filePath, ".map")
 
 	filePathWithRealExt := filePath

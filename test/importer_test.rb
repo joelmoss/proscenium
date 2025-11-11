@@ -11,10 +11,19 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
   let(:subject) { Proscenium::Importer }
 
   describe '.import' do
-    it 'single file' do
+    test 'single file' do
       subject.import '/app/views/layouts/application.js'
 
       assert_equal({ '/app/views/layouts/application.js' => {} }, subject.imported)
+    end
+
+    test 'js imports css' do
+      subject.import '/app/components/css_module_import.js'
+
+      assert_equal({
+                     '/app/components/css_module_import.js' => {},
+                     '/app/components/css_module_import.module.css' => {}
+                   }, subject.imported)
     end
 
     it 'passes additional kwargs' do

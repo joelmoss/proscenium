@@ -40,34 +40,37 @@ func Compile() (bool, string) {
 	}
 
 	buildOptions := esbuild.BuildOptions{
-		EntryPoints:       types.Config.Precompile,
-		Splitting:         types.Config.CodeSplitting,
-		AbsWorkingDir:     types.Config.RootPath,
-		AbsPaths:          esbuild.MetafileAbsPath,
-		LogLevel:          logLevel,
-		Outdir:            types.Config.OutputDir,
-		Outbase:           "./",
-		EntryNames:        "[dir]/[name]-$[hash]$",
-		AssetNames:        "[dir]/[name]-$[hash]$",
-		ChunkNames:        "_asset_chunks/[name]-$[hash]$",
-		Format:            esbuild.FormatESModule,
-		JSX:               esbuild.JSXAutomatic,
-		JSXDev:            types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
-		MinifyWhitespace:  minify,
-		MinifyIdentifiers: minify,
-		MinifySyntax:      minify,
-		Bundle:            true,
-		Conditions:        []string{types.Config.Environment.String(), "proscenium"},
-		Write:             true,
-		Sourcemap:         esbuild.SourceMapLinked,
-		LegalComments:     esbuild.LegalCommentsNone,
-		Target:            esbuild.ES2022,
-		Metafile:          true,
+		EntryPoints:                 types.Config.Precompile,
+		Splitting:                   types.Config.CodeSplitting,
+		AbsWorkingDir:               types.Config.RootPath,
+		AbsPaths:                    esbuild.MetafileAbsPath,
+		LogLevel:                    logLevel,
+		Outdir:                      types.Config.OutputDir,
+		Outbase:                     "./",
+		EntryNames:                  "[dir]/[name]-$[hash]$",
+		AssetNames:                  "[dir]/[name]-$[hash]$",
+		ChunkNames:                  "_asset_chunks/[name]-$[hash]$",
+		Format:                      esbuild.FormatESModule,
+		JSX:                         esbuild.JSXAutomatic,
+		JSXDev:                      types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
+		MinifyWhitespace:            minify,
+		MinifyIdentifiers:           minify,
+		MinifySyntax:                minify,
+		DeterministicLocalCSSNaming: true,
+		Bundle:                      true,
+		Conditions:                  []string{types.Config.Environment.String(), "proscenium"},
+		Write:                       true,
+		Sourcemap:                   esbuild.SourceMapLinked,
+		LegalComments:               esbuild.LegalCommentsNone,
+		Target:                      esbuild.ES2022,
+		Metafile:                    true,
+
+		// Inject: []string{path.Join(types.Config.GemPath, "lib/proscenium/p_css_modules.js")},
 
 		// Ensure CSS modules are treated as plain CSS, and not esbuild's "local css".
-		Loader: map[string]esbuild.Loader{
-			".module.css": esbuild.LoaderCSS,
-		},
+		// Loader: map[string]esbuild.Loader{
+		// 	".module.css": esbuild.LoaderCSS,
+		// },
 
 		Supported: map[string]bool{
 			// Ensure CSS nesting is transformed for browsers that don't support it.
@@ -104,9 +107,6 @@ func Compile() (bool, string) {
 	buildOptions.Define = definitions
 	buildOptions.Define["proscenium.env.PRECOMPILED"] = "true"
 	buildOptions.Define["global"] = "window"
-
-	// TODO: remove this
-	buildOptions.Define["PROSCENIUM_CACHE_QUERY_STRING"] = "undefined"
 
 	result := esbuild.Build(buildOptions)
 

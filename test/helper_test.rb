@@ -5,9 +5,9 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     it 'transforms class names beginning with @' do
       page = Capybara::Node::Simple.new(CssmHelperController.render(:index))
 
-      assert page.has_css?('body.body-ead1b5bc')
-      assert page.has_css?('h2.view-ba1ab2b7')
-      assert page.has_css?('div.partial-7800dcdf.world')
+      assert page.has_css?('body.body_fc789ed8')
+      assert page.has_css?('h2.view_38fff6bc')
+      assert page.has_css?('div.partial_90b89cfc.world')
     end
   end
 
