@@ -120,14 +120,36 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     assert_includes response.body, %("sources": ["../../../lib/foo.css"])
   end
 
-  it 'serves css module' do
-    get '/lib/styles.module.css'
+  describe 'css modules' do
+    test 'from app' do
+      get '/lib/styles.module.css'
 
-    assert_equal 'text/css', response.headers['Content-Type']
-    assert_includes response.body.squish, %(
-      .myClass-330940eb { color: pink; }
-      /*# sourceMappingURL=styles.module.css.map */
-    ).squish
+      assert_equal 'text/css', response.headers['Content-Type']
+      assert_includes response.body.squish, %(
+        .myClass_0d45f40a_lib-styles-module { color: pink; }
+        /*# sourceMappingURL=styles.module.css.map */
+      ).squish
+    end
+
+    test 'from external gem' do
+      get '/node_modules/@rubygems/gem2/styles.module.css'
+
+      assert_equal 'text/css', response.headers['Content-Type']
+      assert_includes response.body.squish, %(
+        .myClass_b0eba875_---external-gem2-styles-module { color: pink; }
+        /*# sourceMappingURL=styles.module.css.map */
+      ).squish
+    end
+
+    test 'from vendored gem' do
+      get '/node_modules/@rubygems/gem1/styles.module.css'
+
+      assert_equal 'text/css', response.headers['Content-Type']
+      assert_includes response.body.squish, %(
+        .myClass_f8ab1250_vendor-gem1-styles-module { color: pink; }
+        /*# sourceMappingURL=styles.module.css.map */
+      ).squish
+    end
   end
 
   private

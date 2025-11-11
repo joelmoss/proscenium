@@ -66,23 +66,14 @@ module Proscenium
         raise Proscenium::CssModule::TransformError.new(original_name, 'CSS module path not given')
       end
 
-      manifest_path, non_manifest_path = Resolver.resolve(path.to_s, as_array: true)
-      digest = Importer.import(manifest_path || non_manifest_path, digest: lambda {
-        Utils.digest non_manifest_path
-      })
+      digest = Importer.import(path.to_s)
 
-      transformed_path = ''
-      if Rails.env.development?
-        transformed_path = "__#{non_manifest_path[1..].gsub(%r{[@/.+]}, '-')}"
-      end
       transformed_name = name.to_s
-      transformed_name = if transformed_name.start_with?('_')
-                           "_#{transformed_name[1..]}-#{digest}#{transformed_path}"
-                         else
-                           "#{transformed_name}-#{digest}#{transformed_path}"
-                         end
-
-      [transformed_name, non_manifest_path]
+      if transformed_name.start_with?('_')
+        "_#{transformed_name[1..]}_#{digest}"
+      else
+        "#{transformed_name}_#{digest}"
+      end
     end
   end
 end

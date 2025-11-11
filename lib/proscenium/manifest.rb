@@ -31,7 +31,10 @@ module Proscenium
                  ep.delete_prefix(Rails.root.to_s)
                end
 
-          manifest[ep] = "/#{outpath}"
+          manifest[ep] = [
+            "/#{outpath}",
+            details['cssBundle']&.delete_prefix(public_path)
+          ].compact
         end
       end
 

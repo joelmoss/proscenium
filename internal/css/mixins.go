@@ -3,14 +3,11 @@ package css
 import (
 	"joelmoss/proscenium/internal/resolver"
 	"os"
-	"path/filepath"
 
 	"github.com/riking/cssparse/tokenizer"
 )
 
 type cssMixins map[string]string
-
-var pathSep = string(filepath.Separator)
 
 // Takes a mixin name and uri, and builds the mixin definition as a map of tokens. These tokens are
 // then inserted into the tokenizer stream, and will be parsed as part of the current stylesheet.
@@ -31,7 +28,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		absPath, err := resolver.ResolveToFSPath(uri, p.filePath)
+		_, absPath, err := resolver.Resolve(uri, p.filePath)
 		if err != nil {
 			return false
 		}

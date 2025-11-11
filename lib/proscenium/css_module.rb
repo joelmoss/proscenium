@@ -21,7 +21,7 @@ module Proscenium::CssModule
       path ||= respond_to?(:css_module_path) ? css_module_path : path
 
       cssm = Transformer.new(path)
-      cssm.class_names(*names, require_prefix: false).map { |name, _| name }.join(' ')
+      cssm.class_names(*names, require_prefix: false).join(' ')
     end
 
     def class_names(*names, path: nil)
@@ -29,7 +29,7 @@ module Proscenium::CssModule
       names = names.flatten.compact
 
       cssm = Transformer.new(path)
-      cssm.class_names(*names).map { |name, _| name }.join(' ') unless names.empty?
+      cssm.class_names(*names).join(' ') unless names.empty?
     end
   end
 
@@ -44,7 +44,7 @@ module Proscenium::CssModule
   # @return [String] the transformed CSS module names concatenated as a string.
   def css_module(*names, path: nil)
     transformer = path.nil? ? cssm : Transformer.new(path)
-    transformer.class_names(*names, require_prefix: false).map { |name, _| name }.join(' ')
+    transformer.class_names(*names, require_prefix: false).join(' ')
   end
 
   # @param name [String,Symbol,Array<String,Symbol>]
@@ -53,7 +53,7 @@ module Proscenium::CssModule
   def class_names(*names, path: nil)
     names = names.flatten.compact
     transformer = path.nil? ? cssm : Transformer.new(path)
-    transformer.class_names(*names).map { |name, _| name }.join(' ') unless names.empty?
+    transformer.class_names(*names).join(' ') unless names.empty?
   end
 
   private

@@ -19,4 +19,15 @@ var _ = Describe("BuildToString", func() {
 
 		Expect(success).To(BeTrue())
 	})
+
+	It("handles css modules", func() {
+		types.Config.Precompile = []string{
+			"./app/components/css_module_import.js",
+			"./app/components/css_module_import.module.css",
+		}
+
+		success, _ := b.Compile()
+
+		Expect(success).To(BeTrue())
+	})
 })

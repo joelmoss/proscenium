@@ -6,6 +6,11 @@ struct Result {
 	char* response;
 	char* contentHash;
 	};
+struct ResolveResult {
+	int success;
+	char* urlPath;
+	char* absPath;
+};
 struct CompileResult {
 	int success;
 	char* messages;
@@ -52,18 +57,18 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 // - config
 //
 //export resolve
-func resolve(filePath *C.char, configJson *C.char) C.struct_Result {
+func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
+		return C.struct_ResolveResult{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
-	resolvedPath, err := resolver.Resolve(C.GoString(filePath), "")
+	urlPath, absPath, err := resolver.Resolve(C.GoString(filePath), "")
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(string(err.Error())), C.CString("")}
+		return C.struct_ResolveResult{C.int(0), C.CString(string(err.Error())), C.CString("")}
 	}
 
-	return C.struct_Result{C.int(1), C.CString(resolvedPath), C.CString("")}
+	return C.struct_ResolveResult{C.int(1), C.CString(urlPath), C.CString(absPath)}
 }
 
 // Compile assets using the given `config`.

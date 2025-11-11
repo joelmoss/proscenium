@@ -45,7 +45,7 @@ module Proscenium
 
     class_methods do
       def sideload(options)
-        Importer.import Resolver.resolve(manager.to_s), **options, js: { type: 'module' }
+        Importer.import manager.to_s, sideloaded: true, **options, js: { type: 'module' }
       end
     end
 
@@ -58,7 +58,7 @@ module Proscenium
 
     # The absolute URL path to the javascript component.
     def virtual_path
-      @virtual_path ||= Resolver.resolve self.class.source_path.sub_ext('.jsx').to_s
+      @virtual_path ||= Resolver.resolve(self.class.source_path.sub_ext('.jsx').to_s)[0]
     end
 
     def props

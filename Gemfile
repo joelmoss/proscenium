@@ -30,6 +30,7 @@ group :test do
   gem 'gem_npm', path: './fixtures/dummy/vendor/gem_npm'
   gem 'gem_npm_ext', path: './fixtures/external/gem_npm_ext'
   gem 'maxitest'
+  gem 'minitest-difftastic'
   gem 'minitest-focus'
   gem 'minitest-spec-rails'
   gem 'sqlite3'

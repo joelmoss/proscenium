@@ -47,7 +47,7 @@ gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
 desc 'Compile for local os/arch'
 task 'compile:local' => 'clobber:ext' do
-  sh %(go build -buildmode=c-shared -mod=mod -o #{ext_dir}/proscenium main.go)
+  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium main.go)
 end
 
 desc 'Build Proscenium gems into the pkg directory.'

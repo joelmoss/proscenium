@@ -27,8 +27,7 @@ module Proscenium
     # @return [String] the transformed CSS module names concatenated as a string.
     def css_module(*names, path: nil)
       path ||= Pathname.new(@lookup_context.find(@virtual_path).identifier).sub_ext('')
-      CssModule::Transformer.new(path).class_names(*names, require_prefix: false)
-                            .map { |name, _| name }.join(' ')
+      CssModule::Transformer.new(path).class_names(*names, require_prefix: false).join(' ')
     end
 
     def include_assets

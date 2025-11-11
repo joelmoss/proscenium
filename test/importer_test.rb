@@ -11,10 +11,28 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
   let(:subject) { Proscenium::Importer }
 
   describe '.import' do
-    it 'single file' do
+    test 'single file' do
       subject.import '/app/views/layouts/application.js'
 
       assert_equal({ '/app/views/layouts/application.js' => {} }, subject.imported)
+    end
+
+    test 'js imports css when pre-compiled' do
+      Proscenium.config.precompile = Set[
+        './app/components/css_module_import.js',
+        './app/components/css_module_import.module.css'
+      ]
+      Proscenium::Builder.compile
+      Proscenium::Manifest.load!
+
+      subject.import '/app/components/css_module_import.js'
+
+      assert_equal({
+                     '/assets/app/components/css_module_import-$FMM3EC6Q$.js' => {},
+                     '/assets/app/components/css_module_import-$CPGHBSRN$.css' => {}
+                   }, subject.imported)
+    ensure
+      Proscenium.config.output_path.rmtree
     end
 
     it 'passes additional kwargs' do

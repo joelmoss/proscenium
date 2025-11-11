@@ -56,12 +56,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			EntryPoint("node_modules/@rubygems/gem_npm/index.module.css", func() {
-				AssertCode(`.myClass-549811de { color: pink; }`)
+				AssertCode(`.myClass_125b3fe9{color:pink}`, Production)
 				AssertCode(`
-					.myClass-549811de__node_modules--rubygems-gem_npm-index-module-css {
+					.myClass_125b3fe9_vendor-gem_npm-index-module {
 						color: pink;
 					}
-				`, UseDevCSSModuleNames)
+				`)
 			})
 		})
 
@@ -93,13 +93,13 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			EntryPoint("node_modules/@rubygems/gem_npm_ext/index.module.css", func() {
-				AssertCode(`.myClass-b6ff5121 { color: pink; }`)
-				AssertCode(`.myClass-b6ff5121 { color: pink; }`, Unbundle)
+				AssertCode(`.myClass_305117bc{color:pink}`, Production)
+				AssertCode(`.myClass_60f5451b_rubygems__rubygems-gem_npm_ext-index-module { color: pink; }`, Unbundle)
 				AssertCode(`
-					.myClass-b6ff5121__node_modules--rubygems-gem_npm_ext-index-module-css {
+					.myClass_305117bc_---external-gem_npm_ext-index-module {
 						color: pink;
 					}
-				`, UseDevCSSModuleNames)
+				`)
 			})
 		})
 
@@ -237,9 +237,9 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
 
-				Expect(code).To(ContainCode(`document.querySelector("#_3ddf717c")`))
-				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
-				Expect(code).To(ContainCode(`.name-3ddf717c`))
+				Expect(code).To(ContainCode(`d.querySelector("#_bc481fd6")`))
+				Expect(code).To(ContainCode(`e.id = "_bc481fd6";`))
+				Expect(code).To(ContainCode(`.name_bc481fd6_---external-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
@@ -261,9 +261,9 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("lib/gems/gem4.js")
 
-				Expect(code).To(ContainCode(`document.querySelector("#_3ddf717c")`))
-				Expect(code).To(ContainCode(`e.id = "_3ddf717c";`))
-				Expect(code).To(ContainCode(`.name-3ddf717c`))
+				Expect(code).To(ContainCode(`d.querySelector("#_bc481fd6")`))
+				Expect(code).To(ContainCode(`e.id = "_bc481fd6";`))
+				Expect(code).To(ContainCode(`.name_bc481fd6_---external-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))

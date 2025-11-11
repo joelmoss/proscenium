@@ -1,10 +1,7 @@
 package utils
 
 import (
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
-	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"path"
 	"regexp"
@@ -25,6 +22,21 @@ func ToString(a interface{}) (string, bool) {
 	}
 
 	return "", false
+}
+
+func KindToString(e esbuild.ResolveKind) string {
+	kindStrings := []string{
+		"ResolveNone",
+		"ResolveEntryPoint",
+		"ResolveJSImportStatement",
+		"ResolveJSRequireCall",
+		"ResolveJSDynamicImport",
+		"ResolveJSRequireResolve",
+		"ResolveCSSImportRule",
+		"ResolveCSSComposesFrom",
+		"ResolveCSSURLToken",
+	}
+	return kindStrings[e]
 }
 
 func HasExtension(name string) (extension string, found bool) {
@@ -48,25 +60,6 @@ func PathIsRelative(name string) bool {
 	return re.MatchString(name)
 }
 
-func ToDigest(s string) string {
-	path := ""
-
-	if types.Config.UseDevCSSModuleNames || types.Config.Environment == types.DevEnv {
-		re := regexp.MustCompile(`[@/\.+]`)
-		path = "__" + re.ReplaceAllLiteralString(strings.TrimPrefix(s, "/"), "-")
-
-		debug.Debug(s, path)
-	}
-
-	hash := sha1.Sum([]byte(s))
-	return hex.EncodeToString(hash[:])[0:8] + path
-}
-
-func pathIsJs(path string) bool {
-	var re = regexp.MustCompile(`\.jsx?$`)
-	return re.MatchString(path)
-}
-
 func PathIsCss(path string) bool {
 	return strings.HasSuffix(path, ".css")
 }
@@ -88,7 +81,7 @@ func PathIsSvg(path string) bool {
 }
 
 func IsCssImportedFromJs(path string, args esbuild.OnResolveArgs) bool {
-	return args.Kind == esbuild.ResolveJSImportStatement && PathIsCss(path) && pathIsJs(args.Importer)
+	return args.Kind == esbuild.ResolveJSImportStatement && PathIsCss(path)
 }
 
 func IsSvgImportedFromJsx(path string, args esbuild.OnResolveArgs) bool {
