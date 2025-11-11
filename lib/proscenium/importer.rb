@@ -28,18 +28,26 @@ module Proscenium
         self.imported ||= {}
 
         filepath = "/node_modules/#{filepath}" if filepath.start_with?('@rubygems/')
-        css_module = filepath.end_with?('.module.css')
+        css_module = filepath.match?(/\.module(-\$[a-z0-9]+\$)?\.css$/i)
 
         unless self.imported.key?(filepath)
           if sideloaded
             ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
                                                                            sideloaded: do
               self.imported[filepath] = { ** }
-              self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+              self.imported[filepath][:digest] ||= Utils.digest(filepath) if css_module
+
+              if self.imported[filepath][:digest].is_a?(Proc)
+                self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+              end
             end
           else
             self.imported[filepath] = { ** }
-            self.imported[filepath][:digest] = Utils.digest(filepath) if css_module
+            self.imported[filepath][:digest] ||= Utils.digest(filepath) if css_module
+
+            if self.imported[filepath][:digest].is_a?(Proc)
+              self.imported[filepath][:digest] = self.imported[filepath][:digest].call
+            end
           end
         end
 
