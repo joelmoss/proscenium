@@ -1,6 +1,6 @@
 module joelmoss/proscenium
 
-go 1.24.0
+go 1.25.4
 
 require (
 	github.com/evanw/esbuild v0.25.12
