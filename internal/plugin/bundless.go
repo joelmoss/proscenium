@@ -12,7 +12,7 @@ import (
 
 	"github.com/ije/esbuild-internal/helpers"
 
-	esbuild "github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/ije/esbuild-internal/api"
 )
 
 // Unbundles the path if it starts with "unbundle:". It resolves the path without the prefix, and to

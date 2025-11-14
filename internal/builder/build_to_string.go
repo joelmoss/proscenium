@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	esbuild "github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/ije/esbuild-internal/api"
 )
 
 var entrypointRegex = regexp.MustCompile(`(?i)(.+)\-\$[a-z0-9]+\$(\.[a-z]+(?:\.map)?)$`)

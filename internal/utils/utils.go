@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"strings"
 
-	esbuild "github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/ije/esbuild-internal/api"
 )
 
 func ToString(a interface{}) (string, bool) {

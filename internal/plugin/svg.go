@@ -10,8 +10,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/evanw/esbuild/pkg/api"
 	httpcache "github.com/gregjones/httpcache/diskcache"
+	"github.com/ije/esbuild-internal/api"
 	"github.com/peterbourgon/diskv"
 )
 

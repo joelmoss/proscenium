@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"4d63.com/collapsewhitespace"
-	"github.com/evanw/esbuild/pkg/api"
+	"github.com/ije/esbuild-internal/api"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 )

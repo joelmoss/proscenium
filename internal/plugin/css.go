@@ -8,7 +8,7 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"strings"
 
-	esbuild "github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/ije/esbuild-internal/api"
 )
 
 var Css = esbuild.Plugin{

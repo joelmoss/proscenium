@@ -1,7 +1,7 @@
 package plugin
 
 import (
-	esbuild "github.com/evanw/esbuild/pkg/api"
+	esbuild "github.com/ije/esbuild-internal/api"
 )
 
 // func Rjs(baseUrl string) esbuild.Plugin {
