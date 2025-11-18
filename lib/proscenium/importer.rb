@@ -111,9 +111,18 @@ module Proscenium
         sideloaded = []
 
         extensions.find do |x|
-          if (fp = filepath.sub_ext(x)).exist?
-            sideloaded << import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)
-          end
+          next unless (fp = filepath.sub_ext(x)).exist?
+
+          sideloaded << if extensions.include?('.module.css')
+                          manifest_path, non_manifest_path = Resolver.resolve(fp.to_s,
+                                                                              as_array: true)
+                          import(manifest_path || non_manifest_path,
+                                 sideloaded: filepath,
+                                 digest: -> { Utils.digest non_manifest_path },
+                                 **options)
+                        else
+                          import(Resolver.resolve(fp.to_s), sideloaded: filepath, **options)
+                        end
         end
 
         sideloaded
