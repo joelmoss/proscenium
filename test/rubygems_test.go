@@ -6,6 +6,7 @@ import (
 	. "joelmoss/proscenium/test/support"
 	"path/filepath"
 
+	ast "github.com/joelmoss/esbuild-internal/ast"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -93,13 +94,30 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			EntryPoint("node_modules/@rubygems/gem_npm_ext/index.module.css", func() {
-				AssertCode(`.myClass_305117bc{color:pink}`, Production)
-				AssertCode(`.myClass_60f5451b_rubygems__rubygems-gem_npm_ext-index-module { color: pink; }`, Unbundle)
-				AssertCode(`
-					.myClass_305117bc_---external-gem_npm_ext-index-module {
-						color: pink;
-					}
-				`)
+				AssertCodeFromFunc(func() string {
+					abspath := filepath.Join(types.Config.RootPath, "../external/gem_npm_ext/index.module.css")
+					hsh := ast.CssLocalHash(abspath)
+
+					return `.myClass_` + hsh + `{color:pink}`
+				}, Production)
+
+				AssertCodeFromFunc(func() string {
+					abspath := filepath.Join("rubygems:@rubygems/gem_npm_ext/index.module.css")
+					hsh := ast.CssLocalHash(abspath)
+
+					return `.myClass_` + hsh + `_rubygems__rubygems-gem_npm_ext-index-module { color: pink; }`
+				}, Unbundle)
+
+				AssertCodeFromFunc(func() string {
+					abspath := filepath.Join(types.Config.RootPath, "../external/gem_npm_ext/index.module.css")
+					hsh := ast.CssLocalHash(abspath)
+
+					return `
+						.myClass_` + hsh + `_---external-gem_npm_ext-index-module {
+							color: pink;
+						}
+					`
+				})
 			})
 		})
 
@@ -237,9 +255,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
 
-				Expect(code).To(ContainCode(`d.querySelector("#_bc481fd6")`))
-				Expect(code).To(ContainCode(`e.id = "_bc481fd6";`))
-				Expect(code).To(ContainCode(`.name_bc481fd6_---external-gem4-lib-gem4-styles-module`))
+				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+				hsh := ast.CssLocalHash(abspath)
+
+				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
+				Expect(code).To(ContainCode(`e.id = "_` + hsh + `";`))
+				Expect(code).To(ContainCode(`.name_` + hsh + `_---external-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
@@ -261,9 +282,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("lib/gems/gem4.js")
 
-				Expect(code).To(ContainCode(`d.querySelector("#_bc481fd6")`))
-				Expect(code).To(ContainCode(`e.id = "_bc481fd6";`))
-				Expect(code).To(ContainCode(`.name_bc481fd6_---external-gem4-lib-gem4-styles-module`))
+				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+				hsh := ast.CssLocalHash(abspath)
+
+				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
+				Expect(code).To(ContainCode(`e.id = "_` + hsh + `";`))
+				Expect(code).To(ContainCode(`.name_` + hsh + `_---external-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))

@@ -135,3 +135,49 @@ var AssertCode = func(expectedCode string, args ...any) {
 		Expect(result).To(ContainCode(expectedCode))
 	})
 }
+
+var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
+	GinkgoHelper()
+
+	description := ""
+	assertArgs := []any{}
+	specArgs := []any{}
+
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Debug):
+		case t == reflect.TypeOf(Bundle):
+		case t == reflect.TypeOf(Unbundle):
+		case t == reflect.TypeOf(Production):
+			assertArgs = append(assertArgs, arg)
+		default:
+			specArgs = append(specArgs, arg)
+		}
+	}
+
+	It("resolves", specArgs, func() {
+		if fileToAssertCode == "" {
+			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
+		}
+
+		for _, arg := range args {
+			switch t := reflect.TypeOf(arg); {
+			case t == reflect.TypeOf(Debug):
+				debug.Enable()
+			case t == reflect.TypeOf(Bundle):
+				types.Config.Bundle = true
+			case t == reflect.TypeOf(Unbundle):
+				types.Config.Bundle = false
+			case t == reflect.TypeOf(Production):
+				types.Config.Environment = types.ProdEnv
+			}
+		}
+
+		if description != "" {
+			By(description)
+		}
+
+		_, result, _ := b.BuildToString(fileToAssertCode)
+		Expect(result).To(ContainCode(expectedCode()))
+	})
+}

@@ -17,7 +17,7 @@ type ContainCodeMatcher struct {
 	actualString string
 }
 
-func (matcher *ContainCodeMatcher) Match(actual interface{}) (success bool, err error) {
+func (matcher *ContainCodeMatcher) Match(actual any) (success bool, err error) {
 	if reflect.TypeOf(actual).String() == "api.BuildResult" {
 		buildResult := actual.(api.BuildResult)
 
@@ -48,11 +48,11 @@ func (matcher *ContainCodeMatcher) Message(isNegated bool) (message string) {
 		format.IndentString(matcher.actualString, 2), to, format.IndentString(matcher.code, 2))
 }
 
-func (matcher *ContainCodeMatcher) FailureMessage(actual interface{}) (message string) {
+func (matcher *ContainCodeMatcher) FailureMessage(actual any) (message string) {
 	return matcher.Message(false)
 }
 
-func (matcher *ContainCodeMatcher) NegatedFailureMessage(actual interface{}) (message string) {
+func (matcher *ContainCodeMatcher) NegatedFailureMessage(actual any) (message string) {
 	return matcher.Message(true)
 }
 
