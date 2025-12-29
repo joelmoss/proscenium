@@ -5,9 +5,14 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     it 'transforms class names beginning with @' do
       page = Capybara::Node::Simple.new(CssmHelperController.render(:index))
 
-      assert page.has_css?('body.body_fc789ed8')
-      assert page.has_css?('h2.view_38fff6bc')
-      assert page.has_css?('div.partial_90b89cfc.world')
+      hsh = Utils.css_module_digest Rails.root.join('app/views/layouts/cssm.module.css')
+      assert page.has_css?("body.body_#{hsh}")
+
+      hsh = Utils.css_module_digest Rails.root.join('app/views/cssm_helper/index.module.css')
+      assert page.has_css?("h2.view_#{hsh}")
+
+      hsh = Utils.css_module_digest Rails.root.join('app/views/cssm_helper/_partial.module.css')
+      assert page.has_css?("div.partial_#{hsh}.world")
     end
   end
 

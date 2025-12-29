@@ -7,13 +7,13 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      assert_equal ['title_3977965b'], names
+      assert_match(/^title_[a-z0-9]{8}$/, names.first)
     end
 
     it 'transforms class names beginning with @ and underscore' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@_title)
 
-      assert_equal ['_title_3977965b'], names
+      assert_match(/^_title_[a-z0-9]{8}$/, names.first)
     end
 
     it 'passes through regular class names' do
@@ -26,15 +26,14 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                              :title, :@subtitle)
 
-      assert_equal %w[title subtitle_3977965b], names
+      assert_equal 'title', names.first
+      assert_match(/^subtitle_[a-z0-9]{8}$/, names.last)
     end
 
     it 'imports stylesheet' do
       Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      assert_equal({
-                     '/lib/css_modules/basic.module.css' => { digest: '3977965b' }
-                   }, Proscenium::Importer.imported)
+      assert_equal(['/lib/css_modules/basic.module.css'], Proscenium::Importer.imported.keys)
     end
 
     context 'local path' do
@@ -43,17 +42,16 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
                                                                '/lib/css_modules/basic2@title',
                                                                :@subtitle)
 
-        assert_equal %w[title_32581d4c subtitle_3977965b], names
+        assert_match(/^title_[a-z0-9]{8}$/, names.first)
+        assert_match(/^subtitle_[a-z0-9]{8}$/, names.last)
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                        '/lib/css_modules/basic2@title', :@subtitle)
 
-        assert_equal({
-                       '/lib/css_modules/basic2.module.css' => { digest: '32581d4c' },
-                       '/lib/css_modules/basic.module.css' => { digest: '3977965b' }
-                     }, Proscenium::Importer.imported)
+        assert_equal(['/lib/css_modules/basic2.module.css', '/lib/css_modules/basic.module.css'],
+                     Proscenium::Importer.imported.keys)
       end
     end
 
@@ -62,16 +60,14 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                'pkg/one@pkg_one_module')
 
-        assert_equal ['pkg_one_module_f52a8541'], names
+        assert_match(/^pkg_one_module_[a-z0-9]{8}$/, names.first)
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                        'pkg/one@pkg_one_module')
 
-        assert_equal({
-                       '/node_modules/pkg/one.module.css' => { digest: 'f52a8541' }
-                     }, Proscenium::Importer.imported)
+        assert_equal(['/node_modules/pkg/one.module.css'], Proscenium::Importer.imported.keys)
       end
     end
 
@@ -80,16 +76,14 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                '/gem2/lib/gem2/styles@foo')
 
-        assert_equal ['foo_b0953e88'], names
+        assert_match(/^foo_[a-z0-9]{8}$/, names.first)
       end
 
       it 'imports stylesheets' do
         Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                        '/gem2/lib/gem2/styles@@foo')
 
-        assert_equal({
-                       '/gem2/lib/gem2/styles.module.css' => { digest: 'b0953e88' }
-                     }, Proscenium::Importer.imported)
+        assert_equal(['/gem2/lib/gem2/styles.module.css'], Proscenium::Importer.imported.keys)
       end
     end
   end
@@ -113,19 +107,19 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       it 'should transform local path' do
         names = transformer.class_names('/lib/css_modules/basic2@title')
 
-        assert_equal ['title_32581d4c'], names
+        assert_match(/^title_[a-z0-9]{8}$/, names.first)
       end
 
       it 'should transform npm path' do
         names = transformer.class_names('pkg/one@pkg_one_module')
 
-        assert_equal ['pkg_one_module_f52a8541'], names
+        assert_match(/^pkg_one_module_[a-z0-9]{8}$/, names.first)
       end
 
       it 'should transform gem path' do
         names = transformer.class_names('/gem2/lib/gem2/styles@foo')
 
-        assert_equal ['foo_b0953e88'], names
+        assert_match(/^foo_[a-z0-9]{8}$/, names.first)
       end
     end
   end

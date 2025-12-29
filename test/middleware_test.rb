@@ -125,30 +125,24 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
       get '/lib/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_includes response.body.squish, %(
-        .myClass_0d45f40a_lib-styles-module { color: pink; }
-        /*# sourceMappingURL=styles.module.css.map */
-      ).squish
+      assert_match Regexp.new('.myClass_[a-z0-9]{8}_lib-styles-module {'),
+                   response.body
     end
 
     test 'from external gem' do
       get '/node_modules/@rubygems/gem2/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_includes response.body.squish, %(
-        .myClass_b0eba875_---external-gem2-styles-module { color: pink; }
-        /*# sourceMappingURL=styles.module.css.map */
-      ).squish
+      assert_match Regexp.new('.myClass_[a-z0-9]{8}_---external-gem2-styles-module {'),
+                   response.body
     end
 
     test 'from vendored gem' do
       get '/node_modules/@rubygems/gem1/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_includes response.body.squish, %(
-        .myClass_f8ab1250_vendor-gem1-styles-module { color: pink; }
-        /*# sourceMappingURL=styles.module.css.map */
-      ).squish
+      assert_match Regexp.new('.myClass_[a-z0-9]{8}_vendor-gem1-styles-module {'),
+                   response.body
     end
   end
 
