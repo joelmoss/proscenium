@@ -196,7 +196,13 @@ var _ = Describe("BuildToString(css)", func() {
 		})
 
 		Describe("from package", func() {
-			AssertCode(`.pkg_one_module_1742dae2{content:"pkg/one.module.css"}`, Production)
+			AssertCodeFromFunc(func() string {
+				abspath := filepath.Join(types.Config.RootPath, "node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg/one.module.css")
+				hsh := ast.CssLocalHash(abspath)
+
+				return `.pkg_one_module_` + hsh + `{content:"pkg/one.module.css"}`
+			}, Production)
+
 			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
 
 			AssertCodeFromFunc(func() string {
@@ -279,7 +285,7 @@ var _ = Describe("BuildToString(css)", func() {
 				var el = d.querySelector('link[href="' + u + '"]');
 				if (!es && !el) {
 					const e = d.createElement("style");
-					e.id = "_0d45f40a";
+					e.id = "_` + hash + `";
 					e.dataset.href = u;
 					e.dataset.prosceniumStyle = true;
 					e.appendChild(d.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `

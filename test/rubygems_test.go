@@ -57,12 +57,23 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			EntryPoint("node_modules/@rubygems/gem_npm/index.module.css", func() {
-				AssertCode(`.myClass_125b3fe9{color:pink}`, Production)
-				AssertCode(`
-					.myClass_125b3fe9_vendor-gem_npm-index-module {
-						color: pink;
-					}
-				`)
+				AssertCodeFromFunc(func() string {
+					abspath := filepath.Join(types.Config.RootPath, "vendor/gem_npm/index.module.css")
+					hsh := ast.CssLocalHash(abspath)
+
+					return `.myClass_` + hsh + `{color:pink}`
+				}, Production)
+
+				AssertCodeFromFunc(func() string {
+					abspath := filepath.Join(types.Config.RootPath, "vendor/gem_npm/index.module.css")
+					hsh := ast.CssLocalHash(abspath)
+
+					return `
+						.myClass_` + hsh + `_vendor-gem_npm-index-module {
+							color: pink;
+						}
+					`
+				})
 			})
 		})
 
