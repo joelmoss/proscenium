@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 	"github.com/peterbourgon/mergemap"
 	yaml "gopkg.in/yaml.v3"
 )

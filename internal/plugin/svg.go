@@ -11,7 +11,7 @@ import (
 	"path/filepath"
 
 	httpcache "github.com/gregjones/httpcache/diskcache"
-	"github.com/ije/esbuild-internal/api"
+	"github.com/joelmoss/esbuild-internal/api"
 	"github.com/peterbourgon/diskv"
 )
 

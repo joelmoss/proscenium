@@ -8,7 +8,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"strings"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 //go:embed src

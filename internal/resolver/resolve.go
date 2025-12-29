@@ -11,7 +11,7 @@ import (
 	"reflect"
 	"strings"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 // Resolve the given `filePath` relative to the root, where the filePath is a URL path or bare

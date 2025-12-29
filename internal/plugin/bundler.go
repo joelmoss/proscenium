@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 // Bundler plugin that bundles everything together.

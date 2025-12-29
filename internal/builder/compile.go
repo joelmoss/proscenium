@@ -7,7 +7,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"os"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 type compileResult struct {

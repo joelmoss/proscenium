@@ -3,7 +3,7 @@ package plugin
 import (
 	"joelmoss/proscenium/internal/utils"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 var Http = esbuild.Plugin{

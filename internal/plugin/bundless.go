@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/ije/esbuild-internal/helpers"
+	"github.com/joelmoss/esbuild-internal/helpers"
 
-	esbuild "github.com/ije/esbuild-internal/api"
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
 // Unbundles the path if it starts with "unbundle:". It resolves the path without the prefix, and to
