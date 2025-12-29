@@ -32,3 +32,6 @@ meta.json
 *.h
 *.so
 /lib/proscenium/ext/*
+
+/go.work
+/go.work.sum
