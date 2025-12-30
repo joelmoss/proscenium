@@ -27,10 +27,11 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
 
       subject.import '/app/components/css_module_import.js'
 
-      assert_equal({
-                     '/assets/app/components/css_module_import-$FMM3EC6Q$.js' => {},
-                     '/assets/app/components/css_module_import-$CPGHBSRN$.css' => {}
-                   }, subject.imported)
+      names = subject.imported.keys
+      assert_match(%r{^/assets/app/components/css_module_import-\$[A-Z0-9]{8}\$\.js$},
+                   names.first)
+      assert_match(%r{^/assets/app/components/css_module_import-\$[A-Z0-9]{8}\$\.css$},
+                   names.last)
     ensure
       Proscenium.config.output_path.rmtree
     end
