@@ -11,6 +11,7 @@ jobs:
 
     env:
       RAILS_ENV: test
+      GOWORK: off
 
     steps:
       - uses: actions/checkout@v4
