@@ -58,7 +58,7 @@ module Proscenium
 
     # The absolute URL path to the javascript component.
     def virtual_path
-      @virtual_path ||= Resolver.resolve(self.class.source_path.sub_ext('.jsx').to_s)[0]
+      @virtual_path ||= Array(Resolver.resolve(self.class.source_path.sub_ext('.jsx').to_s))[0]
     end
 
     def props
