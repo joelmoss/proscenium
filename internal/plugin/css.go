@@ -146,7 +146,7 @@ func cssModulesProxyTemplate(hash string) string {
 
 // Build the given `urlPath`
 func cssBuild(urlPath string) esbuild.BuildResult {
-	minify := types.Config.Environment == types.ProdEnv
+	minify := !types.Config.InternalTesting && !types.Config.Debug && types.Config.Environment != types.DevEnv
 
 	return esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:                 []string{urlPath},

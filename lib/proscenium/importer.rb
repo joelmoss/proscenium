@@ -48,7 +48,7 @@ module Proscenium
           end
 
           transformed_path = ''
-          if !Rails.env.production?
+          if Proscenium.config.debug || Rails.env.development?
             rel_path = Pathname.new(abs_path).relative_path_from(Rails.root).sub_ext('')
             transformed_path = "_#{rel_path.to_s.gsub(%r{[@/.+]}, '-')}"
           end

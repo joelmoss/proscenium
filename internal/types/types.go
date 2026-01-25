@@ -45,6 +45,7 @@ type ConfigT struct {
 	Environment   Environment
 
 	// For testing
+	InternalTesting      bool
 	UseDevCSSModuleNames bool
 }
 

@@ -50,6 +50,7 @@ var _ = BeforeEach(func() {
 	fileToAssertCode = ""
 
 	types.Config.Reset()
+	types.Config.InternalTesting = true
 	types.Config.Environment = types.TestEnv
 
 	_, filename, _, _ := runtime.Caller(0)
@@ -123,6 +124,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 			case t == reflect.TypeOf(Unbundle):
 				types.Config.Bundle = false
 			case t == reflect.TypeOf(Production):
+				types.Config.InternalTesting = false
 				types.Config.Environment = types.ProdEnv
 			}
 		}
@@ -169,6 +171,7 @@ var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
 			case t == reflect.TypeOf(Unbundle):
 				types.Config.Bundle = false
 			case t == reflect.TypeOf(Production):
+				types.Config.InternalTesting = false
 				types.Config.Environment = types.ProdEnv
 			}
 		}

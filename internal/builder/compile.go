@@ -32,7 +32,7 @@ func Compile() (bool, string) {
 		return compileError("build npm replacements", err.Error())
 	}
 
-	minify := !types.Config.Debug && types.Config.Environment == types.ProdEnv
+	minify := !types.Config.InternalTesting && !types.Config.Debug && types.Config.Environment != types.DevEnv
 
 	logLevel := esbuild.LogLevelInfo
 	if types.Config.Debug {
