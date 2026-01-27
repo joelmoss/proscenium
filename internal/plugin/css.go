@@ -62,7 +62,10 @@ var Css = esbuild.Plugin{
 							const es = d.querySelector('#_` + hash + `');
 							const el = d.querySelector('link[href="' + u + '"]');
 							if (!es && !el) {
+								const metaTag = d.querySelector('meta[name="csp-nonce"]');
+								const nonce = metaTag?.content;
 								const e = d.createElement('style');
+								if (nonce) e.nonce = nonce;
 								e.id = '_` + hash + `';
 								e.dataset.href = u;
 								e.dataset.prosceniumStyle = true;
