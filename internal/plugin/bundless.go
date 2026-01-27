@@ -201,15 +201,33 @@ var Bundless = esbuild.Plugin{
 
 				resolveUnbundledPrefix(&result)
 
+				var isBare string
+				var hasExt bool
+
 				if utils.IsBareModule(result.Path) {
 					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 						result.Path = aliasedPath
 						resolveUnbundledPrefix(&result)
+
+						// If the aliased path is a @rubygems path, resolve it inline.
+						if utils.IsRubyGem(result.Path) {
+							result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+
+							// Verify the gem exists
+							if _, _, err := utils.ResolveRubyGem(result.Path); err != nil {
+								return result, err
+							}
+
+							result.External = true
+							result.Path = "/node_modules/" + result.Path
+
+							goto FINISH
+						}
 					}
 				}
 
-				isBare := utils.ExtractBareModule(result.Path)
-				_, hasExt := utils.HasExtension(result.Path)
+				isBare = utils.ExtractBareModule(result.Path)
+				_, hasExt = utils.HasExtension(result.Path)
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
 					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells

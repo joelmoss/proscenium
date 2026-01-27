@@ -160,7 +160,7 @@ func cssBuild(urlPath string) esbuild.BuildResult {
 		MinifySyntax:                minify,
 		DeterministicLocalCSSNaming: true,
 		Bundle:                      true,
-		External:                    []string{"*.rjs", "*.gif", "*.jpg", "*.png", "*.woff2", "*.woff"},
+		External:                    types.Config.External,
 		Conditions:                  []string{types.Config.Environment.String(), "proscenium"},
 		Write:                       false,
 		Sourcemap:                   esbuild.SourceMapNone,

@@ -182,6 +182,38 @@ var Bundler = esbuild.Plugin{
 
 							goto FINISH
 						}
+
+						// If the aliased path is a @rubygems path, resolve it inline.
+						if utils.IsRubyGem(result.Path) {
+							unbundled = resolveUnbundledPrefix(&result)
+							result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+
+							gemName, gemPath, err := utils.ResolveRubyGem(result.Path)
+							if err != nil {
+								return result, err
+							}
+
+							ext, hasExt := utils.HasExtension(result.Path)
+
+							if hasExt {
+								if ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".eot" {
+									unbundled = true
+								} else if utils.IsSvgImportedFromJsx(result.Path, args) {
+									result.Namespace = "svgFromJsx"
+								} else if utils.IsSvgImportedFromCss(result.Path, args) {
+									unbundled = true
+								}
+							}
+
+							if unbundled {
+								result.External = true
+								result.Path = "/node_modules/" + result.Path
+							} else if hasExt {
+								result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+							}
+
+							goto FINISH
+						}
 					}
 				}
 

@@ -337,6 +337,36 @@ var _ = Describe("BuildToString", func() {
 				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
 			})
 		})
+
+		EntryPoint("lib/aliases/bare_to_rubygems.js", func() {
+			Describe("bare module to @rubygems path", func() {
+				BeforeEach(func() {
+					addGem("gem2", "external")
+
+					types.Config.Aliases = map[string]string{
+						"my-gem-alias": "@rubygems/gem2/lib/gem2/console.js",
+					}
+				})
+
+				AssertCode(`console.log("gem2");`)
+				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`, Unbundle)
+			})
+		})
+
+		EntryPoint("lib/aliases/bare_to_rubygems.css", func() {
+			Describe("bare module to @rubygems CSS path", func() {
+				BeforeEach(func() {
+					addGem("gem2", "external")
+
+					types.Config.Aliases = map[string]string{
+						"gem-blue-alias": "@rubygems/gem2/lib/gem2/blue.css",
+					}
+				})
+
+				AssertCode(`external/gem2/lib/gem2/blue.css`)
+				AssertCode(`@import "/node_modules/@rubygems/gem2/lib/gem2/blue.css";`, Unbundle)
+			})
+		})
 	})
 
 	EntryPoint("lib/env_vars.js", func() {

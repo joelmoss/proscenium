@@ -1,0 +1,5 @@
+@import "gem-blue-alias";
+
+.test {
+  @mixin blue;
+}
