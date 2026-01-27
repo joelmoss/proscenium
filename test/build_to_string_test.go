@@ -337,6 +337,22 @@ var _ = Describe("BuildToString", func() {
 				AssertCode(`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`, Unbundle)
 			})
 		})
+
+		EntryPoint("lib/aliases/bare_to_rubygems.js", func() {
+			Describe("bare to @rubygems/* path", func() {
+				BeforeEach(func() {
+					addGem("gem2", "external")
+
+					types.Config.Aliases = map[string]string{
+						"lexxy-styles": "@rubygems/gem2/styles.module.css",
+					}
+				})
+
+				AssertCode(`.myClass_`)
+				AssertCode(`color: pink`)
+				AssertCode(`import "/node_modules/@rubygems/gem2/styles.module.css";`, Unbundle)
+			})
+		})
 	})
 
 	EntryPoint("lib/env_vars.js", func() {

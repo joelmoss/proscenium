@@ -83,6 +83,15 @@ var Bundler = esbuild.Plugin{
 					debug.Debug("OnResolve(@rubygems/*):alias", result.Path, aliasedPath)
 					result.Path = aliasedPath
 					unbundled = resolveUnbundledPrefix(&result)
+
+					// If the aliased path is also a @rubygems/* path, re-resolve the gem
+					result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+					if utils.IsRubyGem(result.Path) {
+						gemName, gemPath, err = utils.ResolveRubyGem(result.Path)
+						if err != nil {
+							return result, err
+						}
+					}
 				}
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -181,6 +190,33 @@ var Bundler = esbuild.Plugin{
 							}
 
 							goto FINISH
+						}
+
+						// If the aliased path is a @rubygems/* path, resolve it with esbuild to let the
+						// @rubygems handler process it
+						if utils.IsRubyGem(result.Path) {
+							r := build.Resolve(result.Path, esbuild.ResolveOptions{
+								ResolveDir: args.ResolveDir,
+								Importer:   args.Importer,
+								Kind:       args.Kind,
+								PluginData: types.PluginData{
+									IsResolvingPath: false,
+								},
+							})
+
+							if len(r.Errors) > 0 {
+								result.External = true
+								debug.Debug("OnResolve(.*):aliasToRubyGem:failure", result.Path, r.Errors)
+							} else {
+								debug.Debug("OnResolve(.*):aliasToRubyGem:success", r)
+								return esbuild.OnResolveResult{
+									Path:        r.Path,
+									External:    r.External,
+									Namespace:   r.Namespace,
+									PluginData:  r.PluginData,
+									SideEffects: result.SideEffects,
+								}, nil
+							}
 						}
 					}
 				}
