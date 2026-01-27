@@ -199,9 +199,6 @@ var Bundler = esbuild.Plugin{
 								ResolveDir: args.ResolveDir,
 								Importer:   args.Importer,
 								Kind:       args.Kind,
-								PluginData: types.PluginData{
-									IsResolvingPath: false,
-								},
 							})
 
 							if len(r.Errors) > 0 {
