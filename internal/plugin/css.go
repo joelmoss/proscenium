@@ -6,6 +6,7 @@ import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
+	"path/filepath"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -47,15 +48,32 @@ var Css = esbuild.Plugin{
 						return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
 					}
 
+					// Calculate hashes - both for the URL path (new, correct) and file system path (old, for replacement)
 					hash := ast.CssLocalHash(urlPath)
+					oldHash := ast.CssLocalHash(args.Path)
+					
 					hashIdent := hash
+					oldHashIdent := oldHash
 					if !build.InitialOptions.MinifyIdentifiers {
 						// Use URL path (without leading slash) for consistent appendix
 						relPath := strings.TrimPrefix(urlPath, "/")
 						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
+						
+						// Calculate old appendix for replacement
+						oldRelPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
+						oldHashIdent = oldHashIdent + "_" + ast.CssLocalAppendice(oldRelPath)
 					}
 
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
+					
+					// Replace old hash/ident with new hash/ident in CSS content
+					if oldHash != hash {
+						contents = strings.ReplaceAll(contents, "_"+oldHash, "_"+hash)
+						if oldHashIdent != hashIdent {
+							contents = strings.ReplaceAll(contents, "_"+oldHashIdent, "_"+hashIdent)
+						}
+					}
+					
 					contents = `
 							const d = document;
 							const u = '` + urlPath + `';

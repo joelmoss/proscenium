@@ -358,13 +358,13 @@ var _ = Describe("BuildToString(css)", func() {
 			It("should bundle with different digest", func() {
 				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "lib/css_modules/basic.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/lib/css_modules/basic.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(`.foo_` + hsh + `_lib-css_modules-basic-module { color: red; }`))
 
-				abspath = filepath.Join(types.Config.RootPath, "lib/css_modules/import_css_module.module.css")
-				hsh = ast.CssLocalHash(abspath)
+				urlpath = "/lib/css_modules/import_css_module.module.css"
+				hsh = ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(`.bar_` + hsh + `_lib-css_modules-import_css_module-module { color: blue; }`))
 			})
