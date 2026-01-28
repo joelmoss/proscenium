@@ -266,12 +266,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/node_modules/@rubygems/gem4/lib/gem4/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
 				Expect(code).To(ContainCode(`e.id = "_` + hsh + `";`))
-				Expect(code).To(ContainCode(`.name_` + hsh + `_---external-gem4-lib-gem4-styles-module`))
+				Expect(code).To(ContainCode(`.name_` + hsh + `_node_modules-_rubygems-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))
@@ -293,12 +293,12 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("lib/gems/gem4.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/node_modules/@rubygems/gem4/lib/gem4/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
 				Expect(code).To(ContainCode(`e.id = "_` + hsh + `";`))
-				Expect(code).To(ContainCode(`.name_` + hsh + `_---external-gem4-lib-gem4-styles-module`))
+				Expect(code).To(ContainCode(`.name_` + hsh + `_node_modules-_rubygems-gem4-lib-gem4-styles-module`))
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem4/imported")`))

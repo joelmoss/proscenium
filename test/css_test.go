@@ -320,8 +320,8 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/import_css_module.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "lib/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/lib/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
 			})
@@ -329,8 +329,8 @@ var _ = Describe("BuildToString(css)", func() {
 			It("import relative css module from js", func() {
 				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "lib/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/lib/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
 			})
@@ -378,8 +378,8 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "vendor/gem1/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/node_modules/@rubygems/gem1/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem1/styles.module.css";`))
 				Expect(result).To(ContainCode(`var es = d.querySelector("#_` + hsh + `");`))
@@ -395,8 +395,8 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js")
 
-				abspath := filepath.Join(types.Config.RootPath, "../external/gem2/styles.module.css")
-				hsh := ast.CssLocalHash(abspath)
+				urlpath := "/node_modules/@rubygems/gem2/styles.module.css"
+				hsh := ast.CssLocalHash(urlpath)
 
 				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem2/styles.module.css";`))
 				Expect(result).To(ContainCode(`var es = d.querySelector("#_` + hsh + `");`))

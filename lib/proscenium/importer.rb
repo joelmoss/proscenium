@@ -50,9 +50,10 @@ module Proscenium
 
           transformed_path = ''
           if Proscenium.config.debug || Rails.env.development?
-            # Remove leading slash and .module.css extension, then replace special chars with dashes
-            rel_path = url_path.delete_prefix('/').sub(/\.module\.css$/, '')
-            transformed_path = "_#{rel_path.gsub(%r{[@/.+]}, '-')}"
+            # Remove leading slash and .css extension, then replace special chars with dashes
+            # Match esbuild's CssLocalAppendice transformation: @ -> _, / -> -, . -> -
+            rel_path = url_path.delete_prefix('/').sub(/\.css$/, '')
+            transformed_path = "_#{rel_path.gsub('@', '_').gsub(%r{[/.+]}, '-')}"
           end
 
           "#{digest}#{transformed_path}"

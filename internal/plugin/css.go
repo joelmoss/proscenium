@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"path/filepath"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
