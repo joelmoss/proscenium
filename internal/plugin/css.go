@@ -48,10 +48,11 @@ var Css = esbuild.Plugin{
 						return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
 					}
 
-					hash := ast.CssLocalHash(args.Path)
+					hash := ast.CssLocalHash(urlPath)
 					hashIdent := hash
 					if !build.InitialOptions.MinifyIdentifiers {
-						relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
+						// Use URL path (without leading slash) for consistent appendix
+						relPath := strings.TrimPrefix(urlPath, "/")
 						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
 					}
 

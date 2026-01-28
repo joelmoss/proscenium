@@ -33,8 +33,9 @@ module Proscenium
 
         if filepath.end_with?('.module.css')
           manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
-          digest = Utils.css_module_digest(abs_path)
-          filepath = Array(manifest_path || non_manifest_path)[0]
+          url_path = Array(manifest_path || non_manifest_path)[0]
+          digest = Utils.css_module_digest(url_path)
+          filepath = url_path
 
           if sideloaded
             ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
@@ -49,8 +50,9 @@ module Proscenium
 
           transformed_path = ''
           if Proscenium.config.debug || Rails.env.development?
-            rel_path = Pathname.new(abs_path).relative_path_from(Rails.root).sub_ext('')
-            transformed_path = "_#{rel_path.to_s.gsub(%r{[@/.+]}, '-')}"
+            # Remove leading slash and .module.css extension, then replace special chars with dashes
+            rel_path = url_path.delete_prefix('/').sub(/\.module\.css$/, '')
+            transformed_path = "_#{rel_path.gsub(%r{[@/.+]}, '-')}"
           end
 
           "#{digest}#{transformed_path}"
