@@ -37,3 +37,4 @@ meta.json
 /go.work.sum
 
 /.claude/settings.local.json
+/.vscode/settings.json
