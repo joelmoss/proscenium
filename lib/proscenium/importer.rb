@@ -27,24 +27,29 @@ module Proscenium
       def import(filepath = nil, sideloaded: false, **)
         self.imported ||= {}
 
-        return if self.imported.key?(filepath)
-
         digest = nil
 
         if filepath.end_with?('.module.css')
-          manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
-          digest = Utils.css_module_digest(abs_path)
-          filepath = Array(manifest_path || non_manifest_path)[0]
+          if self.imported.key?(filepath)
+            digest = self.imported[filepath][:digest]
+            abs_path = self.imported[filepath][:abs_path]
+          else
+            manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
+            digest = Utils.css_module_digest(abs_path)
+            filepath = Array(manifest_path || non_manifest_path)[0]
 
-          if sideloaded
-            ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
-                                                                           sideloaded: do
+            if sideloaded
+              ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
+                                                                             sideloaded: do
+                self.imported[filepath] = { ** }
+                self.imported[filepath][:digest] = digest
+                self.imported[filepath][:abs_path] = abs_path
+              end
+            else
               self.imported[filepath] = { ** }
               self.imported[filepath][:digest] = digest
+              self.imported[filepath][:abs_path] = abs_path
             end
-          else
-            self.imported[filepath] = { ** }
-            self.imported[filepath][:digest] = digest
           end
 
           transformed_path = ''
@@ -55,6 +60,8 @@ module Proscenium
 
           "#{digest}#{transformed_path}"
         else
+          return if self.imported.key?(filepath)
+
           Array(Resolver.resolve(filepath)).each do |fp|
             if sideloaded
               ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: fp,

@@ -105,9 +105,10 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       it 'should transform local path' do
-        names = transformer.class_names('/lib/css_modules/basic2@title')
-
-        assert_match(/^title_[a-z0-9]{8}$/, names.first)
+        assert_match(/^title_[a-z0-9]{8}$/,
+                     transformer.class_names('/lib/css_modules/basic2@title').first)
+        assert_match(/^title_[a-z0-9]{8}$/,
+                     transformer.class_names('/lib/css_modules/basic2@title').first)
       end
 
       it 'should transform npm path' do
