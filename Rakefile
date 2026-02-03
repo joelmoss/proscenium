@@ -54,7 +54,7 @@ desc 'Build Proscenium gems into the pkg directory.'
 task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
 
 desc 'Push Proscenium gems up to the gem server.'
-task push: PLATFORMS.keys.map { |platform| "push:#{platform}" }
+task push: PLATFORMS.keys.map { |platform| "push:#{platform}" } << 'push:gem'
 
 PLATFORMS.each do |ruby_platform, go_platform|
   task "build:#{ruby_platform}" => ["compile:#{ruby_platform}"] do
@@ -100,6 +100,11 @@ PLATFORMS.each do |ruby_platform, go_platform|
   desc "Push built gem (#{ruby_platform})"
   task "push:#{ruby_platform}" do
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem"
+  end
+
+  desc 'Push built gem'
+  task 'push:gem' do
+    sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}.gem"
   end
 end
 
