@@ -1,0 +1,26 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file_path=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // .filePath // empty') && [[ \"$file_path\" == */proscenium/ext/* ]] && echo 'BLOCK: Compiled binaries in ext/ should not be edited. Use rake compile:local.' && exit 1 || true"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file_path=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // .filePath // empty') && [[ \"$file_path\" == *.rb ]] && bundle exec rubocop -A --fail-level E \"$file_path\" || true"
+          }
+        ]
+      }
+    ]
+  }
+}
