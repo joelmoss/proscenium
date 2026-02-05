@@ -355,17 +355,13 @@ var _ = Describe("BuildToString(css)", func() {
 		})
 
 		When("importing css module from css module", func() {
-			It("should bundle with different digest", func() {
-				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
+			It("should use the same ident for all class names", func() {
+				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.module.css")
 
-				abspath := filepath.Join(types.Config.RootPath, "lib/css_modules/basic.module.css")
+				abspath := filepath.Join(types.Config.RootPath, "lib/css_modules/import_css_module.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
-				Expect(result).To(ContainCode(`.foo_` + hsh + `_lib-css_modules-basic-module { color: red; }`))
-
-				abspath = filepath.Join(types.Config.RootPath, "lib/css_modules/import_css_module.module.css")
-				hsh = ast.CssLocalHash(abspath)
-
+				Expect(result).To(ContainCode(`.foo_` + hsh + `_lib-css_modules-import_css_module-module { color: red; }`))
 				Expect(result).To(ContainCode(`.bar_` + hsh + `_lib-css_modules-import_css_module-module { color: blue; }`))
 			})
 		})
