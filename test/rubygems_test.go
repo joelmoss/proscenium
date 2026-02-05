@@ -333,6 +333,16 @@ var _ = Describe("@rubygems scoped paths", func() {
 				})
 			})
 
+			When("with { unbundle: 'true' } relative import", func() {
+				It("unbundles", func() {
+					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_with_relative.js")
+
+					Expect(code).To(ContainCode(`
+						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
+					`))
+				})
+			})
+
 			When("unbundle:* same import", func() {
 				It("unbundles", func() {
 					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_same.js")
