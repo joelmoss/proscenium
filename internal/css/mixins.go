@@ -28,7 +28,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		_, absPath, err := resolver.Resolve(uri, p.filePath)
+		_, absPath, err := resolver.Resolve(uri, p.tokens.tokenizers[p.tokens.position].filePath)
 		if err != nil {
 			return false
 		}

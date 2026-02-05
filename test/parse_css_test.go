@@ -158,7 +158,9 @@ var _ = Describe("Build(parseCss)", func() {
 						})
 					})
 
-					PIt("nested relative mixin is resolved", func() {})
+					Describe("nested relative mixin", func() {
+						AssertCode(`.nested-mixin { color: green; font-weight: bold; font-size: 99px; }`)
+					})
 				})
 
 				It("should cache mixin definition", func() {

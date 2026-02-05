@@ -51,3 +51,8 @@
   @mixin mixin from url("@rubygems/gem2/mixin.css");
   font-size: 70px;
 }
+/* nested relative mixin */
+.nested-mixin {
+  @mixin outer from url("./nested/nested_mixin_outer.css");
+  font-size: 99px;
+}

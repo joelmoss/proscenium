@@ -1,0 +1,4 @@
+@define-mixin outer {
+  @mixin inner from url('./nested_mixin_inner.css');
+  font-weight: bold;
+}
