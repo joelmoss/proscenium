@@ -1,0 +1,6 @@
+@define-mixin table {
+  max-width: 100%;
+  font-size: var(--table-font-size);
+  vertical-align: var(--table-cell-vertical-align);
+  border-top: var(--border);
+}

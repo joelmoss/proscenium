@@ -1,6 +1,9 @@
 package css
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/riking/cssparse/tokenizer"
 )
 
@@ -15,6 +18,9 @@ type cssParser struct {
 	// Map of mixin names and their contents.
 	mixins cssMixins
 
+	// Warnings accumulated during parsing.
+	warnings []CssWarning
+
 	// The nesting level of each `:global` declaration, where each element is a pair of integers. The
 	// first is the nesting level, and the second is 0 (ident) or 1 (function).
 	globalRuleLevels [][2]int
@@ -24,7 +30,7 @@ type cssParser struct {
 	localRuleLevels [][2]int
 }
 
-func (p *cssParser) parse() (string, error) {
+func (p *cssParser) parse() (string, []CssWarning, error) {
 	for {
 		result, ok := p.handleNextToken()
 		if !ok {
@@ -34,7 +40,57 @@ func (p *cssParser) parse() (string, error) {
 		p.append(result)
 	}
 
-	return p.output, nil
+	return p.output, p.warnings, nil
+}
+
+// addWarning adds a warning associated with the current file. The search string is used to locate
+// the warning position within the input by searching for it starting from the current output length.
+func (p *cssParser) addWarning(search string, format string, args ...any) {
+	w := CssWarning{
+		Text:     fmt.Sprintf(format, args...),
+		FilePath: p.filePath,
+	}
+
+	if search != "" {
+		// Use output length as approximate position in input. Clamp to valid range since mixin
+		// expansion can make output longer than input.
+		startFrom := len(p.output) - len(search)
+		if startFrom < 0 {
+			startFrom = 0
+		} else if startFrom > len(p.input) {
+			startFrom = 0
+		}
+
+		idx := strings.Index(p.input[startFrom:], search)
+		if idx >= 0 {
+			idx += startFrom
+		} else if idx = strings.Index(p.input, search); idx < 0 {
+			// Not found at all; skip location info.
+			p.warnings = append(p.warnings, w)
+			return
+		}
+
+		prefix := p.input[:idx]
+		w.Line = strings.Count(prefix, "\n") + 1
+		w.Length = len(search)
+
+		lastNL := strings.LastIndex(prefix, "\n")
+		if lastNL == -1 {
+			w.Column = idx
+		} else {
+			w.Column = idx - lastNL - 1
+		}
+
+		lineStart := lastNL + 1
+		lineEnd := strings.Index(p.input[lineStart:], "\n")
+		if lineEnd == -1 {
+			w.LineText = p.input[lineStart:]
+		} else {
+			w.LineText = p.input[lineStart : lineStart+lineEnd]
+		}
+	}
+
+	p.warnings = append(p.warnings, w)
 }
 
 // Append the given input to the output.

@@ -26,10 +26,13 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		return false
 	}
 
+	search := "@mixin " + mixinIdent
+
 	if uri != "" {
 		// Resolve the uri.
 		_, absPath, err := resolver.Resolve(uri, p.tokens.tokenizers[p.tokens.position].filePath)
 		if err != nil {
+			p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
 			return false
 		}
 
@@ -39,14 +42,23 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 		if p.parseMixinDefinitions(absPath) {
 			// We've successfully parsed the mixin file, so look up the definition.
-			return findAndInsertMixin(absPath, mixinIdent)
+			if findAndInsertMixin(absPath, mixinIdent) {
+				return true
+			}
+			p.addWarning(search, "Mixin %q not found in %q", mixinIdent, absPath)
+			return false
 		}
+
+		p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
+		return false
 	} else {
 		filePath := p.tokens.tokenizers[p.tokens.position].filePath
-		return findAndInsertMixin(filePath, mixinIdent)
+		if findAndInsertMixin(filePath, mixinIdent) {
+			return true
+		}
+		p.addWarning(search, "Mixin %q not defined in %q", mixinIdent, filePath)
+		return false
 	}
-
-	return false
 }
 
 // Parse the given `filePath` for mixin definitions, and append each to the given `mixins` map. This

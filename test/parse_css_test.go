@@ -1,8 +1,11 @@
 package proscenium_test
 
 import (
+	"joelmoss/proscenium/internal/css"
 	. "joelmoss/proscenium/test/support"
+	"strings"
 
+	"github.com/MakeNowJust/heredoc"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
@@ -25,6 +28,23 @@ var _ = Describe("Build(parseCss)", func() {
 							@mixin foo;
 						}
 					`, "/foo.css"))
+				})
+
+				It("undefined local mixin generates a warning", func() {
+					input := strings.TrimSpace(heredoc.Doc(`
+						header {
+							@mixin foo;
+						}
+					`))
+					_, warnings, err := css.ParseCss(input, "/foo.css")
+					Expect(err).NotTo(HaveOccurred())
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "foo" not defined in "/foo.css"`))
+					Expect(warnings[0].FilePath).To(Equal("/foo.css"))
+					Expect(warnings[0].Line).To(Equal(2))
+					Expect(warnings[0].Column).To(Equal(1))
+					Expect(warnings[0].Length).To(Equal(len("@mixin foo")))
+					Expect(warnings[0].LineText).To(Equal("\t@mixin foo;"))
 				})
 
 				It("mixin not defined at root level is passed through", func() {
@@ -133,6 +153,24 @@ var _ = Describe("Build(parseCss)", func() {
 
 						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`)
 						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`, Unbundle)
+
+						It("undefined @rubygems mixin generates a warning", func() {
+							input := strings.TrimSpace(heredoc.Doc(`
+								header {
+									@mixin table from url("@rubygems/gem1/table.css");
+									@mixin undefMixin from url("@rubygems/gem1/table.css");
+								}
+							`))
+							_, warnings, err := css.ParseCss(input, "/foo.css")
+							Expect(err).NotTo(HaveOccurred())
+							Expect(warnings).To(HaveLen(1))
+							Expect(warnings[0].Text).To(ContainSubstring(`Mixin "undefMixin" not found in`))
+							Expect(warnings[0].FilePath).To(Equal("/foo.css"))
+							Expect(warnings[0].Line).To(Equal(3))
+							Expect(warnings[0].Column).To(Equal(1))
+							Expect(warnings[0].Length).To(Equal(len("@mixin undefMixin")))
+							Expect(warnings[0].LineText).To(ContainSubstring(`@mixin undefMixin from url`))
+						})
 					})
 
 					Describe("from external @rubygems/*", func() {
@@ -183,8 +221,6 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 
 				When("mixin file is not found", func() {
-					// It("should log warning", Pending)
-
 					It("should pass through the @mixin declaration", func() {
 						Expect(`
 						header {
@@ -195,6 +231,23 @@ var _ = Describe("Build(parseCss)", func() {
 							@mixin red from url("/unknown.css");
 						}
 					`, "/foo.css"))
+					})
+
+					It("should generate a warning", func() {
+						input := strings.TrimSpace(heredoc.Doc(`
+							header {
+								@mixin red from url("/unknown.css");
+							}
+						`))
+						_, warnings, err := css.ParseCss(input, "/foo.css")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(warnings).To(HaveLen(1))
+						Expect(warnings[0].Text).To(Equal(`Could not resolve mixin file "/unknown.css" for mixin "red"`))
+						Expect(warnings[0].FilePath).To(Equal("/foo.css"))
+						Expect(warnings[0].Line).To(Equal(2))
+						Expect(warnings[0].Column).To(Equal(1))
+						Expect(warnings[0].Length).To(Equal(len("@mixin red")))
+						Expect(warnings[0].LineText).To(ContainSubstring(`@mixin red from url("/unknown.css");`))
 					})
 				})
 
@@ -209,6 +262,23 @@ var _ = Describe("Build(parseCss)", func() {
 							@mixin unknown from url("/lib/mixins/colors.css");
 						}
 					`, "/foo.css"))
+					})
+
+					It("should generate a warning", func() {
+						input := strings.TrimSpace(heredoc.Doc(`
+							header {
+								@mixin unknown from url("/lib/mixins/colors.css");
+							}
+						`))
+						_, warnings, err := css.ParseCss(input, "/foo.css")
+						Expect(err).NotTo(HaveOccurred())
+						Expect(warnings).To(HaveLen(1))
+						Expect(warnings[0].Text).To(ContainSubstring(`Mixin "unknown" not found in`))
+						Expect(warnings[0].FilePath).To(Equal("/foo.css"))
+						Expect(warnings[0].Line).To(Equal(2))
+						Expect(warnings[0].Column).To(Equal(1))
+						Expect(warnings[0].Length).To(Equal(len("@mixin unknown")))
+						Expect(warnings[0].LineText).To(ContainSubstring(`@mixin unknown from url`))
 					})
 				})
 

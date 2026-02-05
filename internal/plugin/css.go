@@ -84,7 +84,7 @@ var Css = esbuild.Plugin{
 					}, nil
 				}
 
-				contents, err := css.ParseCssFile(args.Path)
+				contents, warnings, err := css.ParseCssFile(args.Path)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
@@ -97,6 +97,7 @@ var Css = esbuild.Plugin{
 				return esbuild.OnLoadResult{
 					Contents: &contents,
 					Loader:   loader,
+					Warnings: cssWarningsToMessages(warnings),
 				}, nil
 			})
 	},
@@ -110,7 +111,7 @@ var cssOnly = esbuild.Plugin{
 			func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 				debug.Debug("cssOnly.OnLoad", args)
 
-				contents, err := css.ParseCssFile(args.Path)
+				contents, warnings, err := css.ParseCssFile(args.Path)
 				if err != nil {
 					return esbuild.OnLoadResult{}, err
 				}
@@ -123,9 +124,32 @@ var cssOnly = esbuild.Plugin{
 				return esbuild.OnLoadResult{
 					Contents: &contents,
 					Loader:   loader,
+					Warnings: cssWarningsToMessages(warnings),
 				}, nil
 			})
 	},
+}
+
+func cssWarningsToMessages(warnings []css.CssWarning) []esbuild.Message {
+	if len(warnings) == 0 {
+		return nil
+	}
+
+	msgs := make([]esbuild.Message, len(warnings))
+	for i, w := range warnings {
+		msgs[i] = esbuild.Message{
+			Text: w.Text,
+			Location: &esbuild.Location{
+				File:      w.FilePath,
+				Namespace: "file",
+				Line:      w.Line,
+				Column:    w.Column,
+				Length:    w.Length,
+				LineText:  w.LineText,
+			},
+		}
+	}
+	return msgs
 }
 
 func buildUrlPath(path string) string {
