@@ -58,11 +58,9 @@
 
 Getting started obviously depends on whether you are adding Proscenium to an existing Rails app, or creating a new one. So choose the appropriate guide below:
 
-- [Getting Started with a new Rails app](https://github.com/joelmoss/proscenium/blob/master/docs/guides/new_rails_app.md)
+- [Getting Started with a new Rails app](docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app
   - [Migrate from Sprockets](docs/guides/migrate_from_sprockets.md)
-  - Migrate from Propshaft _[Coming soon]_
-  - Migrate from Webpacker _[Coming soon]_
 - [Render a React component with Proscenium](docs/guides/basic_react.md)
 
 ## Installation
@@ -159,7 +157,7 @@ Let's continue with our problem example above, where we have the following asset
 - `/app/assets/users.js`
 - `/app/assets/user.js`
 
-Your application layout is at `/app/views/layouts/application.hml.erb`, and the view that needs the users assets is at `/app/views/users/index.html.erb`, so move your assets JS and CSS alongside them:
+Your application layout is at `/app/views/layouts/application.html.erb`, and the view that needs the users assets is at `/app/views/users/index.html.erb`, so move your assets JS and CSS alongside them:
 
 - `/app/views/layouts/application.css`
 - `/app/views/layouts/application.js`
@@ -297,8 +295,6 @@ Your browsers dev tools should pick this up and automatically load the source ma
 You can import SVG from JS(X), which will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
 
 ## Environment Variables
-
-> Available in `>=0.10.0`
 
 You can define and access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace.
 
@@ -479,7 +475,9 @@ Proscenium will also automatically insert vendor prefixes so that your CSS will 
 
 ### Importing CSS from JavaScript
 
-You can also import CSS from JavaScript. When you do this, Proscenium will automatically append each stylesheet to the document's head as a `<link>` element.
+You can also import CSS from JavaScript. When you do this, Proscenium will automatically append each stylesheet to the document's head as a `<style>` element.
+
+If your page includes a `<meta name="csp-nonce" content="...">` tag, the injected `<style>` elements will automatically pick up the nonce value for Content Security Policy compliance.
 
 ```jsx
 import "./button.css";
