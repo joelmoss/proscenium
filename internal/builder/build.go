@@ -98,7 +98,7 @@ func build(entryPoint string) esbuild.BuildResult {
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css, plugin.Dirname)
 
 	if !utils.IsUrl(entryPoint) {
 		definitions, err := buildEnvVars()

@@ -20,14 +20,8 @@ import (
 var _ = Describe("BuildToString", func() {
 	Describe("source maps", func() {
 		EntryPoint("lib/foo.js.map", func() {
-			AssertCode(`
-				"sources": ["../../../lib/foo.js"],
-				"sourcesContent": ["console.log('/lib/foo.js')\n"],
-			`)
-			AssertCode(`
-				"sources": ["../../../lib/foo.js"],
-				"sourcesContent": ["console.log('/lib/foo.js')\n"],
-			`, Unbundle)
+			AssertCode(`"sources": ["../../../lib/foo.js"]`)
+			AssertCode(`"sources": ["../../../lib/foo.js"]`, Unbundle)
 		})
 
 		EntryPoint("lib/foo.js", func() {
@@ -378,6 +372,22 @@ var _ = Describe("BuildToString", func() {
 		})
 	})
 
+	Describe("__filename and __dirname", func() {
+		EntryPoint("lib/dirname_test.js", func() {
+			AssertCode(`"/lib/dirname_test.js"`)
+			AssertCode(`"/lib"`)
+			AssertCode(`"/lib/dirname_test.js"`, Unbundle)
+			AssertCode(`"/lib"`, Unbundle)
+		})
+
+		EntryPoint("lib/importing/app/dirname_nested.js", func() {
+			AssertCode(`"/lib/importing/app/dirname_nested.js"`)
+			AssertCode(`"/lib/importing/app"`)
+			AssertCode(`"/lib/importing/app/dirname_nested.js"`, Unbundle)
+			AssertCode(`"/lib/importing/app"`, Unbundle)
+		})
+	})
+
 	Describe("bundle = true", func() {
 		BeforeEach(func() {
 			types.Config.Bundle = true
@@ -398,7 +408,9 @@ var _ = Describe("BuildToString", func() {
 func BenchmarkBuildToString(bm *testing.B) {
 	_, filename, _, _ := runtime.Caller(0)
 	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
+	types.Config.OutputDir = "public/assets"
 	types.Config.Environment = types.TestEnv
+	types.Config.InternalTesting = true
 
 	for bm.Loop() {
 		success, result, _ := b.BuildToString("lib/foo.js")

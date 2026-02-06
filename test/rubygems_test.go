@@ -474,6 +474,52 @@ var _ = Describe("@rubygems scoped paths", func() {
 	})
 })
 
+var _ = Describe("@rubygems __filename and __dirname", func() {
+	Describe("gem inside root (vendored)", func() {
+		BeforeEach(func() {
+			addGem("gem1", "dummy/vendor")
+		})
+
+		It("injects correct values into gem entry point", func() {
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+
+			Expect(code).To(ContainCode(`__filename = "@rubygems/gem1/lib/gem1/gem1.js"`))
+			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem1/lib/gem1"`))
+		})
+
+		It("injects correct values into app file that imports vendored gem", func() {
+			_, code, _ := b.BuildToString("lib/rubygems/dirname_vendored.js")
+
+			Expect(code).To(ContainCode(`__filename = "@rubygems/gem1/lib/gem1/gem1.js"`))
+			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem1/lib/gem1"`))
+			Expect(code).To(ContainCode(`__filename2 = "/lib/rubygems/dirname_vendored.js"`))
+			Expect(code).To(ContainCode(`__dirname2 = "/lib/rubygems"`))
+		})
+	})
+
+	Describe("gem outside root (external)", func() {
+		BeforeEach(func() {
+			addGem("gem2", "external")
+		})
+
+		It("injects correct values into gem entry point", func() {
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+
+			Expect(code).To(ContainCode(`__filename = "@rubygems/gem2/lib/gem2/gem2.js"`))
+			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem2/lib/gem2"`))
+		})
+
+		It("injects correct values into app file that imports external gem", func() {
+			_, code, _ := b.BuildToString("lib/rubygems/dirname_test.js")
+
+			Expect(code).To(ContainCode(`__filename2 = "/lib/rubygems/dirname_test.js"`))
+			Expect(code).To(ContainCode(`__dirname2 = "/lib/rubygems"`))
+			Expect(code).To(ContainCode(`__filename = "@rubygems/gem2/lib/gem2/console.js"`))
+			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem2/lib/gem2"`))
+		})
+	})
+})
+
 func addGem(name string, path string) {
 	if types.Config.RubyGems == nil {
 		types.Config.RubyGems = map[string]string{}

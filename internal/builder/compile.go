@@ -90,7 +90,7 @@ func Compile() (bool, string) {
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css, plugin.Dirname)
 
 	definitions, err := buildEnvVars()
 	if err != nil {
