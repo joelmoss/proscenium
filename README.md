@@ -36,6 +36,7 @@
 - [JavaScript](#javascript)
   - [Tree Shaking](#tree-shaking)
   - [Code Splitting](#code-splitting)
+  - [`__filename` and `__dirname`](#__filename-and-__dirname)
   - [JavaScript Caveats](#javascript-caveats)
 - [CSS](#css)
   - [Importing CSS from JavaScript](#importing-css-from-javascript)
@@ -441,6 +442,26 @@ Code splitting is enabled by default. You can disable it by setting the `code_sp
 ```ruby
 config.proscenium.code_splitting = false
 ```
+
+### `__filename` and `__dirname`
+
+Proscenium provides Node.js-style `__filename` and `__dirname` constants in your JavaScript and TypeScript files. These are replaced at build time with the root-relative path of the current file and its directory respectively.
+
+```js
+// /app/views/users/index.js
+console.log(__filename); // "/app/views/users/index.js"
+console.log(__dirname); // "/app/views/users"
+```
+
+Files inside Ruby gems resolve to their `@rubygems/` scoped path:
+
+```js
+// Inside the "mygem" gem
+console.log(__filename); // "@rubygems/mygem/lib/mygem/component.js"
+console.log(__dirname); // "@rubygems/mygem/lib/mygem"
+```
+
+Note that `__filename` and `__dirname` are not injected into files within `node_modules`.
 
 ### JavaScript Caveats
 
