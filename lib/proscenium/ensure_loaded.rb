@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
-  NotIncludedError = Class.new(Error)
+  NotIncludedError = Class.new(Error) # rubocop:disable Style/EmptyClassDefinition
 
   module EnsureLoaded
     def self.included(child)
