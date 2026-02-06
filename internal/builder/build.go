@@ -40,7 +40,7 @@ func build(entryPoint string) esbuild.BuildResult {
 
 	minify := !types.Config.InternalTesting && !types.Config.Debug && types.Config.Environment != types.DevEnv
 
-	logLevel := esbuild.LogLevelSilent
+	logLevel := esbuild.LogLevelWarning
 	if types.Config.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}

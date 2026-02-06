@@ -84,7 +84,7 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 		filePath = "." + filePath
 	}
 
-	logLevel := esbuild.LogLevelSilent
+	logLevel := esbuild.LogLevelWarning
 	if types.Config.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
