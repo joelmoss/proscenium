@@ -1,5 +1,7 @@
 package types
 
+import "encoding/json"
+
 var Debug = false
 
 const RubyGemsScope = "@rubygems/"
@@ -64,6 +66,10 @@ type PluginData = struct {
 	ImportedFromJs  bool
 	RealPath        string
 	GemPath         string
+}
+
+func UnmarshalConfig(data []byte) error {
+	return json.Unmarshal(data, &Config)
 }
 
 // The maximum size of an HTTP response body to cache.

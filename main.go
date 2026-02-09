@@ -19,15 +19,33 @@ struct CompileResult {
 import "C"
 
 import (
-	"encoding/json"
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
 )
 
+// Cache the last config JSON to skip unmarshalling when unchanged.
+var lastConfigJSON string
+
+func unmarshalConfigIfChanged(configJson *C.char) error {
+	json := C.GoString(configJson)
+	if json == lastConfigJSON {
+		return nil
+	}
+
+	err := types.UnmarshalConfig([]byte(json))
+	if err != nil {
+		return err
+	}
+
+	lastConfigJSON = json
+	return nil
+}
+
 //export reset_config
 func reset_config() {
 	types.Config.Reset()
+	lastConfigJSON = ""
 }
 
 // Build the given `path` using the `config`.
@@ -37,7 +55,7 @@ func reset_config() {
 //
 //export build_to_string
 func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
-	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
@@ -58,7 +76,7 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 //
 //export resolve
 func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
-	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_ResolveResult{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
@@ -77,7 +95,7 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 //
 //export compile
 func compile(configJson *C.char) C.struct_CompileResult {
-	err := json.Unmarshal([]byte(C.GoString(configJson)), &types.Config)
+	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_CompileResult{C.int(0), C.CString("")}
 	}
