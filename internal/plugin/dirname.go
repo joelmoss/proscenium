@@ -5,7 +5,6 @@ import (
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -40,29 +39,11 @@ var Dirname = api.Plugin{
 					return api.OnLoadResult{}, nil
 				}
 
-				bytes, err := os.ReadFile(args.Path)
-				if err != nil {
-					return api.OnLoadResult{}, err
-				}
-
 				dir := filepath.Dir(relPath)
-				prefix := fmt.Sprintf("const __filename = %q, __dirname = %q;\n", relPath, dir)
-				contents := prefix + string(bytes)
-
-				loader := api.LoaderJS
-				switch filepath.Ext(args.Path) {
-				case ".jsx":
-					loader = api.LoaderJSX
-				case ".ts":
-					loader = api.LoaderTS
-				case ".tsx":
-					loader = api.LoaderTSX
-				}
+				prepend := fmt.Sprintf("const __filename = %q, __dirname = %q;\n", relPath, dir)
 
 				return api.OnLoadResult{
-					Contents:   &contents,
-					ResolveDir: filepath.Dir(args.Path),
-					Loader:     loader,
+					Prepend: &prepend,
 				}, nil
 			})
 	},

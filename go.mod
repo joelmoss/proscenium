@@ -7,7 +7,7 @@ go 1.25.7
 // and run `go mod tidy` to update the go.sum file.
 
 require (
-	github.com/joelmoss/esbuild-internal v0.27.1-0.20260206004233-76b125f12da4
+	github.com/joelmoss/esbuild-internal v0.27.1-0.20260210005108-72cd54b707b7
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/onsi/ginkgo/v2 v2.28.1
 	github.com/peterbourgon/diskv v2.0.1+incompatible
