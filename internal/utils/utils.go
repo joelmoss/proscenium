@@ -50,14 +50,15 @@ func IsBareModule(name string) bool {
 
 var IsBareSpecifier = IsBareModule
 
+var isUrlRe = regexp.MustCompile(`^https?:\/\/`)
+var pathIsRelativeRe = regexp.MustCompile(`^\.(\.)?\/`)
+
 func IsUrl(name string) bool {
-	var re = regexp.MustCompile(`^https?:\/\/`)
-	return re.MatchString(name)
+	return isUrlRe.MatchString(name)
 }
 
 func PathIsRelative(name string) bool {
-	var re = regexp.MustCompile(`^\.(\.)?\/`)
-	return re.MatchString(name)
+	return pathIsRelativeRe.MatchString(name)
 }
 
 func PathIsCss(path string) bool {

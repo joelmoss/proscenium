@@ -11,7 +11,7 @@ type cssParser struct {
 	tokens *cssTokenizer
 
 	input    string
-	output   string
+	output   strings.Builder
 	filePath string
 	rootPath string
 
@@ -40,7 +40,7 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 		p.append(result)
 	}
 
-	return p.output, p.warnings, nil
+	return p.output.String(), p.warnings, nil
 }
 
 // addWarning adds a warning associated with the current file. The search string is used to locate
@@ -54,7 +54,7 @@ func (p *cssParser) addWarning(search string, format string, args ...any) {
 	if search != "" {
 		// Use output length as approximate position in input. Clamp to valid range since mixin
 		// expansion can make output longer than input.
-		startFrom := len(p.output) - len(search)
+		startFrom := p.output.Len() - len(search)
 		if startFrom < 0 {
 			startFrom = 0
 		} else if startFrom > len(p.input) {
@@ -96,7 +96,7 @@ func (p *cssParser) addWarning(search string, format string, args ...any) {
 // Append the given input to the output.
 func (p *cssParser) append(input string) {
 	p.tokens.logOutput(input)
-	p.output += input
+	p.output.WriteString(input)
 }
 
 // Returns the next token, or nil if the end or an error is reached.
@@ -191,11 +191,12 @@ func (p *cssParser) handleNextToken(args ...any) (string, bool) {
 			var mixinIdent, uri string
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
-			original := token.Render()
+			var original strings.Builder
+			original.WriteString(token.Render())
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
 			p.forEachToken(func(token *tokenizer.Token, nesting int) bool {
-				original += token.Render()
+				original.WriteString(token.Render())
 
 				if token.Type == tokenizer.TokenSemicolon {
 					// Current token is a semicolon, so we're done. But we need to skip to the next token,
@@ -222,7 +223,7 @@ func (p *cssParser) handleNextToken(args ...any) (string, bool) {
 				return "", true
 			} else {
 				t := p.tokens.currentToken()
-				return original + t.Render(), true
+				return original.String() + t.Render(), true
 			}
 		}
 	}

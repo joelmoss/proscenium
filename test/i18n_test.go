@@ -19,11 +19,8 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 	})
 })
 
-// Avg 875,000 ns/op
 func BenchmarkI18n(bm *testing.B) {
-	bm.ResetTimer()
-
-	for i := 0; i < bm.N; i++ {
+	for bm.Loop() {
 		success, result, _ := b.BuildToString("lib/i18n/benchmark/index.js")
 
 		if !success {

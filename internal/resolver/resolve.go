@@ -8,7 +8,6 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"path"
 	"path/filepath"
-	"reflect"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -116,7 +115,10 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 		return returnResolve("", jsonErr)
 	}
 
-	filePath = reflect.ValueOf(metadata.Inputs).MapKeys()[0].String()
+	for key := range metadata.Inputs {
+		filePath = key
+		break
+	}
 
 	if gemName != "" {
 		return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+"/"+filePath, nil)

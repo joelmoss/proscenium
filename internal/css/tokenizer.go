@@ -96,11 +96,12 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 		return "", ""
 	}
 
-	var mixinIdent, original string
+	var mixinIdent string
+	var original strings.Builder
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
 	x.forEachToken(func(token *tokenizer.Token) bool {
-		original += token.Render()
+		original.WriteString(token.Render())
 
 		switch token.Type {
 		case tokenizer.TokenOpenBrace:
@@ -125,11 +126,11 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 // Capture all output between the nest opening brace, until the closing brace at the given level.
 func (x *cssTokenizer) captureBlock(level int) string {
-	var content string
+	var content strings.Builder
 
 	x.forEachToken(func(token *tokenizer.Token) bool {
 		if token.Type == tokenizer.TokenOpenBrace && x.nesting == level {
-			content = ""
+			content.Reset()
 			return true
 		}
 
@@ -137,11 +138,11 @@ func (x *cssTokenizer) captureBlock(level int) string {
 			return false
 		}
 
-		content += token.Render()
+		content.WriteString(token.Render())
 		return true
 	})
 
-	return content
+	return content.String()
 }
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
