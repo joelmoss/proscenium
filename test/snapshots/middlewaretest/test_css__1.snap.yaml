@@ -1,9 +1,0 @@
---- |-
-  /* app/views/layouts/application.css */
-  body {
-    color: pink;
-  }
-  .name {
-    color: black;
-  }
-  /*# sourceMappingURL=application.css.map */

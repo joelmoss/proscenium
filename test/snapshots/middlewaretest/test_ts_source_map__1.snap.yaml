@@ -1,8 +1,0 @@
---- |
-  {
-    "version": 3,
-    "sources": ["../../../lib/foo.ts"],
-    "sourcesContent": ["type Result = \"pass\" | \"fail\"\n \nfunction verify(result: Result) {\n  if (result === \"pass\") {\n    console.log(\"Passed\")\n  } else {\n    console.log(\"Failed\")\n  }\n}\n\nverify(\"pass\")"],
-    "mappings": ";AAEA,SAAS,OAAO,QAAgB;AAC9B,MAAI,WAAW,QAAQ;AACrB,YAAQ,IAAI,QAAQ;AAAA,EACtB,OAAO;AACL,YAAQ,IAAI,QAAQ;AAAA,EACtB;AACF;AAEA,OAAO,MAAM;",
-    "names": []
-  }

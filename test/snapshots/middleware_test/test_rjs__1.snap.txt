@@ -1,4 +1,0 @@
-// lib/rjs.js
-import foo from "/constants.rjs";
-console.log(foo);
-//# sourceMappingURL=rjs.js.map

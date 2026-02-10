@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../lib/react_shim.js", "../../lib/component.jsx"],
-  "sourcesContent": ["import * as React from 'react'\nexport { React }\n", "const Component = () => {\n  return <div>Hello</div>\n}\n\nexport default Component\n"],
-  "mappings": ";AAAA;;;ACAA,IAAM,YAAY,MAAM;AACtB,SAAO,oCAAC,aAAI,OAAK;AACnB;AAEA,IAAO,oBAAQ;",
-  "names": []
-}

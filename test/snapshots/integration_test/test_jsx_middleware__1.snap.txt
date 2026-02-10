@@ -1,8 +1,0 @@
-import { createElement, Fragment } from "react";
-const Component = () => {
-  return /* @__PURE__ */ createElement("div", null, "Hello");
-};
-var component_default = Component;
-export {
-  component_default as default
-};

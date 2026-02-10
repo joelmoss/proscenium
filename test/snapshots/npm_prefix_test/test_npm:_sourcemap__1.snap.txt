@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["../../../../external/one/index.js"],
-  "sourcesContent": ["import isPlainObject from 'is-plain-obj'\n\nexport default () => {\n  console.log('test/external/one')\n  isPlainObject()\n}\n"],
-  "mappings": ";;;;AAAA,OAAO,mBAAmB;AAE1B,IAAO,cAAQ,6BAAM;AACnB,UAAQ,IAAI,mBAAmB;AAC/B,gBAAc;AAChB,GAHe;",
-  "names": []
-}

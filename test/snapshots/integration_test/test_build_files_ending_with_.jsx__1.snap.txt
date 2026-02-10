@@ -1,8 +1,0 @@
-// lib/component.jsx
-var Component = () => {
-  return /* @__PURE__ */ React.createElement("div", null, "Hello");
-};
-var component_default = Component;
-export {
-  component_default as default
-};

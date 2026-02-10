@@ -1,3 +1,0 @@
-.myClass330940eb {
-  color: pink;
-}

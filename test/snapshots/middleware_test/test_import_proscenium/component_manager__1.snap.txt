@@ -1,3 +1,0 @@
-// lib/import_proscenium_component_manager_without_bundle.js
-import { init } from "/proscenium-runtime/component_manager/index.js";
-init();

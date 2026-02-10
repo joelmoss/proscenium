@@ -1,6 +1,0 @@
-// importStylesheet:/lib/styles.module.css
-import { importCssModule } from "/proscenium-runtime/import_css.js";
-var styles_module_default = await importCssModule("/lib/styles.module.css");
-
-// lib/import_css_module.js
-console.log(styles_module_default);

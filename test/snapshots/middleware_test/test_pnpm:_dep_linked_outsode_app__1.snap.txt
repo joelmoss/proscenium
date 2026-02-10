@@ -1,3 +1,0 @@
-// ../external/one/index.js
-console.log("external/one");
-//# sourceMappingURL=index.js.map

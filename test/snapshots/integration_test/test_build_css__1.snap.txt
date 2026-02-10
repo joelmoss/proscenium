@@ -1,8 +1,0 @@
-body {
-  color: pink;
-}
-
-.name {
-  color: #000;
-}
-

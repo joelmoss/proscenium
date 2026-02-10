@@ -1,7 +1,0 @@
-{
-  "version": 3,
-  "sources": ["url:https://ga.jspm.io/npm:is-fn@3.0.0/index.js"],
-  "sourcesContent": ["function isFunction(t){const n=Object.prototype.toString.call(t);return\"[object Function]\"===n||\"[object GeneratorFunction]\"===n||\"[object AsyncFunction]\"===n}export default isFunction;\n\n//# sourceMappingURL=index.js.map"],
-  "mappings": ";;;;AAAA,SAAS,WAAW,GAAE;AAAC,QAAM,IAAE,OAAO,UAAU,SAAS,KAAK,CAAC;AAAE,SAAM,wBAAsB,KAAG,iCAA+B,KAAG,6BAA2B;AAAC;AAArJ;AAAsJ,IAAO,wBAAQ;",
-  "names": []
-}

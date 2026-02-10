@@ -1,4 +1,0 @@
-// lib/pnpm/link_outside_dep.js
-import one from "/npm:external-one-link";
-one();
-//# sourceMappingURL=link_outside_dep.js.map
