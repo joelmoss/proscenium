@@ -142,7 +142,7 @@ var Bundless = esbuild.Plugin{
 					if strings.HasPrefix(result.Path, types.RubyGemsScope+gemName) {
 						result.Path = "/node_modules/" + result.Path
 					} else {
-						suffix := strings.TrimPrefix(result.Path, gemPath)
+						suffix := strings.TrimPrefix(filepath.ToSlash(result.Path), filepath.ToSlash(gemPath))
 						result.Path = "/node_modules/" + types.RubyGemsScope + gemName + suffix
 					}
 

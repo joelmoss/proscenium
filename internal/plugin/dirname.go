@@ -31,7 +31,7 @@ var Dirname = api.Plugin{
 
 				if gemName, gemPath, ok := utils.PathIsRubyGem(args.Path); ok {
 					// Rubygem file — use @rubygems/<name>/... path.
-					suffix := strings.TrimPrefix(args.Path, gemPath)
+					suffix := strings.TrimPrefix(filepath.ToSlash(args.Path), filepath.ToSlash(gemPath))
 					relPath = types.RubyGemsScope + gemName + suffix
 				} else if cutPath, ok := strings.CutPrefix(filepath.ToSlash(args.Path), filepath.ToSlash(types.Config.RootPath)); ok {
 					// File inside the project root — use root-relative path.

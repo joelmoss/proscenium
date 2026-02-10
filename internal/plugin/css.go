@@ -48,11 +48,11 @@ var Css = esbuild.Plugin{
 						return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
 					}
 
-					hash := ast.CssLocalHash(args.Path)
+					hash := ast.CssLocalHash(filepath.ToSlash(args.Path))
 					hashIdent := hash
 					if !build.InitialOptions.MinifyIdentifiers {
 						relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
-						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
+						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(filepath.ToSlash(relPath))
 					}
 
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))

@@ -169,7 +169,7 @@ func extractScopedPackageName(path string) string {
 
 func PathIsRubyGem(path string) (gemName string, gemPath string, found bool) {
 	for gemName, gemPath := range types.Config.RubyGems {
-		if strings.HasPrefix(path, gemPath) {
+		if strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(gemPath)) {
 			return gemName, gemPath, true
 		}
 	}
@@ -210,7 +210,7 @@ func ResolveRubyGem(path string) (gemName string, gemPath string, err error) {
 //	"/full/path/to/rubygems/@rubygems/foo/bar" -> "/node_modules/@rubygems/foo/bar"
 func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
 	if gemName, gemPath, ok := PathIsRubyGem(fsPath); ok {
-		suffix := strings.TrimPrefix(fsPath, gemPath)
+		suffix := strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(gemPath))
 		return path.Join("/node_modules", types.RubyGemsScope, gemName, suffix), true
 	}
 

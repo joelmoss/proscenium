@@ -3,6 +3,7 @@ package css
 import (
 	"joelmoss/proscenium/internal/resolver"
 	"os"
+	"path/filepath"
 
 	"github.com/riking/cssparse/tokenizer"
 )
@@ -17,7 +18,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 	}
 
 	findAndInsertMixin := func(filePath string, mixinName string) bool {
-		def, ok := p.mixins[filePath+"#"+mixinName]
+		def, ok := p.mixins[filepath.ToSlash(filePath)+"#"+mixinName]
 		if ok {
 			p.tokens.insertTokens(def, filePath, mixinName)
 			return true
@@ -90,7 +91,7 @@ func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 				return true
 			}
 
-			p.mixins[filePath+"#"+key] = def
+			p.mixins[filepath.ToSlash(filePath)+"#"+key] = def
 		}
 
 		return true
