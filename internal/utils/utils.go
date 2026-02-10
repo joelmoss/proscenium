@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -59,6 +60,13 @@ func IsUrl(name string) bool {
 
 func PathIsRelative(name string) bool {
 	return pathIsRelativeRe.MatchString(name)
+}
+
+// PathIsAbsolute returns true if the path is absolute. Unlike filepath.IsAbs, this also recognizes
+// URL-style paths starting with "/" on Windows, where filepath.IsAbs only recognizes paths like
+// "C:\...".
+func PathIsAbsolute(name string) bool {
+	return strings.HasPrefix(name, "/") || filepath.IsAbs(name)
 }
 
 func PathIsCss(path string) bool {

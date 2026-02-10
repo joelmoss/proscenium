@@ -239,7 +239,7 @@ var Bundler = esbuild.Plugin{
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if !shouldBeExternal && filepath.IsAbs(result.Path) {
+				if !shouldBeExternal && utils.PathIsAbsolute(result.Path) {
 					result.Path = filepath.Join(root, result.Path)
 				}
 
@@ -252,7 +252,7 @@ var Bundler = esbuild.Plugin{
 
 					_, hasExt := utils.HasExtension(result.Path)
 
-					if filepath.IsAbs(result.Path) && hasExt {
+					if utils.PathIsAbsolute(result.Path) && hasExt {
 						goto FINISH
 					}
 
@@ -314,7 +314,7 @@ var Bundler = esbuild.Plugin{
 
 			FINISH:
 
-				if filepath.IsAbs(result.Path) {
+				if utils.PathIsAbsolute(result.Path) {
 					relPath := strings.TrimPrefix(filepath.ToSlash(result.Path), filepath.ToSlash(root))
 
 					if aliasedPath, exists := utils.HasAlias(relPath); exists {

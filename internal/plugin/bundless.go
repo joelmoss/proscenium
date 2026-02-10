@@ -248,7 +248,7 @@ var Bundless = esbuild.Plugin{
 					goto FINISH
 				}
 
-				if filepath.IsAbs(result.Path) {
+				if utils.PathIsAbsolute(result.Path) {
 					if hasExt {
 						// Absolute path and extension, so assume this is an app relative path, and return as is.
 						goto FINISH
@@ -326,7 +326,7 @@ var Bundless = esbuild.Plugin{
 					result.Path = newPath
 				}
 
-				if filepath.IsAbs(result.Path) {
+				if utils.PathIsAbsolute(result.Path) {
 					if aliasedPath, exists := utils.HasAlias(result.Path); exists {
 						result.Path, _ = strings.CutPrefix(aliasedPath, "unbundle:")
 					}
