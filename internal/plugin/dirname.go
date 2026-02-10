@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
-	"path/filepath"
 	"strings"
 
 	"github.com/joelmoss/esbuild-internal/api"
@@ -22,8 +21,8 @@ var Dirname = api.Plugin{
 				debug.Debug("OnLoad:begin", args)
 
 				// Skip npm packages in node_modules.
-				if strings.Contains(filepath.ToSlash(args.Path), "/node_modules/") {
-					debug.Debug(strings.Contains(filepath.ToSlash(args.Path), "/node_modules/"))
+				if strings.Contains(args.Path, "/node_modules/") {
+					debug.Debug(strings.Contains(args.Path, "/node_modules/"))
 					return api.OnLoadResult{}, nil
 				}
 
@@ -31,9 +30,9 @@ var Dirname = api.Plugin{
 
 				if gemName, gemPath, ok := utils.PathIsRubyGem(args.Path); ok {
 					// Rubygem file — use @rubygems/<name>/... path.
-					suffix := strings.TrimPrefix(filepath.ToSlash(args.Path), filepath.ToSlash(gemPath))
+					suffix := strings.TrimPrefix(args.Path, gemPath)
 					relPath = types.RubyGemsScope + gemName + suffix
-				} else if cutPath, ok := strings.CutPrefix(filepath.ToSlash(args.Path), filepath.ToSlash(types.Config.RootPath)); ok {
+				} else if cutPath, ok := strings.CutPrefix(args.Path, types.Config.RootPath); ok {
 					// File inside the project root — use root-relative path.
 					relPath = cutPath
 				} else {

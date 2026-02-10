@@ -6,6 +6,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -239,7 +240,7 @@ var Bundler = esbuild.Plugin{
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if !shouldBeExternal && utils.PathIsAbsolute(result.Path) {
+				if !shouldBeExternal && path.IsAbs(result.Path) {
 					result.Path = filepath.Join(root, result.Path)
 				}
 
@@ -252,7 +253,7 @@ var Bundler = esbuild.Plugin{
 
 					_, hasExt := utils.HasExtension(result.Path)
 
-					if utils.PathIsAbsolute(result.Path) && hasExt {
+					if path.IsAbs(result.Path) && hasExt {
 						goto FINISH
 					}
 
@@ -314,8 +315,8 @@ var Bundler = esbuild.Plugin{
 
 			FINISH:
 
-				if utils.PathIsAbsolute(result.Path) {
-					relPath := strings.TrimPrefix(filepath.ToSlash(result.Path), filepath.ToSlash(root))
+				if path.IsAbs(result.Path) {
+					relPath := strings.TrimPrefix(result.Path, root)
 
 					if aliasedPath, exists := utils.HasAlias(relPath); exists {
 						if after, ok := strings.CutPrefix(aliasedPath, "unbundle:"); ok {

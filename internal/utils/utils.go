@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -60,13 +59,6 @@ func IsUrl(name string) bool {
 
 func PathIsRelative(name string) bool {
 	return pathIsRelativeRe.MatchString(name)
-}
-
-// PathIsAbsolute returns true if the path is absolute. Unlike filepath.IsAbs, this also recognizes
-// URL-style paths starting with "/" on Windows, where filepath.IsAbs only recognizes paths like
-// "C:\...".
-func PathIsAbsolute(name string) bool {
-	return strings.HasPrefix(name, "/") || filepath.IsAbs(name)
 }
 
 func PathIsCss(path string) bool {
@@ -169,7 +161,7 @@ func extractScopedPackageName(path string) string {
 
 func PathIsRubyGem(path string) (gemName string, gemPath string, found bool) {
 	for gemName, gemPath := range types.Config.RubyGems {
-		if strings.HasPrefix(filepath.ToSlash(path), filepath.ToSlash(gemPath)) {
+		if strings.HasPrefix(path, gemPath) {
 			return gemName, gemPath, true
 		}
 	}
@@ -210,7 +202,7 @@ func ResolveRubyGem(path string) (gemName string, gemPath string, err error) {
 //	"/full/path/to/rubygems/@rubygems/foo/bar" -> "/node_modules/@rubygems/foo/bar"
 func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
 	if gemName, gemPath, ok := PathIsRubyGem(fsPath); ok {
-		suffix := strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(gemPath))
+		suffix := strings.TrimPrefix(fsPath, gemPath)
 		return path.Join("/node_modules", types.RubyGemsScope, gemName, suffix), true
 	}
 

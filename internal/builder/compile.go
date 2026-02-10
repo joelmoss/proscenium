@@ -6,7 +6,7 @@ import (
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"os"
-	"path/filepath"
+	"path"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -26,7 +26,7 @@ func Compile() (bool, string) {
 	}
 
 	// Delete old compiled assets.
-	os.RemoveAll(filepath.Join(types.Config.RootPath, types.Config.OutputDir))
+	os.RemoveAll(path.Join(types.Config.RootPath, types.Config.OutputDir))
 
 	_, err := replacements.Build()
 	if err != nil {
@@ -116,7 +116,7 @@ func Compile() (bool, string) {
 		return false, string(messages)
 	}
 
-	os.WriteFile(filepath.Join(types.Config.RootPath, types.Config.OutputDir, ".manifest.json"), []byte(result.Metafile), 0644)
+	os.WriteFile(path.Join(types.Config.RootPath, types.Config.OutputDir, ".manifest.json"), []byte(result.Metafile), 0644)
 
 	return true, string(messages)
 }

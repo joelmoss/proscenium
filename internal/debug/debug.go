@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"os"
-	"path/filepath"
+	"path"
 	"runtime"
 	"strings"
 
@@ -22,7 +22,7 @@ func Debug(args ...any) {
 		cwd, _ := os.Getwd()
 		_, fn, line, _ := runtime.Caller(1)
 
-		print(strings.TrimPrefix(fn, filepath.Join(cwd, "..")+string(filepath.Separator)), line, args...)
+		print(strings.TrimPrefix(fn, path.Join(cwd, "..")+"/"), line, args...)
 	}
 }
 
@@ -31,7 +31,7 @@ func FDebug(args ...any) {
 	cwd, _ := os.Getwd()
 	_, fn, line, _ := runtime.Caller(1)
 
-	print(strings.TrimPrefix(fn, filepath.Join(cwd, "..")+string(filepath.Separator)), line, args...)
+	print(strings.TrimPrefix(fn, path.Join(cwd, "..")+"/"), line, args...)
 }
 
 func print(filename string, line int, args ...any) {

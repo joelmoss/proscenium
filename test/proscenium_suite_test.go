@@ -8,7 +8,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"os"
-	"path/filepath"
+	"path"
 	"reflect"
 	"runtime"
 	"testing"
@@ -29,7 +29,7 @@ const Unbundle = unbundleType(true)
 const Production = asProduction(true)
 
 var cwd, _ = os.Getwd()
-var fixturesRoot string = filepath.Join(cwd, "..", "fixtures")
+var fixturesRoot string = path.Join(cwd, "..", "fixtures")
 
 func TestProscenium(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -38,10 +38,10 @@ func TestProscenium(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	_, filename, _, _ := runtime.Caller(0)
-	assetPath := filepath.Join(filepath.Dir(filename), "..", "fixtures", "dummy", "public", "assets")
+	assetPath := path.Join(path.Dir(filename), "..", "fixtures", "dummy", "public", "assets")
 	dir, _ := os.ReadDir(assetPath)
 	for _, d := range dir {
-		os.RemoveAll(filepath.Join(assetPath, d.Name()))
+		os.RemoveAll(path.Join(assetPath, d.Name()))
 	}
 })
 
@@ -53,10 +53,10 @@ var _ = BeforeEach(func() {
 	types.Config.Environment = types.TestEnv
 
 	_, filename, _, _ := runtime.Caller(0)
-	root := filepath.Dir(filename)
-	types.Config.RootPath = filepath.Join(root, "..", "fixtures", "dummy")
+	root := path.Dir(filename)
+	types.Config.RootPath = path.Join(root, "..", "fixtures", "dummy")
 	types.Config.OutputDir = "public/assets"
-	types.Config.GemPath = filepath.Join(root, "..")
+	types.Config.GemPath = path.Join(root, "..")
 
 	// Currently only used by the SVG plugin
 	plugin.DiskvCache.EraseAll()

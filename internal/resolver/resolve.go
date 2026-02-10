@@ -7,7 +7,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
-	"path/filepath"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -39,16 +38,16 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 			return returnResolve("", errors.New("relative paths are not supported when an importer is not given"))
 		}
 
-		filePath = filepath.ToSlash(filepath.Join(filepath.Dir(importer), filePath))
+		filePath = path.Join(path.Dir(importer), filePath)
 
 		// TODO: while filePath is relative, the importer could be a ruby gem. Check now, and return
 		// correct path (beginning /node_modules/@rubygems/...)
 		gemName, gemPath, found := utils.PathIsRubyGem(filePath)
 		if found {
-			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, filepath.ToSlash(gemPath)), nil)
+			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, gemPath), nil)
 		}
 
-		return returnResolve(strings.TrimPrefix(filePath, filepath.ToSlash(rootPath)), nil)
+		return returnResolve(strings.TrimPrefix(filePath, rootPath), nil)
 	}
 
 	gemName := ""
@@ -151,11 +150,11 @@ func returnResolve(filePath string, err error) (string, string, error) {
 
 		isRubyGem = true
 		suffix := utils.RemoveRubygemPrefix(relativePath, gemName)
-		absPath = filepath.Join(gemPath, suffix)
+		absPath = path.Join(gemPath, suffix)
 	}
 
 	if !isRubyGem {
-		absPath = filepath.Join(types.Config.RootPath, absPath)
+		absPath = path.Join(types.Config.RootPath, absPath)
 	}
 
 	return filePath, absPath, err

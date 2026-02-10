@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
+
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 	"github.com/joelmoss/esbuild-internal/ast"
 )
@@ -48,11 +49,11 @@ var Css = esbuild.Plugin{
 						return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
 					}
 
-					hash := ast.CssLocalHash(filepath.ToSlash(args.Path))
+					hash := ast.CssLocalHash(args.Path)
 					hashIdent := hash
 					if !build.InitialOptions.MinifyIdentifiers {
 						relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
-						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(filepath.ToSlash(relPath))
+						hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
 					}
 
 					contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
@@ -155,9 +156,9 @@ func cssWarningsToMessages(warnings []css.CssWarning) []esbuild.Message {
 func buildUrlPath(fsPath string) string {
 	gemName, gemPath, found := utils.PathIsRubyGem(fsPath)
 	if found {
-		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(gemPath))
+		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(fsPath, gemPath)
 	} else {
-		return strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(types.Config.RootPath))
+		return strings.TrimPrefix(fsPath, types.Config.RootPath)
 	}
 }
 

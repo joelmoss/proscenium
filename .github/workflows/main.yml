@@ -5,7 +5,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-latest", "macos-latest"]
 
     runs-on: ${{ matrix.os }}
 
@@ -25,16 +25,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      - name: Compile Go shared library (Unix)
-        if: runner.os != 'Windows'
-        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - name: Compile Go shared library (Windows)
-        if: runner.os == 'Windows'
-        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
+      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
       - run: bundle exec appraisal install
-        shell: bash
       - run: bundle exec appraisal bin/test
-        shell: bash
 
   rubocop:
     runs-on: "ubuntu-latest"

@@ -20,16 +20,13 @@ task release: %i[build push]
 # linux-arm64.so            | aarch64-linux   |
 # linux-amd64.so            | x86_64-linux    |
 #
-# windows-4.0-amd64.dll     | x64-mingw-ucrt  |
-#
 
 # Ruby => Go
 PLATFORMS = {
   'x86_64-darwin' => 'darwin/amd64',
   'arm64-darwin' => 'darwin/arm64',
   'aarch64-linux' => 'linux/arm64',
-  'x86_64-linux' => 'linux/amd64',
-  'x64-mingw-ucrt' => 'windows/amd64'
+  'x86_64-linux' => 'linux/amd64'
 }.freeze
 
 base = FileUtils.pwd
@@ -41,8 +38,7 @@ gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
 desc 'Compile for local os/arch'
 task 'compile:local' => 'clobber:ext' do
-  ext = Gem.win_platform? ? '.dll' : ''
-  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium#{ext} main.go)
+  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium main.go)
 end
 
 desc 'Build Proscenium gems into the pkg directory.'
@@ -83,8 +79,6 @@ PLATFORMS.each do |ruby_platform, go_platform|
       built_path.each_child do |child|
         if child.extname == '.h'
           child.rename "#{ext_dir}/proscenium.h"
-        elsif child.extname == '.dll'
-          child.rename "#{ext_dir}/proscenium.dll"
         else
           child.rename "#{ext_dir}/proscenium"
         end
