@@ -155,7 +155,7 @@ func returnResolve(filePath string, err error) (string, string, error) {
 	}
 
 	if !isRubyGem {
-		absPath = path.Join(types.Config.RootPath, absPath)
+		absPath = filepath.Join(types.Config.RootPath, absPath)
 	}
 
 	return filePath, absPath, err

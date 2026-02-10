@@ -6,6 +6,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -27,7 +28,7 @@ var extensionMap = map[string]string{
 // Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
 // See Proscenium::Middleware::Esbuild.
 func BuildToString(filePath string) (success bool, code string, contentHash string) {
-	var pathPrefix = types.Config.RootPath + "/" + types.Config.OutputDir + "/"
+	var pathPrefix = filepath.Join(types.Config.RootPath, types.Config.OutputDir) + string(filepath.Separator)
 	var output esbuild.OutputFile
 
 	result := build(filePath)
@@ -99,7 +100,7 @@ func BuildToString(filePath string) (success bool, code string, contentHash stri
 				epPath = findOutputPathForEntryPoint(filePath, metadata)
 			}
 
-			epPath = path.Join(types.Config.RootPath, epPath)
+			epPath = filepath.Join(types.Config.RootPath, epPath)
 
 			for _, out := range result.OutputFiles {
 				if out.Path == epPath {

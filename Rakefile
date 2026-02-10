@@ -11,17 +11,16 @@ task default: %i[test rubocop]
 task release: %i[build push]
 
 #
-# GO Binary                 | Ruby Gem
-# --------------------------|---------------|
+# GO Binary                 | Ruby Gem        |
+# --------------------------|-----------------|
 #
-# darwin-10.12-arm64.dylib  | arm64-darwin  |
-# darwin-10.12-amd64.dylib  | x86_64-darwin |
+# darwin-10.12-arm64.dylib  | arm64-darwin    |
+# darwin-10.12-amd64.dylib  | x86_64-darwin   |
 #
-# linux-arm64.so            | aarch64-linux |
-# linux-amd64.so            | x86_64-linux  |
+# linux-arm64.so            | aarch64-linux   |
+# linux-amd64.so            | x86_64-linux    |
 #
-# windows-4.0-386           | x86-mingw32   | ?
-# windows-4.0-amd64         | x64-mingw32   | ?
+# windows-4.0-amd64.dll     | x64-mingw-ucrt  |
 #
 
 # Ruby => Go
@@ -29,13 +28,8 @@ PLATFORMS = {
   'x86_64-darwin' => 'darwin/amd64',
   'arm64-darwin' => 'darwin/arm64',
   'aarch64-linux' => 'linux/arm64',
-  'x86_64-linux' => 'linux/amd64'
-  # 'arm-linux' => { goos: 'linux', arch: 'arm' },
-  # 'x86-linux' => { goos: 'linux', arch: '386' },
-  # 'x86_64-linux' => { goos: 'linux', arch: 'amd64' }
-  # 'arm-windows' => { goos: 'windows', arch: 'arm' },
-  # 'x86_64-windows' => { goos: 'windows', arch: 'amd64' },
-  # 'aarch64-windows' => { goos: 'windows', arch: 'arm64' }
+  'x86_64-linux' => 'linux/amd64',
+  'x64-mingw-ucrt' => 'windows/amd64'
 }.freeze
 
 base = FileUtils.pwd
@@ -47,7 +41,8 @@ gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
 desc 'Compile for local os/arch'
 task 'compile:local' => 'clobber:ext' do
-  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium main.go)
+  ext = Gem.win_platform? ? '.dll' : ''
+  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium#{ext} main.go)
 end
 
 desc 'Build Proscenium gems into the pkg directory.'
@@ -88,6 +83,8 @@ PLATFORMS.each do |ruby_platform, go_platform|
       built_path.each_child do |child|
         if child.extname == '.h'
           child.rename "#{ext_dir}/proscenium.h"
+        elsif child.extname == '.dll'
+          child.rename "#{ext_dir}/proscenium.dll"
         else
           child.rename "#{ext_dir}/proscenium"
         end

@@ -152,12 +152,12 @@ func cssWarningsToMessages(warnings []css.CssWarning) []esbuild.Message {
 	return msgs
 }
 
-func buildUrlPath(path string) string {
-	gemName, gemPath, found := utils.PathIsRubyGem(path)
+func buildUrlPath(fsPath string) string {
+	gemName, gemPath, found := utils.PathIsRubyGem(fsPath)
 	if found {
-		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(path, gemPath)
+		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(gemPath))
 	} else {
-		return strings.TrimPrefix(path, types.Config.RootPath)
+		return strings.TrimPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(types.Config.RootPath))
 	}
 }
 

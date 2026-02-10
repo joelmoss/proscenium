@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -125,7 +124,7 @@ var Bundler = esbuild.Plugin{
 						result.Path = "/node_modules/" + result.Path
 					}
 				} else if hasExt {
-					result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+					result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 				}
 
 				debug.Debug("OnResolve(@rubygems/*):end", result)
@@ -209,7 +208,7 @@ var Bundler = esbuild.Plugin{
 								result.External = true
 								result.Path = "/node_modules/" + result.Path
 							} else if hasExt {
-								result.Path = path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+								result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 							}
 
 							goto FINISH
@@ -240,8 +239,8 @@ var Bundler = esbuild.Plugin{
 				}
 
 				// Absolute path - prepend the root to prepare for resolution.
-				if !shouldBeExternal && path.IsAbs(result.Path) {
-					result.Path = path.Join(root, result.Path)
+				if !shouldBeExternal && filepath.IsAbs(result.Path) {
+					result.Path = filepath.Join(root, result.Path)
 				}
 
 				if shouldBeExternal {
@@ -253,7 +252,7 @@ var Bundler = esbuild.Plugin{
 
 					_, hasExt := utils.HasExtension(result.Path)
 
-					if path.IsAbs(result.Path) && hasExt {
+					if filepath.IsAbs(result.Path) && hasExt {
 						goto FINISH
 					}
 
@@ -264,7 +263,7 @@ var Bundler = esbuild.Plugin{
 					// resolving the path, which is faster and also ensures tree shaking works.
 					if utils.PathIsRelative(result.Path) && hasExt {
 						if isCssImportedFromJs || result.Namespace == "svgFromJsx" || unbundled {
-							result.Path = path.Join(args.ResolveDir, result.Path)
+							result.Path = filepath.Join(args.ResolveDir, result.Path)
 						} else {
 							result.Path = ""
 						}
@@ -316,7 +315,7 @@ var Bundler = esbuild.Plugin{
 			FINISH:
 
 				if filepath.IsAbs(result.Path) {
-					relPath := strings.TrimPrefix(result.Path, root)
+					relPath := strings.TrimPrefix(filepath.ToSlash(result.Path), filepath.ToSlash(root))
 
 					if aliasedPath, exists := utils.HasAlias(relPath); exists {
 						if after, ok := strings.CutPrefix(aliasedPath, "unbundle:"); ok {

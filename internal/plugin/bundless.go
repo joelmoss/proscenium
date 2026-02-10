@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -114,7 +113,7 @@ var Bundless = esbuild.Plugin{
 
 				// If the path is an entrypoint, then it must be an absolute fileystem path.
 				if args.Kind == esbuild.ResolveEntryPoint {
-					realPath := path.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+					realPath := filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 					if pluginData, ok := result.PluginData.(types.PluginData); ok {
 						pluginData.RealPath = realPath
 						result.PluginData = pluginData
@@ -254,14 +253,14 @@ var Bundless = esbuild.Plugin{
 						// Absolute path and extension, so assume this is an app relative path, and return as is.
 						goto FINISH
 					} else {
-						result.Path = path.Join(root, result.Path)
+						result.Path = filepath.Join(root, result.Path)
 					}
 				}
 
 				// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
 				// that can get expensive.
 				if utils.PathIsRelative(result.Path) && hasExt {
-					result.Path = path.Join(args.ResolveDir, result.Path)
+					result.Path = filepath.Join(args.ResolveDir, result.Path)
 				} else {
 					if isBare != "" {
 						// replace some npm modules with browser native APIs
@@ -341,7 +340,7 @@ var Bundless = esbuild.Plugin{
 
 // Converts an absolute file system path that begins with the root, to a URL path.
 func rootPathToUrlPath(fsPath string) (urlPath string, found bool) {
-	if after, ok := strings.CutPrefix(fsPath, types.Config.RootPath); ok {
+	if after, ok := strings.CutPrefix(filepath.ToSlash(fsPath), filepath.ToSlash(types.Config.RootPath)); ok {
 		return after, true
 	}
 
