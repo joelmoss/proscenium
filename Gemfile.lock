@@ -341,6 +341,7 @@ PLATFORMS
   arm64-darwin-22
   arm64-darwin-23
   arm64-darwin-24
+  arm64-darwin-25
   x86_64-linux
 
 DEPENDENCIES
@@ -371,4 +372,4 @@ DEPENDENCIES
   sqlite3
 
 BUNDLED WITH
-   2.6.8
+  4.0.6
