@@ -29,12 +29,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rails: [rails_7.1, rails_7.2, rails_8, rails_8.1]
+        rails: [rails-7.1, rails-7.2, rails-8, rails-8.1]
     runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
       GOWORK: off
-      BUNDLE_GEMFILE: gemfiles/${{ matrix.rails }}.gemfile
     steps:
       - uses: actions/checkout@v4
 
@@ -47,7 +46,8 @@ jobs:
           bundler-cache: true
 
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - run: bundle exec bin/test
+      - run: bundle exec appraisal ${{ matrix.rails }} install
+      - run: bundle exec appraisal ${{ matrix.rails }} bin/test
 
   rubocop:
     runs-on: ubuntu-latest
