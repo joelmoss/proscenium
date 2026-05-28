@@ -46,7 +46,7 @@ jobs:
           bundler-cache: true
 
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - run: bundle exec appraisal ${{ matrix.rails }} install
+      - run: bundle exec appraisal install
       - run: bundle exec appraisal ${{ matrix.rails }} bin/test
 
   rubocop:
