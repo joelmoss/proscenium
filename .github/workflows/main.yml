@@ -1,44 +1,59 @@
 name: main
-on: [push]
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
 jobs:
-  test:
+  go-test:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest"]
-
+        os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+      - run: go test ./test
 
+  ruby-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rails: [rails_7.1, rails_7.2, rails_8, rails_8.1]
+    runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
       GOWORK: off
-
+      BUNDLE_GEMFILE: gemfiles/${{ matrix.rails }}.gemfile
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v6
         with:
-          go-version-file: "./go.mod"
-          cache: false
-      - run: go test ./test
+          go-version-file: ./go.mod
 
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - run: bundle exec appraisal install
-      - run: bundle exec appraisal bin/test
+      - run: bundle exec bin/test
 
   rubocop:
-    runs-on: "ubuntu-latest"
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - name: Setup
-        uses: ruby/setup-ruby@v1
+      - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.3"
           bundler-cache: true
-
-      - name: Rubocop
-        run: bundle exec rubocop -P --fail-level C
+      - run: bundle exec rubocop -P --fail-level C
