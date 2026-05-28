@@ -135,7 +135,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       result = transformer.class_names(:@title) { |name, path| yielded << [name, path] }
 
       assert_equal 1, yielded.length
-      assert_match(/^title_[a-z0-9]{8}_lib-css_modules-basic-module$/, yielded.first.first)
+      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
       assert_equal '/lib/css_modules/basic.module.css', yielded.first.last
       assert_equal result, [yielded.first.first]
     end
@@ -146,7 +146,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         yielded << [name, path]
       end
 
-      assert_match(/^title_[a-z0-9]{8}_lib-css_modules-basic2-module$/, yielded.first.first)
+      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
       assert_equal '/lib/css_modules/basic2.module.css', yielded.first.last
     end
 
@@ -164,7 +164,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       assert_equal 1, yielded.length
-      assert_match(/^title_[a-z0-9]{8}_lib-css_modules-basic-module$/, yielded.first.first)
+      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
       assert_equal '/lib/css_modules/basic.module.css', yielded.first.last
     end
 
@@ -183,10 +183,10 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       assert_equal 3, yielded.length
-      assert_match(/^title_[a-z0-9]{8}_/, yielded[0].first)
+      assert_match(/^title_[a-z0-9]{8}$/, yielded[0].first)
       assert_equal '/lib/css_modules/basic.module.css', yielded[0].last
       assert_equal ['plain', nil], yielded[1]
-      assert_match(/^subtitle_[a-z0-9]{8}_/, yielded[2].first)
+      assert_match(/^subtitle_[a-z0-9]{8}$/, yielded[2].first)
       assert_equal '/lib/css_modules/basic2.module.css', yielded[2].last
     end
   end
