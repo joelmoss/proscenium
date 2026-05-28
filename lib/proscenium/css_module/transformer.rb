@@ -33,31 +33,22 @@ module Proscenium
     #   class_names "mypackage/button@large"
     #   class_names "@scoped/package/button@small"
     #
+    # When a block is given, it is yielded once per input name with
+    # `(transformed_name, side_load_path)`. `side_load_path` is the exact string passed to
+    # `Importer.import` for that name, or `nil` for names that did not trigger a side-load (plain
+    # class names with `require_prefix: true`). The return value is unchanged — callers that don't
+    # need the path can keep ignoring the block.
+    #
     # @param names [String,Symbol,Array<String,Symbol>]
     # @param require_prefix: [Boolean] whether or not to require the `@` prefix.
+    # @yieldparam transformed_name [String]
+    # @yieldparam side_load_path [String, nil]
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
       names.map do |name|
-        original_name = name.dup
-        name = name.to_s if name.is_a?(Symbol)
-
-        if name.include?('/')
-          if name.start_with?('@')
-            # Scoped bare specifier (eg. "@scoped/package/lib/button@default").
-            _, path, name = name.split('@')
-            path = "@#{path}"
-          else
-            # Local path (eg. /some/path/to/button@default") or bare specifier (eg.
-            # "mypackage/lib/button@default").
-            path, name = name.split('@')
-          end
-
-          class_name! name, original_name, path: "#{path}#{FILE_EXT}"
-        elsif name.start_with?('@')
-          class_name! name[1..], original_name
-        else
-          require_prefix ? name : class_name!(name, original_name)
-        end
+        transformed, path = transform_class_name(name, require_prefix: require_prefix)
+        yield(transformed, path) if block_given?
+        transformed
       end
     end
 
@@ -73,6 +64,39 @@ module Proscenium
         "_#{transformed_name[1..]}_#{digest}"
       else
         "#{transformed_name}_#{digest}"
+      end
+    end
+
+    private
+
+    # Returns `[transformed_name, side_load_path]` for a single class-name reference.
+    # `side_load_path` is the exact string that `class_name!` passed to `Importer.import`, or
+    # `nil` if the name did not trigger a side-load. Extracted so `#class_names` can yield paths
+    # to consumers (e.g. proscenium-phlex's `resolved_css_module_paths` replay registry) without
+    # re-parsing names.
+    def transform_class_name(name, require_prefix:)
+      original_name = name.dup
+      name = name.to_s if name.is_a?(Symbol)
+
+      if name.include?('/')
+        if name.start_with?('@')
+          # Scoped bare specifier (eg. "@scoped/package/lib/button@default").
+          _, path, name = name.split('@')
+          path = "@#{path}"
+        else
+          # Local path (eg. /some/path/to/button@default") or bare specifier (eg.
+          # "mypackage/lib/button@default").
+          path, name = name.split('@')
+        end
+
+        module_path = "#{path}#{FILE_EXT}"
+        [class_name!(name, original_name, path: module_path), module_path]
+      elsif name.start_with?('@')
+        [class_name!(name[1..], original_name), @source_path&.to_s]
+      elsif require_prefix
+        [name, nil]
+      else
+        [class_name!(name, original_name), @source_path&.to_s]
       end
     end
   end
