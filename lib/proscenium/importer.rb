@@ -30,9 +30,9 @@ module Proscenium
         digest = nil
 
         if filepath.end_with?('.module.css')
-          if self.imported.key?(filepath)
-            digest = self.imported[filepath][:digest]
-            abs_path = self.imported[filepath][:abs_path]
+          if imported.key?(filepath)
+            digest = imported[filepath][:digest]
+            abs_path = imported[filepath][:abs_path]
           else
             manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
             digest = Utils.css_module_digest(abs_path)
@@ -41,14 +41,14 @@ module Proscenium
             if sideloaded
               ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
                                                                              sideloaded: do
-                self.imported[filepath] = { ** }
-                self.imported[filepath][:digest] = digest
-                self.imported[filepath][:abs_path] = abs_path
+                imported[filepath] = { ** }
+                imported[filepath][:digest] = digest
+                imported[filepath][:abs_path] = abs_path
               end
             else
-              self.imported[filepath] = { ** }
-              self.imported[filepath][:digest] = digest
-              self.imported[filepath][:abs_path] = abs_path
+              imported[filepath] = { ** }
+              imported[filepath][:digest] = digest
+              imported[filepath][:abs_path] = abs_path
             end
           end
 
@@ -60,16 +60,16 @@ module Proscenium
 
           "#{digest}#{transformed_path}"
         else
-          return if self.imported.key?(filepath)
+          return if imported.key?(filepath)
 
           Array(Resolver.resolve(filepath)).each do |fp|
             if sideloaded
               ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: fp,
                                                                              sideloaded: do
-                self.imported[fp] = { ** }
+                imported[fp] = { ** }
               end
             else
-              self.imported[fp] = { ** }
+              imported[fp] = { ** }
             end
           end
         end
