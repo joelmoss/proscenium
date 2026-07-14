@@ -12,7 +12,7 @@ raise ArgumentError, 'Must provide a benchmark name.' if ARGV.empty?
 
 name = ARGV.first
 
-require_relative "./benchmarks/#{name}"
+require_relative "benchmarks/#{name}"
 
 name = ActiveSupport::Inflector.camelize(name)
 ActiveSupport::Inflector.constantize("Benchmarks::#{name}").new
