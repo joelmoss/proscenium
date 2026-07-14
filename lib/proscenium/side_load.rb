@@ -28,9 +28,7 @@ module Proscenium
         return if response_body.first.blank? || !Proscenium::Importer.css_imported?
 
         included_comment = response_body.first.include?(CSS_COMMENT)
-        fragments = if (fragment_header = request.headers['X-Fragment'])
-                      fragment_header.split
-                    end
+        fragments = proscenium_fragment_header&.split(/[,\s]+/)
 
         return if !fragments && !included_comment
 
@@ -55,9 +53,7 @@ module Proscenium
         return if response_body.first.blank? || !Proscenium::Importer.js_imported?
 
         included_comment = response_body.first.include?(JS_COMMENT)
-        fragments = if (fragment_header = request.headers['X-Fragment'])
-                      fragment_header.split
-                    end
+        fragments = proscenium_fragment_header&.split(/[,\s]+/)
 
         return if !fragments && !included_comment
 
@@ -76,6 +72,17 @@ module Proscenium
         elsif included_comment
           response_body.first.gsub! JS_COMMENT, out.join.html_safe
         end
+      end
+
+      private
+
+      # Fragment rendering: phlex-rails 1.x used `X-Fragment`, phlex-rails 2.x uses `X-Fragments`.
+      # Honour both so side-loaded assets are injected into fragment responses regardless of the
+      # phlex-rails version in use. The value is only used as a presence flag (all imported assets
+      # are injected — Proscenium does not filter by fragment name), so the split delimiter is
+      # cosmetic; splitting on comma or whitespace covers both conventions (plural is comma-based).
+      def proscenium_fragment_header
+        request.headers['X-Fragment'] || request.headers['X-Fragments']
       end
     end
 

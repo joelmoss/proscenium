@@ -50,6 +50,28 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # A fragment request (e.g. phlex-rails id-based selective rendering) returns only a subtree with
+  # no <head>, so there is no placeholder comment to replace. Proscenium instead prepends the side
+  # loaded assets to the response body. phlex-rails 1.x sent `X-Fragment`; 2.x sends `X-Fragments`
+  # — both must be honoured.
+  describe 'fragment requests' do
+    %w[X-Fragment X-Fragments].each do |header|
+      context "with the #{header} header" do
+        it 'prepends side loaded assets to the response body' do
+          get '/include_assets', headers: { header => 'foo' }
+
+          assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css"]'
+          assert_dom 'script[src="/app/views/bare_pages/include_assets.js"]'
+
+          # Prepended, not injected at the placeholder: the placeholder comment survives and the
+          # body opens with the asset tags.
+          assert_includes @response.body, Proscenium::SideLoad::CSS_COMMENT
+          assert @response.body.lstrip.start_with?('<link', '<script')
+        end
+      end
+    end
+  end
+
   describe '#sideload_assets' do
     context 'false in controller' do
       it 'does not include assets' do
