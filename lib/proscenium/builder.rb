@@ -93,7 +93,7 @@ module Proscenium
     end
 
     def initialize(root: nil)
-      @request_config = FFI::MemoryPointer.from_string({
+      config_hash = {
         RootPath: (root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
         GemPath: gem_root,
@@ -106,7 +106,22 @@ module Proscenium
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
         Debug: Proscenium.config.debug
-      }.to_json)
+      }
+
+      @request_config = self.class.request_config_pointer(config_hash)
+    end
+
+    class << self
+      # Building the config JSON and copying it into an FFI::MemoryPointer is the only real cost
+      # in instantiating a Builder (everything else is memoized attribute reads). Since the
+      # config is identical across the vast majority of calls (same root, same Rails env, same
+      # Proscenium.config), skip re-serializing and re-allocating it when nothing has changed.
+      def request_config_pointer(config_hash)
+        return @request_config_pointer if config_hash == @request_config_hash
+
+        @request_config_hash = config_hash
+        @request_config_pointer = FFI::MemoryPointer.from_string(config_hash.to_json)
+      end
     end
 
     def build_to_string(path)
