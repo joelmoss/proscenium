@@ -70,9 +70,8 @@ PLATFORMS.each do |ruby_platform, go_platform|
 
     if go_platform.include?('darwin')
       goos, goarch = go_platform.split('/')
-      # rubocop:disable Layout/LineLength
+      # rubocop:disable-next Layout/LineLength
       sh %(GOWORK=off GOOS=#{goos} GOARCH=#{goarch} CGO_ENABLED=1 go build -buildmode=c-shared -v -o #{ext_dir}/proscenium main.go)
-      # rubocop:enable Layout/LineLength
     else
       sh %(xgo -env=GOWORK=off -buildmode=c-shared -dest="#{ext_dir}" -targets="#{go_platform}" .)
 
