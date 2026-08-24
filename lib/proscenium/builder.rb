@@ -8,19 +8,19 @@ module Proscenium
 
     class Result < FFI::Struct
       layout :success, :bool,
-             :response, :string,
-             :content_hash, :string
+             :response, :pointer,
+             :content_hash, :pointer
     end
 
     class ResolveResult < FFI::Struct
       layout :success, :bool,
-             :url_path, :string,
-             :abs_path, :string
+             :url_path, :pointer,
+             :abs_path, :pointer
     end
 
     class CompileResult < FFI::Struct
       layout :success, :bool,
-             :messages, :string
+             :messages, :pointer
     end
 
     module Request
@@ -45,6 +45,8 @@ module Proscenium
       ], CompileResult.by_value
 
       attach_function :reset_config, [], :void
+
+      attach_function :free_cstr, [:pointer], :void
     end
 
     class BuildError < Error
@@ -109,7 +111,9 @@ module Proscenium
 
     def build_to_string(path)
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
-        result = Request.build_to_string(path, @request_config)
+        raw = Request.build_to_string(path, @request_config)
+        result = { success: raw[:success], response: read_and_free(raw[:response]),
+                   content_hash: read_and_free(raw[:content_hash]) }
 
         raise BuildError.new(path, result[:response]) unless result[:success]
 
@@ -119,20 +123,34 @@ module Proscenium
 
     def resolve(path)
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
-        result = Request.resolve(path, @request_config)
+        raw = Request.resolve(path, @request_config)
+        success = raw[:success]
+        url_path = read_and_free(raw[:url_path])
+        abs_path = read_and_free(raw[:abs_path])
 
-        raise ResolveError.new(path, result[:url_path]) unless result[:success]
+        raise ResolveError.new(path, url_path) unless success
 
-        [result[:url_path], result[:abs_path]]
+        [url_path, abs_path]
       end
     end
 
     def compile
-      result = Request.compile(@request_config)
-      result[:success]
+      raw = Request.compile(@request_config)
+      read_and_free(raw[:messages])
+      raw[:success]
     end
 
     private
+
+    # The Go side allocates each of these strings with C.CString, which the Go runtime cannot
+    # see or collect - it must be freed from this side once we're done reading it.
+    def read_and_free(ptr)
+      return nil if ptr.null?
+
+      ptr.read_string
+    ensure
+      Request.free_cstr(ptr)
+    end
 
     # Build the ENV variables as determined by `Proscenium.config.env_vars` and
     # `Proscenium::DEFAULT_ENV_VARS` to pass to esbuild.

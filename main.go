@@ -1,6 +1,8 @@
 package main
 
 /*
+#include <stdlib.h>
+
 struct Result {
 	int success;
 	char* response;
@@ -19,6 +21,8 @@ struct CompileResult {
 import "C"
 
 import (
+	"unsafe"
+
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
@@ -46,6 +50,15 @@ func unmarshalConfigIfChanged(configJson *C.char) error {
 func reset_config() {
 	types.Config.Reset()
 	lastConfigJSON = ""
+}
+
+// Free a C string previously returned to the Ruby FFI caller via build_to_string, resolve, or
+// compile. The Go runtime cannot see or collect memory allocated with C.CString - callers must
+// free it explicitly once they're done reading it.
+//
+//export free_cstr
+func free_cstr(ptr *C.char) {
+	C.free(unsafe.Pointer(ptr))
 }
 
 // Build the given `path` using the `config`.
