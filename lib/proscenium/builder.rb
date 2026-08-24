@@ -30,21 +30,25 @@ module Proscenium
 
       enum :environment, [:development, 1, :test, :production]
 
+      # `blocking: true` releases the GVL for the duration of the call, so a build/resolve
+      # doesn't stall unrelated Ruby threads (eg. other requests in a multi-threaded server).
+      # Safe to do because the Go side serialises these calls itself with a mutex - see main.go.
+
       attach_function :build_to_string, [
         :string, # Path or entry point.
         :pointer # Config as JSON.
-      ], Result.by_value
+      ], Result.by_value, blocking: true
 
       attach_function :resolve, [
         :string, # path or entry point
         :pointer # Config as JSON.
-      ], ResolveResult.by_value
+      ], ResolveResult.by_value, blocking: true
 
       attach_function :compile, [
         :pointer # Config as JSON.
-      ], CompileResult.by_value
+      ], CompileResult.by_value, blocking: true
 
-      attach_function :reset_config, [], :void
+      attach_function :reset_config, [], :void, blocking: true
 
       attach_function :free_cstr, [:pointer], :void
     end

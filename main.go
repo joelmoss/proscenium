@@ -21,12 +21,20 @@ struct CompileResult {
 import "C"
 
 import (
+	"sync"
 	"unsafe"
 
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
 )
+
+// build_to_string, resolve, compile and reset_config are attached on the Ruby side with
+// `blocking: true`, so that a slow build doesn't hold the GVL and stall unrelated Ruby threads.
+// That means Ruby can now call into this library from more than one OS thread at once, which
+// this global mutex serialises: types.Config, lastConfigJSON, and the builder package's env var
+// cache are all unsynchronised globals, so genuinely concurrent calls would race.
+var callMutex sync.Mutex
 
 // Cache the last config JSON to skip unmarshalling when unchanged.
 var lastConfigJSON string
@@ -48,6 +56,9 @@ func unmarshalConfigIfChanged(configJson *C.char) error {
 
 //export reset_config
 func reset_config() {
+	callMutex.Lock()
+	defer callMutex.Unlock()
+
 	types.Config.Reset()
 	lastConfigJSON = ""
 }
@@ -68,6 +79,9 @@ func free_cstr(ptr *C.char) {
 //
 //export build_to_string
 func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
+	callMutex.Lock()
+	defer callMutex.Unlock()
+
 	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
@@ -89,6 +103,9 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 //
 //export resolve
 func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
+	callMutex.Lock()
+	defer callMutex.Unlock()
+
 	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_ResolveResult{C.int(0), C.CString(err.Error()), C.CString("")}
@@ -108,6 +125,9 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 //
 //export compile
 func compile(configJson *C.char) C.struct_CompileResult {
+	callMutex.Lock()
+	defer callMutex.Unlock()
+
 	err := unmarshalConfigIfChanged(configJson)
 	if err != nil {
 		return C.struct_CompileResult{C.int(0), C.CString("")}
