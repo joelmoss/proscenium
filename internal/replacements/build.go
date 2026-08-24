@@ -7,6 +7,7 @@ import (
 	"errors"
 	"joelmoss/proscenium/internal/types"
 	"strings"
+	"sync"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -15,6 +16,8 @@ import (
 var efs embed.FS
 
 var npmReplacements = map[string][]byte{}
+var buildOnce sync.Once
+var buildErr error
 
 func Get(specifier string) ([]byte, bool) {
 	var replacement []byte
@@ -42,38 +45,34 @@ func get(name string) ([]byte, bool) {
 	return ret, ok
 }
 
-// Build builds the npm replacements.
+// Build builds the npm replacements. Safe to call concurrently - the embedded source files are
+// only ever walked and transformed once, via sync.Once.
 func Build() (n int, err error) {
-	if len(npmReplacements) > 0 {
-		return len(npmReplacements), nil
-	}
-
-	err = walkEmbedFS("src", func(path string) error {
-		sourceCode, err := efs.ReadFile(path)
-		if err != nil {
-			return err
-		}
-		ret := esbuild.Transform(string(sourceCode), esbuild.TransformOptions{
-			Target:            esbuild.ES2022,
-			Format:            esbuild.FormatESModule,
-			Platform:          esbuild.PlatformBrowser,
-			MinifyWhitespace:  true,
-			MinifyIdentifiers: true,
-			MinifySyntax:      true,
-			Loader:            esbuild.LoaderJS,
+	buildOnce.Do(func() {
+		buildErr = walkEmbedFS("src", func(path string) error {
+			sourceCode, err := efs.ReadFile(path)
+			if err != nil {
+				return err
+			}
+			ret := esbuild.Transform(string(sourceCode), esbuild.TransformOptions{
+				Target:            esbuild.ES2022,
+				Format:            esbuild.FormatESModule,
+				Platform:          esbuild.PlatformBrowser,
+				MinifyWhitespace:  true,
+				MinifyIdentifiers: true,
+				MinifySyntax:      true,
+				Loader:            esbuild.LoaderJS,
+			})
+			if len(ret.Errors) > 0 {
+				return errors.New(ret.Errors[0].Text)
+			}
+			specifier := strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(path, "src/"), ".mjs"), "/index")
+			npmReplacements[specifier] = ret.Code
+			return nil
 		})
-		if len(ret.Errors) > 0 {
-			return errors.New(ret.Errors[0].Text)
-		}
-		specifier := strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(path, "src/"), ".mjs"), "/index")
-		npmReplacements[specifier] = ret.Code
-		return nil
 	})
-	if err != nil {
-		return
-	}
 
-	return len(npmReplacements), nil
+	return len(npmReplacements), buildErr
 }
 
 func walkEmbedFS(dir string, fn func(path string) error) error {
