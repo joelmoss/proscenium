@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
-	"regexp"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -50,15 +49,12 @@ func IsBareModule(name string) bool {
 
 var IsBareSpecifier = IsBareModule
 
-var isUrlRe = regexp.MustCompile(`^https?:\/\/`)
-var pathIsRelativeRe = regexp.MustCompile(`^\.(\.)?\/`)
-
 func IsUrl(name string) bool {
-	return isUrlRe.MatchString(name)
+	return strings.HasPrefix(name, "http://") || strings.HasPrefix(name, "https://")
 }
 
 func PathIsRelative(name string) bool {
-	return pathIsRelativeRe.MatchString(name)
+	return strings.HasPrefix(name, "./") || strings.HasPrefix(name, "../")
 }
 
 func PathIsCss(path string) bool {
