@@ -138,6 +138,7 @@ Linux builds use [xgo](https://github.com/techknowlogick/xgo) for cross-compilat
 - **Go FFI functions** (`main.go`): `build_to_string(filePath, configJson)`, `resolve(filePath, configJson)`, `compile(configJson)`, `reset_config()`. All accept JSON config and return C structs. Check `Result`, `ResolveResult`, `CompileResult` struct definitions when modifying.
 - **go.work is gitignored**: The `go.work` and `go.work.sum` files are not checked in. Each developer needs their own pointing to their local esbuild fork.
 - **Compiled binaries are gitignored**: `lib/proscenium/ext/` contents (`.so`, `.h` files) are not checked in.
+- **Go runtime + Puma `preload_app!` fork hazard**: never call `Builder.build_to_string`/`resolve`/`compile` from a Rails boot-time initializer. Go's runtime cannot survive a `fork()` once it has been initialized (see [golang/go#15538](https://github.com/golang/go/issues/15538), unfixed) - a `preload_app!` + `workers` Puma setup forks after boot, so any pre-fork Go call would break every worker. The Go runtime only initializes lazily on the first actual builder call, and stock Proscenium's own boot sequence never triggers it - this only bites if custom app code calls a builder method during boot. See README's "Puma preload_app! and Cluster Mode" section.
 
 ## Skill routing
 

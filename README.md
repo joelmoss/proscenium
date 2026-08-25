@@ -51,6 +51,7 @@
 - [Resolution](#resolution)
 - [Aliases](#aliases)
 - [Pre-compilation](#precompilation)
+- [Puma `preload_app!` and Cluster Mode](#puma-preload_app-and-cluster-mode)
 - [Thanks](#thanks)
 - [Development](#development)
 
@@ -712,6 +713,14 @@ Rails.configuration.proscenium.precompile = Set[
 ```
 
 This will bundle, code split, tree shake, and compile all your JS, TS, JSX, TSX and CSS files and place them in the `public/assets` directory, ready to be served in production.
+
+## Puma `preload_app!` and Cluster Mode
+
+Proscenium's builder is backed by a Go shared library, and Go's runtime has a known, unfixed limitation ([golang/go#15538](https://github.com/golang/go/issues/15538)): if the Go runtime has already been initialized in a process before that process calls `fork()`, the forked child's Go runtime is left in a broken state (only the forking thread survives `fork()`; the Go scheduler and GC's other threads simply vanish) and any subsequent call into Go code in that child can hang or fail.
+
+This matters if you run Puma in cluster mode with `preload_app!` (the app, including gems, is booted once in the master process, then workers are created via `fork()` with no `exec()` afterward). Proscenium itself never triggers this - simply requiring the gem does not initialize the Go runtime, and nothing in Proscenium's own boot sequence calls into it. The Go runtime only initializes lazily, the first time something actually calls a builder method (`build_to_string`, `resolve`, or `compile`).
+
+**Do not call any `Proscenium::Builder` method (directly, or indirectly via the resolver/side-loading) from a Rails initializer or any other code that runs during application boot**, if you use `preload_app!` with `workers`. Doing so initializes the Go runtime in the master process before the fork, and every worker will inherit a broken one. There is no fix available from Go's side - this is a fundamental fork() limitation, not a bug Proscenium can work around. Asset builds and resolves triggered by actual HTTP requests (the normal case) are unaffected, since those always happen after the fork, independently in each worker.
 
 ## Thanks
 
