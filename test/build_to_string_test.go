@@ -393,7 +393,7 @@ var _ = Describe("BuildToString", func() {
 			types.Config.Bundle = true
 		})
 
-		assertCommonBuildBehaviour(b.BuildToString)
+		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, &types.Config) })
 	})
 
 	Describe("bundle = false", func() {
@@ -401,7 +401,7 @@ var _ = Describe("BuildToString", func() {
 			types.Config.Bundle = false
 		})
 
-		assertCommonBuildBehaviour(b.BuildToString)
+		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, &types.Config) })
 	})
 })
 
@@ -413,7 +413,7 @@ func BenchmarkBuildToString(bm *testing.B) {
 	types.Config.InternalTesting = true
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/foo.js")
+		success, result, _ := b.BuildToString("lib/foo.js", &types.Config)
 
 		if !success {
 			panic("Build failed: " + result)

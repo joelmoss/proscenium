@@ -2,7 +2,6 @@ package debug
 
 import (
 	"fmt"
-	"joelmoss/proscenium/internal/types"
 	"os"
 	"path"
 	"runtime"
@@ -17,8 +16,10 @@ func Enable() {
 	Enabled = true
 }
 
-func Debug(args ...any) {
-	if types.Config.Debug || Enabled {
+// Debug prints args if cfgDebug is true (ie. the caller's config has Debug enabled) or Enable()
+// has been called.
+func Debug(cfgDebug bool, args ...any) {
+	if cfgDebug || Enabled {
 		cwd, _ := os.Getwd()
 		_, fn, line, _ := runtime.Caller(1)
 

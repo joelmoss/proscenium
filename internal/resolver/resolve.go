@@ -24,44 +24,44 @@ import (
 //
 // Returns an URL path (has a leading slash and can be appended to the app domain), and the absolute
 // file system path.
-func Resolve(filePath string, importer string) (urlPath string, absPath string, err error) {
-	rootPath := types.Config.RootPath
+func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath string, absPath string, err error) {
+	rootPath := cfg.RootPath
 
-	debug.Debug("Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
+	debug.Debug(cfg.Debug, "Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
 
 	if utils.IsUrl(filePath) {
-		return returnResolve(filePath, nil)
+		return returnResolve(filePath, nil, cfg)
 	}
 
 	if utils.PathIsRelative(filePath) {
 		if importer == "" {
-			return returnResolve("", errors.New("relative paths are not supported when an importer is not given"))
+			return returnResolve("", errors.New("relative paths are not supported when an importer is not given"), cfg)
 		}
 
 		filePath = path.Join(path.Dir(importer), filePath)
 
 		// TODO: while filePath is relative, the importer could be a ruby gem. Check now, and return
 		// correct path (beginning /node_modules/@rubygems/...)
-		gemName, gemPath, found := utils.PathIsRubyGem(filePath)
+		gemName, gemPath, found := utils.PathIsRubyGem(filePath, cfg)
 		if found {
-			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, gemPath), nil)
+			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, gemPath), nil, cfg)
 		}
 
-		return returnResolve(strings.TrimPrefix(filePath, rootPath), nil)
+		return returnResolve(strings.TrimPrefix(filePath, rootPath), nil, cfg)
 	}
 
 	gemName := ""
 	if utils.IsRubyGem(filePath) {
 		var err error
-		gemName, rootPath, err = utils.ResolveRubyGem(filePath)
+		gemName, rootPath, err = utils.ResolveRubyGem(filePath, cfg)
 		if err != nil {
-			return returnResolve(filePath, err)
+			return returnResolve(filePath, err, cfg)
 		}
 
 		pathSuffix := utils.RemoveRubygemPrefix(filePath, gemName)
 
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve("/node_modules/"+filePath, nil)
+			return returnResolve("/node_modules/"+filePath, nil, cfg)
 		}
 
 		if pathSuffix == "" {
@@ -73,7 +73,7 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 
 	if !utils.IsBareModule(filePath) {
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve(filePath, nil)
+			return returnResolve(filePath, nil, cfg)
 		}
 	}
 
@@ -83,7 +83,7 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 	}
 
 	logLevel := esbuild.LogLevelWarning
-	if types.Config.Debug {
+	if cfg.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
 
@@ -91,7 +91,7 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 		EntryPoints:      []string{filePath},
 		AbsWorkingDir:    rootPath,
 		Format:           esbuild.FormatESModule,
-		Conditions:       []string{types.Config.Environment.String(), "proscenium"},
+		Conditions:       []string{cfg.Environment.String(), "proscenium"},
 		Write:            false,
 		Metafile:         true,
 		LogLevel:         logLevel,
@@ -105,13 +105,13 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 	})
 
 	if len(result.Errors) > 0 {
-		return returnResolve("", errors.New(result.Errors[0].Text))
+		return returnResolve("", errors.New(result.Errors[0].Text), cfg)
 	}
 
 	var metadata struct{ Inputs map[string]any }
 	jsonErr := json.Unmarshal([]byte(result.Metafile), &metadata)
 	if jsonErr != nil {
-		return returnResolve("", jsonErr)
+		return returnResolve("", jsonErr, cfg)
 	}
 
 	for key := range metadata.Inputs {
@@ -120,20 +120,20 @@ func Resolve(filePath string, importer string) (urlPath string, absPath string, 
 	}
 
 	if gemName != "" {
-		return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+"/"+filePath, nil)
+		return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+"/"+filePath, nil, cfg)
 	}
 
-	return returnResolve("/"+filePath, nil)
+	return returnResolve("/"+filePath, nil, cfg)
 }
 
-func returnResolve(filePath string, err error) (string, string, error) {
+func returnResolve(filePath string, err error, cfg *types.ConfigT) (string, string, error) {
 	absPath := filePath
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
 	}
 
-	debug.Debug("Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
+	debug.Debug(cfg.Debug, "Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
 
 	if err != nil {
 		return "", "", err
@@ -143,7 +143,7 @@ func returnResolve(filePath string, err error) (string, string, error) {
 	isRubyGem := false
 	relativePath := strings.TrimPrefix(filePath, "/node_modules/")
 	if utils.IsRubyGem(relativePath) {
-		gemName, gemPath, err := utils.ResolveRubyGem(relativePath)
+		gemName, gemPath, err := utils.ResolveRubyGem(relativePath, cfg)
 		if err != nil {
 			return "", "", err
 		}
@@ -154,7 +154,7 @@ func returnResolve(filePath string, err error) (string, string, error) {
 	}
 
 	if !isRubyGem {
-		absPath = path.Join(types.Config.RootPath, absPath)
+		absPath = path.Join(cfg.RootPath, absPath)
 	}
 
 	return filePath, absPath, err

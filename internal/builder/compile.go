@@ -16,9 +16,9 @@ type compileResult struct {
 	Warnings []esbuild.Message
 }
 
-func Compile() (bool, string) {
+func Compile(cfg *types.ConfigT) (bool, string) {
 	// Check if Precompile is empty
-	if len(types.Config.Precompile) == 0 {
+	if len(cfg.Precompile) == 0 {
 		return compileError(
 			"No precompile paths specified",
 			"The `precompile` configuration option must be an array, and specify at least one path or glob path to compile.",
@@ -26,40 +26,40 @@ func Compile() (bool, string) {
 	}
 
 	// Delete old compiled assets.
-	os.RemoveAll(path.Join(types.Config.RootPath, types.Config.OutputDir))
+	os.RemoveAll(path.Join(cfg.RootPath, cfg.OutputDir))
 
 	_, err := replacements.Build()
 	if err != nil {
 		return compileError("build npm replacements", err.Error())
 	}
 
-	minify := !types.Config.InternalTesting && !types.Config.Debug && types.Config.Environment != types.DevEnv
+	minify := !cfg.InternalTesting && !cfg.Debug && cfg.Environment != types.DevEnv
 
 	logLevel := esbuild.LogLevelInfo
-	if types.Config.Debug {
+	if cfg.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
 
 	buildOptions := esbuild.BuildOptions{
-		EntryPoints:                 types.Config.Precompile,
-		Splitting:                   types.Config.CodeSplitting,
-		AbsWorkingDir:               types.Config.RootPath,
+		EntryPoints:                 cfg.Precompile,
+		Splitting:                   cfg.CodeSplitting,
+		AbsWorkingDir:               cfg.RootPath,
 		AbsPaths:                    esbuild.MetafileAbsPath,
 		LogLevel:                    logLevel,
-		Outdir:                      types.Config.OutputDir,
+		Outdir:                      cfg.OutputDir,
 		Outbase:                     "./",
 		EntryNames:                  "[dir]/[name]-$[hash]$",
 		AssetNames:                  "[dir]/[name]-$[hash]$",
 		ChunkNames:                  "_asset_chunks/[name]-$[hash]$",
 		Format:                      esbuild.FormatESModule,
 		JSX:                         esbuild.JSXAutomatic,
-		JSXDev:                      types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
+		JSXDev:                      cfg.Environment != types.TestEnv && cfg.Environment != types.ProdEnv,
 		MinifyWhitespace:            minify,
 		MinifyIdentifiers:           minify,
 		MinifySyntax:                minify,
 		DeterministicLocalCSSNaming: true,
 		Bundle:                      true,
-		Conditions:                  []string{types.Config.Environment.String(), "proscenium"},
+		Conditions:                  []string{cfg.Environment.String(), "proscenium"},
 		Write:                       true,
 		Sourcemap:                   esbuild.SourceMapLinked,
 		LegalComments:               esbuild.LegalCommentsNone,
@@ -79,25 +79,21 @@ func Compile() (bool, string) {
 
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.Http,
-		plugin.I18n,
+		plugin.I18n(cfg),
 		plugin.Rjs(),
 	}
 
-	if types.Config.Bundle {
-		buildOptions.External = types.Config.External
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
+	if cfg.Bundle {
+		buildOptions.External = cfg.External
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler(cfg))
 	} else {
 		buildOptions.PreserveSymlinks = true
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless(cfg))
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css, plugin.Dirname)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements(cfg), plugin.Svg, plugin.Css(cfg), plugin.Dirname(cfg))
 
-	definitions, err := buildEnvVars()
-	if err != nil {
-		return compileError("Failed to parse environment variables", err.Error())
-	}
-
+	definitions := buildEnvVars(cfg)
 	buildOptions.Define = definitions
 	buildOptions.Define["proscenium.env.PRECOMPILED"] = "true"
 	buildOptions.Define["global"] = "window"
@@ -116,7 +112,7 @@ func Compile() (bool, string) {
 		return false, string(messages)
 	}
 
-	os.WriteFile(path.Join(types.Config.RootPath, types.Config.OutputDir, ".manifest.json"), []byte(result.Metafile), 0644)
+	os.WriteFile(path.Join(cfg.RootPath, cfg.OutputDir, ".manifest.json"), []byte(result.Metafile), 0644)
 
 	return true, string(messages)
 }

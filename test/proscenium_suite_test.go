@@ -132,7 +132,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 			By(description)
 		}
 
-		_, result, _ := b.BuildToString(fileToAssertCode)
+		_, result, _ := b.BuildToString(fileToAssertCode, &types.Config)
 		Expect(result).To(ContainCode(expectedCode))
 	})
 }
@@ -179,7 +179,7 @@ var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
 			By(description)
 		}
 
-		_, result, _ := b.BuildToString(fileToAssertCode)
+		_, result, _ := b.BuildToString(fileToAssertCode, &types.Config)
 		Expect(result).To(ContainCode(expectedCode()))
 	})
 }

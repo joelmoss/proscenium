@@ -25,13 +25,13 @@ type CssWarning struct {
 //
 // Arguments:
 //   - path: The absolute file system path of the file being parsed.
-func ParseCssFile(path string) (string, []CssWarning, error) {
+func ParseCssFile(path string, cfg *types.ConfigT) (string, []CssWarning, error) {
 	input, err := os.ReadFile(path)
 	if err != nil {
 		return "", nil, err
 	}
 
-	return ParseCss(string(input), path)
+	return ParseCss(string(input), path, cfg)
 }
 
 // Parse the given CSS, and return the transformed CSS.
@@ -39,14 +39,14 @@ func ParseCssFile(path string) (string, []CssWarning, error) {
 // Arguments:
 //   - input: The CSS to parse.
 //   - path: The absolute file system path of the file being parsed.
-func ParseCss(input string, path string) (string, []CssWarning, error) {
+func ParseCss(input string, path string, cfg *types.ConfigT) (string, []CssWarning, error) {
 	t, _ := newCssTokenizer(input, path)
 
 	p := cssParser{
 		tokens:   t,
 		input:    input,
 		filePath: path,
-		rootPath: types.Config.RootPath,
+		cfg:      cfg,
 		mixins:   cssMixins{},
 	}
 

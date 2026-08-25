@@ -14,7 +14,7 @@ import (
 var _ = Describe("@rubygems scoped paths", func() {
 	EntryPoint("node_modules/@rubygems/gem1/lib/gem1/gem1.js", func() {
 		It("fails if gem not found", func() {
-			success, _, _ := b.BuildToString(fileToAssertCode)
+			success, _, _ := b.BuildToString(fileToAssertCode, &types.Config)
 
 			Expect(success).To(BeFalse())
 		})
@@ -24,7 +24,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 	EntryPoint("lib/rubygems/vendored.js", func() {
 		It("fails if gem not found", func() {
-			success, _, _ := b.BuildToString(fileToAssertCode)
+			success, _, _ := b.BuildToString(fileToAssertCode, &types.Config)
 
 			Expect(success).To(BeFalse())
 		})
@@ -158,19 +158,19 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
+				_, code, _ := b.BuildToString("lib/rubygems/vendored.js", &types.Config)
 
 				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
 
 			It("bundles without extension", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/vendored_extensionless.js")
+				_, code, _ := b.BuildToString("lib/rubygems/vendored_extensionless.js", &types.Config)
 
 				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
 
 			It("resolves entry point", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js", &types.Config)
 
 				Expect(code).To(ContainCode(`console.log("gem1");`))
 			})
@@ -179,7 +179,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem3", "dummy/vendor")
 				addGem("gem4", "external")
 
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js", &types.Config)
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
@@ -198,7 +198,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem3", "dummy/vendor")
 				addGem("gem4", "external")
 
-				_, code, _ := b.BuildToString("lib/gems/gem3.js")
+				_, code, _ := b.BuildToString("lib/gems/gem3.js", &types.Config)
 
 				Expect(code).To(ContainCode(`console.log("pkg/index.js")`))
 				Expect(code).To(ContainCode(`console.log("gem3/imported")`))
@@ -215,7 +215,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			When("unbundle:* on import", func() {
 				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/unbundle_vendored.js")
+					_, code, _ := b.BuildToString("lib/rubygems/unbundle_vendored.js", &types.Config)
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
@@ -224,7 +224,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("does not bundle fonts", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css")
+				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css", &types.Config)
 
 				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2)`))
 			})
@@ -236,7 +236,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external.js")
+				_, code, _ := b.BuildToString("lib/rubygems/external.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					console.log("gem2");
@@ -244,7 +244,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles without extension", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external_extensionless.js")
+				_, code, _ := b.BuildToString("lib/rubygems/external_extensionless.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					console.log("gem2");
@@ -252,7 +252,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("resolves entry point", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					console.log("gem2");
@@ -264,7 +264,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem3", "dummy/vendor")
 				addGem("gem4", "external")
 
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -291,7 +291,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem3", "dummy/vendor")
 				addGem("gem4", "external")
 
-				_, code, _ := b.BuildToString("lib/gems/gem4.js")
+				_, code, _ := b.BuildToString("lib/gems/gem4.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -315,7 +315,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			When("unbundle:* on import", func() {
 				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/unbundle_external.js")
+					_, code, _ := b.BuildToString("lib/rubygems/unbundle_external.js", &types.Config)
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -325,7 +325,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			When("unbundle:* relative import", func() {
 				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_relative.js")
+					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_relative.js", &types.Config)
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -335,7 +335,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			When("with { unbundle: 'true' } relative import", func() {
 				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_with_relative.js")
+					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_with_relative.js", &types.Config)
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -345,7 +345,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			When("unbundle:* same import", func() {
 				It("unbundles", func() {
-					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_same.js")
+					_, code, _ := b.BuildToString("lib/rubygems/external_unbundle_same.js", &types.Config)
 
 					Expect(code).To(ContainCode(`
 						import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -354,7 +354,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("does not bundle fonts", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external_fonts.css")
+				_, code, _ := b.BuildToString("lib/rubygems/external_fonts.css", &types.Config)
 
 				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem2/somefont.woff2)`))
 			})
@@ -374,7 +374,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/vendored.js")
+				_, code, _ := b.BuildToString("lib/rubygems/vendored.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
@@ -382,7 +382,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles without extension", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/vendored_extensionless.js")
+				_, code, _ := b.BuildToString("lib/rubygems/vendored_extensionless.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";
@@ -390,7 +390,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("resolves entry point", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					console.log("gem1");
@@ -398,7 +398,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("resolves imports", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem3/lib/gem3/gem3.js", &types.Config)
 
 				Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem3/lib/gem3/imported.js";`))
@@ -412,7 +412,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("does not bundle fonts", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css")
+				_, code, _ := b.BuildToString("lib/rubygems/internal_fonts.css", &types.Config)
 
 				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem1/somefont.woff2)`))
 			})
@@ -424,7 +424,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external.js")
+				_, code, _ := b.BuildToString("lib/rubygems/external.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -432,7 +432,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("bundles without extension", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external_extensionless.js")
+				_, code, _ := b.BuildToString("lib/rubygems/external_extensionless.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";
@@ -440,7 +440,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("resolves entry point", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js", &types.Config)
 
 				Expect(code).To(ContainCode(`
 					console.log("gem2");
@@ -452,7 +452,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 				addGem("gem3", "dummy/vendor")
 				addGem("gem4", "external")
 
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js", &types.Config)
 
 				Expect(code).To(ContainCode(`import "/node_modules/pkg/index.js";`))
 				Expect(code).To(ContainCode(`import imported from "/node_modules/@rubygems/gem4/lib/gem4/imported.js";`))
@@ -466,7 +466,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			})
 
 			It("does not bundle fonts", func() {
-				_, code, _ := b.BuildToString("lib/rubygems/external_fonts.css")
+				_, code, _ := b.BuildToString("lib/rubygems/external_fonts.css", &types.Config)
 
 				Expect(code).To(ContainCode(`url(/node_modules/@rubygems/gem2/somefont.woff2)`))
 			})
@@ -481,14 +481,14 @@ var _ = Describe("@rubygems __filename and __dirname", func() {
 		})
 
 		It("injects correct values into gem entry point", func() {
-			_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js")
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem1/lib/gem1/gem1.js", &types.Config)
 
 			Expect(code).To(ContainCode(`__filename = "@rubygems/gem1/lib/gem1/gem1.js"`))
 			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem1/lib/gem1"`))
 		})
 
 		It("injects correct values into app file that imports vendored gem", func() {
-			_, code, _ := b.BuildToString("lib/rubygems/dirname_vendored.js")
+			_, code, _ := b.BuildToString("lib/rubygems/dirname_vendored.js", &types.Config)
 
 			Expect(code).To(ContainCode(`__filename = "@rubygems/gem1/lib/gem1/gem1.js"`))
 			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem1/lib/gem1"`))
@@ -503,14 +503,14 @@ var _ = Describe("@rubygems __filename and __dirname", func() {
 		})
 
 		It("injects correct values into gem entry point", func() {
-			_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js")
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem2/lib/gem2/gem2.js", &types.Config)
 
 			Expect(code).To(ContainCode(`__filename = "@rubygems/gem2/lib/gem2/gem2.js"`))
 			Expect(code).To(ContainCode(`__dirname = "@rubygems/gem2/lib/gem2"`))
 		})
 
 		It("injects correct values into app file that imports external gem", func() {
-			_, code, _ := b.BuildToString("lib/rubygems/dirname_test.js")
+			_, code, _ := b.BuildToString("lib/rubygems/dirname_test.js", &types.Config)
 
 			Expect(code).To(ContainCode(`__filename2 = "/lib/rubygems/dirname_test.js"`))
 			Expect(code).To(ContainCode(`__dirname2 = "/lib/rubygems"`))

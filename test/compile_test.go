@@ -15,7 +15,7 @@ var _ = Describe("BuildToString", func() {
 			"./app/models/**/*.jsx",
 		}
 
-		success, _ := b.Compile()
+		success, _ := b.Compile(&types.Config)
 
 		Expect(success).To(BeTrue())
 	})
@@ -26,7 +26,7 @@ var _ = Describe("BuildToString", func() {
 			"./app/components/css_module_import.module.css",
 		}
 
-		success, _ := b.Compile()
+		success, _ := b.Compile(&types.Config)
 
 		Expect(success).To(BeTrue())
 	})

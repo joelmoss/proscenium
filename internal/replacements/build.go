@@ -19,11 +19,11 @@ var npmReplacements = map[string][]byte{}
 var buildOnce sync.Once
 var buildErr error
 
-func Get(specifier string) ([]byte, bool) {
+func Get(specifier string, cfg *types.ConfigT) ([]byte, bool) {
 	var replacement []byte
 	var ok bool
 
-	if types.Config.Environment == types.DevEnv {
+	if cfg.Environment == types.DevEnv {
 		replacement, ok = get(specifier + "_browser_dev")
 		if !ok {
 			replacement, ok = get(specifier + "_dev")

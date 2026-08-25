@@ -17,7 +17,7 @@ import (
 // - path - The path to build relative to `root`.
 //
 //export build
-func build(entryPoint string) esbuild.BuildResult {
+func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 	_, err := replacements.Build()
 	if err != nil {
 		return esbuild.BuildResult{
@@ -38,10 +38,10 @@ func build(entryPoint string) esbuild.BuildResult {
 		}
 	}
 
-	minify := !types.Config.InternalTesting && !types.Config.Debug && types.Config.Environment != types.DevEnv
+	minify := !cfg.InternalTesting && !cfg.Debug && cfg.Environment != types.DevEnv
 
 	logLevel := esbuild.LogLevelWarning
-	if types.Config.Debug {
+	if cfg.Debug {
 		logLevel = esbuild.LogLevelDebug
 	}
 
@@ -49,24 +49,24 @@ func build(entryPoint string) esbuild.BuildResult {
 
 	buildOptions := esbuild.BuildOptions{
 		EntryPoints:                 []string{entryPoint},
-		Splitting:                   types.Config.CodeSplitting,
-		AbsWorkingDir:               types.Config.RootPath,
+		Splitting:                   cfg.CodeSplitting,
+		AbsWorkingDir:               cfg.RootPath,
 		LogLevel:                    logLevel,
 		LogLimit:                    1,
-		Outdir:                      types.Config.OutputDir,
+		Outdir:                      cfg.OutputDir,
 		Outbase:                     "./",
 		EntryNames:                  "[dir]/[name]-$[hash]$",
 		AssetNames:                  "[dir]/[name]-$[hash]$",
 		ChunkNames:                  "_asset_chunks/[name]-$[hash]$",
 		Format:                      esbuild.FormatESModule,
 		JSX:                         esbuild.JSXAutomatic,
-		JSXDev:                      types.Config.Environment != types.TestEnv && types.Config.Environment != types.ProdEnv,
+		JSXDev:                      cfg.Environment != types.TestEnv && cfg.Environment != types.ProdEnv,
 		MinifyWhitespace:            minify,
 		MinifyIdentifiers:           minify,
 		MinifySyntax:                minify,
 		DeterministicLocalCSSNaming: true,
 		Bundle:                      true,
-		Conditions:                  []string{types.Config.Environment.String(), "proscenium"},
+		Conditions:                  []string{cfg.Environment.String(), "proscenium"},
 		Write:                       true,
 		Sourcemap:                   esbuild.SourceMapExternal,
 		LegalComments:               esbuild.LegalCommentsNone,
@@ -86,30 +86,22 @@ func build(entryPoint string) esbuild.BuildResult {
 
 	buildOptions.Plugins = []esbuild.Plugin{
 		plugin.Http,
-		plugin.I18n,
+		plugin.I18n(cfg),
 		plugin.Rjs(),
 	}
 
-	if types.Config.Bundle {
-		buildOptions.External = types.Config.External
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler)
+	if cfg.Bundle {
+		buildOptions.External = cfg.External
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundler(cfg))
 	} else {
 		buildOptions.PreserveSymlinks = true
-		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless)
+		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless(cfg))
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements, plugin.Svg, plugin.Css, plugin.Dirname)
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements(cfg), plugin.Svg, plugin.Css(cfg), plugin.Dirname(cfg))
 
 	if !utils.IsUrl(entryPoint) {
-		definitions, err := buildEnvVars()
-		if err != nil {
-			return esbuild.BuildResult{
-				Errors: []esbuild.Message{{
-					Text:   "Failed to parse environment variables",
-					Detail: err.Error(),
-				}},
-			}
-		}
+		definitions := buildEnvVars(cfg)
 		buildOptions.Define = definitions
 		buildOptions.Define["proscenium.env.PRECOMPILED"] = "false"
 		buildOptions.Define["global"] = "window"
@@ -118,24 +110,22 @@ func build(entryPoint string) esbuild.BuildResult {
 	return esbuild.Build(buildOptions)
 }
 
-// Maintains a cache of environment variables.
-var envVarMap = make(map[string]string, 4)
+// Builds the map of environment variable defines. Recomputed on every call rather than cached -
+// cheap (a handful of string entries) and avoids the unsynchronised global cache that used to
+// live here.
+func buildEnvVars(cfg *types.ConfigT) map[string]string {
+	envVarMap := make(map[string]string, 4)
 
-func buildEnvVars() (map[string]string, error) {
-	if types.Config.Environment != types.TestEnv && len(envVarMap) > 0 {
-		return envVarMap, nil
-	}
-
-	for key, value := range types.Config.EnvVars {
+	for key, value := range cfg.EnvVars {
 		if key != "" || value != "" {
 			envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
 		}
 	}
 
-	if len(types.Config.EnvVars) == 0 {
+	if len(cfg.EnvVars) == 0 {
 		// This ensures that we always have NODE_ENV and RAILS_ENV defined even the given env vars do
 		// not define them.
-		env := fmt.Sprintf("'%s'", types.Config.Environment)
+		env := fmt.Sprintf("'%s'", cfg.Environment)
 		envVarMap["proscenium.env.RAILS_ENV"] = env
 		envVarMap["proscenium.env.NODE_ENV"] = env
 	}
@@ -143,5 +133,5 @@ func buildEnvVars() (map[string]string, error) {
 	envVarMap["process.env.NODE_ENV"] = envVarMap["proscenium.env.RAILS_ENV"]
 	envVarMap["proscenium.env"] = "undefined"
 
-	return envVarMap, nil
+	return envVarMap
 }

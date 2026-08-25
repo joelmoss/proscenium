@@ -97,9 +97,9 @@ func RemoveRubygemPrefix(path string, gemName string) string {
 	return strings.TrimPrefix(path, types.RubyGemsScope+gemName)
 }
 
-func HasAlias(path string) (string, bool) {
-	if len(types.Config.Aliases) > 0 {
-		if aliasedPath, exists := types.Config.Aliases[path]; exists {
+func HasAlias(path string, cfg *types.ConfigT) (string, bool) {
+	if len(cfg.Aliases) > 0 {
+		if aliasedPath, exists := cfg.Aliases[path]; exists {
 			return aliasedPath, true
 		}
 	}
@@ -155,8 +155,8 @@ func extractScopedPackageName(path string) string {
 	return rest[:secondSlash]
 }
 
-func PathIsRubyGem(path string) (gemName string, gemPath string, found bool) {
-	for gemName, gemPath := range types.Config.RubyGems {
+func PathIsRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, found bool) {
+	for gemName, gemPath := range cfg.RubyGems {
 		if strings.HasPrefix(path, gemPath) {
 			return gemName, gemPath, true
 		}
@@ -181,10 +181,10 @@ func IsRubyGem(path string, mustBeFromNodeModules ...bool) bool {
 	return strings.HasPrefix(path, types.RubyGemsScope) || strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
 }
 
-func ResolveRubyGem(path string) (gemName string, gemPath string, err error) {
+func ResolveRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, err error) {
 	name := extractScopedPackageName(path)
 
-	if gemPath, exists := types.Config.RubyGems[name]; exists {
+	if gemPath, exists := cfg.RubyGems[name]; exists {
 		return name, gemPath, nil
 	} else {
 		return "", "", fmt.Errorf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
@@ -196,8 +196,8 @@ func ResolveRubyGem(path string) (gemName string, gemPath string, err error) {
 // Example:
 //
 //	"/full/path/to/rubygems/@rubygems/foo/bar" -> "/node_modules/@rubygems/foo/bar"
-func RubyGemPathToUrlPath(fsPath string) (urlPath string, found bool) {
-	if gemName, gemPath, ok := PathIsRubyGem(fsPath); ok {
+func RubyGemPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, found bool) {
+	if gemName, gemPath, ok := PathIsRubyGem(fsPath, cfg); ok {
 		suffix := strings.TrimPrefix(fsPath, gemPath)
 		return path.Join("/node_modules", types.RubyGemsScope, gemName, suffix), true
 	}

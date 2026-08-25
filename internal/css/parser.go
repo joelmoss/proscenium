@@ -2,6 +2,7 @@ package css
 
 import (
 	"fmt"
+	"joelmoss/proscenium/internal/types"
 	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
@@ -13,7 +14,7 @@ type cssParser struct {
 	input    string
 	output   strings.Builder
 	filePath string
-	rootPath string
+	cfg      *types.ConfigT
 
 	// Map of mixin names and their contents.
 	mixins cssMixins

@@ -30,7 +30,7 @@ func BenchmarkCssBuild(bm *testing.B) {
 	}
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/css_all/index.css")
+		success, result, _ := b.BuildToString("lib/css_all/index.css", &types.Config)
 
 		if !success {
 			panic("Build failed: " + result)
@@ -42,7 +42,7 @@ func BenchmarkCssModuleFromJs(bm *testing.B) {
 	benchSetup()
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/css_modules/import_css_module.js")
+		success, result, _ := b.BuildToString("lib/css_modules/import_css_module.js", &types.Config)
 
 		if !success {
 			panic("Build failed: " + result)

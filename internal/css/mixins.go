@@ -30,7 +30,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		_, absPath, err := resolver.Resolve(uri, p.tokens.tokenizers[p.tokens.position].filePath)
+		_, absPath, err := resolver.Resolve(uri, p.tokens.tokenizers[p.tokens.position].filePath, p.cfg)
 		if err != nil {
 			p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
 			return false

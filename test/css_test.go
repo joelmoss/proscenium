@@ -229,14 +229,14 @@ var _ = Describe("BuildToString(css)", func() {
 		})
 
 		It("builds from npm install", func() {
-			_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.css")
+			_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.css", &types.Config)
 
 			Expect(code).To(ContainCode(`.myClass {	color: pink; }`))
 		})
 
 		Context("css modules", func() {
 			It("builds from npm install", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "vendor/gem_npm/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -245,7 +245,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("builds from file:* npm install", func() {
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "vendor/gem_file/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -262,7 +262,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("builds npm install", func() {
 				addGem("gem_npm", "dummy/vendor")
 
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css")
+				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "vendor/gem_npm/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -312,13 +312,13 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("non css module", func() {
-				_, result, _ := b.BuildToString("app/components/css_import.js")
+				_, result, _ := b.BuildToString("app/components/css_import.js", &types.Config)
 
 				Expect(result).To(ContainCode(`var css_import_default = {};`))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result, _ := b.BuildToString("lib/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_css_module.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -327,7 +327,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("import relative css module from js", func() {
-				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -342,13 +342,13 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("import relative css module from js", func() {
-				_, result, _ := b.BuildToString("lib/import_relative_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_relative_css_module.js", &types.Config)
 
 				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result, _ := b.BuildToString("lib/import_css_module.js")
+				_, result, _ := b.BuildToString("lib/import_css_module.js", &types.Config)
 
 				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
 			})
@@ -356,7 +356,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 		When("importing css module from css module", func() {
 			It("should use the same ident for all class names", func() {
-				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.module.css")
+				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.module.css", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "lib/css_modules/import_css_module.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -372,7 +372,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js")
+				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "vendor/gem1/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
@@ -389,7 +389,7 @@ var _ = Describe("BuildToString(css)", func() {
 			})
 
 			It("includes stylesheet and proxies class names", func() {
-				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js")
+				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js", &types.Config)
 
 				abspath := filepath.Join(types.Config.RootPath, "../external/gem2/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)

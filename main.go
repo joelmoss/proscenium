@@ -87,7 +87,7 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
-	success, result, contentHash := builder.BuildToString(C.GoString(filePath))
+	success, result, contentHash := builder.BuildToString(C.GoString(filePath), &types.Config)
 
 	if success {
 		return C.struct_Result{C.int(1), C.CString(result), C.CString(contentHash)}
@@ -111,7 +111,7 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 		return C.struct_ResolveResult{C.int(0), C.CString(err.Error()), C.CString("")}
 	}
 
-	urlPath, absPath, err := resolver.Resolve(C.GoString(filePath), "")
+	urlPath, absPath, err := resolver.Resolve(C.GoString(filePath), "", &types.Config)
 	if err != nil {
 		return C.struct_ResolveResult{C.int(0), C.CString(string(err.Error())), C.CString("")}
 	}
@@ -133,7 +133,7 @@ func compile(configJson *C.char) C.struct_CompileResult {
 		return C.struct_CompileResult{C.int(0), C.CString("")}
 	}
 
-	success, messages := builder.Compile()
+	success, messages := builder.Compile(&types.Config)
 
 	if success {
 		return C.struct_CompileResult{C.int(1), C.CString(messages)}
