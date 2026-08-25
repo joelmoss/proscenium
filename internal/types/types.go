@@ -72,5 +72,17 @@ func UnmarshalConfig(data []byte) error {
 	return json.Unmarshal(data, &Config)
 }
 
+// Parses the given JSON into a fresh ConfigT, independent of the shared global Config. Callers
+// that don't need the global (eg. concurrent-safe call sites) should prefer this over
+// UnmarshalConfig - see the global config refactor plan.
+func NewConfig(data []byte) (*ConfigT, error) {
+	cfg := &ConfigT{CodeSplitting: true, Bundle: true}
+	if err := json.Unmarshal(data, cfg); err != nil {
+		return nil, err
+	}
+
+	return cfg, nil
+}
+
 // The maximum size of an HTTP response body to cache.
 var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
