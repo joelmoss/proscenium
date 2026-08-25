@@ -138,3 +138,22 @@ Linux builds use [xgo](https://github.com/techknowlogick/xgo) for cross-compilat
 - **Go FFI functions** (`main.go`): `build_to_string(filePath, configJson)`, `resolve(filePath, configJson)`, `compile(configJson)`, `reset_config()`. All accept JSON config and return C structs. Check `Result`, `ResolveResult`, `CompileResult` struct definitions when modifying.
 - **go.work is gitignored**: The `go.work` and `go.work.sum` files are not checked in. Each developer needs their own pointing to their local esbuild fork.
 - **Compiled binaries are gitignored**: `lib/proscenium/ext/` contents (`.so`, `.h` files) are not checked in.
+
+## Skill routing
+
+When the user's request matches an available skill, invoke it via the Skill tool. When in doubt, invoke the skill.
+
+Key routing rules:
+- Product ideas/brainstorming → invoke /office-hours
+- Strategy/scope → invoke /plan-ceo-review
+- Architecture → invoke /plan-eng-review
+- Design system/plan review → invoke /design-consultation or /plan-design-review
+- Full review pipeline → invoke /autoplan
+- Bugs/errors → invoke /investigate
+- QA/testing site behavior → invoke /qa or /qa-only
+- Code review/diff check → invoke /review
+- Visual polish → invoke /design-review
+- Ship/deploy/PR → invoke /ship or /land-and-deploy
+- Save progress → invoke /context-save
+- Resume context → invoke /context-restore
+- Author a backlog-ready spec/issue → invoke /spec
