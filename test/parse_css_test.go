@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/css"
-	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"strings"
 
@@ -37,7 +36,7 @@ var _ = Describe("Build(parseCss)", func() {
 							@mixin foo;
 						}
 					`))
-					_, warnings, err := css.ParseCss(input, "/foo.css", &types.Config)
+					_, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(warnings).To(HaveLen(1))
 					Expect(warnings[0].Text).To(Equal(`Mixin "foo" not defined in "/foo.css"`))
@@ -162,7 +161,7 @@ var _ = Describe("Build(parseCss)", func() {
 									@mixin undefMixin from url("@rubygems/gem1/table.css");
 								}
 							`))
-							_, warnings, err := css.ParseCss(input, "/foo.css", &types.Config)
+							_, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
 							Expect(err).NotTo(HaveOccurred())
 							Expect(warnings).To(HaveLen(1))
 							Expect(warnings[0].Text).To(ContainSubstring(`Mixin "undefMixin" not found in`))
@@ -240,7 +239,7 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin red from url("/unknown.css");
 							}
 						`))
-						_, warnings, err := css.ParseCss(input, "/foo.css", &types.Config)
+						_, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(warnings).To(HaveLen(1))
 						Expect(warnings[0].Text).To(Equal(`Could not resolve mixin file "/unknown.css" for mixin "red"`))
@@ -271,7 +270,7 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin unknown from url("/lib/mixins/colors.css");
 							}
 						`))
-						_, warnings, err := css.ParseCss(input, "/foo.css", &types.Config)
+						_, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
 						Expect(err).NotTo(HaveOccurred())
 						Expect(warnings).To(HaveLen(1))
 						Expect(warnings[0].Text).To(ContainSubstring(`Mixin "unknown" not found in`))

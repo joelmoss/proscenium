@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"regexp"
 
@@ -37,14 +36,14 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		})
 
 		It("bundles", func() {
-			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.jsx", &types.Config)
+			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.jsx", testConfig)
 
 			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem1/at.svg";`))
 		})
 
 		It("resolves, but does not bundle from css", func() {
-			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.css", &types.Config)
+			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.css", testConfig)
 
 			Expect(code).To(ContainCode(`
 				url(/node_modules/@rubygems/gem1/at.svg)`,
@@ -58,14 +57,14 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		})
 
 		It("bundles", func() {
-			_, code, _ := b.BuildToString("lib/svg/external_rubygem.jsx", &types.Config)
+			_, code, _ := b.BuildToString("lib/svg/external_rubygem.jsx", testConfig)
 
 			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem2/at.svg";`))
 		})
 
 		It("resolves, but does not bundle from css", func() {
-			_, code, _ := b.BuildToString("lib/svg/external_rubygem.css", &types.Config)
+			_, code, _ := b.BuildToString("lib/svg/external_rubygem.css", testConfig)
 
 			Expect(code).To(ContainCode(`
 				url(/node_modules/@rubygems/gem2/at.svg)`,
@@ -74,7 +73,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	})
 
 	It("does not bundle svg from css", func() {
-		_, code, _ := b.BuildToString("lib/svg/svg.css", &types.Config)
+		_, code, _ := b.BuildToString("lib/svg/svg.css", testConfig)
 
 		Expect(code).To(ContainCode(`
 			url(/hue/icons/angle-right-regular.svg)`,
@@ -84,7 +83,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	It("bundles remote svg from jsx", func() {
 		MockURL("/at.svg", svgContent)
 
-		_, code, _ := b.BuildToString("lib/svg/remote.jsx", &types.Config)
+		_, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(code).To(ContainCode(`
 			var svg = /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
@@ -100,7 +99,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		PIt("should not bundle or encode; leave as is", func() {
 			MockURL("/at.svg", svgContent)
 
-			_, code, _ := b.BuildToString("lib/svg/remote.css", &types.Config)
+			_, code, _ := b.BuildToString("lib/svg/remote.css", testConfig)
 
 			Expect(code).To(ContainCode(`background-image: url(https://proscenium.test/at.svg);`))
 		})

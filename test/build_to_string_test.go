@@ -209,7 +209,7 @@ var _ = Describe("BuildToString", func() {
 		EntryPoint("lib/aliases/absolute_paths.js", func() {
 			Describe("to unbundle: prefix", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"/lib/foo2.js": "unbundle:/lib/foo3.js",
 					}
 				})
@@ -220,7 +220,7 @@ var _ = Describe("BuildToString", func() {
 
 			Describe("to absolute path", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"/lib/foo2.js": "/lib/foo3.js",
 					}
 				})
@@ -233,7 +233,7 @@ var _ = Describe("BuildToString", func() {
 		EntryPoint("lib/aliases/relative_paths.js", func() {
 			Describe("to unbundle: prefix", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"/lib/foo2.js": "unbundle:/lib/foo3.js",
 					}
 				})
@@ -244,7 +244,7 @@ var _ = Describe("BuildToString", func() {
 
 			Describe("to absolute path", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"/lib/foo2.js": "/lib/foo3.js",
 					}
 				})
@@ -257,7 +257,7 @@ var _ = Describe("BuildToString", func() {
 		EntryPoint("lib/aliases/bare.js", func() {
 			Describe("bare to unbundle: prefix", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"bare": "unbundle:/lib/foo.js",
 					}
 				})
@@ -268,7 +268,7 @@ var _ = Describe("BuildToString", func() {
 
 			Describe("bare to absolute path", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"bare": "/lib/foo4.js",
 					}
 				})
@@ -281,7 +281,7 @@ var _ = Describe("BuildToString", func() {
 		// EntryPoint("lib/aliases/packages.js", func() {
 		// 	Describe("catches all with package prefix", func() {
 		// 		BeforeEach(func() {
-		// 			types.Config.Aliases = map[string]string{
+		// 			testConfig.Aliases = map[string]string{
 		// 				"pkg/*": "unbundle:pkg/*",
 		// 			}
 		// 		})
@@ -294,7 +294,7 @@ var _ = Describe("BuildToString", func() {
 		EntryPoint("lib/aliases/url.js", func() {
 			Describe("bare to url", func() {
 				BeforeEach(func() {
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"msw": "https://esm.sh/msw@1.3.2?bundle&dev",
 					}
 				})
@@ -309,7 +309,7 @@ var _ = Describe("BuildToString", func() {
 				BeforeEach(func() {
 					addGem("gem2", "external")
 
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"@rubygems/gem2": "unbundle:@rubygems/gem2/lib/gem2/gem2.js",
 					}
 				})
@@ -322,7 +322,7 @@ var _ = Describe("BuildToString", func() {
 				BeforeEach(func() {
 					addGem("gem2", "external")
 
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"@rubygems/gem2": "@rubygems/gem2/lib/gem2/gem2.js",
 					}
 				})
@@ -337,7 +337,7 @@ var _ = Describe("BuildToString", func() {
 				BeforeEach(func() {
 					addGem("gem2", "external")
 
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"my-gem-alias": "@rubygems/gem2/lib/gem2/console.js",
 					}
 				})
@@ -352,7 +352,7 @@ var _ = Describe("BuildToString", func() {
 				BeforeEach(func() {
 					addGem("gem2", "external")
 
-					types.Config.Aliases = map[string]string{
+					testConfig.Aliases = map[string]string{
 						"gem-blue-alias": "@rubygems/gem2/lib/gem2/blue.css",
 					}
 				})
@@ -390,30 +390,34 @@ var _ = Describe("BuildToString", func() {
 
 	Describe("bundle = true", func() {
 		BeforeEach(func() {
-			types.Config.Bundle = true
+			testConfig.Bundle = true
 		})
 
-		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, &types.Config) })
+		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, testConfig) })
 	})
 
 	Describe("bundle = false", func() {
 		BeforeEach(func() {
-			types.Config.Bundle = false
+			testConfig.Bundle = false
 		})
 
-		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, &types.Config) })
+		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, testConfig) })
 	})
 })
 
 func BenchmarkBuildToString(bm *testing.B) {
 	_, filename, _, _ := runtime.Caller(0)
-	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
-	types.Config.OutputDir = "public/assets"
-	types.Config.Environment = types.TestEnv
-	types.Config.InternalTesting = true
+	cfg := &types.ConfigT{
+		RootPath:        path.Join(path.Dir(filename), "..", "fixtures", "dummy"),
+		OutputDir:       "public/assets",
+		Environment:     types.TestEnv,
+		InternalTesting: true,
+		CodeSplitting:   true,
+		Bundle:          true,
+	}
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/foo.js", &types.Config)
+		success, result, _ := b.BuildToString("lib/foo.js", cfg)
 
 		if !success {
 			panic("Build failed: " + result)

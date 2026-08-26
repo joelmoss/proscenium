@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
 	"testing"
 
@@ -12,7 +11,7 @@ import (
 
 var _ = Describe("b.BuildToString(i18n)", func() {
 	It("exports json", func() {
-		_, code, _ := b.BuildToString("lib/i18n/benchmark/index.js", &types.Config)
+		_, code, _ := b.BuildToString("lib/i18n/benchmark/index.js", testConfig)
 
 		Expect(code).To(ContainCode(`
 			{ firstName: "Joel", foo: { bar: { baz: 1 } }, lastName: "Moss" }
@@ -21,8 +20,10 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 })
 
 func BenchmarkI18n(bm *testing.B) {
+	cfg := newTestConfig()
+
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/i18n/benchmark/index.js", &types.Config)
+		success, result, _ := b.BuildToString("lib/i18n/benchmark/index.js", cfg)
 
 		if !success {
 			panic("Build failed: " + result)

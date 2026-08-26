@@ -5,6 +5,7 @@ import (
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
 
+	"path"
 	"runtime"
 	"strings"
 
@@ -24,11 +25,25 @@ type BeParsedToMatcher struct {
 	Expected interface{}
 }
 
+// test/support is its own package, so it can't reach proscenium_test's package-scoped
+// testConfig - build a self-contained config matching the same fixture root instead.
+func matcherConfig() *types.ConfigT {
+	_, filename, _, _ := runtime.Caller(0)
+	return &types.ConfigT{
+		RootPath:        path.Join(path.Dir(filename), "..", "..", "fixtures", "dummy"),
+		OutputDir:       "public/assets",
+		Environment:     types.TestEnv,
+		InternalTesting: true,
+		CodeSplitting:   true,
+		Bundle:          true,
+	}
+}
+
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, matcher.Warnings, _ = css.ParseCss(matcher.Input, matcher.Path, &types.Config)
+	matcher.Output, matcher.Warnings, _ = css.ParseCss(matcher.Input, matcher.Path, matcherConfig())
 	matcher.Output = strings.TrimSpace(matcher.Output)
 
 	defer func() {

@@ -3,7 +3,6 @@ package proscenium_test
 import (
 	"fmt"
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
@@ -18,12 +17,10 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type debugType bool
 type bundleType bool
 type unbundleType bool
 type asProduction bool
 
-const Debug = debugType(true)
 const Bundle = bundleType(true)
 const Unbundle = unbundleType(true)
 const Production = asProduction(true)
@@ -45,18 +42,31 @@ var _ = BeforeSuite(func() {
 	}
 })
 
-var _ = BeforeEach(func() {
-	fileToAssertCode = ""
-
-	types.Config.Reset()
-	types.Config.InternalTesting = true
-	types.Config.Environment = types.TestEnv
-
+// Builds the default config every spec starts from. Specs that need something different
+// (aliases, precompile paths, ruby gems, bundle mode) mutate the `testConfig` package var
+// directly in their own BeforeEach, rather than the old shared types.Config global.
+func newTestConfig() *types.ConfigT {
 	_, filename, _, _ := runtime.Caller(0)
 	root := path.Dir(filename)
-	types.Config.RootPath = path.Join(root, "..", "fixtures", "dummy")
-	types.Config.OutputDir = "public/assets"
-	types.Config.GemPath = path.Join(root, "..")
+
+	return &types.ConfigT{
+		CodeSplitting:   true,
+		Bundle:          true,
+		InternalTesting: true,
+		Environment:     types.TestEnv,
+		RootPath:        path.Join(root, "..", "fixtures", "dummy"),
+		OutputDir:       "public/assets",
+		GemPath:         path.Join(root, ".."),
+	}
+}
+
+// The config for the spec currently running. Rebuilt fresh in BeforeEach for every spec -
+// never shared or mutated concurrently, since Ginkgo runs specs sequentially in this suite.
+var testConfig *types.ConfigT
+
+var _ = BeforeEach(func() {
+	fileToAssertCode = ""
+	testConfig = newTestConfig()
 
 	// Currently only used by the SVG plugin
 	plugin.DiskvCache.EraseAll()
@@ -82,11 +92,35 @@ var EntryPoint = func(entryPoint string, container func()) {
 	})
 }
 
+// Builds a copy of testConfig with the given markers (Bundle/Unbundle/Production) applied. Never
+// mutates testConfig itself - each spec gets its own independent *ConfigT.
+func configWithMarkers(args []any) *types.ConfigT {
+	cfg := *testConfig
+
+	for _, arg := range args {
+		switch t := reflect.TypeOf(arg); {
+		case t == reflect.TypeOf(Bundle):
+			cfg.Bundle = true
+		case t == reflect.TypeOf(Unbundle):
+			cfg.Bundle = false
+		case t == reflect.TypeOf(Production):
+			cfg.InternalTesting = false
+			cfg.Environment = types.ProdEnv
+		}
+	}
+
+	return &cfg
+}
+
+func isMarker(arg any) bool {
+	t := reflect.TypeOf(arg)
+	return t == reflect.TypeOf(Bundle) || t == reflect.TypeOf(Unbundle) || t == reflect.TypeOf(Production)
+}
+
 var AssertCode = func(expectedCode string, args ...any) {
 	GinkgoHelper()
 
 	description := ""
-	assertArgs := []any{}
 	specArgs := []any{}
 
 	// If second argument is a string, then a test description has been provided as the first
@@ -98,13 +132,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 	}
 
 	for _, arg := range args {
-		switch t := reflect.TypeOf(arg); {
-		case t == reflect.TypeOf(Debug):
-		case t == reflect.TypeOf(Bundle):
-		case t == reflect.TypeOf(Unbundle):
-		case t == reflect.TypeOf(Production):
-			assertArgs = append(assertArgs, arg)
-		default:
+		if !isMarker(arg) {
 			specArgs = append(specArgs, arg)
 		}
 	}
@@ -114,25 +142,13 @@ var AssertCode = func(expectedCode string, args ...any) {
 			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
 		}
 
-		for _, arg := range args {
-			switch t := reflect.TypeOf(arg); {
-			case t == reflect.TypeOf(Debug):
-				debug.Enable()
-			case t == reflect.TypeOf(Bundle):
-				types.Config.Bundle = true
-			case t == reflect.TypeOf(Unbundle):
-				types.Config.Bundle = false
-			case t == reflect.TypeOf(Production):
-				types.Config.InternalTesting = false
-				types.Config.Environment = types.ProdEnv
-			}
-		}
+		cfg := configWithMarkers(args)
 
 		if description != "" {
 			By(description)
 		}
 
-		_, result, _ := b.BuildToString(fileToAssertCode, &types.Config)
+		_, result, _ := b.BuildToString(fileToAssertCode, cfg)
 		Expect(result).To(ContainCode(expectedCode))
 	})
 }
@@ -140,18 +156,10 @@ var AssertCode = func(expectedCode string, args ...any) {
 var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
 	GinkgoHelper()
 
-	description := ""
-	assertArgs := []any{}
 	specArgs := []any{}
 
 	for _, arg := range args {
-		switch t := reflect.TypeOf(arg); {
-		case t == reflect.TypeOf(Debug):
-		case t == reflect.TypeOf(Bundle):
-		case t == reflect.TypeOf(Unbundle):
-		case t == reflect.TypeOf(Production):
-			assertArgs = append(assertArgs, arg)
-		default:
+		if !isMarker(arg) {
 			specArgs = append(specArgs, arg)
 		}
 	}
@@ -161,25 +169,9 @@ var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
 			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
 		}
 
-		for _, arg := range args {
-			switch t := reflect.TypeOf(arg); {
-			case t == reflect.TypeOf(Debug):
-				debug.Enable()
-			case t == reflect.TypeOf(Bundle):
-				types.Config.Bundle = true
-			case t == reflect.TypeOf(Unbundle):
-				types.Config.Bundle = false
-			case t == reflect.TypeOf(Production):
-				types.Config.InternalTesting = false
-				types.Config.Environment = types.ProdEnv
-			}
-		}
+		cfg := configWithMarkers(args)
 
-		if description != "" {
-			By(description)
-		}
-
-		_, result, _ := b.BuildToString(fileToAssertCode, &types.Config)
+		_, result, _ := b.BuildToString(fileToAssertCode, cfg)
 		Expect(result).To(ContainCode(expectedCode()))
 	})
 }

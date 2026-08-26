@@ -9,8 +9,7 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
-	"path"
-	"runtime"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -30,25 +29,37 @@ import (
 //     parses its own independent *ConfigT (types.NewConfig, no cache, no shared pointer). The
 //     real FFI path has no shared config state left to race on at all.
 //
-// This test itself still calls internal/builder.BuildToString directly with a shared
-// &types.Config across all 8 goroutines, bypassing main.go entirely - so it no longer reflects
-// the real call path (which never shares a *ConfigT across calls post-Phase 2) and passes clean
-// under `go test -race` for that reason, not because it's exercising and clearing a real risk.
-// Phase 3 is scoped to rewrite this to go through the real parseConfig-per-call path with a
-// genuinely different config per goroutine, which is now the only way this test would mean
-// anything again.
+// Phase 3: rewritten to actually prove parallel CORRECTNESS, not just absence-of-crash. Each
+// goroutine now gets its own genuinely different *types.ConfigT (built independently, matching
+// main.go's real parseConfig-per-call shape - no shared &types.Config across goroutines
+// anymore) and asserts its OWN build output reflects ITS OWN config, not another goroutine's -
+// distinguished by Environment (development/test/production), which build.go bakes into the
+// output via the proscenium.env.RAILS_ENV define. If two goroutines' configs were ever crossed
+// (e.g. a future regression reintroduces shared state), this would catch it as a wrong-value
+// assertion failure, not just a crash - the exact class of bug -race alone can't see (wrong
+// data served, not a data race).
 func TestConcurrentBuildToStringRace(t *testing.T) {
-	_, filename, _, _ := runtime.Caller(0)
-	types.Config.RootPath = path.Join(path.Dir(filename), "..", "fixtures", "dummy")
-	types.Config.OutputDir = "public/assets"
-	types.Config.Environment = types.TestEnv
-	types.Config.InternalTesting = true
+	environments := []types.Environment{types.DevEnv, types.TestEnv, types.ProdEnv}
 
 	var wg sync.WaitGroup
-	for range 8 {
+	for i := range 8 {
+		env := environments[i%len(environments)]
+
 		wg.Go(func() {
+			cfg := newTestConfig()
+			cfg.Environment = env
+			expected := env.String()
+
 			for range 50 {
-				b.BuildToString("lib/foo.js", &types.Config)
+				success, result, _ := b.BuildToString("lib/env_vars.js", cfg)
+				if !success {
+					t.Errorf("build failed: %s", result)
+					return
+				}
+				if !strings.Contains(result, expected) {
+					t.Errorf("expected build output to contain %q (this goroutine's own Environment), got: %s", expected, result)
+					return
+				}
 			}
 		})
 	}

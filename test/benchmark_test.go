@@ -2,35 +2,22 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"path"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
-func benchSetup() {
-	_, filename, _, _ := runtime.Caller(1)
-	root := path.Dir(filename)
-	types.Config.RootPath = path.Join(root, "..", "fixtures", "dummy")
-	types.Config.OutputDir = "public/assets"
-	types.Config.Environment = types.TestEnv
-	types.Config.InternalTesting = true
-	types.Config.GemPath = path.Join(root, "..")
-}
-
 func BenchmarkCssBuild(bm *testing.B) {
-	benchSetup()
+	cfg := newTestConfig()
 
-	fixturesPath := filepath.Join(types.Config.RootPath, "..")
-	types.Config.RubyGems = map[string]string{
+	fixturesPath := filepath.Join(cfg.RootPath, "..")
+	cfg.RubyGems = map[string]string{
 		"gem1": filepath.Join(fixturesPath, "dummy", "vendor", "gem1"),
 		"gem2": filepath.Join(fixturesPath, "external", "gem2"),
 	}
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/css_all/index.css", &types.Config)
+		success, result, _ := b.BuildToString("lib/css_all/index.css", cfg)
 
 		if !success {
 			panic("Build failed: " + result)
@@ -39,10 +26,10 @@ func BenchmarkCssBuild(bm *testing.B) {
 }
 
 func BenchmarkCssModuleFromJs(bm *testing.B) {
-	benchSetup()
+	cfg := newTestConfig()
 
 	for bm.Loop() {
-		success, result, _ := b.BuildToString("lib/css_modules/import_css_module.js", &types.Config)
+		success, result, _ := b.BuildToString("lib/css_modules/import_css_module.js", cfg)
 
 		if !success {
 			panic("Build failed: " + result)
