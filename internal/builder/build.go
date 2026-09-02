@@ -38,7 +38,7 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 		}
 	}
 
-	minify := !cfg.InternalTesting && !cfg.Debug && cfg.Environment != types.DevEnv
+	minify := cfg.ShouldMinify()
 
 	logLevel := esbuild.LogLevelWarning
 	if cfg.Debug {
@@ -67,7 +67,7 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 		DeterministicLocalCSSNaming: true,
 		Bundle:                      true,
 		Conditions:                  []string{cfg.Environment.String(), "proscenium"},
-		Write:                       true,
+		Write:                       cfg.ShouldWrite(),
 		Sourcemap:                   esbuild.SourceMapExternal,
 		LegalComments:               esbuild.LegalCommentsNone,
 		Target:                      esbuild.ES2022,

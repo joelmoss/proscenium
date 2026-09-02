@@ -406,7 +406,10 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem1/lib/gem1/console.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/console.js";`))
-				Expect(code).To(ContainCode(`import styles from "/node_modules/@rubygems/gem3/lib/gem3/styles.module.css";`))
+				// A CSS module imported from JS is loaded even when unbundling, so it is no longer an
+				// external import - the JS side needs the exported class-name Proxy.
+				Expect(code).To(ContainCode(`const u = "/node_modules/@rubygems/gem3/lib/gem3/styles.module.css";`))
+				Expect(code).To(ContainCode(`var styles_default = new Proxy({}, {`))
 				Expect(code).To(ContainCode(`console.log("lib/gem3/gem3")`))
 			})
 
@@ -460,7 +463,10 @@ var _ = Describe("@rubygems scoped paths", func() {
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem4/lib/gem4/console.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem3/lib/gem3/console.js";`))
 				Expect(code).To(ContainCode(`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
-				Expect(code).To(ContainCode(`import styles from "/node_modules/@rubygems/gem4/lib/gem4/styles.module.css";`))
+				// A CSS module imported from JS is loaded even when unbundling, so it is no longer an
+				// external import - the JS side needs the exported class-name Proxy.
+				Expect(code).To(ContainCode(`const u = "/node_modules/@rubygems/gem4/lib/gem4/styles.module.css";`))
+				Expect(code).To(ContainCode(`var styles_default = new Proxy({}, {`))
 				Expect(code).To(ContainCode(`console.log("lib/gem4/gem4")`))
 			})
 

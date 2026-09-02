@@ -33,7 +33,7 @@ func Compile(cfg *types.ConfigT) (bool, string) {
 		return compileError("build npm replacements", err.Error())
 	}
 
-	minify := !cfg.InternalTesting && !cfg.Debug && cfg.Environment != types.DevEnv
+	minify := cfg.ShouldMinify()
 
 	logLevel := esbuild.LogLevelInfo
 	if cfg.Debug {

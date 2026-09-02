@@ -60,3 +60,46 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 }
+
+func TestShouldMinify(t *testing.T) {
+	t.Run("derives from the environment", func(t *testing.T) {
+		if (&types.ConfigT{Environment: types.ProdEnv}).ShouldMinify() != true {
+			t.Error("expected production to minify")
+		}
+		if (&types.ConfigT{Environment: types.DevEnv}).ShouldMinify() != false {
+			t.Error("expected development not to minify")
+		}
+		if (&types.ConfigT{Environment: types.ProdEnv, Debug: true}).ShouldMinify() != false {
+			t.Error("expected Debug to disable minification")
+		}
+		if (&types.ConfigT{Environment: types.ProdEnv, InternalTesting: true}).ShouldMinify() != false {
+			t.Error("expected InternalTesting to disable minification")
+		}
+	})
+}
+
+func TestShouldWrite(t *testing.T) {
+	no := false
+
+	t.Run("writes by default", func(t *testing.T) {
+		if !(&types.ConfigT{}).ShouldWrite() {
+			t.Error("expected ShouldWrite to default true")
+		}
+	})
+
+	t.Run("an explicit Write=false turns it off", func(t *testing.T) {
+		if (&types.ConfigT{Write: &no}).ShouldWrite() {
+			t.Error("expected ShouldWrite to be false")
+		}
+	})
+
+	t.Run("Write round-trips through JSON", func(t *testing.T) {
+		cfg, err := types.NewConfig([]byte(`{"Write":false}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Write == nil || *cfg.Write {
+			t.Errorf("expected Write to parse as false, got %v", cfg.Write)
+		}
+	})
+}

@@ -278,24 +278,26 @@ var _ = Describe("BuildToString(css)", func() {
 	Describe("importing css module from js", func() {
 		var expectedCode = func(hash string) string {
 			return `
-				var d = document;
-				var u = "/lib/styles.module.css";
-				var es = d.querySelector("#_` + hash + `");
-				var el = d.querySelector('link[href="' + u + '"]');
-				if (!es && !el) {
-					const metaTag = d.querySelector('meta[name="csp-nonce"]');
-					const nonce = metaTag?.content;
-					const e = d.createElement("style");
-					if (nonce) e.nonce = nonce;
-					e.id = "_` + hash + `";
-					e.dataset.href = u;
-					e.dataset.prosceniumStyle = true;
-					e.appendChild(d.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
-						.myClass_` + hash + `_lib-styles-module {
-							color: pink;
-						}` + "`" + `));
-					const ps = d.head.querySelector("[data-proscenium-style]");
-					ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
+				if (typeof document !== "undefined") {
+					const d = document;
+					const u = "/lib/styles.module.css";
+					const es = d.querySelector("#_` + hash + `");
+					const el = d.querySelector('link[href="' + u + '"]');
+					if (!es && !el) {
+						const metaTag = d.querySelector('meta[name="csp-nonce"]');
+						const nonce = metaTag?.content;
+						const e = d.createElement("style");
+						if (nonce) e.nonce = nonce;
+						e.id = "_` + hash + `";
+						e.dataset.href = u;
+						e.dataset.prosceniumStyle = true;
+						e.appendChild(d.createTextNode(String.raw` + "`/* lib/styles.module.css */" + `
+							.myClass_` + hash + `_lib-styles-module {
+								color: pink;
+							}` + "`" + `));
+						const ps = d.head.querySelector("[data-proscenium-style]");
+						ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
+					}
 				}
 				var styles_default = new Proxy({}, {
 					get(t, p, r) {
@@ -340,16 +342,38 @@ var _ = Describe("BuildToString(css)", func() {
 				testConfig.Bundle = false
 			})
 
+			// A CSS module imported from JS is loaded even when unbundling, because the JS side needs
+			// the exported class-name Proxy. Externalising it would hand raw CSS to a JS import.
 			It("import relative css module from js", func() {
 				_, result, _ := b.BuildToString("lib/import_relative_css_module.js", testConfig)
 
-				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
+				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				hsh := ast.CssLocalHash(abspath)
+
+				Expect(result).To(ContainCode(expectedCode(hsh)))
 			})
 
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/import_css_module.js", testConfig)
 
-				Expect(result).To(ContainCode(`import styles from "/lib/styles.module.css";`))
+				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				hsh := ast.CssLocalHash(abspath)
+
+				Expect(result).To(ContainCode(expectedCode(hsh)))
+			})
+
+			// Regressions. Only a CSS *module* imported from JS changes; everything else that was
+			// externalised when unbundling stays externalised.
+			It("leaves a plain css import from js external", func() {
+				_, result, _ := b.BuildToString("app/components/css_import.js", testConfig)
+
+				Expect(result).To(ContainCode(`import styles from "/app/components/css_import.css";`))
+			})
+
+			It("leaves a css module imported from css external", func() {
+				_, result, _ := b.BuildToString("lib/importing/css_module.css", testConfig)
+
+				Expect(result).To(ContainCode(`@import "/lib/importing/app/one.module.css";`))
 			})
 		})
 
@@ -376,8 +400,8 @@ var _ = Describe("BuildToString(css)", func() {
 				abspath := filepath.Join(testConfig.RootPath, "vendor/gem1/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
-				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem1/styles.module.css";`))
-				Expect(result).To(ContainCode(`var es = d.querySelector("#_` + hsh + `");`))
+				Expect(result).To(ContainCode(`const u = "/node_modules/@rubygems/gem1/styles.module.css";`))
+				Expect(result).To(ContainCode(`const es = d.querySelector("#_` + hsh + `");`))
 				Expect(result).To(ContainCode(`.myClass_` + hsh + `_vendor-gem1-styles-module { color: pink; }`))
 			})
 		})
@@ -393,8 +417,8 @@ var _ = Describe("BuildToString(css)", func() {
 				abspath := filepath.Join(testConfig.RootPath, "../external/gem2/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
-				Expect(result).To(ContainCode(`var u = "/node_modules/@rubygems/gem2/styles.module.css";`))
-				Expect(result).To(ContainCode(`var es = d.querySelector("#_` + hsh + `");`))
+				Expect(result).To(ContainCode(`const u = "/node_modules/@rubygems/gem2/styles.module.css";`))
+				Expect(result).To(ContainCode(`const es = d.querySelector("#_` + hsh + `");`))
 				Expect(result).To(ContainCode(`.myClass_` + hsh + `_---external-gem2-styles-module { color: pink; }`))
 			})
 		})

@@ -30,6 +30,42 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
+	When("Bundle = false", func() {
+		BeforeEach(func() {
+			testConfig.Bundle = false
+		})
+
+		// An SVG imported from JS(X) is loaded even when unbundling, because the JS side needs the
+		// wrapped component. Externalising it would hand raw XML to the JS runtime.
+		It("wraps an svg imported from jsx as a component", func() {
+			_, code, _ := b.BuildToString("lib/svg/absolute_jsx.jsx", testConfig)
+
+			Expect(code).To(ContainCode(`("svg"`))
+			Expect(code).NotTo(ContainCode(`from "/public/at.svg"`))
+		})
+
+		It("wraps an svg imported from tsx as a component", func() {
+			_, code, _ := b.BuildToString("lib/svg/absolute_tsx.tsx", testConfig)
+
+			Expect(code).To(ContainCode(`("svg"`))
+			Expect(code).NotTo(ContainCode(`from "/public/at.svg"`))
+		})
+
+		// Regressions. Only an SVG imported from JSX/TSX changes; every other svg import that was
+		// externalised when unbundling stays externalised.
+		It("leaves an svg imported from plain js external", func() {
+			_, code, _ := b.BuildToString("lib/svg/plain_js.js", testConfig)
+
+			Expect(code).To(ContainCode(`import AtIcon from "/public/at.svg";`))
+		})
+
+		It("leaves an svg referenced from css external", func() {
+			_, code, _ := b.BuildToString("lib/svg/svg.css", testConfig)
+
+			Expect(code).To(ContainCode(`url(/hue/icons/angle-right-regular.svg)`))
+		})
+	})
+
 	Context("internal @rubygems/*", func() {
 		BeforeEach(func() {
 			addGem("gem1", "dummy/vendor")

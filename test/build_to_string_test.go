@@ -3,11 +3,15 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
+	. "joelmoss/proscenium/test/support"
+	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
+	. "github.com/onsi/gomega"
 )
 
 // Describe("nested", func() {
@@ -403,6 +407,46 @@ var _ = Describe("BuildToString", func() {
 
 		assertCommonBuildBehaviour(func(path string) (bool, string, string) { return b.BuildToString(path, testConfig) })
 	})
+
+	Describe("Write", func() {
+		// Esbuild writes output files to OutputDir even though BuildToString only reads the
+		// in-memory result, so every build leaves hashed files behind. Callers that just want the
+		// string can turn that off.
+		var outputPath = func() string {
+			return filepath.Join(testConfig.RootPath, testConfig.OutputDir)
+		}
+
+		var outputFileCount = func() int {
+			entries, err := os.ReadDir(outputPath())
+			if err != nil {
+				return 0
+			}
+			return len(entries)
+		}
+
+		BeforeEach(func() {
+			os.RemoveAll(outputPath())
+		})
+
+		It("writes output files by default", func() {
+			success, _, _ := b.BuildToString("lib/foo.js", testConfig)
+
+			Expect(success).To(BeTrue())
+			Expect(outputFileCount()).To(BeNumerically(">", 0))
+		})
+
+		It("writes nothing when Write is false, and still returns the code", func() {
+			no := false
+			testConfig.Write = &no
+
+			success, code, _ := b.BuildToString("lib/foo.js", testConfig)
+
+			Expect(success).To(BeTrue())
+			Expect(code).To(ContainCode(`console.log("/lib/foo.js")`))
+			Expect(outputFileCount()).To(Equal(0))
+		})
+	})
+
 })
 
 func BenchmarkBuildToString(bm *testing.B) {

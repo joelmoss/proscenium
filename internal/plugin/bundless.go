@@ -233,10 +233,40 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					if utils.IsCssImportedFromJs(result.Path, args) {
 						// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
 						// the css plugin to return the CSS as a JS object of class names (css module).
-						//
-						// TODO: We're not bundling, but the import may want the CSS as a JS object of class
-						// names. (CSS module), or a constructable stylesheet. We need to handle this case.
 						result.PluginData = types.PluginData{ImportedFromJs: true}
+
+						// A CSS module imported from JS(X) is loaded rather than externalised, even when
+						// unbundling. The JS side needs the exported class-name Proxy, and only the css
+						// plugin's OnLoad produces it - which requires the import to stay internal and to
+						// carry a real file system path. Externalising it instead emits
+						// `import styles from "/x.module.css"`, and the separate request for that path
+						// arrives with no importer, so nothing can know it came from JS and raw CSS is
+						// served to a JS import.
+						if utils.PathIsCssModule(result.Path) {
+							if absPath, ok := assetFsPath(result.Path, args, root); ok {
+								result.Path = absPath
+								result.External = false
+
+								debug.Debug(cfg.Debug, "OnResolve(.*):end css module from js", result)
+
+								return result, nil
+							}
+						}
+					}
+
+					// An SVG imported from JS(X) is loaded rather than externalised for the same reason:
+					// the svg plugin's OnLoad wraps the source as a component, and it only runs for the
+					// `svgFromJsx` namespace. Externalising would hand raw XML to the JS runtime.
+					if utils.IsSvgImportedFromJsx(result.Path, args) {
+						if absPath, ok := assetFsPath(result.Path, args, root); ok {
+							result.Path = absPath
+							result.Namespace = "svgFromJsx"
+							result.External = false
+
+							debug.Debug(cfg.Debug, "OnResolve(.*):end svg from jsx", result)
+
+							return result, nil
+						}
 					}
 
 					if utils.IsUrl(result.Path) {
@@ -346,6 +376,31 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 func rootPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, found bool) {
 	if after, ok := strings.CutPrefix(fsPath, cfg.RootPath); ok {
 		return after, true
+	}
+
+	return "", false
+}
+
+// Absolute file system path for an asset that must be loaded rather than externalised when
+// unbundling (a CSS module or an SVG imported from JS(X)). Handles the two forms such an import
+// takes in app or package source: root-absolute (`/x.module.css`) and importer-relative
+// (`./x.module.css`). Anything else - a bare specifier, a URL - returns false and keeps the
+// existing unbundled behaviour.
+func assetFsPath(p string, args esbuild.OnResolveArgs, root string) (string, bool) {
+	if utils.IsUrl(p) {
+		return "", false
+	}
+
+	if strings.HasPrefix(p, root) {
+		return p, true
+	}
+
+	if path.IsAbs(p) {
+		return filepath.Join(root, p), true
+	}
+
+	if utils.PathIsRelative(p) && args.ResolveDir != "" {
+		return filepath.Join(args.ResolveDir, p), true
 	}
 
 	return "", false
