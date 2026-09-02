@@ -57,22 +57,27 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 						}
 
 						contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
+						// The <style> injection is guarded on `document` existing. The exported class-name
+						// Proxy is what a DOM-less runtime (a JS test runner, or SSR) actually wants, and
+						// an unguarded `document` reference would throw before it could get it.
 						contents = `
-								const d = document;
-								const u = '` + urlPath + `';
-								const es = d.querySelector('#_` + hash + `');
-								const el = d.querySelector('link[href="' + u + '"]');
-								if (!es && !el) {
-									const metaTag = d.querySelector('meta[name="csp-nonce"]');
-									const nonce = metaTag?.content;
-									const e = d.createElement('style');
-									if (nonce) e.nonce = nonce;
-									e.id = '_` + hash + `';
-									e.dataset.href = u;
-									e.dataset.prosceniumStyle = true;
-									e.appendChild(d.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
-									const ps = d.head.querySelector('[data-proscenium-style]');
-									ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
+								if (typeof document !== 'undefined') {
+									const d = document;
+									const u = '` + urlPath + `';
+									const es = d.querySelector('#_` + hash + `');
+									const el = d.querySelector('link[href="' + u + '"]');
+									if (!es && !el) {
+										const metaTag = d.querySelector('meta[name="csp-nonce"]');
+										const nonce = metaTag?.content;
+										const e = d.createElement('style');
+										if (nonce) e.nonce = nonce;
+										e.id = '_` + hash + `';
+										e.dataset.href = u;
+										e.dataset.prosceniumStyle = true;
+										e.appendChild(d.createTextNode(` + fmt.Sprintf("String.raw`%s`", contents) + `));
+										const ps = d.head.querySelector('[data-proscenium-style]');
+										ps ? d.head.insertBefore(e, ps) : d.head.appendChild(e);
+									}
 								}
 								` + cssModulesProxyTemplate(hashIdent)
 
@@ -177,7 +182,7 @@ func cssModulesProxyTemplate(hash string) string {
 
 // Build the given `urlPath`
 func cssBuild(urlPath string, cfg *types.ConfigT) esbuild.BuildResult {
-	minify := !cfg.InternalTesting && !cfg.Debug && cfg.Environment != types.DevEnv
+	minify := cfg.ShouldMinify()
 
 	return esbuild.Build(esbuild.BuildOptions{
 		EntryPoints:                 []string{urlPath},

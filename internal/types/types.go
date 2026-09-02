@@ -32,6 +32,7 @@ func (e Environment) String() string {
 // - CodeSplitting?
 // - Bundle?
 // - Debug?
+// - Write - Override whether esbuild writes output files to disk. Nil means write, as before.
 type ConfigT struct {
 	RootPath      string
 	OutputDir     string
@@ -45,6 +46,10 @@ type ConfigT struct {
 	CodeSplitting bool
 	Bundle        bool
 	Environment   Environment
+
+	// A pointer so that an absent JSON key keeps the default (write), and an explicit `false` is
+	// distinguishable from "not set".
+	Write *bool
 
 	// For testing
 	InternalTesting      bool
@@ -86,3 +91,20 @@ func NewConfig(data []byte) (*ConfigT, error) {
 
 // The maximum size of an HTTP response body to cache.
 var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
+
+// Whether output should be minified. One definition, rather than the same expression repeated at
+// every build site.
+func (config *ConfigT) ShouldMinify() bool {
+	return !config.InternalTesting && !config.Debug && config.Environment != DevEnv
+}
+
+// Whether esbuild writes its output files to OutputDir. It does by default, even though
+// BuildToString only ever reads the in-memory result, so a caller that just wants the string can
+// turn it off. OutputFiles is populated either way.
+func (config *ConfigT) ShouldWrite() bool {
+	if config.Write != nil {
+		return *config.Write
+	}
+
+	return true
+}
