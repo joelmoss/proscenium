@@ -20,6 +20,7 @@ Gem::Specification.new do |spec|
 
   spec.files = Dir[
     'lib/proscenium/**/*',
+    'lib/generators/**/*',
     'lib/tasks/**/*',
     'lib/proscenium.rb',
     'CODE_OF_CONDUCT.md',

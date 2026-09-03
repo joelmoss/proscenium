@@ -53,4 +53,62 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
       ], subject.resolve('pkg')
     end
   end
+
+  describe 'config overrides' do
+    it 'builds identically when no overrides are given' do
+      first = subject.build_to_string('lib/foo.js')
+      second = subject.build_to_string('lib/foo.js')
+
+      assert_equal first[:response], second[:response]
+    end
+
+    it 'passes Bundle through to the builder' do
+      import_of_foo4 = %r{import[^;]*"/lib/foo4\.js"}
+
+      bundled = subject.build_to_string('lib/import_absolute_module.js')
+      unbundled = subject.build_to_string('lib/import_absolute_module.js', Bundle: false)
+
+      assert_match import_of_foo4, unbundled[:response]
+      refute_match import_of_foo4, bundled[:response]
+    end
+
+    it 'passes Write through to the builder' do
+      output = Proscenium.root.join('fixtures/dummy/public/assets')
+      FileUtils.rm_rf output
+
+      result = subject.build_to_string('lib/foo.js', Write: false)
+
+      assert_includes result[:response], 'console.log("/lib/foo.js")'
+      assert_empty Dir.exist?(output) ? Dir.children(output) : []
+    end
+
+    # Two threads building with different overrides must not receive each other's config pointer.
+    # Without the mutex the failure mode is a build made with the wrong config rather than an
+    # exception, so this asserts on the built output.
+    it 'is thread safe across differing overrides' do
+      bundled = []
+      unbundled = []
+      mutex = Mutex.new
+
+      threads = Array.new(12) do |i|
+        Thread.new do
+          if i.even?
+            out = subject.build_to_string('lib/import_absolute_module.js')
+            mutex.synchronize { bundled << out[:response] }
+          else
+            out = subject.build_to_string('lib/import_absolute_module.js', Bundle: false)
+            mutex.synchronize { unbundled << out[:response] }
+          end
+        end
+      end
+      threads.each(&:join)
+
+      import_of_foo4 = %r{import[^;]*"/lib/foo4\.js"}
+
+      assert_equal 6, bundled.size
+      assert_equal 6, unbundled.size
+      bundled.each { |r| refute_match import_of_foo4, r }
+      unbundled.each { |r| assert_match import_of_foo4, r }
+    end
+  end
 end

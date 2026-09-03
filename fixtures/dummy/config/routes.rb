@@ -10,6 +10,10 @@ Rails.application.routes.draw do
   # get '/user' => 'users#show'
   get '/events' => 'users#index'
 
+  # Server rendered JavaScript, reachable at a `.rjs` path.
+  get '/constants.rjs' => 'rjs#constants'
+  get '/boom.rjs' => 'rjs#boom'
+
   # get '/sideloadpartial', to: 'pages#sideloadpartial'
   # get '/variant', to: 'pages#variant'
   # get 'first_component', to: 'pages#first_component'

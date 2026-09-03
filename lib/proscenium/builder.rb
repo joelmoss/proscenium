@@ -79,16 +79,16 @@ module Proscenium
       end
     end
 
-    def self.build_to_string(path, root: nil)
-      new(root:).build_to_string(path)
+    def self.build_to_string(path, root: nil, **overrides)
+      new(root:, **overrides).build_to_string(path)
     end
 
-    def self.resolve(path, root: nil)
-      new(root:).resolve(path)
+    def self.resolve(path, root: nil, **overrides)
+      new(root:, **overrides).resolve(path)
     end
 
-    def self.compile(root: nil)
-      new(root:).compile
+    def self.compile(root: nil, **overrides)
+      new(root:, **overrides).compile
     end
 
     # Intended for tests only.
@@ -96,7 +96,11 @@ module Proscenium
       Request.reset_config
     end
 
-    def initialize(root: nil)
+    # `overrides` are merged over the config derived from `Proscenium.config`, and are passed
+    # straight through to the Go side. Intended for callers that are not serving a browser request
+    # and so want different build settings - `Bundle: false`, `Minify: false`, `Write: false` - than
+    # the app's own configuration.
+    def initialize(root: nil, **overrides)
       config_hash = {
         RootPath: (root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
@@ -110,21 +114,31 @@ module Proscenium
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
         Debug: Proscenium.config.debug
-      }
+      }.merge(overrides)
 
       @request_config = self.class.request_config_pointer(config_hash)
     end
+
+    # Guards the class-level config-pointer memo below. Without it, two threads building with
+    # different `overrides` can hand each other the wrong pointer - which surfaces as a build made
+    # with someone else's config, not as a clean error.
+    CONFIG_POINTER_MUTEX = Mutex.new
 
     class << self
       # Building the config JSON and copying it into an FFI::MemoryPointer is the only real cost
       # in instantiating a Builder (everything else is memoized attribute reads). Since the
       # config is identical across the vast majority of calls (same root, same Rails env, same
       # Proscenium.config), skip re-serializing and re-allocating it when nothing has changed.
+      #
+      # Callers keep their own reference to the returned pointer, so a later call replacing the
+      # memo does not invalidate a pointer already in use.
       def request_config_pointer(config_hash)
-        return @request_config_pointer if config_hash == @request_config_hash
+        CONFIG_POINTER_MUTEX.synchronize do
+          return @request_config_pointer if config_hash == @request_config_hash
 
-        @request_config_hash = config_hash
-        @request_config_pointer = FFI::MemoryPointer.from_string(config_hash.to_json)
+          @request_config_hash = config_hash
+          @request_config_pointer = FFI::MemoryPointer.from_string(config_hash.to_json)
+        end
       end
     end
 

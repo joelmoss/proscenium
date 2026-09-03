@@ -49,6 +49,39 @@ jobs:
       - run: bundle exec appraisal install
       - run: bundle exec appraisal ${{ matrix.rails }} bin/test
 
+  bun-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RAILS_ENV: test
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      # Pinned, so a Bun release cannot change what this job tests. The harness leans on measured
+      # plugin behaviour, so the version matters more than usual.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.13
+
+      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+
+      # fixtures/dummy's node_modules is committed, because its @rubygems/* dependencies are
+      # served by the app's own registry and a clean install would need it running.
+      - run: bun test test/js/
+        working-directory: fixtures/dummy
+
   rubocop:
     runs-on: ubuntu-latest
     steps:
