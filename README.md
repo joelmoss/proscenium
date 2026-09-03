@@ -48,6 +48,7 @@
 - [JSX](#jsx)
 - [JSON](#json)
 - [rjs is back!](#rjs-is-back)
+- [Testing your JavaScript](#testing-your-javascript)
 - [Resolution](#resolution)
 - [Aliases](#aliases)
 - [Pre-compilation](#precompilation)
@@ -663,6 +664,70 @@ console.log(version);
 ## rjs is back
 
 Proscenium brings back RJS! Any path ending in .rjs will be served from your Rails app. This allows you to import server rendered javascript.
+
+## Testing your JavaScript
+
+Your app's JavaScript can be tested with [Bun](https://bun.com), importing exactly what Proscenium
+serves - root-absolute paths, extensionless imports, aliases, `@rubygems/*`, CSS modules, SVG
+components, `proscenium/i18n`, `proscenium.env.*` and `.rjs` - with no dev server running and no
+separate build step.
+
+```bash
+rails generate proscenium:bun
+```
+
+That writes `test/proscenium.preload.js` and adds it to your `bunfig.toml` (merging into an
+existing one rather than replacing it). Then write a test that imports your app code:
+
+```jsx
+// test/js/button.test.jsx
+import { expect, test } from "bun:test";
+import Button from "/app/components/button.jsx";
+import styles from "/app/components/button.module.css";
+
+test("the button has its scoped class name", () => {
+  expect(styles.button).toEqual(Button.className);
+});
+```
+
+```bash
+bun test
+```
+
+### What you test is what you ship
+
+Every module is fetched through your application's own middleware stack, by a single
+`rails runner` process the preload starts for the run and talks to over a Unix socket. Not rebuilt
+with settings of the test harness's choosing - actually served, the same way a browser request is.
+So your `config.proscenium` settings apply as-is: bundling, minification, code splitting, aliases,
+externals and environment variables are whatever your app is configured to use. `.rjs` files are
+rendered by your own routes.
+
+This matters more than it sounds. Minification decides the *shape* of a CSS module class name, so
+a test harness that helpfully turned minification off would hand you `button_a1b2c3d4_app-…`
+while your views render `button_a1b2c3d4`. Under `bun test` the two are the same string, and there
+is a test in Proscenium's own suite that fails if they ever diverge.
+
+Stack traces stay readable because the source map is inlined into each module, not because the
+code is built differently.
+
+### Caveats
+
+- **Mock targets need their extension.** `mock.module("/lib/api.js", …)` works;
+  `mock.module("/lib/api")` does not, because Bun only passes a specifier to a plugin when it
+  contains a `.` or a `:`. With bundling on - the Rails default - a module's dependencies are
+  inlined into it, so there is nothing left to intercept.
+- **Import statically.** Bun does not run a plugin's load hook for a dynamic `import()`, so
+  `await import("/lib/thing.js")` inside a test will not go through Proscenium.
+- **`.rjs` actions need `skip_forgery_protection`.** Rails refuses a non-XHR GET that returns
+  JavaScript, in the browser as much as under test.
+- **No DOM.** A CSS module still exports its class names, but the `<style>` element Proscenium
+  would append is skipped. Add [happy-dom](https://github.com/capricorn86/happy-dom) if you need
+  one.
+- **`config.proscenium.bundle = false` needs ESM dependencies.** Unbundled, every module is loaded
+  on its own, and a JavaScript runtime cannot load a CommonJS package that way - React 18 included.
+  The same is true in the browser.
+- **Node, Deno and Vitest are not supported yet.** They can reuse the same daemon; see `TODOS.md`.
 
 ## Resolution
 

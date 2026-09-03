@@ -25,3 +25,25 @@
 **Effort:** XL
 **Priority:** P4
 **Depends on:** Global config refactor Phase 4 landing first
+
+## Frontend
+
+### Node, Vitest and Deno test adapters
+
+**What:** Adapters so `node --test`, Vitest and Deno can run app JavaScript, driving the same
+daemon protocol as the Bun plugin (`lib/proscenium/runtime/server.rb`).
+
+**Why:** Issue #65 asks for "Bun, Deno or Node". v1 ships Bun only, so the issue is half answered.
+The daemon knows nothing about Bun, so an adapter is one new plugin file and nothing else.
+
+**Context:** Three constraints are already established and are the expensive part to rediscover.
+Node's `resolve` hook sees extensionless and bare specifiers directly, so the Node adapter is
+*simpler* than Bun's - but it must use async `module.register`, not the synchronous
+`module.registerHooks`, which cannot await the daemon. Node also rejects unknown import attributes
+at parse time (`ERR_IMPORT_ATTRIBUTE_UNSUPPORTED`), so every file has to go through the load hook
+for `with { unbundle: 'true' }` to survive. Deno has no load hook at all, so it can only ever do
+resolution - no CSS modules, SVG components or i18n.
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** The Bun harness landing first.
