@@ -281,12 +281,15 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     it 'announces its socket path, then answers framed requests' do
       out = StringIO.new
       srv = Proscenium::Runtime::Server.new(stdout: out, watch: nil, threads: 2)
-      thread = Thread.new { srv.start }
 
-      # Left behind by a previous run. Starting up clears it.
+      # Left behind by a previous run. Starting up clears it. Written before the server starts,
+      # not after: `start` clears the directory well before it announces, so a write racing that
+      # clear survives it and the refutation below fails perhaps one run in four.
       stale = Rails.root.join('tmp/proscenium/served/stale.js')
       FileUtils.mkdir_p stale.dirname
       stale.write "export default 'stale';\n"
+
+      thread = Thread.new { srv.start }
 
       begin
         wait_until { !out.string.empty? }
