@@ -2,6 +2,7 @@
 
 require 'test_helper'
 require 'proscenium/runtime/server'
+require 'timeout'
 
 class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
   let(:server) { Proscenium::Runtime::Server.new(watch: nil) }
@@ -127,6 +128,27 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       assert_same first[:code], second[:code]
     end
 
+    # A route-rendered module has no file to key on, and keying it on nil made the key a constant -
+    # pinning the first render for the life of the daemon. Invisible in a one-shot run, wrong in a
+    # watching one.
+    it 'does not cache a module rendered by a route' do
+      first = request('build', path: '/constants.rjs')
+      second = request('build', path: '/constants.rjs')
+
+      assert first[:ok]
+      refute_same first[:code], second[:code]
+    end
+
+    # A source map is written under no name of its own, but its contents track the file it
+    # describes - so it is keyed on that file rather than going uncached.
+    it 'caches a source map against its source file' do
+      first = request('build', path: '/lib/foo.js.map')
+      second = request('build', path: '/lib/foo.js.map')
+
+      assert first[:ok]
+      assert_same first[:code], second[:code]
+    end
+
     it 'invalidates the cache when the file changes' do
       path = Rails.root.join('tmp/cache_probe.js')
       FileUtils.mkdir_p path.dirname
@@ -243,6 +265,62 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
   end
 
+  # `Thread#join` re-raises a dead thread's exception into the joiner, and `start` joins every
+  # worker - so anything that can raise out of `handle` or the reply write takes the whole daemon
+  # down mid-suite rather than failing one request.
+  describe 'a request that is not an object' do
+    it 'answers rather than raising, for every non-Hash shape' do
+      # All valid JSON lines: `null`, `42`, `[1,2]`.
+      [nil, 42, [1, 2], 'a string'].each do |request|
+        reply = server.handle(request)
+
+        refute reply[:ok], request.inspect
+        assert_match(/expected a JSON object/, reply[:error], request.inspect)
+      end
+    end
+
+    it 'reports output that is not valid utf-8 instead of killing the worker' do
+      reply = { id: 7, ok: true, code: "\xC3(".dup.force_encoding('UTF-8') }
+      written = StringIO.new
+
+      server.send(:answer, written, Mutex.new, reply)
+
+      answered = JSON.parse(written.string)
+      refute answered['ok']
+      assert_equal 7, answered['id']
+      assert_match(/not valid UTF-8/, answered['error'])
+    end
+  end
+
+  describe 'a malformed request line' do
+    it 'closes the connection rather than sending a reply no client can match' do
+      out = StringIO.new
+      srv = Proscenium::Runtime::Server.new(stdout: out, watch: nil, threads: 2)
+      thread = Thread.new do
+        srv.start
+        :done
+      end
+
+      begin
+        wait_until { !out.string.empty? }
+        client = UNIXSocket.new(out.string.lines.first.chomp)
+
+        client.write("not json\n")
+
+        # Either shape is acceptable - a final error line, or an immediate close. What must not
+        # happen is silence, which is what an id-less reply produced.
+        reply = Timeout.timeout(5) { client.gets }
+        refute_nil reply, 'connection closed with no explanation at all'
+        assert_match(/invalid JSON/, reply)
+        assert_nil Timeout.timeout(5) { client.gets }, 'connection stayed open after a bad line'
+      ensure
+        client&.close
+        srv.handle({ 'id' => 99, 'op' => 'shutdown' })
+        thread.join(5)
+      end
+    end
+  end
+
   describe 'unknown op' do
     it 'is a protocol error, not a crash' do
       reply = request('nonsense')
@@ -250,6 +328,56 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       refute reply[:ok]
       assert_match(/unknown op "nonsense"/, reply[:error])
       assert_equal 1, reply[:id]
+    end
+  end
+
+  # `build` is the one op that takes a url path, and two of the places that path ends up do not
+  # anchor it: `File.join` keeps a `..` verbatim, and esbuild resolves relative to the app root and
+  # will climb out of it. `serve` gets Rack's path cleaning for free and 404s, which is exactly how
+  # a traversal used to reach `build_entry`.
+  describe 'path guard on build' do
+    it 'refuses a path that escapes the application root' do
+      reply = request('build', path: '/lib/../../../Rakefile.js')
+
+      refute reply[:ok]
+      assert_match(/resolves outside the application root/, reply[:error])
+    end
+
+    it 'refuses a path carrying a scheme, which would let the caller choose the host' do
+      reply = request('build', path: 'http://evil.example.com/lib/foo.js')
+
+      refute reply[:ok]
+      assert_match(/is not a url path/, reply[:error])
+    end
+
+    it 'refuses a protocol-relative path' do
+      reply = request('build', path: '//evil.example.com/lib/foo.js')
+
+      refute reply[:ok]
+      assert_match(/is not a url path/, reply[:error])
+    end
+
+    it 'refuses a path that is not root-absolute' do
+      reply = request('build', path: 'lib/foo.js')
+
+      refute reply[:ok]
+      assert_match(/is not a url path/, reply[:error])
+    end
+
+    it 'allows an interior .. that stays inside the root' do
+      reply = request('build', path: '/lib/importing/app/../app/one.js')
+
+      assert reply[:ok]
+    end
+
+    # resolve is deliberately not guarded: it is given absolute filesystem paths on purpose,
+    # including ones outside the root, because that is where a gem or a link:ed package lives.
+    it 'still resolves an absolute path outside the root' do
+      reply = request('resolve',
+                      path: Proscenium.root.join('lib/proscenium/react-manager/react.js').to_s)
+
+      assert reply[:ok]
+      assert_equal '/node_modules/@rubygems/proscenium/react-manager/react.js', reply[:urlPath]
     end
   end
 
@@ -277,6 +405,42 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
   end
 
+  # A regression in either of these leaves an orphaned Rails daemon behind after every test run,
+  # which no other spec would catch.
+  describe 'parent liveness' do
+    it 'shuts down when the watched stream reaches EOF' do
+      reader, writer = IO.pipe
+      srv = Proscenium::Runtime::Server.new(watch: reader, stdout: StringIO.new)
+      thread = Thread.new do
+        srv.start
+        :done
+      end
+
+      wait_until { File.socket?(srv.socket_path) }
+      writer.close
+
+      refute_nil thread.join(5), 'server did not shut down on stream EOF'
+      assert_equal :done, thread.value
+    ensure
+      reader&.close
+      writer&.close unless writer&.closed?
+    end
+
+    it 'shuts down once the parent pid is gone' do
+      pid = Process.spawn('true')
+      Process.wait(pid)
+
+      srv = Proscenium::Runtime::Server.new(parent_pid: pid, stdout: StringIO.new)
+      thread = Thread.new do
+        srv.start
+        :done
+      end
+
+      refute_nil thread.join(5), 'server did not notice the dead parent'
+      assert_equal :done, thread.value
+    end
+  end
+
   describe 'over a socket' do
     it 'announces its socket path, then answers framed requests' do
       out = StringIO.new
@@ -289,7 +453,10 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       FileUtils.mkdir_p stale.dirname
       stale.write "export default 'stale';\n"
 
-      thread = Thread.new { srv.start }
+      thread = Thread.new do
+        srv.start
+        :done
+      end
 
       begin
         wait_until { !out.string.empty? }
@@ -312,7 +479,8 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       ensure
         client&.close
         srv.handle({ 'id' => 99, 'op' => 'shutdown' })
-        thread.join(2)
+        refute_nil thread.join(5), 'server thread did not terminate after shutdown'
+        assert_equal :done, thread.value
       end
     end
   end

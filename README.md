@@ -696,12 +696,17 @@ bun test
 
 ### What you test is what you ship
 
-Every module is fetched through your application's own middleware stack, by a single
+Every module you import is fetched through your application's own middleware stack, by a single
 `rails runner` process the preload starts for the run and talks to over a Unix socket. Not rebuilt
 with settings of the test harness's choosing - actually served, the same way a browser request is.
 So your `config.proscenium` settings apply as-is: bundling, minification, code splitting, aliases,
 externals and environment variables are whatever your app is configured to use. `.rjs` files are
 rendered by your own routes.
+
+The test file itself is the one exception, because no browser ever requests one: it is built
+directly rather than served, with its output read as a string instead of written, code splitting
+off, and `bun:*`/`node:*` treated as external. Never minification, which is the setting that would
+actually change what you are testing.
 
 This matters more than it sounds. Minification decides the *shape* of a CSS module class name, so
 a test harness that helpfully turned minification off would hand you `button_a1b2c3d4_app-…`

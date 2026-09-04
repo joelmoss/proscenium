@@ -51,6 +51,19 @@ var _ = Describe("b.BuildToString(svg)", func() {
 			Expect(code).NotTo(ContainCode(`from "/public/at.svg"`))
 		})
 
+		It("wraps an svg imported by bare specifier as a component", func() {
+			_, code, _ := b.BuildToString("lib/svg/bare.jsx", testConfig)
+
+			Expect(code).To(ContainCode(`("svg"`))
+			Expect(code).NotTo(ContainCode(`from "/node_modules/pkg/at.svg"`))
+		})
+
+		It("wraps an svg imported by relative path as a component", func() {
+			_, code, _ := b.BuildToString("lib/svg/relative.jsx", testConfig)
+
+			Expect(code).To(ContainCode(`("svg"`))
+		})
+
 		// Regressions. Only an SVG imported from JSX/TSX changes; every other svg import that was
 		// externalised when unbundling stays externalised.
 		It("leaves an svg imported from plain js external", func() {

@@ -28,12 +28,13 @@ module Proscenium
 
         contents = File.read(bunfig_full_path)
 
-        if contents.include?(PRELOAD_ENTRY)
+        if already_preloaded?(contents)
           say_status :identical, BUNFIG_PATH, :blue
-        elsif contents.match?(/^\s*preload\s*=/)
-          inject_into_existing_preload(contents)
+        elsif (updated = with_preload(contents))
+          File.write(bunfig_full_path, updated)
+          say_status :update, BUNFIG_PATH, :green
         else
-          append_to_file BUNFIG_PATH, "\n#{default_bunfig}"
+          say_manual_step
         end
       end
 
@@ -48,6 +49,69 @@ module Proscenium
       end
 
       private
+
+      # Only a real entry counts. The bare string can also appear in a commented-out line, and
+      # reporting "identical" then would silently do nothing for someone who had disabled it.
+      def already_preloaded?(contents)
+        test_table(contents).to_s.match?(/^[^#\n]*["']#{Regexp.escape(PRELOAD_ENTRY)}["']/o)
+      end
+
+      # Returns the whole file with our entry added inside the `[test]` table, or nil when that
+      # cannot be done without risking the file.
+      #
+      # Editing TOML with a regex is how this went wrong before, so the rules are narrow and each
+      # refusal falls through to printing the two lines for the user to add:
+      #
+      #   - a `preload` key outside `[test]` is left alone. It belongs to `bun run`, and appending
+      #     to it put the test preload somewhere `bun test` never reads.
+      #   - `[test]` already present without a `preload` key gets the key inserted into it. The
+      #     previous version appended a second `[test]` table, which is invalid TOML.
+      #   - an existing `[test] preload` array is extended in place, respecting a trailing comma.
+      #     Appending `, "entry"` after one produced `,\n, "entry"`, also invalid TOML.
+      def with_preload(contents)
+        table = test_table(contents)
+
+        return "#{contents.sub(/\n*\z/, "\n")}\n#{default_bunfig}" if table.nil?
+
+        if (array = table[/^[^#\n]*\bpreload\s*=\s*\[.*?\]/m])
+          return contents.sub(array) { extend_array(array) }
+        end
+
+        # `[test]` exists but has no preload key: put one directly under its header.
+        header = table[/\A\[test\][^\n]*\n/]
+        return nil if header.nil?
+
+        contents.sub(table) { table.sub(header, %(#{header}preload = ["#{PRELOAD_ENTRY}"]\n)) }
+      end
+
+      # The `[test]` table's text, from its header to the next table header or end of file. Nil
+      # when the file has no `[test]` table.
+      def test_table(contents)
+        contents[/^\[test\][^\n]*\n.*?(?=^\[|\z)/m]
+      end
+
+      # Adds our entry to an existing array, keeping the file's own shape. A trailing comma is
+      # respected rather than doubled - appending ", entry" after one is what produced invalid
+      # TOML before.
+      def extend_array(array)
+        inner = array[/\[(.*)\]/m, 1]
+        entry = %("#{PRELOAD_ENTRY}")
+
+        return array.sub(/\[\s*\]/m, "[#{entry}]") if inner.strip.empty?
+
+        separator = inner.rstrip.end_with?(',') ? '' : ', '
+        array.sub(/(\s*)\]\z/) { "#{separator}#{::Regexp.last_match(1)}#{entry}]" }
+      end
+
+      def say_manual_step
+        say_status :skip, BUNFIG_PATH, :yellow
+        say ''
+        say "  Could not edit #{BUNFIG_PATH} safely. Add this to it by hand:"
+        say ''
+        say '    [test]'
+        say %(    preload = ["#{PRELOAD_ENTRY}"])
+        say ''
+      end
 
       def bunfig_full_path
         File.expand_path(BUNFIG_PATH, destination_root)
