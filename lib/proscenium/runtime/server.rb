@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'digest'
+require 'securerandom'
 require 'fileutils'
 require 'json'
 require 'socket'
@@ -13,28 +14,27 @@ module Proscenium
     #
     #   preload.js                      Server (this class)
     #       │                                  │
-    #       ├── spawn ─────────────────────────▶  boots Rails, then prints ONE line to stdout:
-    #       │                                  │  the socket path. Nothing else uses that channel.
+    #       ├── spawn ─────────────────────────▶  boots Rails, then listens. Prints the socket
+    #       │                                  │  path to stdout only when it chose the path
+    #       │                                  │  itself; a caller that supplies one is told
+    #       │                                  │  nothing, because it already knows.
     #       ├── connect(socket) ───────────────▶  UNIXServer
     #       │                                  │
     #       ├── {"id":1,"op":"handshake"} ─────▶  pool ──▶ config + pluginPath
     #       ├── {"id":2,"op":"resolve",...} ───▶  pool ──▶ Resolver.resolve
-    #       ├── {"id":3,"op":"build",...} ─────▶  pool ──▶ Builder.build_to_string
-    #       └── {"id":4,"op":"rjs",...} ───────▶  pool ──▶ Rails.application.call
+    #       ├── {"id":3,"op":"build",...} ─────▶  pool ──▶ Rails.application.call, or the
+    #       │                                  │           builder for the entry point
+    #       └── {"id":4,"op":"shutdown"} ──────▶  pool ──▶ closes the listener
+    #
+    # There is no `rjs` op: a `.rjs` path is fetched by `build` like anything else, and happens to
+    # be answered by the app's own route.
     #
     # Why a socket rather than stdio: `rails runner CODE` boots the whole application before
     # evaluating CODE, so anything an initializer or a gem prints to stdout is already on the wire
     # before this class runs. A socket cannot be written to by accident.
     class Server
-      # The entry point - a test file - is the one module a browser never requests, so it is the
-      # one module built directly rather than served. Three departures, all of them about the test
-      # runner rather than the app:
-      #
-      #   Minify  - a test file is not shipped, and a legible stack trace is worth more.
-      #   Write   - its output is read as a string and never served, so writing it is litter.
-      #   External- `bun:test` and `node:*` are provided by the runtime. Without this the build
-      #             fails to resolve them, since bundled mode treats an unresolvable bare import as
-      #             an error rather than a warning.
+      # Modules the runtime provides itself, added to `External` for the entry-point build only.
+      # See `build_entry` for why.
       RUNTIME_MODULES = ['bun:*', 'node:*'].freeze
 
       # What a module may come back as. A source map is JSON; everything else a JavaScript runtime
@@ -42,8 +42,13 @@ module Proscenium
       # rather than handed to the runtime to choke on.
       CONTENT_TYPES = {
         '.map' => ['application/json'],
+        '.css' => ['text/css'],
         :default => ['application/javascript', 'text/javascript']
       }.freeze
+
+      # `import "/x.js"`, `import y from "/x.js"`, `export * from "/x.js"`, `import("/x.js")` and
+      # `require("/x.js")`, with or without the whitespace a minifier removes.
+      IMPORT_SPECIFIER = %r{(?:\bfrom|\bimport|\brequire)\s*\(?\s*["'](/[^"'\s]+\.\w+)["']}
 
       # Where a module with no file of its own - `.rjs`, rendered by a route - is written, so the
       # test runner has a real path to import it from. Relative to Rails.root.
@@ -81,6 +86,7 @@ module Proscenium
         @parent_pid = parent_pid
         @requests = Queue.new
         @cache = {}
+        @key_mutexes = {}
         @cache_mutex = Mutex.new
         @resolve_mutex = Mutex.new
         @shutdown = false
@@ -107,6 +113,10 @@ module Proscenium
         announce
         accept_loop
 
+        # Tell the workers to stop BEFORE waiting for them. `shutdown!` pushes the sentinels, and
+        # it only runs in the ensure below - so joining first meant every join timed out and a
+        # shutdown took a second per worker longer than it needed to.
+        stop_workers
         workers.each { |t| t.join(1) }
       ensure
         shutdown!
@@ -114,10 +124,22 @@ module Proscenium
 
       # Answer one request. Public so it can be driven directly from a test without a socket.
       #
-      # @param request [Hash] with String keys.
+      # Never raises. The rescue reports on the `id` captured before the work started, rather than
+      # reading it out of the request again: `42` and `null` are both valid JSON lines, so a
+      # request is not necessarily a Hash, and re-reading `request['id']` in the rescue reproduced
+      # the very error it was handling - which escaped, killed the worker thread, and then killed
+      # the whole daemon when `Thread#join` re-raised it into `start`.
+      #
+      # @param request [Hash] with String keys. Anything else is answered, not raised on.
       # @return [Hash] the reply, always carrying `id` and `ok`.
       def handle(request)
-        id = request['id']
+        id = request.is_a?(Hash) ? request['id'] : nil
+
+        unless request.is_a?(Hash)
+          return { id: id, ok: false,
+                   error: "ProtocolError: expected a JSON object, got #{request.class}" }
+        end
+
         op = request['op']
 
         reply = case op
@@ -130,7 +152,7 @@ module Proscenium
 
         { id: id, ok: true }.merge(reply)
       rescue StandardError => e
-        { id: request['id'], ok: false, error: "#{e.class}: #{e.message}" }
+        { id: id, ok: false, error: "#{e.class}: #{e.message}" }
       end
 
       private
@@ -182,13 +204,43 @@ module Proscenium
       # Bun's resolve hook cannot await a promise, so a module's imports are resolved here too, in
       # the same round trip, and the plugin answers from a lookup table.
       def op_build(request)
-        path = request.fetch('path')
+        path = url_path!(request.fetch('path'))
 
         cached(:build, path) do
           code = serve_or_build(path)
 
-          { code: code, imports: resolve_imports(code) }
+          # A source map has no imports to resolve, and the client discards the field, so scanning
+          # it is work nobody reads.
+          path.end_with?('.map') ? { code: code } : { code: code, imports: resolve_imports(code) }
         end
+      end
+
+      # Everything `build` is given has to be a url path - the thing a browser would put in a GET -
+      # because two of the places it ends up do not anchor it themselves. `File.join(Rails.root,
+      # spec)` keeps a `..` verbatim, and `build_entry` hands the path to esbuild, which resolves
+      # it relative to the app root and will happily climb out; the `serve` path is the only one
+      # that gets `Rack::Utils.clean_path_info` for free, via Middleware::Base. A traversal 404s
+      # there and then lands in `build_entry`, so without this guard `/lib/../../../secrets.js`
+      # reads and returns any file esbuild can load.
+      #
+      # A scheme is refused for a second reason: `Rack::MockRequest.env_for` accepts a full URL and
+      # takes SERVER_NAME from it, so a caller could otherwise choose the host the app sees and
+      # walk straight past `config.hosts`.
+      #
+      # `resolve` deliberately does NOT go through this - it is given absolute filesystem paths on
+      # purpose, including ones outside the root, because that is where a gem or a `link:`ed
+      # package lives.
+      def url_path!(path)
+        unless path.start_with?('/') && !path.start_with?('//') && !path.include?('://')
+          raise ProtocolError, "#{path.inspect} is not a url path"
+        end
+
+        expanded = File.expand_path(path.delete_prefix('/'), Rails.root)
+        unless expanded == Rails.root.to_s || expanded.start_with?("#{Rails.root}/")
+          raise ProtocolError, "#{path.inspect} resolves outside the application root"
+        end
+
+        path
       end
 
       # Proscenium serves anything under its own path globs. A test file is not one of those - no
@@ -198,7 +250,7 @@ module Proscenium
       end
 
       # The entry point is the one module a browser never requests, so it is built rather than
-      # served. Only two departures, and neither changes a single byte of app code:
+      # served. Three departures, none of which changes a single byte of app code:
       #
       #   Write    - its output is read as a string and never served, so writing it is litter.
       #   External - `bun:test` and `node:*` come from the runtime. Without this the build fails to
@@ -241,10 +293,16 @@ module Proscenium
 
       # Root-absolute, extension-bearing specifiers are what Proscenium emits, and the only thing
       # the plugin's `^/` filter will be asked about. A specifier that cannot be resolved is
-      # skipped rather than failing the build: it may be a string literal that merely looks like a
-      # path, and a genuinely broken import fails more clearly at resolve time.
+      # skipped rather than failing the build: a genuinely broken import fails more clearly at
+      # resolve time.
+      #
+      # Anchored on import syntax rather than on any quoted path-shaped string. An app constant
+      # like "/api/v1/thing.json" is not an import, and treating it as one meant a full
+      # `Rails.application.call` per data literal - which for a route with side effects is a
+      # request the developer never wrote. Handles minified output too, where the space goes:
+      # `from"/x.js"`.
       def resolve_imports(code)
-        code.scan(%r{["'](/[^"'\s]+\.\w+)["']}).flatten.uniq.each_with_object({}) do |spec, acc|
+        code.scan(IMPORT_SPECIFIER).flatten.uniq.each_with_object({}) do |spec, acc|
           acc[spec] = resolution_for(spec)
         rescue StandardError
           next
@@ -264,7 +322,7 @@ module Proscenium
         relative = File.join(MATERIALISED_DIR, "#{Digest::SHA1.hexdigest(spec)[0, 12]}.js")
         target = Rails.root.join(relative)
         FileUtils.mkdir_p(target.dirname)
-        target.write(code) unless target.exist? && target.read == code
+        write_atomically(target, code)
 
         { urlPath: spec, absPath: target.to_s, materialised: true }
       end
@@ -280,6 +338,19 @@ module Proscenium
       # than in production.
       def rack_env_for(path)
         Rack::MockRequest.env_for(path)
+      end
+
+      # Written to a unique path and renamed, because rename is atomic within a filesystem. The
+      # check-then-write this replaces could interleave between two workers materialising the same
+      # module, and a reader could see a partly written file.
+      def write_atomically(target, code)
+        return if target.exist? && target.read == code
+
+        temp = target.sub_ext(".#{SecureRandom.hex(8)}.tmp")
+        temp.write(code)
+        File.rename(temp, target)
+      ensure
+        temp&.delete if temp&.exist?
       end
 
       def op_shutdown
@@ -312,38 +383,77 @@ module Proscenium
       # ponytail: the key covers the entry file only. Unbundled output inlines a CSS module, an SVG
       # or i18n data, so editing one of those without touching the importing module can serve a
       # stale build in watch mode. Track the build's own inputs (esbuild's metafile) if that bites.
+      # Held across the build, not just around the hash read, so N concurrent requests for the same
+      # module build it once and the rest wait for that result. A single mutex around the whole
+      # thing would serialise every build and defeat the worker pool, so the lock is per key.
+      #
+      # A path with nothing on disk to key on is not cached at all. `.rjs` is rendered by a route,
+      # so its bytes depend on app code that can change; keying it on a nil mtime made the key a
+      # constant and pinned the first render for the life of the daemon. That is invisible in a
+      # one-shot run and wrong in a watching one - a suite passing against bytes the app no longer
+      # produces. A route render is cheap next to a build, so it happens each time instead.
       def cached(kind, path)
-        key = [kind, path, mtime_of(path)]
+        mtime = mtime_of(path)
+        return yield if mtime.nil?
+
+        key = [kind, path, mtime]
 
         hit = @cache_mutex.synchronize { @cache[key] }
         return hit if hit
 
-        value = yield
-        @cache_mutex.synchronize { @cache[key] = value }
-        value
+        key_mutex = @cache_mutex.synchronize { @key_mutexes[key] ||= Mutex.new }
+
+        key_mutex.synchronize do
+          hit = @cache_mutex.synchronize { @cache[key] }
+          next hit if hit
+
+          value = yield
+          @cache_mutex.synchronize { @cache[key] = value }
+          value
+        end
       end
 
       # `path` is a url path, so its leading slash has to go before it can be joined - otherwise
       # Pathname#join treats it as absolute and stats the wrong file entirely.
+      #
+      # A source map is keyed on its source file: nothing is written under the `.map` name, but its
+      # contents track the file it describes, which is the thing that changes.
       def mtime_of(path)
-        File.mtime(Rails.root.join(path.delete_prefix('/'))).to_f
+        target = path.delete_suffix('.map').delete_prefix('/')
+
+        File.mtime(Rails.root.join(target)).to_f
       rescue SystemCallError
         nil
       end
 
+      # A worker must not be able to die. `Thread#join` re-raises a dead thread's exception into
+      # whoever joins it, and `start` joins every worker - so one unhandled error in here took the
+      # entire daemon down mid-suite, not just the one request.
       def worker
         Thread.new do
           while (job = @requests.pop)
             socket, request, write_mutex = job
-            reply = handle(request)
-
-            begin
-              write_mutex.synchronize { socket.puts(JSON.generate(reply)) }
-            rescue IOError, Errno::EPIPE
-              # The runner went away mid-request. Nothing to report it to.
-            end
+            answer(socket, write_mutex, handle(request))
           end
         end
+      end
+
+      # `JSON.generate` raises `JSON::GeneratorError` - a StandardError, not an IOError - when the
+      # reply carries bytes that are not valid UTF-8, which is what a mis-encoded source file in
+      # the app produces. That needs reporting as a failed build rather than taking the daemon
+      # with it, so the developer learns which module is mis-encoded.
+      def answer(socket, write_mutex, reply)
+        line = begin
+          JSON.generate(reply)
+        rescue StandardError => e
+          JSON.generate({ id: reply[:id], ok: false,
+                          error: "#{e.class}: #{e.message} - the built output is not valid UTF-8" })
+        end
+
+        write_mutex.synchronize { socket.puts(line) }
+      rescue IOError, Errno::EPIPE
+        # The runner went away mid-request. Nothing to report it to.
+        nil
       end
 
       # The run is over when the parent is gone - cleanly or otherwise - and this process must not
@@ -369,8 +479,9 @@ module Proscenium
       end
 
       # `kill(0)` signals nothing; it just asks whether the process is still there. This daemon is
-      # not the parent's child, so there is no reaping to confuse it - the pid is either live or
-      # gone. A second of latency past the end of a test run costs nothing.
+      # a direct child of the process it watches, so when that process exits this one is reparented
+      # and the pid stops resolving - which is the signal. A second of latency past the end of a
+      # test run costs nothing.
       #
       # ESRCH only, deliberately: EPERM means the process is alive and merely belongs to someone
       # else, which cannot happen for a parent that spawned this one, and treating it as death
@@ -426,9 +537,14 @@ module Proscenium
             begin
               @requests << [socket, JSON.parse(line), write_mutex]
             rescue JSON::ParserError => e
-              write_mutex.synchronize do
-                socket.puts(JSON.generate({ ok: false, error: "invalid JSON: #{e.message}" }))
-              end
+              # The stream is desynchronised, and a reply cannot help: every reply is matched to a
+              # request by `id`, and a line that would not parse has none to echo. A client that
+              # correlates on id drops an id-less reply and waits for a reply that never comes. So
+              # close the connection instead - the client's close handler fails every request in
+              # flight with a named error, which is a diagnosable end rather than a hang.
+              report_unparseable(socket, write_mutex, e)
+
+              return
             end
           end
         end
@@ -438,9 +554,25 @@ module Proscenium
         socket.close unless socket.closed?
       end
 
+      # Best effort: the client is told why the connection is about to close, but it may already be
+      # gone, and there is nowhere to report that.
+      def report_unparseable(socket, write_mutex, error)
+        write_mutex.synchronize do
+          socket.puts(JSON.generate({ ok: false, error: "invalid JSON: #{error.message}" }))
+        end
+      rescue IOError, Errno::EPIPE
+        nil
+      end
+
+      # A nil per worker: `Queue#pop` blocks, so a worker only notices a shutdown by being handed
+      # one. Idempotent, because `shutdown!` runs on every exit path as well.
+      def stop_workers
+        @threads.times { @requests << nil }
+      end
+
       def shutdown!
         @shutdown = true
-        @threads.times { @requests << nil }
+        stop_workers
         @server&.close unless @server&.closed?
         FileUtils.rm_f(@socket_path)
       rescue SystemCallError, IOError

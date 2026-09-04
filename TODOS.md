@@ -28,13 +28,38 @@
 
 ## Frontend
 
+### One esbuild build per module, not two
+
+**What:** Return a module's source map from the same `esbuild.Build()` that produced its code,
+instead of rebuilding. Today `internal/builder/build.go` strips a `.map` suffix from the entry
+point and runs a complete independent build, so every module the Bun test daemon loads costs two
+full builds.
+
+**Why:** `TODOS.md` already records that 60-90% of a build's CPU is esbuild re-scanning
+node_modules from scratch per call, so build count is the whole cost. Measured on the 5-file
+fixture suite: 3.66s with source maps, 2.91s without - and ~2s of that is Rails boot, so the build
+half roughly halves. On a real suite with hundreds of modules it is a straight 2x.
+
+**Context:** esbuild already emits both output files from one call (`Sourcemap: SourceMapExternal`),
+and `build_to_string.go` already contains the logic to pick one of two output files by suffix - so
+the build is being thrown away rather than being unavailable. The fix needs a way to ask for both
+at once, which means the cgo surface in `main.go` and its mirror in `lib/proscenium/builder.rb`
+(CLAUDE.md flags that pairing). The daemon would then cache the pair under one key.
+`lib/proscenium/runtime/bun.js` already has a `sourcemaps: false` escape hatch in the meantime.
+
+**Effort:** M
+**Priority:** P2
+**Depends on:** None.
+
 ### Node, Vitest and Deno test adapters
 
 **What:** Adapters so `node --test`, Vitest and Deno can run app JavaScript, driving the same
 daemon protocol as the Bun plugin (`lib/proscenium/runtime/server.rb`).
 
 **Why:** Issue #65 asks for "Bun, Deno or Node". v1 ships Bun only, so the issue is half answered.
-The daemon knows nothing about Bun, so an adapter is one new plugin file and nothing else.
+The daemon is mostly runtime-agnostic, but not entirely: `op_handshake` hands every client the Bun
+plugin's path, and `RUNTIME_MODULES` adds Bun's own module namespaces to the entry build's
+externals. An adapter is a new plugin file plus letting the client say which runtime is asking.
 
 **Context:** Three constraints are already established and are the expensive part to rediscover.
 Node's `resolve` hook sees extensionless and bare specifiers directly, so the Node adapter is

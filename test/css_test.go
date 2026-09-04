@@ -362,6 +362,13 @@ var _ = Describe("BuildToString(css)", func() {
 				Expect(result).To(ContainCode(expectedCode(hsh)))
 			})
 
+			It("import css module by bare specifier from js", func() {
+				_, result, _ := b.BuildToString("lib/css_modules/bare_import.js", testConfig)
+
+				Expect(result).To(ContainCode(`new Proxy`))
+				Expect(result).NotTo(ContainCode(`from "/node_modules/pkg/one.module.css"`))
+			})
+
 			// Regressions. Only a CSS *module* imported from JS changes; everything else that was
 			// externalised when unbundling stays externalised.
 			It("leaves a plain css import from js external", func() {

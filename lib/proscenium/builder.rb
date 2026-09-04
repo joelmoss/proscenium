@@ -98,8 +98,9 @@ module Proscenium
 
     # `overrides` are merged over the config derived from `Proscenium.config`, and are passed
     # straight through to the Go side. Intended for callers that are not serving a browser request
-    # and so want different build settings - `Bundle: false`, `Minify: false`, `Write: false` - than
-    # the app's own configuration.
+    # and so want different build settings - `Bundle: false`, `Write: false`, `CodeSplitting: false`
+    # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
+    # any it does not know.
     def initialize(root: nil, **overrides)
       config_hash = {
         RootPath: (root || Rails.root).to_s,
@@ -119,11 +120,6 @@ module Proscenium
       @request_config = self.class.request_config_pointer(config_hash)
     end
 
-    # Guards the class-level config-pointer memo below. Without it, two threads building with
-    # different `overrides` can hand each other the wrong pointer - which surfaces as a build made
-    # with someone else's config, not as a clean error.
-    CONFIG_POINTER_MUTEX = Mutex.new
-
     class << self
       # Building the config JSON and copying it into an FFI::MemoryPointer is the only real cost
       # in instantiating a Builder (everything else is memoized attribute reads). Since the
@@ -132,13 +128,20 @@ module Proscenium
       #
       # Callers keep their own reference to the returned pointer, so a later call replacing the
       # memo does not invalidate a pointer already in use.
+      #
+      # The hash and its pointer are stored as one frozen pair in one ivar, and assigned once. Two
+      # ivars would need a lock: a reader could see a hash already updated while its pointer still
+      # pointed at the previous config, and get a build made with someone else's settings. One
+      # assignment cannot be observed half-done, so a reader sees either the old pair or the new
+      # one - never a mix - and there is no window for a test to have to reproduce.
       def request_config_pointer(config_hash)
-        CONFIG_POINTER_MUTEX.synchronize do
-          return @request_config_pointer if config_hash == @request_config_hash
+        memo = @config_memo
+        return memo[1] if memo && memo[0] == config_hash
 
-          @request_config_hash = config_hash
-          @request_config_pointer = FFI::MemoryPointer.from_string(config_hash.to_json)
-        end
+        pointer = FFI::MemoryPointer.from_string(config_hash.to_json)
+        @config_memo = [config_hash, pointer].freeze
+
+        pointer
       end
     end
 

@@ -8,25 +8,49 @@
 // anything that has to come from node_modules - a DOM shim, a testing library - must already be
 // imported and cached by an earlier preload, or it gets fetched from your Rails app instead.
 
+import { existsSync, mkdtempSync, rmSync, statSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+
 // Written to a file rather than read off a pipe, because a pipe cannot be relied on from here.
 // Once happy-dom's GlobalRegistrator has run and a DOM-touching package has been imported - which
 // is the normal state of a preload that comes before this one - every `Bun.spawn`/`Bun.spawnSync`
 // in the process returns a zero-length stdout: exit status 0, empty stderr, no bytes, for any
 // command at all.
-const gemDirFile = `${process.env.TMPDIR ?? "/tmp"}/proscenium-gem-dir-${process.pid}`;
+//
+// The file goes in a private directory rather than straight into the shared temp dir: the name
+// stops being guessable, and the create is exclusive by construction, so another user on the same
+// machine cannot pre-place a file here and break or redirect the run.
+const gemDirDir = mkdtempSync(join(tmpdir(), "proscenium-"));
+const gemDirFile = join(gemDirDir, "gem-dir");
 
-Bun.spawnSync(["bundle", "exec", "ruby", "-e", "print Gem.loaded_specs['proscenium'].gem_dir"], {
-  stdout: Bun.file(gemDirFile),
-  stderr: "inherit",
-});
+let gemDir = "";
+try {
+  Bun.spawnSync(["bundle", "exec", "ruby", "-e", "print Gem.loaded_specs['proscenium'].gem_dir"], {
+    stdout: Bun.file(gemDirFile),
+    stderr: "inherit",
+  });
 
-const gemDir = (await Bun.file(gemDirFile).text()).trim();
-await Bun.file(gemDirFile).unlink();
+  gemDir = (await Bun.file(gemDirFile).text()).trim();
+} catch (error) {
+  // `Bun.spawnSync` throws rather than returning when the command cannot be run at all - no
+  // bundler on PATH, or not a Ruby project - and then the output file was never created, so the
+  // read throws too. Both land here so the message below is the one thing the developer sees.
+  gemDir = "";
+  if (error?.code !== "ENOENT") throw error;
+} finally {
+  rmSync(gemDirDir, { recursive: true, force: true });
+}
 
-if (!gemDir) {
+// Checked for being a directory, not merely non-empty: bundler writes some of its own
+// diagnostics to stdout ("Could not locate Gemfile", for one), which would otherwise sail past a
+// truthiness check and fail later as an unreadable module path.
+if (!gemDir || !existsSync(gemDir) || !statSync(gemDir).isDirectory()) {
   throw new Error(
     "could not locate the proscenium gem. `bundle exec ruby -e \"print " +
-      "Gem.loaded_specs['proscenium'].gem_dir\"` produced nothing - its stderr is above.",
+      "Gem.loaded_specs['proscenium'].gem_dir\"` did not name a directory" +
+      (gemDir ? ` - it produced ${JSON.stringify(gemDir.slice(0, 200))}` : " - it produced nothing") +
+      ". Is this a Rails app with proscenium in its Gemfile, and is bundler on PATH?",
   );
 }
 

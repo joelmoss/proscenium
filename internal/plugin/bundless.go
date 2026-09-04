@@ -25,6 +25,34 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 		Setup: func(build esbuild.PluginBuild) {
 			root := build.InitialOptions.AbsWorkingDir
 
+			// Absolute file system path for an asset that must be loaded rather than externalised
+			// when unbundling. assetFsPath covers the shapes a path join can answer; a bare
+			// specifier (`pkg/at.svg`, `pkg/one.module.css`) cannot be joined - it has to go
+			// through node resolution, which is why it needs esbuild and therefore this closure
+			// rather than the package-level helper.
+			resolveAssetPath := func(args esbuild.OnResolveArgs, p string) (string, bool) {
+				if absPath, ok := assetFsPath(p, args, root); ok {
+					return absPath, true
+				}
+
+				if utils.ExtractBareModule(p) == "" {
+					return "", false
+				}
+
+				// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
+				r := build.Resolve(p, esbuild.ResolveOptions{
+					ResolveDir: args.ResolveDir,
+					Importer:   args.Importer,
+					Kind:       args.Kind,
+					PluginData: types.PluginData{IsResolvingPath: true},
+				})
+				if len(r.Errors) > 0 || r.Path == "" {
+					return "", false
+				}
+
+				return r.Path, true
+			}
+
 			// Resolve with esbuild. Try and avoid this call as much as possible!
 			resolveWithEsbuild := func(args esbuild.OnResolveArgs, onResolveResult *esbuild.OnResolveResult) bool {
 				// If the path is a bare module, and the resolve dir is inside node_modules, then we need to
@@ -243,7 +271,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						// arrives with no importer, so nothing can know it came from JS and raw CSS is
 						// served to a JS import.
 						if utils.PathIsCssModule(result.Path) {
-							if absPath, ok := assetFsPath(result.Path, args, root); ok {
+							if absPath, ok := resolveAssetPath(args, result.Path); ok {
 								result.Path = absPath
 								result.External = false
 
@@ -258,7 +286,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					// the svg plugin's OnLoad wraps the source as a component, and it only runs for the
 					// `svgFromJsx` namespace. Externalising would hand raw XML to the JS runtime.
 					if utils.IsSvgImportedFromJsx(result.Path, args) {
-						if absPath, ok := assetFsPath(result.Path, args, root); ok {
+						if absPath, ok := resolveAssetPath(args, result.Path); ok {
 							result.Path = absPath
 							result.Namespace = "svgFromJsx"
 							result.External = false
