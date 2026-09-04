@@ -55,22 +55,30 @@ module Proscenium
         new(**).start
       end
 
-      # @param socket_path [String] where to listen. Defaults to a unique path under Dir.tmpdir.
-      # @param threads [Integer] size of the worker pool.
-      # @param stdout [IO] where the socket path is announced.
-      # @param watch [IO, nil] closing this stream shuts the server down. Defaults to $stdin, which
-      #   the parent process holds open, so the server cannot outlive the test run.
       # Removes every materialised module. Exposed because `handle` can be driven without ever
       # calling `start` - a test, or another runtime's adapter.
       def clear_materialised
         FileUtils.rm_rf(Rails.root.join(MATERIALISED_DIR))
       end
 
-      def initialize(socket_path: nil, threads: 4, stdout: $stdout, watch: $stdin)
+      # @param socket_path [String] where to listen. Defaults to a unique path under Dir.tmpdir.
+      #   Supplying one also suppresses the announcement, since the caller already knows it.
+      # @param threads [Integer] size of the worker pool.
+      # @param stdout [IO] where the socket path is announced.
+      # @param watch [IO, nil] closing this stream shuts the server down. Defaults to $stdin, which
+      #   the parent process holds open, so the server cannot outlive the test run. Ignored when
+      #   parent_pid is given.
+      # @param parent_pid [Integer, nil] poll this process instead of watching a stream, and shut
+      #   down once it is gone. For a parent that cannot hold a pipe open - see `watch_parent`.
+      def initialize(socket_path: nil, threads: 4, stdout: $stdout, watch: $stdin, parent_pid: nil)
+        # Nothing to announce when the caller chose the path - it already knows it, and this
+        # process' stdout is the terminal in that case.
+        @announce = socket_path.nil?
         @socket_path = socket_path || File.join(Dir.tmpdir, "proscenium-#{Process.pid}.sock")
         @threads = threads
         @stdout = stdout
-        @watch = watch
+        @watch = parent_pid ? nil : watch
+        @parent_pid = parent_pid
         @requests = Queue.new
         @cache = {}
         @cache_mutex = Mutex.new
@@ -196,6 +204,9 @@ module Proscenium
       #   External - `bun:test` and `node:*` come from the runtime. Without this the build fails to
       #              resolve them, since bundled mode treats an unresolvable bare import as an
       #              error rather than a warning.
+      #   Splitting- with `Write: false` a shared chunk is never written anywhere, so a test file
+      #              containing a dynamic `import()` would come back importing
+      #              `../_asset_chunks/<name>-$HASH$.js` - a path with nothing behind it.
       #
       # Notably NOT minification. Bundling inlines app modules into this build, so unminified here
       # would mean unminified class names for every CSS module the test imports - names the app
@@ -204,7 +215,7 @@ module Proscenium
         external = Proscenium.config.external.to_a + RUNTIME_MODULES
 
         Proscenium::Builder.build_to_string(
-          path.delete_prefix('/'), Write: false, External: external
+          path.delete_prefix('/'), Write: false, External: external, CodeSplitting: false
         )[:response]
       end
 
@@ -335,9 +346,17 @@ module Proscenium
         end
       end
 
-      # The parent holds this stream open for the life of the test run, so EOF means the run is
-      # over - or the runner was killed. Either way this process must not survive it.
+      # The run is over when the parent is gone - cleanly or otherwise - and this process must not
+      # survive it.
+      #
+      # Two ways to notice, because one of them is unavailable to a Bun test runner. The stream
+      # watch is the better signal: the parent holds $stdin open for the life of the run, so EOF
+      # arrives the moment it exits. But under `bun test`, once happy-dom's GlobalRegistrator has
+      # run and a DOM-touching package has been imported, every pipe Bun opens to a child is
+      # broken from the start - the child sees immediate EOF on stdin and the parent captures no
+      # stdout - so a runner in that position passes `parent_pid` and this polls instead.
       def watch_parent
+        return watch_parent_pid if @parent_pid
         return unless @watch
 
         Thread.new do
@@ -349,7 +368,32 @@ module Proscenium
         end
       end
 
+      # `kill(0)` signals nothing; it just asks whether the process is still there. This daemon is
+      # not the parent's child, so there is no reaping to confuse it - the pid is either live or
+      # gone. A second of latency past the end of a test run costs nothing.
+      #
+      # ESRCH only, deliberately: EPERM means the process is alive and merely belongs to someone
+      # else, which cannot happen for a parent that spawned this one, and treating it as death
+      # would shut down a running test suite.
+      def watch_parent_pid
+        Thread.new do
+          loop do
+            sleep 1
+
+            begin
+              Process.kill(0, @parent_pid)
+            rescue Errno::ESRCH
+              break
+            end
+          end
+
+          op_shutdown
+        end
+      end
+
       def announce
+        return unless @announce
+
         @stdout.puts(@socket_path)
         @stdout.flush
       end

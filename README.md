@@ -713,10 +713,34 @@ code is built differently.
 
 ### Caveats
 
-- **Mock targets need their extension.** `mock.module("/lib/api.js", …)` works;
-  `mock.module("/lib/api")` does not, because Bun only passes a specifier to a plugin when it
-  contains a `.` or a `:`. With bundling on - the Rails default - a module's dependencies are
-  inlined into it, so there is nothing left to intercept.
+- **`mock.module` does not reach your own modules.** With bundling on - the Rails default - a
+  module's dependencies are inlined into it, so there is nothing left for a mock to substitute.
+  This catches an existing suite hard. Mock at a boundary the bundle cannot inline: `globalThis`
+  (`fetch`, a namespace a script installs), a property the code reads at call time, or a
+  test-environment `alias` pointing at a recording stub. Anything Proscenium leaves `external` -
+  `.rjs` included, since `*.rjs` is external by default - is resolved by Bun rather than inlined,
+  and a mock keyed on the specifier still will not match, because Bun resolves it to the file
+  Proscenium materialised. (`mock.module("/lib/api")` also cannot work at all: Bun only passes a
+  specifier to a plugin when it contains a `.` or a `:`.)
+- **Put this preload last, and externalise the runner's own tooling.** The plugin's load hook has
+  no namespace filter, so once registered it claims every uncached JavaScript module - including
+  `@testing-library/react` and whatever else your harness needs from node_modules. Registering it
+  after those are loaded and cached is half the answer; adding them to `config.proscenium.external`
+  in the test environment is the other, or each served test file gets its own second copy.
+- **An import map is invisible to Bun.** If bare specifiers reach the browser through
+  `<script type="importmap">`, mirror the same mapping in `compilerOptions.paths` in
+  `tsconfig.json`/`jsconfig.json`, which Bun does read. Otherwise Bun resolves them from
+  node_modules and you test a different copy than you ship - a CommonJS React, most likely, whose
+  named exports it cannot see.
+- **No cache-busting query strings.** `await import("./thing.js?t=" + Date.now())` to force a
+  fresh module cannot work under a bundler, which fixes module identity at build time. Give the
+  module no state to reset instead, or reset it explicitly.
+- **`sideEffects` in package.json is enforced.** A bare `import "./thing.js"` for its side effect
+  is dropped unless that path is listed there, exactly as in a production build.
+- **Set `code_splitting = false` in the test environment** if your test files sit under a path
+  Proscenium serves. A test file containing a dynamic `import()` otherwise comes back importing
+  `../_asset_chunks/<name>-$HASH$.js`, which the browser resolves against the request URL and the
+  test runner cannot resolve at all.
 - **Import statically.** Bun does not run a plugin's load hook for a dynamic `import()`, so
   `await import("/lib/thing.js")` inside a test will not go through Proscenium.
 - **`.rjs` actions need `skip_forgery_protection`.** Rails refuses a non-XHR GET that returns
