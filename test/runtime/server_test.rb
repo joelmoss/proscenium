@@ -101,6 +101,16 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       assert_includes reply[:code], 'bun:test'
     end
 
+    # The map comes back inside the code, from the same build. Fetching it separately is a second
+    # complete build of the same module, and the client only turns it into a data URL anyway.
+    it 'inlines the source map into the entry point' do
+      reply = request('build', path: '/test/js/resolution.test.js')
+
+      assert reply[:ok]
+      assert_includes reply[:code], '//# sourceMappingURL=data:application/json;base64,'
+      refute_includes reply[:code], 'sourceMappingURL=resolution.test.js.map'
+    end
+
     # Serving writes to public/assets exactly as a browser request does - that is parity, and
     # code splitting depends on it. Only the entry point, which no browser requests, is unwritten.
     it 'does not write output for the entry point' do

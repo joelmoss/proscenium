@@ -40,6 +40,14 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 
 	minify := cfg.ShouldMinify()
 
+	// External emits the map as a second output file, which BuildToString then has to throw away
+	// unless it was the map that was asked for - so getting both means building twice. Inline
+	// hands back one file carrying both.
+	sourcemap := esbuild.SourceMapExternal
+	if cfg.SourcemapInline {
+		sourcemap = esbuild.SourceMapInline
+	}
+
 	logLevel := esbuild.LogLevelWarning
 	if cfg.Debug {
 		logLevel = esbuild.LogLevelDebug
@@ -68,7 +76,7 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 		Bundle:                      true,
 		Conditions:                  []string{cfg.Environment.String(), "proscenium"},
 		Write:                       cfg.ShouldWrite(),
-		Sourcemap:                   esbuild.SourceMapExternal,
+		Sourcemap:                   sourcemap,
 		LegalComments:               esbuild.LegalCommentsNone,
 		Target:                      esbuild.ES2022,
 		Metafile:                    true,

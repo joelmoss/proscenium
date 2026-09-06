@@ -43,6 +43,12 @@ func BuildToString(filePath string, cfg *types.ConfigT) (success bool, code stri
 
 	nonSourceMapFile, isSourceMap := strings.CutSuffix(filePath, ".map")
 
+	// There is no separate map to hand back - it is inside the code. Returning the code here would
+	// answer a request for JSON with JavaScript, so say so instead.
+	if isSourceMap && cfg.SourcemapInline {
+		return buildError("Source maps are inlined; request " + nonSourceMapFile + " instead.")
+	}
+
 	filePathWithRealExt := filePath
 	ext := path.Ext(nonSourceMapFile)
 
@@ -121,11 +127,14 @@ func BuildToString(filePath string, cfg *types.ConfigT) (success bool, code stri
 		return true, contents, output.Hash
 	}
 
-	sourcemapUrl := path.Base(filePath)
-	if utils.PathIsCss(output.Path) {
-		contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
-	} else {
-		contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
+	// esbuild appends the data URL comment itself when the map is inlined.
+	if !cfg.SourcemapInline {
+		sourcemapUrl := path.Base(filePath)
+		if utils.PathIsCss(output.Path) {
+			contents += "/*# sourceMappingURL=" + sourcemapUrl + ".map */"
+		} else {
+			contents += "//# sourceMappingURL=" + sourcemapUrl + ".map"
+		}
 	}
 
 	return true, contents, output.Hash

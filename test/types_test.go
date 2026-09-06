@@ -69,6 +69,9 @@ func TestShouldMinify(t *testing.T) {
 		if (&types.ConfigT{Environment: types.DevEnv}).ShouldMinify() != false {
 			t.Error("expected development not to minify")
 		}
+		if (&types.ConfigT{Environment: types.TestEnv}).ShouldMinify() != false {
+			t.Error("expected test not to minify - a minified stack trace is unreadable")
+		}
 		if (&types.ConfigT{Environment: types.ProdEnv, Debug: true}).ShouldMinify() != false {
 			t.Error("expected Debug to disable minification")
 		}

@@ -53,7 +53,9 @@ module Proscenium
           end
 
           transformed_path = ''
-          if Proscenium.config.debug || Rails.env.development?
+          # Mirrors ConfigT#ShouldMinify - the suffix exists whenever identifiers are not
+          # minified, and a class name the stylesheet does not define is worse than a long one.
+          if Proscenium.config.debug || !Rails.env.production?
             rel_path = Pathname.new(abs_path).relative_path_from(Rails.root).sub_ext('')
             transformed_path = "_#{rel_path.to_s.gsub(%r{[@/.+]}, '-')}"
           end

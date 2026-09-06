@@ -259,6 +259,9 @@ module Proscenium
       #   Splitting- with `Write: false` a shared chunk is never written anywhere, so a test file
       #              containing a dynamic `import()` would come back importing
       #              `../_asset_chunks/<name>-$HASH$.js` - a path with nothing behind it.
+      #   Sourcemap- inlined, because a separate `.map` is a second full build of the same module,
+      #              and the client only ever turns it into a data URL anyway. A browser wants the
+      #              separate file it can fetch on demand; nothing here is a browser.
       #
       # Notably NOT minification. Bundling inlines app modules into this build, so unminified here
       # would mean unminified class names for every CSS module the test imports - names the app
@@ -267,7 +270,8 @@ module Proscenium
         external = Proscenium.config.external.to_a + RUNTIME_MODULES
 
         Proscenium::Builder.build_to_string(
-          path.delete_prefix('/'), Write: false, External: external, CodeSplitting: false
+          path.delete_prefix('/'),
+          Write: false, External: external, CodeSplitting: false, SourcemapInline: true
         )[:response]
       end
 

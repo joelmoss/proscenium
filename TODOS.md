@@ -32,20 +32,41 @@
 
 **What:** Return a module's source map from the same `esbuild.Build()` that produced its code,
 instead of rebuilding. Today `internal/builder/build.go` strips a `.map` suffix from the entry
-point and runs a complete independent build, so every module the Bun test daemon loads costs two
-full builds.
+point and runs a complete independent build, so any module whose map is fetched costs two full
+builds.
+
+**Mostly handled.** `SourcemapInline` embeds the map in the code, so one build returns both, and
+the Bun daemon uses it for every module it builds. What is left is the case where the map has to
+be a separate file: a browser in development with devtools open, which fetches `<path>.map` after
+the code, and the unbundled Bun path, where each module is served rather than built.
+
+**Separately: Bun does not apply the map at all.** Measured on 1.3.13, a module returned from a
+plugin's `onLoad` gets no source-map treatment - a thrown error names the bundled entry point at
+line 1, identically with an inline map, with a fetched-and-inlined one, and with none. Setting
+esbuild's `SourceRoot` (the map's `sources` are written relative to `OutputDir`, which is nowhere
+near where Bun loaded the module from) changes nothing, which is what says Bun is not reading the
+map rather than misreading it. So the maps the harness ships are inert until Bun supports this;
+they are kept because they now cost nothing. Debugging a test failure means reading built output.
 
 **Why:** `TODOS.md` already records that 60-90% of a build's CPU is esbuild re-scanning
-node_modules from scratch per call, so build count is the whole cost. Measured on the 5-file
-fixture suite: 3.66s with source maps, 2.91s without - and ~2s of that is Rails boot, so the build
-half roughly halves. On a real suite with hundreds of modules it is a straight 2x.
+node_modules from scratch per call, so build count is the whole cost. Measured in the dummy app,
+development, mean of 20 builds each - code plus separate map against a single inlined build:
+
+| entry point | two builds | one inlined build |
+|---|---|---|
+| `lib/importing/package.js` | 29.2ms | 12.2ms |
+| `lib/css_modules/bare_import.js` | 13.7ms | 4.0ms |
+| `app/views/articles/index.jsx` | 2.9ms | 1.5ms |
+
+The map is free when it rides along, and costs as much as the code when it does not.
 
 **Context:** esbuild already emits both output files from one call (`Sourcemap: SourceMapExternal`),
 and `build_to_string.go` already contains the logic to pick one of two output files by suffix - so
 the build is being thrown away rather than being unavailable. The fix needs a way to ask for both
 at once, which means the cgo surface in `main.go` and its mirror in `lib/proscenium/builder.rb`
 (CLAUDE.md flags that pairing). The daemon would then cache the pair under one key.
-`lib/proscenium/runtime/bun.js` already has a `sourcemaps: false` escape hatch in the meantime.
+`register({ sourcemaps: false })` in `lib/proscenium/runtime/bun.js` skips what remains, at the
+cost of readable failures in a minified build.
 
 **Effort:** M
 **Priority:** P2

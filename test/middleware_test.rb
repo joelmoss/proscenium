@@ -108,7 +108,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     get '/lib/foo.css'
 
     assert_includes response.body.squish, %(
-      .body{color:red}
+      .body { color: red; }
       /*# sourceMappingURL=foo.css.map */
     ).squish
   end
@@ -125,7 +125,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
       get '/lib/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_match Regexp.new('.myClass_[a-z0-9]{8}{'),
+      assert_match Regexp.new(".myClass_#{CSS_MODULE_DIGEST} \\{"),
                    response.body
     end
 
@@ -133,7 +133,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
       get '/node_modules/@rubygems/gem2/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_match Regexp.new('.myClass_[a-z0-9]{8}{'),
+      assert_match Regexp.new(".myClass_#{CSS_MODULE_DIGEST} \\{"),
                    response.body
     end
 
@@ -141,7 +141,7 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
       get '/node_modules/@rubygems/gem1/styles.module.css'
 
       assert_equal 'text/css', response.headers['Content-Type']
-      assert_match Regexp.new('.myClass_[a-z0-9]{8}{'),
+      assert_match Regexp.new(".myClass_#{CSS_MODULE_DIGEST} \\{"),
                    response.body
     end
   end

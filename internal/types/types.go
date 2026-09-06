@@ -33,6 +33,7 @@ func (e Environment) String() string {
 // - Bundle?
 // - Debug?
 // - Write - Override whether esbuild writes output files to disk. Nil means write, as before.
+// - SourcemapInline - Embed the source map in the output rather than emitting a second file.
 type ConfigT struct {
 	RootPath      string
 	OutputDir     string
@@ -46,6 +47,12 @@ type ConfigT struct {
 	CodeSplitting bool
 	Bundle        bool
 	Environment   Environment
+
+	// Embed the source map as a data URL comment at the end of the output rather than emitting it
+	// as a second output file. Off by default: a browser wants the separate `.map` it can fetch on
+	// demand. A caller reading the result as a string wants it inline, because fetching the map
+	// separately means building the whole module a second time.
+	SourcemapInline bool
 
 	// A pointer so that an absent JSON key keeps the default (write), and an explicit `false` is
 	// distinguishable from "not set".
@@ -94,8 +101,17 @@ var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
 
 // Whether output should be minified. One definition, rather than the same expression repeated at
 // every build site.
+//
+// Production only. Minified output is unreadable in a stack trace - a one-letter function name and
+// a column on line 1 - which is the wrong trade anywhere the point is to find out what broke.
+// Anything Rails does not recognise as an environment arrives here as TestEnv (builder.rb), so an
+// unnamed environment gets readable output too.
+//
+// Importer#import applies the same rule when it builds a CSS module class name, and the two have
+// to agree: unminified identifiers carry a path-derived suffix, so a mismatch means the helper
+// renders a class the stylesheet does not define.
 func (config *ConfigT) ShouldMinify() bool {
-	return !config.InternalTesting && !config.Debug && config.Environment != DevEnv
+	return !config.InternalTesting && !config.Debug && config.Environment == ProdEnv
 }
 
 // Whether esbuild writes its output files to OutputDir. It does by default, even though

@@ -37,6 +37,35 @@ var _ = Describe("BuildToString", func() {
 			AssertCode("/*# sourceMappingURL=foo.css.map */")
 			AssertCode("/*# sourceMappingURL=foo.css.map */", Unbundle)
 		})
+
+		// Inlining is what lets one build hand back code and map together. Asking for the map
+		// separately is a second complete build of the same module.
+		Describe("inlined", func() {
+			BeforeEach(func() {
+				testConfig.SourcemapInline = true
+			})
+
+			It("embeds the map in the code", func() {
+				_, result, _ := b.BuildToString("lib/foo.js", testConfig)
+
+				Expect(result).To(ContainSubstring("//# sourceMappingURL=data:application/json;base64,"))
+				Expect(result).NotTo(ContainSubstring("sourceMappingURL=foo.js.map"))
+			})
+
+			It("embeds the map in CSS too", func() {
+				_, result, _ := b.BuildToString("lib/foo.css", testConfig)
+
+				Expect(result).To(ContainSubstring("sourceMappingURL=data:application/json;base64,"))
+				Expect(result).NotTo(ContainSubstring("sourceMappingURL=foo.css.map"))
+			})
+
+			It("refuses a request for the map on its own", func() {
+				success, result, _ := b.BuildToString("lib/foo.js.map", testConfig)
+
+				Expect(success).To(BeFalse())
+				Expect(result).To(ContainSubstring("Source maps are inlined"))
+			})
+		})
 	})
 
 	EntryPoint("lib/importing/rjs.js", func() {
