@@ -705,16 +705,16 @@ rendered by your own routes.
 
 The test file itself is the one exception, because no browser ever requests one: it is built
 directly rather than served, with its output read as a string instead of written, code splitting
-off, and `bun:*`/`node:*` treated as external. Never minification, which is the setting that would
-actually change what you are testing.
+off, `bun:*`/`node:*` treated as external, and its source map inlined. Never minification, which is
+the setting that would actually change what you are testing.
 
-This matters more than it sounds. Minification decides the *shape* of a CSS module class name, so
-a test harness that helpfully turned minification off would hand you `button_a1b2c3d4_app-…`
-while your views render `button_a1b2c3d4`. Under `bun test` the two are the same string, and there
-is a test in Proscenium's own suite that fails if they ever diverge.
+This matters more than it sounds. Minification decides the *shape* of a CSS module class name -
+minified you get `button_a1b2c3d4`, unminified `button_a1b2c3d4_app-…` - and your views and your
+stylesheets have to agree on which. So the harness does not get a vote: whatever your app is
+configured to do is what runs. Proscenium's own suite fails if the two ever diverge.
 
-Stack traces stay readable because the source map is inlined into each module, not because the
-code is built differently.
+Output is minified in production only, so a test failure names a real function on a real line
+rather than a letter at column 80.
 
 ### Caveats
 
@@ -756,6 +756,12 @@ code is built differently.
 - **`config.proscenium.bundle = false` needs ESM dependencies.** Unbundled, every module is loaded
   on its own, and a JavaScript runtime cannot load a CommonJS package that way - React 18 included.
   The same is true in the browser.
+- **Stack traces name your functions, not your source lines.** Output is only minified in
+  production, so a failure points at a real function name and a real line of the built module.
+  It is not mapped back to the original file: a source map is embedded in everything the harness
+  builds, but Bun does not apply one to a module a plugin loaded (measured on Bun 1.3.13). The map
+  costs nothing to carry, so it stays for when Bun does.
+
 - **Node, Deno and Vitest are not supported yet.** They can reuse the same daemon; see `TODOS.md`.
 
 ## Resolution

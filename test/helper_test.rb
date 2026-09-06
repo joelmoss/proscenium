@@ -6,17 +6,17 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       page = Capybara::Node::Simple.new(CssmHelperController.render(:index))
 
       hsh = Proscenium::Utils.css_module_digest Rails.root.join('app/views/layouts/cssm.module.css')
-      assert page.has_css?("body.body_#{hsh}")
+      assert page.has_css?("body[class^='body_#{hsh}']")
 
       hsh = Proscenium::Utils.css_module_digest(
         Rails.root.join('app/views/cssm_helper/index.module.css')
       )
-      assert page.has_css?("h2.view_#{hsh}")
+      assert page.has_css?("h2[class^='view_#{hsh}']")
 
       hsh = Proscenium::Utils.css_module_digest(
         Rails.root.join('app/views/cssm_helper/_partial.module.css')
       )
-      assert page.has_css?("div.partial_#{hsh}.world")
+      assert page.has_css?("div[class^='partial_#{hsh}'].world")
     end
   end
 

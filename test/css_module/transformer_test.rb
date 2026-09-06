@@ -7,13 +7,13 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
-      assert_match(/^title_[a-z0-9]{8}$/, names.first)
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, names.first)
     end
 
     it 'transforms class names beginning with @ and underscore' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@_title)
 
-      assert_match(/^_title_[a-z0-9]{8}$/, names.first)
+      assert_match(/^_title_#{CSS_MODULE_DIGEST}$/o, names.first)
     end
 
     it 'passes through regular class names' do
@@ -27,7 +27,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
                                                              :title, :@subtitle)
 
       assert_equal 'title', names.first
-      assert_match(/^subtitle_[a-z0-9]{8}$/, names.last)
+      assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, names.last)
     end
 
     it 'imports stylesheet' do
@@ -42,8 +42,8 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
                                                                '/lib/css_modules/basic2@title',
                                                                :@subtitle)
 
-        assert_match(/^title_[a-z0-9]{8}$/, names.first)
-        assert_match(/^subtitle_[a-z0-9]{8}$/, names.last)
+        assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, names.first)
+        assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, names.last)
       end
 
       it 'imports stylesheets' do
@@ -60,7 +60,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                'pkg/one@pkg_one_module')
 
-        assert_match(/^pkg_one_module_[a-z0-9]{8}$/, names.first)
+        assert_match(/^pkg_one_module_#{CSS_MODULE_DIGEST}$/o, names.first)
       end
 
       it 'imports stylesheets' do
@@ -76,7 +76,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic',
                                                                '/gem2/lib/gem2/styles@foo')
 
-        assert_match(/^foo_[a-z0-9]{8}$/, names.first)
+        assert_match(/^foo_#{CSS_MODULE_DIGEST}$/o, names.first)
       end
 
       it 'imports stylesheets' do
@@ -105,22 +105,22 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       it 'should transform local path' do
-        assert_match(/^title_[a-z0-9]{8}$/,
+        assert_match(/^title_#{CSS_MODULE_DIGEST}$/o,
                      transformer.class_names('/lib/css_modules/basic2@title').first)
-        assert_match(/^title_[a-z0-9]{8}$/,
+        assert_match(/^title_#{CSS_MODULE_DIGEST}$/o,
                      transformer.class_names('/lib/css_modules/basic2@title').first)
       end
 
       it 'should transform npm path' do
         names = transformer.class_names('pkg/one@pkg_one_module')
 
-        assert_match(/^pkg_one_module_[a-z0-9]{8}$/, names.first)
+        assert_match(/^pkg_one_module_#{CSS_MODULE_DIGEST}$/o, names.first)
       end
 
       it 'should transform gem path' do
         names = transformer.class_names('/gem2/lib/gem2/styles@foo')
 
-        assert_match(/^foo_[a-z0-9]{8}$/, names.first)
+        assert_match(/^foo_#{CSS_MODULE_DIGEST}$/o, names.first)
       end
     end
   end
@@ -135,7 +135,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       result = transformer.class_names(:@title) { |name, path| yielded << [name, path] }
 
       assert_equal 1, yielded.length
-      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, yielded.first.first)
       assert_equal '/lib/css_modules/basic.module.css', yielded.first.last
       assert_equal result, [yielded.first.first]
     end
@@ -146,7 +146,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
         yielded << [name, path]
       end
 
-      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, yielded.first.first)
       assert_equal '/lib/css_modules/basic2.module.css', yielded.first.last
     end
 
@@ -164,7 +164,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       assert_equal 1, yielded.length
-      assert_match(/^title_[a-z0-9]{8}$/, yielded.first.first)
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, yielded.first.first)
       assert_equal '/lib/css_modules/basic.module.css', yielded.first.last
     end
 
@@ -183,10 +183,10 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       end
 
       assert_equal 3, yielded.length
-      assert_match(/^title_[a-z0-9]{8}$/, yielded[0].first)
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, yielded[0].first)
       assert_equal '/lib/css_modules/basic.module.css', yielded[0].last
       assert_equal ['plain', nil], yielded[1]
-      assert_match(/^subtitle_[a-z0-9]{8}$/, yielded[2].first)
+      assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, yielded[2].first)
       assert_equal '/lib/css_modules/basic2.module.css', yielded[2].last
     end
   end
