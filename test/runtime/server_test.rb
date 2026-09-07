@@ -84,11 +84,35 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     it 'reports the imports it still contains, already resolved' do
       reply = unbundled { request('build', path: '/lib/import_absolute_module.js') }
 
-      # Unbundled, so the import survives - and minified, because that is what the app serves in
-      # this environment. The binding is renamed; the specifier is not.
+      # Unbundled, so the import survives. Whatever the app serves is what comes back; only the
+      # specifier is asserted, because that is the part the resolver keys on.
       assert_includes reply[:code], '"/lib/foo4.js"'
       assert_equal Rails.root.join('lib/foo4.js').to_s,
                    reply[:imports]['/lib/foo4.js'][:absPath]
+    end
+
+    # A path-shaped string that is not an import still costs a full `Rails.application.call` to
+    # discover that - for a route with side effects, a request the developer never wrote. The
+    # match is what has to be prevented, so the match is what is asserted: by the time it reaches
+    # `imports` the failed resolve has already been swallowed, and an end-to-end assertion passes
+    # whether or not the regex is right.
+    it 'matches real import syntax and nothing that merely ends in the same letters' do
+      matches = lambda do |code|
+        code.scan(Proscenium::Runtime::Server::IMPORT_SPECIFIER).flatten
+      end
+
+      assert_equal ['/lib/a.js'], matches['import x from "/lib/a.js";']
+      assert_equal ['/lib/b.js'], matches['export * from "/lib/b.js";']
+      assert_equal ['/lib/c.js'], matches['import o from"/lib/c.js";']
+      assert_equal ['/lib/d.js'], matches['import "/lib/d.js";']
+      assert_equal ['/lib/e.js'], matches['await import("/lib/e.js")']
+      assert_equal ['/lib/f.js'], matches['require("/lib/f.js")']
+
+      # `.` is a non-word character, so a word boundary alone lets every `<expr>.from(` through.
+      assert_empty matches['Array.from("/api/v1/thing.json")']
+      assert_empty matches['Buffer.from("/api/v1/thing.json")']
+      assert_empty matches['export const E = "/api/v1/thing.json";']
+      assert_empty matches['const o = { from: "/api/v1/thing.json" };']
     end
 
     # The entry point is the exception - no browser asks for a test file, so it is built rather
@@ -109,6 +133,15 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       assert reply[:ok]
       assert_includes reply[:code], '//# sourceMappingURL=data:application/json;base64,'
       refute_includes reply[:code], 'sourceMappingURL=resolution.test.js.map'
+    end
+
+    # The client turns the map down and the daemon has to stop building one, or the opt-out costs
+    # exactly as much as leaving it on.
+    it 'omits the source map when the client asks for none' do
+      reply = request('build', path: '/test/js/resolution.test.js', sourcemap: false)
+
+      assert reply[:ok]
+      refute_includes reply[:code], 'sourceMappingURL=data:'
     end
 
     # Serving writes to public/assets exactly as a browser request does - that is parity, and

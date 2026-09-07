@@ -714,7 +714,9 @@ stylesheets have to agree on which. So the harness does not get a vote: whatever
 configured to do is what runs. Proscenium's own suite fails if the two ever diverge.
 
 Output is minified in production only, so a test failure names a real function on a real line
-rather than a letter at column 80.
+rather than a letter at column 80. Note that "production" means a literal `production` Rails
+environment: any name Rails does not recognise - `staging`, `qa`, a per-PR environment - is
+treated as test, and so is served and precompiled unminified.
 
 ### Caveats
 

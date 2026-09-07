@@ -86,8 +86,13 @@ module Proscenium
 
       # The `[test]` table's text, from its header to the next table header or end of file. Nil
       # when the file has no `[test]` table.
+      # The header line may end at EOF rather than a newline. Requiring the newline made a bunfig
+      # whose last line is `[test]` look like it had no `[test]` table at all, and the nil branch
+      # above then appended a second one - the invalid-TOML shape this rewrite exists to avoid.
+      # Matching it here instead leaves `with_preload` unable to find a header to insert under, so
+      # it refuses and prints the two lines for the user to add.
       def test_table(contents)
-        contents[/^\[test\][^\n]*\n.*?(?=^\[|\z)/m]
+        contents[/^\[test\][^\n]*(?:\n|\z).*?(?=^\[|\z)/m]
       end
 
       # Adds our entry to an existing array, keeping the file's own shape. A trailing comma is
@@ -122,26 +127,6 @@ module Proscenium
           [test]
           preload = ["#{PRELOAD_ENTRY}"]
         TOML
-      end
-
-      # Adds our entry to whatever preload list is already there, leaving the rest of the file
-      # alone. Only the first `preload =` is touched - a bunfig with several is unusual enough that
-      # guessing which one to edit would be worse than saying so.
-      def inject_into_existing_preload(contents)
-        updated = contents.sub(/^(\s*preload\s*=\s*\[)(.*?)(\])/m) do
-          open_bracket, entries, close_bracket = Regexp.last_match.captures
-          separator = entries.strip.empty? ? '' : ', '
-
-          "#{open_bracket}#{entries}#{separator}\"#{PRELOAD_ENTRY}\"#{close_bracket}"
-        end
-
-        if updated == contents
-          say_status :skip, "#{BUNFIG_PATH} - add #{PRELOAD_ENTRY} to its preload list by hand",
-                     :yellow
-        else
-          File.write(bunfig_full_path, updated)
-          say_status :update, BUNFIG_PATH, :green
-        end
       end
     end
   end
