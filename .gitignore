@@ -38,3 +38,4 @@ meta.json
 
 /.claude/settings.local.json
 /.vscode/settings.json
+.gbrain-source
