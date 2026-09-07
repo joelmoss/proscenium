@@ -90,3 +90,22 @@ jobs:
         with:
           bundler-cache: true
       - run: bundle exec rubocop -P --fail-level C
+
+  golangci-lint:
+    runs-on: ubuntu-latest
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+
+      # Pinned for the same reason bun is: a golangci-lint release can add a check or change one,
+      # and a branch nobody touched should not go red because upstream shipped. The action verifies
+      # .golangci.yml against its schema before running, so a config the local binary accepts but
+      # this version does not fails here rather than silently linting nothing.
+      - uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.13.2
