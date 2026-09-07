@@ -117,9 +117,39 @@ module Proscenium
       end
 
       def start
+        # Captured first and put back in the ensure below, because the write further down is to
+        # process-wide config. A real daemon is spawned per test run and exits, so restoring it
+        # there changes nothing - but `start` is also called in-process by this class' own tests,
+        # and a write left standing would decide the build settings of every test that happened
+        # to run after them, under whatever order minitest picked.
+        code_splitting_was = Proscenium.config.code_splitting
+
         # A precompiled manifest would make `Resolver.resolve` hand back digest URLs from
         # public/assets instead of resolving the source. Nothing reloads it after this.
         Proscenium::Manifest.reset!
+
+        # Code splitting off for everything this daemon hands back, not just the entry point.
+        # `build_entry` already passes `CodeSplitting: false` for the one module it builds
+        # directly, but a module that comes from `serve` is built by the app's own middleware
+        # under the app's own config - so an app whose test files sit under a path Proscenium
+        # serves has its entry point built with splitting on, and a dynamic `import()` in it comes
+        # back as `../_asset_chunks/<name>-$HASH$.js`. A browser resolves that specifier against
+        # the request URL and Proscenium serves it; a client of this daemon resolves it against
+        # the importing file's path on disk, where nothing exists. The app's config is right for
+        # the app and wrong here.
+        #
+        # Set here rather than asked of each app, because it is a property of this transport: no
+        # client of this daemon can resolve a chunk path, and an app that turned splitting off to
+        # satisfy `bun test` would be turning it off for its system tests too, which drive a real
+        # browser and should keep the chunked output production emits.
+        #
+        # The cost, named rather than called parity: a module containing a dynamic `import()` is
+        # compiled differently here, not merely divided up differently. With splitting on the
+        # `import()` stays a fetch of a chunk; with it off esbuild inlines the imported module
+        # into the bundle and rewrites the call to `Promise.resolve().then(...)`. Every other
+        # module is byte-identical, so the one thing `bun test` cannot cover is the fetch itself -
+        # which is a system test's job anyway.
+        Proscenium.config.code_splitting = false
 
         # One daemon per test run, so this clears materialised modules between runs - including
         # after a run that died without shutting down. Cleared at boot rather than at exit so the
@@ -141,7 +171,10 @@ module Proscenium
         stop_workers
         workers.each { |t| t.join(1) }
       ensure
+        # `shutdown!` first: it is the cleanup that leaves something behind on disk if it is
+        # skipped, and it swallows its own errors, so the restore below always runs.
         shutdown!
+        Proscenium.config.code_splitting = code_splitting_was
       end
 
       # Answer one request. Public so it can be driven directly from a test without a socket.
@@ -219,9 +252,11 @@ module Proscenium
       #
       # The module is fetched through the middleware stack rather than rebuilt with settings of
       # this daemon's own choosing. That is what parity means: the same `Proscenium.config`, so the
-      # same bundling, minification, code splitting and externals a browser gets. Any setting
-      # decided here would be a way for a test to pass against something the app does not serve -
-      # and minification alone changes CSS module class names, so "close enough" is not.
+      # same bundling, minification and externals a browser gets. Code splitting is the single
+      # exception - `start` turns it off process-wide, because no client of this daemon can resolve
+      # a chunk path; see there for the cost. Any other setting decided here would be a way for a
+      # test to pass against something the app does not serve - and minification alone changes CSS
+      # module class names, so "close enough" is not.
       #
       # Bun's resolve hook cannot await a promise, so a module's imports are resolved here too, in
       # the same round trip, and the plugin answers from a lookup table.
@@ -278,7 +313,7 @@ module Proscenium
       end
 
       # The entry point is the one module a browser never requests, so it is built rather than
-      # served. Three departures, none of which changes a single byte of app code:
+      # served. Four departures, none of which changes a single byte of app code:
       #
       #   Write    - its output is read as a string and never served, so writing it is litter.
       #   External - `bun:test` and `node:*` come from the runtime. Without this the build fails to
@@ -286,7 +321,9 @@ module Proscenium
       #              error rather than a warning.
       #   Splitting- with `Write: false` a shared chunk is never written anywhere, so a test file
       #              containing a dynamic `import()` would come back importing
-      #              `../_asset_chunks/<name>-$HASH$.js` - a path with nothing behind it.
+      #              `../_asset_chunks/<name>-$HASH$.js` - a path with nothing behind it. `start`
+      #              turns this off process-wide too; kept here because `handle` can be driven
+      #              without ever calling `start`.
       #   Sourcemap- inlined, because a separate `.map` is a second full build of the same module,
       #              and the client only ever turns it into a data URL anyway. A browser wants the
       #              separate file it can fetch on demand; nothing here is a browser.
@@ -631,7 +668,10 @@ module Proscenium
         @shutdown = true
         stop_workers
         @server&.close unless @server&.closed?
-        FileUtils.rm_f(@socket_path)
+        # nil when `socket_path` raised before it could memoise - `mktmpdir` on a /tmp this
+        # process cannot write to, most usefully. `rm_f(nil)` raises TypeError, which the rescue
+        # below does not catch, so the useful error was replaced by a confusing one.
+        FileUtils.rm_f(@socket_path) if @socket_path
         FileUtils.remove_entry(@socket_dir) if @socket_dir && Dir.exist?(@socket_dir)
       rescue SystemCallError, IOError
         nil

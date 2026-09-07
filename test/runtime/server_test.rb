@@ -261,8 +261,11 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
   end
 
-  # Parity is the contract: a module the runtime imports is the module the browser gets. These are
-  # the assertions that fail if the daemon ever starts deciding build settings for itself.
+  # Parity is the contract: a module the runtime imports is the module the browser gets. These
+  # catch a daemon that passes build OVERRIDES of its own, which is what it used to do. What they
+  # cannot catch is a daemon that changes `Proscenium.config` itself: `served` dispatches through
+  # `Rails.application.call`, which reads the same live config the daemon does, so both sides of
+  # the equality move together. Code splitting is the one such setting, covered below.
   describe 'parity with what rails serves' do
     it 'serves an app module byte for byte' do
       %w[/lib/foo.js /lib/import_absolute_module.js /lib/import_css_module.js].each do |path|
@@ -528,7 +531,48 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
   end
 
+  # The one build setting the daemon decides for itself, so the one that needs its own cover: the
+  # override has to actually apply, and it has to not outlive the daemon that made it.
+  describe 'code splitting' do
+    it 'leaves no chunk specifier in a served module with a dynamic import' do
+      started do |srv|
+        code = srv.handle('id' => 1, 'op' => 'build', 'path' => '/lib/importing/dynamic.js')[:code]
+
+        # Nothing on the JavaScript side resolves `../_asset_chunks/<name>-$HASH$.js`: it is
+        # relative to a url the client never requested.
+        refute_includes code, '_asset_chunks'
+      end
+    end
+
+    it "restores the app's own setting on shutdown" do
+      was = Proscenium.config.code_splitting
+
+      started { refute Proscenium.config.code_splitting, 'start did not turn splitting off' }
+
+      # Left set, this decides the build settings of every test that runs after this one.
+      assert_equal was, Proscenium.config.code_splitting
+    end
+  end
+
   private
+
+  # Runs a started daemon for the duration of the block, then shuts it down. `start` is where the
+  # process-wide overrides happen, so anything asserting one has to go through it rather than
+  # driving `handle` directly.
+  # Waits on the announcement rather than on `srv.socket_path`: `start` memoises that path on the
+  # server thread, and a test thread reading it first would race the memo and get a second
+  # directory. The announcement comes after the bind, so by then there is one agreed path.
+  def started
+    out = StringIO.new
+    srv = Proscenium::Runtime::Server.new(watch: nil, stdout: out)
+    thread = Thread.new { srv.start }
+    wait_until { !out.string.empty? }
+
+    yield srv
+  ensure
+    srv.handle('id' => 99, 'op' => 'shutdown')
+    refute_nil thread&.join(5), 'server thread did not terminate after shutdown'
+  end
 
   # What a browser would get for this path, through the same middleware stack.
   def served(path)

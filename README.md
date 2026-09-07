@@ -744,10 +744,12 @@ treated as test, and so is served and precompiled unminified.
   module no state to reset instead, or reset it explicitly.
 - **`sideEffects` in package.json is enforced.** A bare `import "./thing.js"` for its side effect
   is dropped unless that path is listed there, exactly as in a production build.
-- **Set `code_splitting = false` in the test environment** if your test files sit under a path
-  Proscenium serves. A test file containing a dynamic `import()` otherwise comes back importing
-  `../_asset_chunks/<name>-$HASH$.js`, which the browser resolves against the request URL and the
-  test runner cannot resolve at all.
+- **Code splitting is off, and the harness turns it off for you.** Nothing on the JavaScript side
+  can resolve a `../_asset_chunks/<name>-$HASH$.js` specifier, so the daemon disables splitting in
+  its own process rather than asking you to disable it for your whole test environment - where it
+  would also cost your system tests the chunked output production emits. The cost is that a
+  dynamic `import()` runs here against an inlined module; the chunk fetch itself is a system
+  test's job.
 - **Import statically.** Bun does not run a plugin's load hook for a dynamic `import()`, so
   `await import("/lib/thing.js")` inside a test will not go through Proscenium.
 - **`.rjs` actions need `skip_forgery_protection`.** Rails refuses a non-XHR GET that returns
