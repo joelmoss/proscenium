@@ -18,7 +18,7 @@ jobs:
     env:
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
@@ -35,7 +35,7 @@ jobs:
       RAILS_ENV: test
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
@@ -59,7 +59,7 @@ jobs:
       RAILS_ENV: test
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
@@ -85,7 +85,7 @@ jobs:
   rubocop:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
@@ -96,7 +96,7 @@ jobs:
     env:
       GOWORK: off
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
         with:
