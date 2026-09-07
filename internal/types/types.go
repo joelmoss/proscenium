@@ -52,6 +52,9 @@ type ConfigT struct {
 	// as a second output file. Off by default: a browser wants the separate `.map` it can fetch on
 	// demand. A caller reading the result as a string wants it inline, because fetching the map
 	// separately means building the whole module a second time.
+	//
+	// Read by `build` (and so by BuildToString) only. `Compile` writes its output for a browser to
+	// fetch, so it always emits a linked map and ignores this.
 	SourcemapInline bool
 
 	// A pointer so that an absent JSON key keeps the default (write), and an explicit `false` is

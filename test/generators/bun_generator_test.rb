@@ -88,6 +88,18 @@ class Proscenium::Generators::BunGeneratorTest < Rails::Generators::TestCase
     assert_equal 1, File.read(bunfig).scan('[test]').size
   end
 
+  # A file whose last line is `[test]` with no trailing newline used to read as having no `[test]`
+  # table at all, and the generator appended a second one - invalid TOML, and the exact shape this
+  # rewrite exists to prevent. Refusing and printing the manual step is the safe answer.
+  it 'refuses rather than declaring a second table when [test] ends the file unterminated' do
+    write_bunfig "[install]\nfoo = 1\n[test]"
+
+    run_generator
+
+    assert_equal 1, File.read(bunfig).scan('[test]').size
+    assert_equal "[install]\nfoo = 1\n[test]", File.read(bunfig)
+  end
+
   it 'leaves a root-level preload alone - it belongs to bun run, not bun test' do
     write_bunfig %(preload = ["./run-setup.js"]\n\n[test]\ncoverage = true\n)
 

@@ -48,7 +48,16 @@ module Proscenium
 
       # `import "/x.js"`, `import y from "/x.js"`, `export * from "/x.js"`, `import("/x.js")` and
       # `require("/x.js")`, with or without the whitespace a minifier removes.
-      IMPORT_SPECIFIER = %r{(?:\bfrom|\bimport|\brequire)\s*\(?\s*["'](/[^"'\s]+\.\w+)["']}
+      #
+      # The lookbehind is what keeps `Array.from("/x.json")` and `Buffer.from("/x.json")` out. A
+      # word boundary is not enough: `.` is a non-word character, so `\bfrom` matches the `from` in
+      # any `<expr>.from(` call - and every match costs a full `Rails.application.call`, which is
+      # exactly the spurious dispatch this regex exists to prevent.
+      IMPORT_SPECIFIER = %r{(?<![.$\w])(?:from|import|require)\s*\(?\s*["'](/[^"'\s]+\.\w+)["']}
+
+      # The socket's name inside its directory. Fixed, so a client that made the directory can name
+      # the path without being told it.
+      SOCKET_NAME = 'd.sock'
 
       # Where a module with no file of its own - `.rjs`, rendered by a route - is written, so the
       # test runner has a real path to import it from. Relative to Rails.root.
@@ -66,8 +75,9 @@ module Proscenium
         FileUtils.rm_rf(Rails.root.join(MATERIALISED_DIR))
       end
 
-      # @param socket_path [String] where to listen. Defaults to a unique path under Dir.tmpdir.
-      #   Supplying one also suppresses the announcement, since the caller already knows it.
+      # @param socket_dir [String] a private directory to put the socket in. Supplying one also
+      #   suppresses the announcement, since the caller can name `SOCKET_NAME` inside it itself.
+      #   Defaults to one this class creates. Either way it is removed on shutdown.
       # @param threads [Integer] size of the worker pool.
       # @param stdout [IO] where the socket path is announced.
       # @param watch [IO, nil] closing this stream shuts the server down. Defaults to $stdin, which
@@ -75,11 +85,11 @@ module Proscenium
       #   parent_pid is given.
       # @param parent_pid [Integer, nil] poll this process instead of watching a stream, and shut
       #   down once it is gone. For a parent that cannot hold a pipe open - see `watch_parent`.
-      def initialize(socket_path: nil, threads: 4, stdout: $stdout, watch: $stdin, parent_pid: nil)
-        # Nothing to announce when the caller chose the path - it already knows it, and this
-        # process' stdout is the terminal in that case.
-        @announce = socket_path.nil?
-        @socket_path = socket_path || File.join(Dir.tmpdir, "proscenium-#{Process.pid}.sock")
+      def initialize(socket_dir: nil, threads: 4, stdout: $stdout, watch: $stdin, parent_pid: nil)
+        # Nothing to announce when the caller supplied the directory - it can name the socket
+        # itself, and this process' stdout is the terminal in that case.
+        @announce = socket_dir.nil?
+        @socket_dir = socket_dir
         @threads = threads
         @stdout = stdout
         @watch = parent_pid ? nil : watch
@@ -92,7 +102,19 @@ module Proscenium
         @shutdown = false
       end
 
-      attr_reader :socket_path
+      # A socket inside a private directory rather than a predictable name in a shared one. The
+      # old default was `proscenium-<pid>.sock` in Dir.tmpdir: a name anyone on the machine can
+      # guess from `ps`, in a directory anyone can write to, and this daemon answers `build` with
+      # code the client executes. `mktmpdir` is 0700 and its create is exclusive, so there is
+      # nobody else in the directory to race. `/tmp` explicitly, not Dir.tmpdir, because a unix
+      # socket path is capped near 104 bytes and a CI or sandboxed TMPDIR can spend most of it.
+      #
+      # Resolved on first use rather than in the constructor, because `handle` can be driven
+      # without ever binding anything - most of this class' own tests do - and a constructor that
+      # creates a directory would leave one behind for every such instance.
+      def socket_path
+        @socket_path ||= File.join(@socket_dir ||= Dir.mktmpdir('proscenium-', '/tmp'), SOCKET_NAME)
+      end
 
       def start
         # A precompiled manifest would make `Resolver.resolve` hand back digest URLs from
@@ -104,8 +126,8 @@ module Proscenium
         # files are still there to look at when a run fails.
         clear_materialised
 
-        FileUtils.rm_f(@socket_path)
-        @server = UNIXServer.new(@socket_path)
+        FileUtils.rm_f(socket_path)
+        @server = UNIXServer.new(socket_path)
 
         workers = Array.new(@threads) { worker }
         watch_parent
@@ -206,8 +228,14 @@ module Proscenium
       def op_build(request)
         path = url_path!(request.fetch('path'))
 
-        cached(:build, path) do
-          code = serve_or_build(path)
+        # The client decides whether it wants a map, because it is the one that would throw it
+        # away. Without this, `register({ sourcemaps: false })` still paid for a base64 blob
+        # bigger than the code itself: generated, JSON-encoded, pushed over the socket, cached,
+        # and then stripped by the plugin.
+        sourcemap = request.fetch('sourcemap', true) ? true : false
+
+        cached(:build, path, sourcemap) do
+          code = serve_or_build(path, sourcemap: sourcemap)
 
           # A source map has no imports to resolve, and the client discards the field, so scanning
           # it is work nobody reads.
@@ -245,8 +273,8 @@ module Proscenium
 
       # Proscenium serves anything under its own path globs. A test file is not one of those - no
       # browser ever asks for it - so it is the one module built directly.
-      def serve_or_build(path)
-        serve(path) || build_entry(path)
+      def serve_or_build(path, sourcemap: true)
+        serve(path) || build_entry(path, sourcemap: sourcemap)
       end
 
       # The entry point is the one module a browser never requests, so it is built rather than
@@ -266,12 +294,12 @@ module Proscenium
       # Notably NOT minification. Bundling inlines app modules into this build, so unminified here
       # would mean unminified class names for every CSS module the test imports - names the app
       # never emits. Legible failures come from the inlined source map instead.
-      def build_entry(path)
+      def build_entry(path, sourcemap: true)
         external = Proscenium.config.external.to_a + RUNTIME_MODULES
 
         Proscenium::Builder.build_to_string(
           path.delete_prefix('/'),
-          Write: false, External: external, CodeSplitting: false, SourcemapInline: true
+          Write: false, External: external, CodeSplitting: false, SourcemapInline: sourcemap
         )[:response]
       end
 
@@ -318,6 +346,12 @@ module Proscenium
       # do not - `.rjs`, rendered by a route - are written under `tmp/` exactly as served, without
       # being rebuilt, because unaltered is what the browser executes.
       def resolution_for(spec)
+        # The same guard `op_build` gets, and for the same two reasons - this specifier came out
+        # of a regex scan of built output, which includes every string literal in every bundled
+        # dependency. `File.join(Rails.root, spec)` keeps a `..` verbatim, and `serve` would take
+        # SERVER_NAME from a `//host/x.js` shape and walk past `config.hosts`.
+        spec = url_path!(spec)
+
         return op_resolve('path' => spec) if File.exist?(File.join(Rails.root, spec))
 
         code = serve(spec)
@@ -341,7 +375,11 @@ module Proscenium
       # action. Leaving the request faithful means the developer sees that requirement here rather
       # than in production.
       def rack_env_for(path)
-        Rack::MockRequest.env_for(path)
+        # SERVER_NAME explicitly: `env_for` defaults it to `example.org`, which `config.hosts`
+        # permits in test (it is empty there) and refuses in development, where Rails installs an
+        # allowlist of `.localhost`/`.test`. Without this, `register({ env: "development" })` -
+        # a documented option - 403s on every single module.
+        Rack::MockRequest.env_for(path, 'SERVER_NAME' => 'localhost')
       end
 
       # Written to a unique path and renamed, because rename is atomic within a filesystem. The
@@ -384,9 +422,12 @@ module Proscenium
 
       # Keyed on the source file's mtime so an edit is picked up between runs of a watching runner.
       #
-      # ponytail: the key covers the entry file only. Unbundled output inlines a CSS module, an SVG
-      # or i18n data, so editing one of those without touching the importing module can serve a
-      # stale build in watch mode. Track the build's own inputs (esbuild's metafile) if that bites.
+      # ponytail: the key covers the keyed file only, and a bundled build inlines its whole graph -
+      # which is the default, so in `--watch` editing any module a test imports can serve the
+      # previous bundle until the test file itself is touched. Unbundled it is narrower but still
+      # real: a CSS module, an SVG and i18n data are inlined either way. `Metafile: true` is
+      # already set in internal/builder/build.go, so keying on the newest mtime across the
+      # metafile's inputs is the fix when this bites.
       # Held across the build, not just around the hash read, so N concurrent requests for the same
       # module build it once and the rest wait for that result. A single mutex around the whole
       # thing would serialise every build and defeat the worker pool, so the lock is per key.
@@ -396,11 +437,12 @@ module Proscenium
       # constant and pinned the first render for the life of the daemon. That is invisible in a
       # one-shot run and wrong in a watching one - a suite passing against bytes the app no longer
       # produces. A route render is cheap next to a build, so it happens each time instead.
-      def cached(kind, path)
+      def cached(kind, path, *extra)
         mtime = mtime_of(path)
         return yield if mtime.nil?
 
-        key = [kind, path, mtime]
+        key = [kind, path, mtime, *extra]
+        prune(kind, path, mtime)
 
         hit = @cache_mutex.synchronize { @cache[key] }
         return hit if hit
@@ -414,6 +456,17 @@ module Proscenium
           value = yield
           @cache_mutex.synchronize { @cache[key] = value }
           value
+        end
+      end
+
+      # An edited file gets a new key, and the old one would otherwise sit in both hashes for the
+      # life of the daemon - so a long `--watch` session holds every historical build of every
+      # module it ever saw. Dropping the superseded generations keeps one entry per module. Every
+      # variant of a superseded mtime goes, whatever else is in its key.
+      def prune(kind, path, mtime)
+        @cache_mutex.synchronize do
+          stale = @cache.keys.select { |k| k[0] == kind && k[1] == path && k[2] != mtime }
+          stale.each { |k| @cache.delete(k) && @key_mutexes.delete(k) }
         end
       end
 
@@ -509,7 +562,7 @@ module Proscenium
       def announce
         return unless @announce
 
-        @stdout.puts(@socket_path)
+        @stdout.puts(socket_path)
         @stdout.flush
       end
 
@@ -579,6 +632,7 @@ module Proscenium
         stop_workers
         @server&.close unless @server&.closed?
         FileUtils.rm_f(@socket_path)
+        FileUtils.remove_entry(@socket_dir) if @socket_dir && Dir.exist?(@socket_dir)
       rescue SystemCallError, IOError
         nil
       end

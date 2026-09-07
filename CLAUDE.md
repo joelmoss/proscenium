@@ -29,6 +29,7 @@ The project is a hybrid Ruby gem + Go shared library:
 - `main.go` - C-exported functions (`build_to_string`, `resolve`, `compile`) called from Ruby
 - `internal/builder/` - esbuild configuration and build orchestration
 - `internal/plugin/` - Custom esbuild plugins (CSS modules, SVG, i18n, RJS, etc.)
+- `lib/proscenium/runtime/` - The `bun test` harness: a `rails runner` daemon (`server.rb`) over a Unix socket, plus the Bun plugin (`bun.js`) and its bootstrap (`bootstrap.js`)
 
 ## Code Style
 
@@ -56,6 +57,11 @@ bin/test test/builder_test.rb:12 # line number of the test method definition
 ### Run Go tests
 ```bash
 go test ./test
+```
+
+### Run the JavaScript tests (`bun test`, via the Proscenium harness)
+```bash
+cd fixtures/dummy && bun test test/js/
 ```
 
 ### Run Go benchmarks
@@ -98,8 +104,10 @@ golangci-lint run
 - Go tests use Ginkgo/Gomega and are in `test/`
 - Go test suite file: `test/proscenium_suite_test.go`
 - Custom Go test matchers: `ContainCode`, `EqualCode`, `BeParsedTo` (in `test/support/`)
-- Go test helpers: `EntryPoint()`, `AssertCode()` — use type aliases `Debug`, `Bundle`, `Unbundle`, `Production` for options
-- Go tests reset config and set `types.Config.InternalTesting = true` in BeforeEach
+- Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Bundle`, `Unbundle`, `Production` for options
+- Go tests build a fresh per-spec `testConfig` in BeforeEach (with `InternalTesting: true`), not the old shared `types.Config` global
+- JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`
+- `bun test` runs the app's real modules through a Rails daemon, so it needs the Go library compiled first, same as the Ruby tests
 - A dummy Rails app for integration testing is at `fixtures/dummy/`
 - Dummy app uses pnpm as its package manager
 - Multi-Rails version testing uses Appraisals (gemfiles for Rails 7.1, 7.2, 8.0, 8.1)
