@@ -99,9 +99,6 @@ func NewConfig(data []byte) (*ConfigT, error) {
 	return cfg, nil
 }
 
-// The maximum size of an HTTP response body to cache.
-var MaxHttpBodySize int64 = 1024 * 1024 * 1 // 1MB
-
 // Whether output should be minified. One definition, rather than the same expression repeated at
 // every build site.
 //
