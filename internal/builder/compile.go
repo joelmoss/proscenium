@@ -91,7 +91,7 @@ func Compile(cfg *types.ConfigT) (bool, string) {
 		buildOptions.Plugins = append(buildOptions.Plugins, plugin.Bundless(cfg))
 	}
 
-	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements(cfg), plugin.Svg, plugin.Css(cfg), plugin.Dirname(cfg))
+	buildOptions.Plugins = append(buildOptions.Plugins, plugin.Replacements(cfg), plugin.Svg(cfg), plugin.Css(cfg), plugin.Dirname(cfg))
 
 	definitions := buildEnvVars(cfg)
 	buildOptions.Define = definitions
@@ -112,7 +112,13 @@ func Compile(cfg *types.ConfigT) (bool, string) {
 		return false, string(messages)
 	}
 
-	os.WriteFile(path.Join(cfg.RootPath, cfg.OutputDir, ".manifest.json"), []byte(result.Metafile), 0644)
+	// Reported rather than ignored: without the manifest, Resolver hands back source paths instead
+	// of the digest URLs under OutputDir, so a precompile that "succeeded" leaves the app serving
+	// something other than what it just built.
+	manifestPath := path.Join(cfg.RootPath, cfg.OutputDir, ".manifest.json")
+	if err := os.WriteFile(manifestPath, []byte(result.Metafile), 0644); err != nil {
+		return compileError("Failed to write the asset manifest", err.Error())
+	}
 
 	return true, string(messages)
 }

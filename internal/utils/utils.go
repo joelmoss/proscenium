@@ -187,7 +187,7 @@ func ResolveRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath st
 	if gemPath, exists := cfg.RubyGems[name]; exists {
 		return name, gemPath, nil
 	} else {
-		return "", "", fmt.Errorf("Could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
+		return "", "", fmt.Errorf("could not resolve Ruby gem %q. Is %q in your Gemfile?", name, name)
 	}
 }
 

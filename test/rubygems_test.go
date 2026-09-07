@@ -18,7 +18,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			Expect(success).To(BeFalse())
 		})
 
-		AssertCode(`Could not resolve Ruby gem \"gem1\"`)
+		AssertCode(`could not resolve Ruby gem \"gem1\"`)
 	})
 
 	EntryPoint("lib/rubygems/vendored.js", func() {
@@ -28,7 +28,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			Expect(success).To(BeFalse())
 		})
 
-		AssertCode(`Could not resolve Ruby gem \"gem1\"`)
+		AssertCode(`could not resolve Ruby gem \"gem1\"`)
 	})
 
 	When("bundle = true", func() {

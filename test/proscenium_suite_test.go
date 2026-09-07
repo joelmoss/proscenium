@@ -68,8 +68,10 @@ var _ = BeforeEach(func() {
 	fileToAssertCode = ""
 	testConfig = newTestConfig()
 
-	// Currently only used by the SVG plugin
-	plugin.DiskvCache.EraseAll()
+	// Currently only used by the SVG plugin. Asserted rather than dropped: the cache is now a
+	// directory of Proscenium's own under the app root, so a failure here is a real one, and a wipe
+	// that quietly did nothing would leak a cached svg into the next spec.
+	Expect(plugin.EraseSvgCache(testConfig)).To(Succeed())
 })
 
 var _ = AfterEach(func() {

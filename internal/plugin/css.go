@@ -46,7 +46,7 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 						}
 
 						if len(cssResult.OutputFiles) > 1 {
-							return esbuild.OnLoadResult{}, fmt.Errorf("Multiple output files generated for %s", args.Path)
+							return esbuild.OnLoadResult{}, fmt.Errorf("multiple output files generated for %s", args.Path)
 						}
 
 						hash := ast.CssLocalHash(args.Path)
@@ -201,7 +201,7 @@ func cssBuild(urlPath string, cfg *types.ConfigT) esbuild.BuildResult {
 		Write:                       false,
 		Sourcemap:                   esbuild.SourceMapNone,
 		LegalComments:               esbuild.LegalCommentsNone,
-		Plugins:                     []esbuild.Plugin{Bundler(cfg), Svg, cssOnly(cfg)},
+		Plugins:                     []esbuild.Plugin{Bundler(cfg), Svg(cfg), cssOnly(cfg)},
 		Target:                      esbuild.ES2022,
 		Supported: map[string]bool{
 			// Ensure CSS  esting is transformed for browsers that don't support it.
