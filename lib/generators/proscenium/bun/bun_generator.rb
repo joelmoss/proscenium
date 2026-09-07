@@ -74,7 +74,14 @@ module Proscenium
         return "#{contents.sub(/\n*\z/, "\n")}\n#{default_bunfig}" if table.nil?
 
         if (array = table[/^[^#\n]*\bpreload\s*=\s*\[.*?\]/m])
-          return contents.sub(array) { extend_array(array) }
+          extended = extend_array(array)
+          return nil if extended.nil?
+
+          # Substituted inside the table, then the table inside the document. `contents.sub(array)`
+          # replaces the FIRST occurrence of that text anywhere - so a root-level `preload` holding
+          # the same entries as `[test]`'s got edited instead, which put the harness in `bun run`,
+          # left `bun test` without it, and reported success.
+          return contents.sub(table) { table.sub(array) { extended } }
         end
 
         # `[test]` exists but has no preload key: put one directly under its header.
@@ -97,12 +104,22 @@ module Proscenium
 
       # Adds our entry to an existing array, keeping the file's own shape. A trailing comma is
       # respected rather than doubled - appending ", entry" after one is what produced invalid
-      # TOML before.
+      # TOML before. Returns nil when the array's shape is one this cannot edit safely.
       def extend_array(array)
         inner = array[/\[(.*)\]/m, 1]
         entry = %("#{PRELOAD_ENTRY}")
 
         return array.sub(/\[\s*\]/m, "[#{entry}]") if inner.strip.empty?
+
+        # A comment after the last entry swallows the separator: the inserted `, ` lands inside
+        # `# DOM shim` and the two entries end up with no comma between them - valid input, invalid
+        # output. Putting the comma before the comment means parsing TOML comments, which is the
+        # approximation this file keeps getting punished for. Refuse and let the user do it.
+        # A comment after the last entry swallows the separator: the inserted `, ` lands inside
+        # `# DOM shim` and the two entries end up with no comma between them - valid input, invalid
+        # output. Putting the comma before the comment means parsing TOML comments, which is the
+        # approximation this file keeps getting punished for. Refuse and let the user do it.
+        return nil if inner.match?(/(?<!["'])#/)
 
         separator = inner.rstrip.end_with?(',') ? '' : ', '
         array.sub(/(\s*)\]\z/) { "#{separator}#{::Regexp.last_match(1)}#{entry}]" }

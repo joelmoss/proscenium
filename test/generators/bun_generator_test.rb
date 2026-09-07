@@ -100,6 +100,29 @@ class Proscenium::Generators::BunGeneratorTest < Rails::Generators::TestCase
     assert_equal "[install]\nfoo = 1\n[test]", File.read(bunfig)
   end
 
+  # `contents.sub(array)` matched the first occurrence of that text anywhere in the file, so a
+  # root-level preload holding the same entries as `[test]`'s got edited instead: the harness
+  # landed in `bun run`, `bun test` never loaded it, and the generator said it had worked.
+  it 'edits the test table even when a root-level preload holds identical entries' do
+    write_bunfig %(preload = ["./run-setup.js"]\n\n[test]\npreload = ["./run-setup.js"]\n)
+
+    run_generator
+
+    assert_preload ['./run-setup.js', './test/proscenium.preload.js']
+    assert_equal %(preload = ["./run-setup.js"]), File.read(bunfig).lines.first.chomp
+  end
+
+  # A comment after the last entry swallowed the separator, so the comma ended up inside the
+  # comment and the array lost it entirely - invalid TOML out of a valid file.
+  it 'refuses rather than corrupting an array whose last entry carries a comment' do
+    original = %([test]\npreload = [\n  "./test/setup.js" # DOM shim\n]\n)
+    write_bunfig original
+
+    run_generator
+
+    assert_equal original, File.read(bunfig)
+  end
+
   it 'leaves a root-level preload alone - it belongs to bun run, not bun test' do
     write_bunfig %(preload = ["./run-setup.js"]\n\n[test]\ncoverage = true\n)
 
