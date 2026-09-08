@@ -23,8 +23,14 @@ module Proscenium
         @gem_name ||= gem_request_path.split('/').first
       end
 
+      # Taken from the normalised path, so the gem name and the suffix describe the file that
+      # will actually be built. Read from the request verbatim, `@rubygems/gem1/../index.js`
+      # named gem1 and a suffix the readability probe then cleaned to `index.js` - approving
+      # `<gem1>/index.js` while the builder resolved `../index.js` and served the file BESIDE
+      # the gem root. Normalised, it names a gem called `index.js`, which is not bundled, so
+      # the request passes through.
       def gem_request_path
-        @gem_request_path ||= @request.path.delete_prefix('/node_modules/@rubygems/')
+        @gem_request_path ||= normalised_path.delete_prefix('/node_modules/@rubygems/')
       end
     end
   end

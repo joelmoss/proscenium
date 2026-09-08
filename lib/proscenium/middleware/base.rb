@@ -14,22 +14,34 @@ module Proscenium
       end
 
       def renderable!
+        # The single funnel every subclass reaches, so the guard sits here rather than in
+        # `renderable?` - a subclass that overrides that (RubyGems does) cannot skip it.
+        return unless normalised_path
+
         renderable? ? self : nil
       end
 
       private
 
+      # The request path, decoded and with `.` and `..` segments resolved. Everything below is
+      # derived from this one value; see `Middleware.normalise_path` for why that matters.
+      def normalised_path
+        return @normalised_path if defined?(@normalised_path)
+
+        @normalised_path = Middleware.normalise_path(@request.path)
+      end
+
       def real_path
-        @real_path ||= @request.path
+        @real_path ||= normalised_path
       end
 
       # @return [String] the path to the file without the leading slash which will be built.
       def path_to_build
-        @path_to_build ||= @request.path[1..]
+        @path_to_build ||= normalised_path[1..]
       end
 
       def sourcemap?
-        @request.path.ends_with?('.map')
+        normalised_path.ends_with?('.map')
       end
 
       def renderable?
@@ -50,6 +62,9 @@ module Proscenium
         Rails.root
       end
 
+      # Secondary to `Middleware.normalise_path`, which every path here has already been through
+      # - this is idempotent on that output, and earns its keep by stripping the leading slash
+      # that the `join` above needs, and by handling the `.map`-stripped variant.
       def clean_path(file)
         path = Rack::Utils.unescape_path file.chomp('/').delete_prefix('/')
         Rack::Utils.clean_path_info path if Rack::Utils.valid_path? path

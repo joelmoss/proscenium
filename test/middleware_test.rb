@@ -109,6 +109,56 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     end
   end
 
+  # `find_type` matched the allowed-directory glob against the request verbatim, while the
+  # readability probe normalised and `path_to_build` did not - so one request was routed by a
+  # directory it does not resolve to, approved against one file, and built as a third. Every one
+  # of these served 200 before the paths were normalised once, up front.
+  context 'a path that normalises out of its own directory' do
+    let(:app) { subject.new HelloApp }
+
+    it 'does not serve a file outside the allowed directories' do
+      secret = Rails.root.join('public', 'normalise_probe.js')
+      secret.write 'console.log("outside");'
+
+      get '/lib/../public/normalise_probe.js'
+
+      assert_equal 'Hello, World!', response.body
+    ensure
+      secret.delete if secret.exist?
+    end
+
+    it 'does not serve a file beside a gem root' do
+      beside = Rails.root.join('vendor', 'index.js')
+      beside.write 'console.log("beside gem1");'
+
+      get '/node_modules/@rubygems/gem1/../index.js'
+
+      assert_equal 'Hello, World!', response.body
+    ensure
+      beside.delete if beside.exist?
+    end
+
+    it 'passes a path Rack rejects straight through' do
+      env = Rack::MockRequest.env_for('/lib/foo.js')
+      env['PATH_INFO'] = "/lib/foo.js\0"
+
+      status, _headers, body = subject.new(HelloApp).call(env)
+
+      assert_equal 200, status
+      assert_equal ['Hello, World!'], body
+    end
+  end
+
+  # The readability probe decoded the path before checking the disk, and the builder was handed
+  # the request verbatim, so this was approved against `mixin.css` and then failed on the literal
+  # `%6dixin.css` - a 500 out of the middleware for a URL any client can send.
+  it 'serves a percent-encoded gem path' do
+    get '/node_modules/@rubygems/gem1/%6dixin.css'
+
+    assert_equal 200, response.status
+    assert_includes response.body, 'vendor/gem1/mixin.css'
+  end
+
   it 'serves javascript' do
     get '/lib/foo.js'
 

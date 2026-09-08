@@ -22,7 +22,7 @@ module Proscenium
         # The path also has to yield a content hash, not just match the prefix - `CHUNKS_PATH`
         # checks only the latter, and `/_asset_chunks/nohash.js` used to index the nil match and
         # return a 500 from here.
-        return @app.call(env) unless (path = cleaned_path(request.path)) &&
+        return @app.call(env) unless (path = Middleware.normalise_path(request.path)) &&
                                      path.match?(CHUNKS_PATH) &&
                                      (etag = path[/-\$([a-z0-9]+)\$/i, 1])
 
@@ -35,18 +35,6 @@ module Proscenium
             'ETag' => etag
           }
         ).attempt(env.merge('PATH_INFO' => path)) || @app.call(env)
-      end
-
-      private
-
-      # The request path as the file handler will see it: percent-decoded, with `.` and `..`
-      # segments resolved. Nil for a path Rack rejects outright. Mirrors `Base#clean_path`,
-      # which does the same two Rack calls for the same reason.
-      def cleaned_path(path)
-        unescaped = Rack::Utils.unescape_path(path.chomp('/').delete_prefix('/'))
-        return unless Rack::Utils.valid_path?(unescaped)
-
-        "/#{Rack::Utils.clean_path_info(unescaped)}"
       end
     end
   end

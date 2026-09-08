@@ -282,7 +282,7 @@ module Proscenium
       # because two of the places it ends up do not anchor it themselves. `File.join(Rails.root,
       # spec)` keeps a `..` verbatim, and `build_entry` hands the path to esbuild, which resolves
       # it relative to the app root and will happily climb out; the `serve` path is the only one
-      # that gets `Rack::Utils.clean_path_info` for free, via Middleware::Base. A traversal 404s
+      # that gets normalised for free, by `Middleware.normalise_path`. A traversal 404s
       # there and then lands in `build_entry`, so without this guard `/lib/../../../secrets.js`
       # reads and returns any file esbuild can load.
       #
