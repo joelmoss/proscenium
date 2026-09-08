@@ -21,14 +21,6 @@ type cssParser struct {
 
 	// Warnings accumulated during parsing.
 	warnings []CssWarning
-
-	// The nesting level of each `:global` declaration, where each element is a pair of integers. The
-	// first is the nesting level, and the second is 0 (ident) or 1 (function).
-	globalRuleLevels [][2]int
-
-	// The nesting level of each `:local` declaration, where each element is a pair of integers. The
-	// first is the nesting level, and the second is 0 (ident) or 1 (function).
-	localRuleLevels [][2]int
 }
 
 func (p *cssParser) parse() (string, []CssWarning, error) {
@@ -108,72 +100,27 @@ func (p *cssParser) nextToken() *tokenizer.Token {
 		return nil
 	}
 
-	switch token.Type {
-	case tokenizer.TokenCloseBrace:
-		gcount := len(p.globalRuleLevels)
-		if gcount > 0 {
-			glevel := p.globalRuleLevels[gcount-1]
-			if p.tokens.nesting == glevel[0] {
-				p.tokens.log(":global is closed at %v", p.tokens.nesting)
-
-				if glevel[1] > 0 {
-					p.append(token.Value)
-				}
-
-				p.globalRuleLevels = p.globalRuleLevels[:gcount-1]
-
-				return p.nextToken()
-			}
-		}
-
-		lcount := len(p.localRuleLevels)
-		if lcount > 0 {
-			llevel := p.localRuleLevels[lcount-1]
-			if p.tokens.nesting == llevel[0] {
-				p.tokens.log(":local is closed at %v", p.tokens.nesting)
-
-				if llevel[1] > 0 {
-					p.append(token.Value)
-				}
-
-				p.localRuleLevels = p.localRuleLevels[:lcount-1]
-				return p.nextToken()
-			}
-		}
-	}
-
 	return token
 }
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
 // Returning false from that function will break from the iteration.
-func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token, nesting int) bool) {
+func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	for {
 		token := p.nextToken()
 
-		iterResult := iterFn(token, p.tokens.nesting)
+		iterResult := iterFn(token)
 		if !iterResult {
 			break
 		}
 	}
 }
 
-// Handle the next token and return the output, and whether we should continue. Accepts a
-// `handleNextTokenUntilFunc` as an optional first argument, which is used to determine whether we
-// should stop handling tokens. The function receives the current token, and should return true if
-// it should stop handling tokens.
-func (p *cssParser) handleNextToken(args ...any) (string, bool) {
+// Handle the next token and return the output, and whether we should continue.
+func (p *cssParser) handleNextToken() (string, bool) {
 	token := p.nextToken()
 	if token == nil {
 		return "", false
-	}
-
-	switch len(args) {
-	case 1:
-		untilFn := args[0].(handleNextTokenUntilFunc)
-		if untilFn(token) {
-			return token.Render(), false
-		}
 	}
 
 	switch token.Type {
@@ -196,7 +143,7 @@ func (p *cssParser) handleNextToken(args ...any) (string, bool) {
 			original.WriteString(token.Render())
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
-			p.forEachToken(func(token *tokenizer.Token, nesting int) bool {
+			p.forEachToken(func(token *tokenizer.Token) bool {
 				original.WriteString(token.Render())
 
 				if token.Type == tokenizer.TokenSemicolon {

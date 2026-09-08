@@ -159,19 +159,6 @@ func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	}
 }
 
-func (x *cssTokenizer) log(msg string, args ...any) {
-	if !debug {
-		return
-	}
-
-	indent := strings.Repeat("..", x.nesting)
-	if indent != "" {
-		indent += " "
-	}
-
-	log.Printf("!%s%s", indent, fmt.Sprintf(msg, args...))
-}
-
 func (x *cssTokenizer) logOutput(output string) {
 	if !debug {
 		return
@@ -185,7 +172,7 @@ func (x *cssTokenizer) logOutput(output string) {
 	log.Printf(" %s> %#v", indent, fmt.Sprint(output))
 }
 
-func (x *cssTokenizer) logToken(args ...any) {
+func (x *cssTokenizer) logToken() {
 	if !debug {
 		return
 	}
@@ -195,11 +182,6 @@ func (x *cssTokenizer) logToken(args ...any) {
 		indent += " "
 	}
 
-	if len(args) > 0 {
-		token := args[0].(tokenizer.Token)
-		log.Printf("!%s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
-	} else {
-		token := x.currentToken()
-		log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
-	}
+	token := x.currentToken()
+	log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
 }

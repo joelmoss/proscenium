@@ -3,13 +3,9 @@ package css
 import (
 	"joelmoss/proscenium/internal/types"
 	"os"
-
-	"github.com/riking/cssparse/tokenizer"
 )
 
 const debug = false
-
-type handleNextTokenUntilFunc func(token *tokenizer.Token) bool
 
 // CssWarning represents a non-fatal warning generated during CSS parsing.
 type CssWarning struct {
