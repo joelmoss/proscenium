@@ -47,6 +47,7 @@ Reviewers were given the do-not-report list below so that already-tracked work i
 
 | Finding | Status |
 |---|---|
+| F-GOPLUGIN-1 | **Done** — `ec1707af`. The three i18n globals are one immutable snapshot, published once after `json.Marshal` succeeds and keyed on the locales directory. Three tests added, none of which existed. **The staleness bug is exactly as described and was reproduced before the fix. The missing root key is LATENT, not live**, as field 3 implies: the directory-mtime check rebuilds whenever the mtimes differ, which they almost always do, so observing a crossed payload takes two roots whose locale directories share an mtime — the new spec forces that with `os.Chtimes`. The `-race` half is confirmed: DATA RACE on all three variables pre-fix. |
 | F-GOCSS-1 | **Done** — `954209bb`. The `:global`/`:local` rule-level stacks, the `untilFn` carcass and `nextToken`'s recursion deleted, plus the orphaned `css_test.snap` whose `TestParseCss` no longer exists. |
 | F-GOCSS-2 | **Done** — `00d1455a`. Both iteration helpers now own termination, so the hang and the panic are gone, and `nextToken` with them. Ruling 12 applied as a split: the tokenizer's helper stops at end-of-input only, the parser's on any stop token, which is what each layer already did — so malformed-CSS output is unchanged. **Field 4 was wrong that the caller-side check at mixins.go:83 could be deleted**; it terminates on the error and "bad" tokens, so it stays. The adjacent stack fix landed too: popping now truncates, which retired `position`, and `currentFilePath()` replaced mixins.go's indexing into the stack. |
 | F-SIDELOAD-1 (NameError half only) | **Done** — `52ad154e`. `PartialRenderer#sideload_template_assets` now receives `controller`. The `merge_options` extraction and the write-through-to-shared-state half are still open. |
@@ -56,8 +57,9 @@ Suggested order and the ordering hazards are in pass 4. The short version: **F-G
 F-GOCSS-2** was the high-severity pair — a hang and a panic that aborted the host Ruby
 process, with no `recover` behind any of the five cgo exports — and both are now done. What
 remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
-**F-GOPLUGIN-1** is the worst live defect left: i18n serves stale locale JSON indefinitely
-after one invalid file, needing no concurrency to get there.
+**F-GOPLUGIN-1** is done too (`ec1707af`). The worst live defect left is **F-MW-1**:
+`GET /_asset_chunks/anything.js` with no `-$HASH$` indexes a nil match and 500s from a
+middleware high in the stack, on an arbitrary client-supplied URL.
 
 ---
 

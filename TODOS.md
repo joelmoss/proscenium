@@ -109,11 +109,11 @@ two loops spun forever on truncated input, and a nil forwarded to a pointer-rece
 panicked - with no `recover` behind any of the five cgo exports, so it aborted the host Ruby
 process rather than failing one build. `@mixin foo` with no semicolon before EOF was enough.
 
-The worst still open is `F-GOPLUGIN-1`. i18n's three unsynchronised globals have three independent
-write points, so adding one invalid locale file publishes the new directory mtime alongside the old
-payload, and fixing that file's contents afterwards does not change the directory mtime - so the
-stale JSON is served indefinitely. No concurrency required, and the cache is not keyed by root
-either, so two roots in one process share whichever payload built first.
+The worst still open is `F-MW-1`. `GET /_asset_chunks/anything.js` without a `-$HASH$` segment
+indexes an unchecked match and raises `NoMethodError` on nil, so an arbitrary client-supplied URL
+500s out of a middleware sitting high in the stack; a missing gem under `/node_modules/@rubygems/`
+raises out of the readability probe the same way, where the sibling app-path branch would pass the
+request through.
 
 **Context:** Three themes carry most of the value, and they are why several individually-small
 findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
@@ -138,15 +138,18 @@ commented out. For those, the diff is small and the test is the work.
 
 Done so far: the high-severity Go/CSS pair, `F-GOCSS-1` (`954209bb`) and `F-GOCSS-2`
 (`00d1455a`), which also took the P3 dead-state items inside `internal/css` and left behind the
-first four tests any of that code has had. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
+first four tests any of that code has had. Then `F-GOPLUGIN-1` (`ec1707af`) - the i18n staleness
+bug, plus the root keying and the data race, with the first three tests for that cache. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
 its `merge_options` extraction and the write-through-to-shared-state half are still open.
 
-One correction the pair produced, for whoever reads the finding rather than this entry:
+Two corrections implementation produced, for whoever reads a finding rather than this entry.
 `F-GOCSS-2`'s field 4 claims the caller-side stop check at `mixins.go:83` can be deleted. It
 cannot - it terminates on the error and "bad" tokens, which pass 4's ruling 12 requires to keep
-today's behaviour, so it stays.
+today's behaviour, so it stays. And `F-GOPLUGIN-1`'s "two roots share one payload" reads as live
+but is latent: the directory-mtime check rebuilds whenever the mtimes differ, so a crossed payload
+needs two roots whose locale directories share one. The staleness half needed no such help.
 
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
-**Priority:** P2 for `F-GOPLUGIN-1`, P3 for the rest.
+**Priority:** P2 for `F-MW-1`, P3 for the rest.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
