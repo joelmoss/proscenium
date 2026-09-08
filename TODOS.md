@@ -103,19 +103,26 @@ commit `5edd7363` covering the Ruby engine, the Go/esbuild core, the FFI contrac
 the Bun harness and the browser React manager. 34 accepted findings, each with `file:line`
 evidence, a smallest-credible scope, regression risks and the validation it needs.
 
-**Why:** Twelve of them fix something reachable today, not just clarify. The severe one is
-`F-GOCSS-2`: `internal/css` encodes end-of-stream three different ways, two loops spin forever on
-truncated input, and a nil forwarded to a pointer-receiver `Render()` panics - with no `recover`
-behind any of the five cgo exports, so it aborts the host Ruby process rather than failing one
-build. `@mixin foo` with no semicolon before EOF is enough.
+**Why:** Twelve of them fix something reachable today, not just clarify. The severest,
+`F-GOCSS-2`, is now fixed (`00d1455a`): `internal/css` encoded end-of-stream three different ways,
+two loops spun forever on truncated input, and a nil forwarded to a pointer-receiver `Render()`
+panicked - with no `recover` behind any of the five cgo exports, so it aborted the host Ruby
+process rather than failing one build. `@mixin foo` with no semicolon before EOF was enough.
+
+The worst still open is `F-GOPLUGIN-1`. i18n's three unsynchronised globals have three independent
+write points, so adding one invalid locale file publishes the new directory mtime alongside the old
+payload, and fixing that file's contents afterwards does not change the directory mtime - so the
+stale JSON is served indefinitely. No concurrency required, and the cache is not keyed by root
+either, so two roots in one process share whichever payload built first.
 
 **Context:** Three themes carry most of the value, and they are why several individually-small
 findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
 URL spelling in five, with the copies now drifted in four distinguishable ways (`F-GOBUNDLE-1`);
 roughly 250 lines of state outlived the refactors meant to remove it, including three
-unsynchronised globals the config-threading pass missed (`F-GOPLUGIN-1`, pattern P3); and three
-places index an unchecked match behind a guard that checked less (`F-MW-1`, and the two panics
-above).
+unsynchronised globals the config-threading pass missed (`F-GOPLUGIN-1`, pattern P3, whose
+`internal/css` items are now deleted); and three places index an unchecked match behind a guard
+that checked less (`F-MW-1` is the last of those - the two `internal/css` panics of that shape are
+fixed).
 
 Read `AUDIT.md`'s "AUDIT-THE-AUDIT — pass 4" section before starting anything: it is the final
 adjudication and overrides the per-lane priorities earlier in that file. It rejects three
@@ -129,10 +136,17 @@ SilenceRequest middleware, `ReactComponentable`, `css_module/path.rb`, `internal
 `spawnDaemon` and the Rakefile have no coverage at all, and `test/manifest_test.rb` is entirely
 commented out. For those, the diff is small and the test is the work.
 
-`F-SIDELOAD-1`'s `NameError` half is already done (`52ad154e`); its `merge_options` extraction and
-the write-through-to-shared-state half are still open.
+Done so far: the high-severity Go/CSS pair, `F-GOCSS-1` (`954209bb`) and `F-GOCSS-2`
+(`00d1455a`), which also took the P3 dead-state items inside `internal/css` and left behind the
+first four tests any of that code has had. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
+its `merge_options` extraction and the write-through-to-shared-state half are still open.
 
-**Effort:** XL in total; individual findings range from one line to a day. The dead-state sweep
-(P3) and the `F-GOCSS-1` deletion are the cheapest openers.
-**Priority:** P2 for `F-GOCSS-2`, P3 for the rest.
+One correction the pair produced, for whoever reads the finding rather than this entry:
+`F-GOCSS-2`'s field 4 claims the caller-side stop check at `mixins.go:83` can be deleted. It
+cannot - it terminates on the error and "bad" tokens, which pass 4's ruling 12 requires to keep
+today's behaviour, so it stays.
+
+**Effort:** XL in total; individual findings range from one line to a day. What is left of the
+dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
+**Priority:** P2 for `F-GOPLUGIN-1`, P3 for the rest.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
