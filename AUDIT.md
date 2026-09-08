@@ -421,6 +421,18 @@ built output — `import "/Users/.../fixtures/external/gem2"` — because the to
 the catch-all handler's `result.External` URL-conversion tail (bundler.go:344-351), which is
 what saves the aliased route. Pre-existing, confirmed unchanged by `f685b282`. Ticket separately.
 
+**Same family, second route in — found by reviewing `8284d26c`.** `buildUrlPath` (plugin/css.go:165-171)
+and the relative-importer exit (resolver/resolve.go:45-50) both fall back to
+`strings.TrimPrefix(fsPath, cfg.RootPath)`, which returns the path UNCHANGED when it is under
+neither a gem root nor the app root — so an absolute filesystem path escapes as a URL. plugin/
+dirname.go:32-40 guards the same three-way branch with an explicit `else { return ... }`; those two
+do not. `8284d26c` did not create this, but it widened the door: a path under a directory merely
+sharing a string prefix with a gem root (`/gems/foobar` against the gem at `/gems/foo`) used to
+take the gem branch and produce a wrong-but-URL-shaped `@rubygems/foobar/...`, and now correctly
+reports "not a gem" and lands in the unguarded fallback instead. Both answers are wrong; the
+failure mode moved from wrong-gem to path-leak. Fixing the two fallbacks belongs with
+`F-GORESOLVE-1`, which already rewrites resolve.go's exits.
+
 **Second finding correctly withheld.** The `for key := range metadata.Inputs { break }` at resolve.go:117-120 is a latent NONDETERMINISM concern (arbitrary map key from a Go map iteration), not a simplification — **recorded as a bug lead, ticket it separately.** The `(value, err)` union in `returnResolve` folds into F-GORESOLVE-1 rather than standing alone.
 **Cross-subsystem note:** resolve.go participates in the `@rubygems` duplication twice within this one file, and lib/proscenium/resolver.rb:18-21 independently re-implements the same gem-fs-path -> `/node_modules/@rubygems/...` mapping in Ruby. Owned by F-GOBUNDLE-1 (Go) and F-BOOT-1 (Ruby). **This makes FIVE known copies of the gem-prefix rule: bundler.go x2, resolve.go x2, resolver.rb, manifest.rb — a genuine cross-cutting pattern, recorded below.**
 

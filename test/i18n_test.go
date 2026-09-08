@@ -29,8 +29,10 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 	// to notice and the stale payload served for the life of the process.
 	It("recovers when an invalid locale file is fixed in place", func() {
 		localeFile := filepath.Join(testConfig.RootPath, "config", "locales", "zz_added.yml")
+		// RemoveAll, not Remove: this is registered before the file exists, so an early failure
+		// below would otherwise fail the cleanup too and mask the real one.
 		DeferCleanup(func() {
-			Expect(os.Remove(localeFile)).To(Succeed())
+			Expect(os.RemoveAll(localeFile)).To(Succeed())
 		})
 
 		// Build once so there is something cached to go stale.
