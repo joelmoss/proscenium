@@ -155,6 +155,95 @@ func extractScopedPackageName(path string) string {
 	return rest[:secondSlash]
 }
 
+// A reference to one bundled Ruby gem, and everything the callers of the old four-call sequence
+// had to re-derive for themselves: which gem, where its root is, and what part of the path sits
+// below that root.
+//
+// `Suffix` is always relative to `Root` and never carries the `@rubygems/` scope or the gem name.
+// It is either empty, or begins with "/".
+type GemRef struct {
+	Name   string
+	Root   string
+	Suffix string
+}
+
+// The URL path Proscenium serves this gem reference at. The one spelling of the
+// `/node_modules/@rubygems/<name><suffix>` rule, which is otherwise rebuilt by hand in five
+// places across this package, internal/plugin and internal/resolver.
+func (g GemRef) UrlPath() string {
+	return path.Join("/node_modules", types.RubyGemsScope, g.Name, g.Suffix)
+}
+
+// Parses a specifier - `@rubygems/<name>/<suffix>`, optionally prefixed with any of `unbundle:`, a
+// leading "/", and `node_modules/`.
+//
+// The three return values are "not a gem specifier at all" (false, no error), "a gem specifier
+// naming a gem that is not bundled" (true, error), and a parsed reference. The error message is
+// user-facing and asserted by test/rubygems_test.go, so it is reproduced verbatim.
+//
+// Answering "is it?" and "which gem?" in one call is the point. `IsRubyGem` and `ResolveRubyGem`
+// disagreed about the accepted language: the predicate accepted a `node_modules/`-prefixed
+// specifier, which the parser then mis-read, reporting the SCOPE as the missing gem name -
+// `could not resolve Ruby gem "@rubygems"`. Correctness rested on each caller remembering to trim
+// the prefix first, and internal/resolver/resolve.go did not.
+func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
+	spec = strings.TrimPrefix(spec, "unbundle:")
+	spec = strings.TrimPrefix(spec, "/")
+	spec = strings.TrimPrefix(spec, "node_modules/")
+
+	if !strings.HasPrefix(spec, types.RubyGemsScope) {
+		return GemRef{}, false, nil
+	}
+
+	name := strings.TrimPrefix(ExtractBareModule(spec), types.RubyGemsScope)
+	if name == "" {
+		return GemRef{}, false, nil
+	}
+
+	root, ok := cfg.RubyGems[name]
+	if !ok {
+		return GemRef{}, true, fmt.Errorf("could not resolve Ruby gem %q. Is %q in your Gemfile?",
+			name, name)
+	}
+
+	suffix := strings.TrimPrefix(spec, types.RubyGemsScope+name)
+	if suffix == "/" {
+		suffix = ""
+	}
+
+	return GemRef{Name: name, Root: root, Suffix: suffix}, true, nil
+}
+
+// Parses an absolute file system path, answering which bundled gem contains it. The filesystem-
+// space counterpart of GemFromSpecifier, and the replacement for PathIsRubyGem.
+//
+// Longest root wins, and a root matches only at a "/" boundary. PathIsRubyGem took the first match
+// of a bare HasPrefix from a Go map range, and gem roots are stored without a trailing separator -
+// so a path under a root that merely shares a string prefix with another (`/gems/foo-ext` against
+// `/gems/foo`) or sits under a nested root could be credited to the wrong gem, and picked
+// differently from one call to the next in a single process. lib/proscenium/resolver.rb:18 already
+// requires the boundary, comparing against `"#{root}/"`; this is the Go side agreeing.
+func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
+	var ref GemRef
+	found := false
+
+	for name, root := range cfg.RubyGems {
+		trimmed := strings.TrimSuffix(root, "/")
+		if fsPath != trimmed && !strings.HasPrefix(fsPath, trimmed+"/") {
+			continue
+		}
+
+		if found && len(trimmed) <= len(strings.TrimSuffix(ref.Root, "/")) {
+			continue
+		}
+
+		ref = GemRef{Name: name, Root: root, Suffix: strings.TrimPrefix(fsPath, trimmed)}
+		found = true
+	}
+
+	return ref, found
+}
+
 func PathIsRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, found bool) {
 	for gemName, gemPath := range cfg.RubyGems {
 		if strings.HasPrefix(path, gemPath) {
@@ -165,20 +254,9 @@ func PathIsRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath str
 }
 
 // Checks if the given path is a Ruby gem, ie. starts with "@rubygems/" or "node_modules/@rubygems".
-// If the second argument is true, it will only return true if the path starts with
-// "node_modules/@rubygems".
-func IsRubyGem(path string, mustBeFromNodeModules ...bool) bool {
-	// Default value is false if no argument provided
-	_mustBeFromNodeModules := false
-	if len(mustBeFromNodeModules) > 0 {
-		_mustBeFromNodeModules = mustBeFromNodeModules[0]
-	}
-
-	if _mustBeFromNodeModules {
-		return strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
-	}
-
-	return strings.HasPrefix(path, types.RubyGemsScope) || strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
+func IsRubyGem(path string) bool {
+	return strings.HasPrefix(path, types.RubyGemsScope) ||
+		strings.HasPrefix(path, "node_modules/"+types.RubyGemsScope)
 }
 
 func ResolveRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, err error) {
