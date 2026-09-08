@@ -522,6 +522,38 @@ Note: the CSS-module digest constraint is N/A here — utils.go contains no dige
 **Nits recorded, deliberately not findings:** `IsBareSpecifier = IsBareModule` (utils.go:50, one caller at builder/build.go:32) is a second name for one predicate; `IsImportedFromJsx` (utils.go:88) never reads its `path` parameter and has one caller (utils.go:85), so it need not be exported.
 **Considered and REJECTED, coordinator agrees:** collapsing `IsCssImportedFromJs`/`IsSvgImportedFromJsx`/`IsSvgImportedFromCss` (utils.go:80-94) into a classified import-edge enum. The else-if chains in bundler.go:89-103/:226-241 and bundless.go:261-296 do re-derive the same two facts, but each branch's ACTION differs, and a `classify()` + `switch` would only move existing branching behind a new type.
 
+## CODEX ADVERSARIAL PASS — 2026-09-08, against the unpushed set
+
+An independent adversarial review by Codex (gpt-5.x, 1.9M tokens) over the 16 unpushed
+commits. It found ELEVEN issues, none of which this audit had raised. Four were verified
+by measurement before acting; two are now fixed in `804ccc50`. **This is the honest score
+for the audit itself: a whole-repository read-only pass missed a request that serves an
+arbitrary file from the output directory under a permanent-cache header, and missed a CSS
+input that hangs a build thread forever.**
+
+| # | Finding | Status |
+|---|---|---|
+| 1 | Eager token skip after a mixin terminator ate the following token — `a{@mixin m;display:block;}` -> `a{color:red;:block;}`, `a{@mixin m;}` loses its closing brace | **Fixed** `804ccc50`. Verified. Root cause of #5's tight form too. |
+| 5 | A mixin including itself, or two files including each other via `url()`, expands without bound — never returns, grows output and tokenizer stack | **Fixed** `804ccc50`. Verified: HANG. Same class as `F-GOCSS-2`, reached by recursion not end-of-stream. |
+| 8 | Chunk guard read the raw path while `FileHandler` normalises afterwards: `/_asset_chunks/x-$FAKE$/../../lib/foo.js` served a file outside the chunk dir with `ETag: FAKE` under `immutable, max-age=100.years` | **Fixed** `804ccc50`. Verified by probe. |
+| 11 | `GemFromFsPath` still nondeterministic when two gems share one root — equal-length matches keep whichever map entry came first | **OPEN.** Verified: 32/8 over 40 calls. Residual in the code written to fix exactly this. Reachable when two gemspecs share a source directory. |
+| 4 | `RubyGems` validates a cleaned path but hands the builder the original, so `@rubygems/foo/../x.js` is approved against `/gems/foo/x.js` and built as `/gems/x.js`; percent-encoding mismatches the other way | **OPEN.** Mismatch confirmed (`BuildError` names the un-normalised path); the escape itself is layout-dependent and unproven here. Belongs with the middleware lane. |
+| 7 | The shared alias route applies a second alias with stale gem attribution (`<gem2-root>/@rubygems/gem1/...`) and overwrites an already-true `unbundle` flag with false | **OPEN.** This is the alias-chaining change `f685b282` flagged as config-only; it is a bug when reached, not a neutral change. |
+| 6 | An alias targeting `unbundle:@rubygems/...` skips gem resolution, because `IsRubyGem` runs before the `unbundle:` prefix is stripped | **OPEN.** One-line guard fix; belongs with `F-GOUTILS-1` step 2, which routes these through `GemFromSpecifier` (that one does strip it). |
+| 3 | Locale edits that preserve mtime are invisible indefinitely; two edits inside the filesystem's timestamp granularity likewise. Contents, size and identity are never checked | **OPEN.** Pre-existing detector design, untouched by `ec1707af`. |
+| 9 | Concurrent locale rebuilds can publish backwards: A reads, B reads and publishes newer, A publishes older over it. The mutex orders the assignment, not the generations | **OPEN.** Confirms `ec1707af`'s snapshots are immutable and root-keyed, and narrows the residual to same-root ordering. |
+| 10 | A locales dir that permits `Stat` but denies `ReadDir` publishes `{}` and, mtime unchanged, serves it forever — and reports the error as a successful load | **OPEN.** |
+| 2 | Vendor files get `immutable, max-age=100.years` with no ETag and no versioned URL, so an edit cannot reach a client that already cached one | **OPEN.** Pre-existing; `c02be7d3` fixed the env mutation, not the caching policy. |
+
+Method note worth keeping: `/codex challenge`'s stock adversarial framing ("think like an
+attacker and a chaos engineer") got the first run KILLED mid-turn by OpenAI's content
+filter (`flagged for possible cybersecurity risk`). Re-framing as a correctness and
+robustness review, with identical technical substance, completed. The answer exceeded the
+harness tool-result limit and was recovered in full from
+`~/.codex/sessions/YYYY/MM/DD/rollout-*.jsonl`.
+
+---
+
 ## AUDIT-THE-AUDIT — pass 1: repository coverage (coordinator, mechanical)
 
 Method: `find . -type f \( -name '*.rb' -o -name '*.go' -o -name '*.js' -o -name '*.jsx' -o -name '*.rake' \)` excluding fixtures/, pkg/, node_modules/, .git/, gemfiles/ — 91 files — diffed against the inventory's file lists. **Three real omissions found. Rows added rather than hidden by widening a completed boundary.**
