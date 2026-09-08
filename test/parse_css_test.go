@@ -3,6 +3,7 @@ package proscenium_test
 import (
 	"joelmoss/proscenium/internal/css"
 	. "joelmoss/proscenium/test/support"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -333,6 +334,75 @@ var _ = Describe("Build(parseCss)", func() {
 			// because the tokenizer returns its end-of-input token forever once the input is
 			// exhausted: a loop that fails to stop spins without allocating, so a regression would
 			// wedge the suite rather than fail it.
+			// A mixin cannot be expanded while it is already open. Each of these pushed a fresh
+			// tokenizer per invocation and never returned, growing the output and the tokenizer
+			// stack until the process died - the same class of hang as the truncated-input cases
+			// below, reached by recursion rather than by end-of-stream.
+			Describe("recursive mixins", func() {
+				It("refuses a mixin that includes itself", func() {
+					code, warnings := parseWithDeadline(
+						"@define-mixin m{color:red;@mixin m; }\na{@mixin m; }", "/foo.css")
+
+					Expect(code).To(Equal("\na{color:red;@mixin m;  }"))
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "m" includes itself`))
+				})
+
+				// No whitespace after the terminator, so the declaration's own stack entry is the
+				// only thing standing between this and an unbounded expansion.
+				It("refuses a self-including mixin with nothing after the terminator", func() {
+					code, warnings := parseWithDeadline(
+						"@define-mixin m{color:red;@mixin m;}a{@mixin m;}", "/foo.css")
+
+					Expect(code).To(Equal("a{color:red;@mixin m;}"))
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "m" includes itself`))
+				})
+
+				It("refuses two mixin files that include each other through url()", func() {
+					code, warnings := parseWithDeadline(
+						`.x{@mixin a from url("/lib/mixins/cycle/a.css"); }`,
+						filepath.Join(testConfig.RootPath, "foo.css"))
+
+					// Both definitions expand once; the second lap back into `a` is refused.
+					Expect(code).To(ContainSubstring("color:red;color:blue;"))
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "a" includes itself`))
+				})
+
+				It("still expands a mixin used twice, and one nested inside another", func() {
+					code, warnings := parseWithDeadline(
+						"@define-mixin i{color:red;}\n@define-mixin o{@mixin i; }\na{@mixin o; }\nb{@mixin i; }",
+						"/foo.css")
+
+					Expect(warnings).To(BeEmpty())
+					Expect(code).To(ContainSubstring("a{color:red;"))
+					Expect(code).To(ContainSubstring("b{color:red;"))
+				})
+			})
+
+			// The token after a mixin's terminator used to be consumed by an eager skip, so a
+			// declaration on the same line as `@mixin foo;` lost its first token: `a{@mixin m;
+			// display:block;}` became `a{color:red;:block;}`, and `a{@mixin m;}` lost its closing
+			// brace. Whitespace after the terminator masked it, which is why every fixture missed
+			// it.
+			Describe("the token after a mixin declaration", func() {
+				It("keeps a declaration that follows on the same line", func() {
+					Expect("@define-mixin m{color:red;}a{@mixin m;display:block;}").To(
+						BeParsedTo("a{color:red;display:block;}", "/foo.css"))
+				})
+
+				It("keeps the closing brace when the mixin is the last thing in the rule", func() {
+					Expect("@define-mixin m{color:red;}a{@mixin m;}").To(
+						BeParsedTo("a{color:red;}", "/foo.css"))
+				})
+
+				It("keeps the token after an unresolved mixin, and emits it once", func() {
+					Expect("a{@mixin nope;display:block;}").To(
+						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css"))
+				})
+			})
+
 			Describe("truncated input", func() {
 				It("passes through a mixin declaration with no terminating semicolon", func() {
 					code, warnings := parseWithDeadline("@mixin foo", "/foo.css")
@@ -360,7 +430,10 @@ var _ = Describe("Build(parseCss)", func() {
 					code, warnings := parseWithDeadline(
 						"header {\n\t@mixin red from url('/lib/mixins/unterminated.css');\n}", "/foo.css")
 
-					Expect(code).To(Equal("header {\n\ncolor: red;\n}"))
+					// The blank line is the newline that followed the `@mixin` declaration. It used
+					// to be swallowed by the eager token skip in `handleNextToken`, and this
+					// assertion pinned that; removing the skip restores it to the output.
+					Expect(code).To(Equal("header {\n\ncolor: red;\n\n}"))
 					Expect(warnings).To(BeEmpty())
 				})
 			})

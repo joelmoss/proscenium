@@ -143,10 +143,10 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				original.WriteString(token.Render())
 
 				if token.Type == tokenizer.TokenSemicolon {
-					// Current token is a semicolon, so we're done. But we need to skip to the next token,
-					// otherwise we get duplicates of the semicolon.
-					p.tokens.next()
-
+					// Current token is a semicolon, so we're done. `original` already ends with it,
+					// which is why nothing is appended to it below - this used to skip a token here
+					// instead, to stop the unresolved path rendering the semicolon twice, and that
+					// discarded whatever real token followed. See the commit that removed it.
 					return false
 				}
 
@@ -165,10 +165,11 @@ func (p *cssParser) handleNextToken() (string, bool) {
 
 			if p.resolveMixin(mixinIdent, uri) {
 				return "", true
-			} else {
-				t := p.tokens.currentToken()
-				return original.String() + t.Render(), true
 			}
+
+			// Unresolved: emit the declaration as it was written. `original` holds every token of
+			// it, terminator included, so there is nothing to append.
+			return original.String(), true
 		}
 	}
 

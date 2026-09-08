@@ -16,17 +16,36 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		return false
 	}
 
+	search := "@mixin " + mixinIdent
+
+	// Set when a mixin was found but refused as a cycle, so the "not defined" warnings below -
+	// which mean "no such mixin" - are not also emitted for it.
+	cycled := false
+
 	findAndInsertMixin := func(filePath string, mixinName string) bool {
-		def, ok := p.mixins[filePath+"#"+mixinName]
-		if ok {
-			p.tokens.insertTokens(def, filePath)
-			return true
+		key := filePath + "#" + mixinName
+
+		def, ok := p.mixins[key]
+		if !ok {
+			return false
 		}
 
-		return false
-	}
+		// A mixin already being expanded cannot be expanded again. `@define-mixin m{@mixin m;}`
+		// pushed a fresh tokenizer per invocation and never returned, growing the output and the
+		// tokenizer stack until the process died; two files including each other through `url()`
+		// fail the same way. Cycle detection rather than a depth cap, because legitimate nesting
+		// has no natural limit and a cycle is never legitimate.
+		if p.tokens.isExpanding(key) {
+			p.addWarning(search, "Mixin %q includes itself", mixinName)
+			cycled = true
 
-	search := "@mixin " + mixinIdent
+			return false
+		}
+
+		p.tokens.insertTokens(def, filePath, key)
+
+		return true
+	}
 
 	if uri != "" {
 		// Resolve the uri.
@@ -40,12 +59,21 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 			return true
 		}
 
+		// Already refused as a cycle, so re-parsing the file and asking again would only refuse
+		// it a second time, and warn twice for one declaration.
+		if cycled {
+			return false
+		}
+
 		if p.parseMixinDefinitions(absPath) {
 			// We've successfully parsed the mixin file, so look up the definition.
 			if findAndInsertMixin(absPath, mixinIdent) {
 				return true
 			}
-			p.addWarning(search, "Mixin %q not found in %q", mixinIdent, absPath)
+			if !cycled {
+				p.addWarning(search, "Mixin %q not found in %q", mixinIdent, absPath)
+			}
+
 			return false
 		}
 
@@ -56,7 +84,10 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		if findAndInsertMixin(filePath, mixinIdent) {
 			return true
 		}
-		p.addWarning(search, "Mixin %q not defined in %q", mixinIdent, filePath)
+		if !cycled {
+			p.addWarning(search, "Mixin %q not defined in %q", mixinIdent, filePath)
+		}
+
 		return false
 	}
 }

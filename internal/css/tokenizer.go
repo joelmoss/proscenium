@@ -15,6 +15,10 @@ type cssTokenizers struct {
 
 	// The file path of the current file being parsed.
 	filePath string
+
+	// The mixin whose expansion this stream is, as `<file path>#<name>`. Empty for the stream of
+	// the file being parsed. Read by `isExpanding` to refuse re-entering a mixin already open.
+	mixinKey string
 }
 
 type cssTokenizer struct {
@@ -84,11 +88,24 @@ func (x *cssTokenizer) currentFilePath() string {
 	return x.tokenizers[len(x.tokenizers)-1].filePath
 }
 
-func (x *cssTokenizer) insertTokens(tokens string, filePath string) {
+func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinKey string) {
 	x.tokenizers = append(x.tokenizers, &cssTokenizers{
 		tokenizer: tokenizer.NewTokenizer(strings.NewReader(tokens)),
 		filePath:  filePath,
+		mixinKey:  mixinKey,
 	})
+}
+
+// Whether the given mixin is already open somewhere up the stack, ie. expanding it again would
+// be re-entering an expansion still in progress.
+func (x *cssTokenizer) isExpanding(mixinKey string) bool {
+	for _, t := range x.tokenizers {
+		if t.mixinKey == mixinKey {
+			return true
+		}
+	}
+
+	return false
 }
 
 // Fetch the mixin definition at the current token, and return its name and definition.

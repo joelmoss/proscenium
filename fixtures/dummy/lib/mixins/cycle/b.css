@@ -1,0 +1,1 @@
+@define-mixin b{color:blue;@mixin a from url("/lib/mixins/cycle/a.css"); }
