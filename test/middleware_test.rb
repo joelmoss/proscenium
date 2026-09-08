@@ -85,6 +85,28 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
         assert_includes response.body, 'console.log("gem4");'
       end
     end
+
+    # A gem that is not in the Gemfile used to raise out of the readability probe and 500,
+    # where the same shape of miss under an app path passes through (see 'unsupported/unknown
+    # path' above, and the assertion below that the two now agree).
+    context 'gem not in the Gemfile' do
+      let(:app) { subject.new HelloApp }
+
+      it 'passes through' do
+        get '/node_modules/@rubygems/notagem/lib/x.js'
+
+        assert_equal 'Hello, World!', response.body
+      end
+
+      it 'passes through the same way a missing app file does' do
+        get '/lib/not_on_disk.js'
+        missing_app_file = response.status
+
+        get '/node_modules/@rubygems/notagem/lib/x.js'
+
+        assert_equal missing_app_file, response.status
+      end
+    end
   end
 
   it 'serves javascript' do

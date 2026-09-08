@@ -7,6 +7,14 @@ module Proscenium
         @real_path ||= Pathname.new(gem_request_path.delete_prefix("#{gem_name}/")).to_s
       end
 
+      # An unknown gem is "not mine", the same answer a missing file under an app path gets from
+      # `Base#file_readable?`. Without this, `pathname_for!` raised out of the readability probe
+      # and a request for a gem that is not in the Gemfile 500'd, while the sibling app-path
+      # branch quietly passed the same shape of miss down the stack.
+      def renderable?
+        BundledGems.pathname_for(gem_name) && super
+      end
+
       def root_for_readable
         BundledGems.pathname_for!(gem_name)
       end
