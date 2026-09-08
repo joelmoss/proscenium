@@ -176,12 +176,13 @@ becoming "a hit in another middleware", which reads like a mislabelled 404; in t
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
 An adversarial Codex pass on 2026-09-08 found ELEVEN issues this audit never raised, listed
-in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Two are fixed (`804ccc50`); nine are open and
-are now the better-value queue than the rest of the audit's own backlog. The sharpest of
-them: `GemFromFsPath` is still nondeterministic when two gems share a root (measured 32/8
-over 40 calls, in the code written to fix that very defect); `RubyGems` validates a cleaned
-path and builds the original; and the alias chaining `f685b282` waved through as config-only
-is a bug when reached.
+in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Five are fixed; six are open and are
+now the better-value queue than the rest of the audit's own backlog. The sharpest of those
+left is `RubyGems` validating a cleaned path and building the original - the same
+check-one-string-act-on-another shape as the chunk-path fix, and the last of the middleware
+lane. The other five are the two i18n detector weaknesses (mtime-preserving edits, and `{}`
+cached after a `ReadDir` failure), the same-root publish ordering, and vendor's permanent
+caching with no ETag or versioned URL, which is a policy call rather than a bug.
 
 **Priority:** P3 for what remains. One bug lead came out of `F-GOBUNDLE-1` and is recorded in
 `AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve

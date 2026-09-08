@@ -526,7 +526,7 @@ Note: the CSS-module digest constraint is N/A here — utils.go contains no dige
 
 An independent adversarial review by Codex (gpt-5.x, 1.9M tokens) over the 16 unpushed
 commits. It found ELEVEN issues, none of which this audit had raised. Four were verified
-by measurement before acting; two are now fixed in `804ccc50`. **This is the honest score
+by measurement before acting; five are now fixed (`804ccc50`, `324e4e4c`). **This is the honest score
 for the audit itself: a whole-repository read-only pass missed a request that serves an
 arbitrary file from the output directory under a permanent-cache header, and missed a CSS
 input that hangs a build thread forever.**
@@ -536,10 +536,10 @@ input that hangs a build thread forever.**
 | 1 | Eager token skip after a mixin terminator ate the following token — `a{@mixin m;display:block;}` -> `a{color:red;:block;}`, `a{@mixin m;}` loses its closing brace | **Fixed** `804ccc50`. Verified. Root cause of #5's tight form too. |
 | 5 | A mixin including itself, or two files including each other via `url()`, expands without bound — never returns, grows output and tokenizer stack | **Fixed** `804ccc50`. Verified: HANG. Same class as `F-GOCSS-2`, reached by recursion not end-of-stream. |
 | 8 | Chunk guard read the raw path while `FileHandler` normalises afterwards: `/_asset_chunks/x-$FAKE$/../../lib/foo.js` served a file outside the chunk dir with `ETag: FAKE` under `immutable, max-age=100.years` | **Fixed** `804ccc50`. Verified by probe. |
-| 11 | `GemFromFsPath` still nondeterministic when two gems share one root — equal-length matches keep whichever map entry came first | **OPEN.** Verified: 32/8 over 40 calls. Residual in the code written to fix exactly this. Reachable when two gemspecs share a source directory. |
+| 11 | `GemFromFsPath` still nondeterministic when two gems share one root — equal-length matches keep whichever map entry came first | **Fixed** `324e4e4c`. Verified 37/3 over 40 calls before, 40/0 after. Tie broken on gem name. The advice taken while writing `8284d26c` - that a shared root is a config problem not worth a tiebreak - was wrong. |
 | 4 | `RubyGems` validates a cleaned path but hands the builder the original, so `@rubygems/foo/../x.js` is approved against `/gems/foo/x.js` and built as `/gems/x.js`; percent-encoding mismatches the other way | **OPEN.** Mismatch confirmed (`BuildError` names the un-normalised path); the escape itself is layout-dependent and unproven here. Belongs with the middleware lane. |
-| 7 | The shared alias route applies a second alias with stale gem attribution (`<gem2-root>/@rubygems/gem1/...`) and overwrites an already-true `unbundle` flag with false | **OPEN.** This is the alias-chaining change `f685b282` flagged as config-only; it is a bug when reached, not a neutral change. |
-| 6 | An alias targeting `unbundle:@rubygems/...` skips gem resolution, because `IsRubyGem` runs before the `unbundle:` prefix is stripped | **OPEN.** One-line guard fix; belongs with `F-GOUTILS-1` step 2, which routes these through `GemFromSpecifier` (that one does strip it). |
+| 7 | The shared alias route applies a second alias with stale gem attribution (`<gem2-root>/@rubygems/gem1/...`) and overwrites an already-true `unbundle` flag with false | **Fixed** `324e4e4c`. Both halves verified. The alias is now resolved BEFORE the gem, and the unbundle flag only ever rises. `f685b282` recorded this chaining as a neutral config-only change; it was a bug. |
+| 6 | An alias targeting `unbundle:@rubygems/...` skips gem resolution, because `IsRubyGem` runs before the `unbundle:` prefix is stripped | **Fixed** `324e4e4c`. The guard uses `GemFromSpecifier`, which strips the prefixes. That is its first production caller, so `F-GOUTILS-1` step 1 is no longer dead code. |
 | 3 | Locale edits that preserve mtime are invisible indefinitely; two edits inside the filesystem's timestamp granularity likewise. Contents, size and identity are never checked | **OPEN.** Pre-existing detector design, untouched by `ec1707af`. |
 | 9 | Concurrent locale rebuilds can publish backwards: A reads, B reads and publishes newer, A publishes older over it. The mutex orders the assignment, not the generations | **OPEN.** Confirms `ec1707af`'s snapshots are immutable and root-keyed, and narrows the residual to same-root ordering. |
 | 10 | A locales dir that permits `Stat` but denies `ReadDir` publishes `{}` and, mtime unchanged, serves it forever — and reports the error as a successful load | **OPEN.** |
