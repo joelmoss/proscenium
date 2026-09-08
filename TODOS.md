@@ -112,10 +112,11 @@ process rather than failing one build. `@mixin foo` with no semicolon before EOF
 Nothing still open misserves or crashes on a client-supplied URL - the two that did, and the two
 `internal/css` defects before them, are fixed. What remains is materiality rather than breakage,
 and the largest of it is `F-GOBUNDLE-1`: the `@rubygems` path rule is re-derived in six places and
-its URL spelling in five, with the copies drifted in four distinguishable ways. `F-GOUTILS-1`'s
-step 1 comes first and is purely additive - it adds the shared `GemRef` primitive without touching
-a call site, so it can land on its own (pass 4's ruling 1 puts the call-site migration *after*
-`F-GOBUNDLE-1`, not before).
+its URL spelling in five, with the copies drifted in four distinguishable ways. `F-GOUTILS-1`'s step 1 is
+now done, so the shared `GemRef` primitive its consumers need already exists - `F-GOBUNDLE-1` can
+be written against it directly. Its own step 2, the call-site migration, still waits for
+`F-GOBUNDLE-1` and `F-GORESOLVE-1` to delete the sites it would otherwise migrate (pass 4's
+ruling 1).
 
 **Context:** Three themes carry most of the value, and they are why several individually-small
 findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
@@ -134,7 +135,7 @@ would otherwise migrate. Eleven ordering constraints are listed there; three wer
 the lanes that produced the findings.
 
 Several findings must write the first test for the code they touch. `Chunks` and `Vendor` now have
-theirs; `SilenceRequest`, `ReactComponentable`, `css_module/path.rb`, `internal/utils`,
+theirs; `internal/utils` has 28; `SilenceRequest`, `ReactComponentable`, `css_module/path.rb`,
 `spawnDaemon` and the Rakefile still have no coverage at all, and `test/manifest_test.rb` is
 entirely commented out. For those, the diff is small and the test is the work.
 
@@ -143,7 +144,8 @@ Done so far: the high-severity Go/CSS pair, `F-GOCSS-1` (`954209bb`) and `F-GOCS
 first four tests any of that code has had. Then `F-GOPLUGIN-1` (`ec1707af`) - the i18n staleness
 bug, plus the root keying and the data race, with the first three tests for that cache. Then the
 middleware pair, `F-MW-1` (`d2730224`) and `F-MW-2` (`c02be7d3`), which between them wrote the
-first tests for `Chunks` and `Vendor`. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
+first tests for `Chunks` and `Vendor`. Then `F-GOUTILS-1` step 1 (`c7ae4da3`) and its file-system
+half (`8284d26c`), which added `GemRef` and the first tests `internal/utils` has ever had. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
 its `merge_options` extraction and the write-through-to-shared-state half are still open.
 
 Two corrections implementation produced, for whoever reads a finding rather than this entry.
@@ -152,6 +154,12 @@ cannot - it terminates on the error and "bad" tokens, which pass 4's ruling 12 r
 today's behaviour, so it stays. And `F-GOPLUGIN-1`'s "two roots share one payload" reads as live
 but is latent: the directory-mtime check rebuilds whenever the mtimes differ, so a crossed payload
 needs two roots whose locale directories share one. The staleness half needed no such help.
+
+`F-GOUTILS-1`'s field 3 understates `PathIsRubyGem` the same way `F-MW-2` does. It has the wrong
+gem being picked "differently between runs"; it is picked differently between CALLS in one process
+(38/2 and 33/7 over 40), and a path under a directory whose name merely starts with a gem root's -
+`/gems/foobar` against the gem at `/gems/foo` - is credited wrongly 40 times out of 40, with no
+randomness involved at all.
 
 `F-MW-2` understates itself in the other direction. Its field 3 describes the leak as a vendor miss
 becoming "a hit in another middleware", which reads like a mislabelled 404; in the dummy app

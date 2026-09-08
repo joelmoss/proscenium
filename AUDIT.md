@@ -47,6 +47,7 @@ Reviewers were given the do-not-report list below so that already-tracked work i
 
 | Finding | Status |
 |---|---|
+| F-GOUTILS-1 (steps 1 and the fs-path behaviour change) | **Done** — `c7ae4da3` (additive: `GemRef`, `GemFromSpecifier`, `GemFromFsPath`, `UrlPath`, dead variadic dropped, first 25 specs for `internal/utils`) and `8284d26c` (the longest-match/boundary change, its own commit per the Convergent ruling — nothing flipped). **Field 3 understated `PathIsRubyGem`:** the non-determinism is intra-PROCESS, not between runs — measured 38/2 and 33/7 over 40 calls — and `/gems/foobar` credited to the gem at `/gems/foo` is a plain wrong answer 40/40 with no randomness at all. **Step 2 (call-site migration) and step 3 (deleting the old primitives) are still open**, and per ruling 1 step 2 waits for `F-GOBUNDLE-1` and `F-GORESOLVE-1`. |
 | F-MW-1 | **Done** — `d2730224`. Both guards now return the value they validated. `Chunks` extracts the content hash in the guard (regex byte-identical, so cached ETags do not move); `RubyGems#renderable?` uses the non-bang lookup, so an unknown gem is "not mine" like a missing app file. First tests for `Chunks`, including the positive ETag case. |
 | F-MW-2 | **Done** — `c02be7d3`. The `/vendor` strip is an argument to the file lookup, not a write to the shared `env`. **Field 3 understated it:** the leak is not a mislabelled 404 — `/vendor/lib/foo.js` was served 200 with the app root's `/lib/foo.js` contents under the client's URL, confirmed before the fix. First tests for `Vendor`, one running the real middleware stack below it. |
 | F-GOPLUGIN-1 | **Done** — `ec1707af`. The three i18n globals are one immutable snapshot, published once after `json.Marshal` succeeds and keyed on the locales directory. Three tests added, none of which existed. **The staleness bug is exactly as described and was reproduced before the fix. The missing root key is LATENT, not live**, as field 3 implies: the directory-mtime check rebuilds whenever the mtimes differ, which they almost always do, so observing a crossed payload takes two roots whose locale directories share an mtime — the new spec forces that with `os.Chtimes`. The `-race` half is confirmed: DATA RACE on all three variables pre-fix. |
@@ -61,9 +62,11 @@ process, with no `recover` behind any of the five cgo exports — and both are n
 remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
 **F-GOPLUGIN-1** is done too (`ec1707af`). **F-MW-1** and **F-MW-2** are done too
 (`d2730224`, `c02be7d3`), which leaves no known defect that misserves or crashes on a
-client-supplied URL. What remains is materiality rather than breakage: **F-GOBUNDLE-1**, the
-audit's highest-materiality refactor, preceded by **F-GOUTILS-1 step 1**, which is purely
-additive and costs nothing (see ruling 1 — step 2 comes after).
+client-supplied URL. What remains is materiality rather than breakage. **F-GOUTILS-1 step 1** is
+done (`c7ae4da3`, `8284d26c`), so the shared `GemRef` primitive its consumers need now
+exists: next is **F-GOBUNDLE-1**, the audit's highest-materiality refactor, then
+**F-GORESOLVE-1**, and only then F-GOUTILS-1's own step 2 (ruling 1 — consumers-by-deletion
+first).
 
 ---
 
