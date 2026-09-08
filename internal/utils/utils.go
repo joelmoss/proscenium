@@ -233,8 +233,20 @@ func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 			continue
 		}
 
-		if found && len(trimmed) <= len(strings.TrimSuffix(ref.Root, "/")) {
-			continue
+		if found {
+			best := strings.TrimSuffix(ref.Root, "/")
+
+			if len(trimmed) < len(best) {
+				continue
+			}
+
+			// Two matching roots of equal length are the same directory, since the "/" boundary
+			// rules out one being a prefix of the other - so this is two gems sharing a source
+			// tree. Break the tie on name, or the answer comes from Go's map iteration order and
+			// varies between calls in one process, which is the defect this function replaced.
+			if len(trimmed) == len(best) && name >= ref.Name {
+				continue
+			}
 		}
 
 		ref = GemRef{Name: name, Root: root, Suffix: strings.TrimPrefix(fsPath, trimmed)}

@@ -443,6 +443,55 @@ var _ = Describe("BuildToString", func() {
 				Expect(result).To(ContainCode(
 					`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
 			})
+
+			// `IsRubyGem` tested the scope without stripping the optional prefixes first, so this
+			// alias failed the guard, skipped gem resolution altogether, and left the browser a
+			// bare `@rubygems/...` specifier it cannot resolve.
+			It("resolves an alias onto an unbundle-prefixed gem path", func() {
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias": "unbundle:@rubygems/gem2/lib/gem2/console.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/bare_to_rubygems.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
+			})
+
+			// An alias whose target is itself aliased, onto a DIFFERENT gem. The gem used to be
+			// resolved before the alias was applied, so the first gem's root was joined with the
+			// second gem's suffix, and the build failed on a path belonging to neither:
+			// `<gem2-root>/@rubygems/gem1/lib/gem1/gem1.js`.
+			It("follows an alias chain onto another gem", func() {
+				addGem("gem1", "dummy/vendor")
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias":                       "@rubygems/gem2/lib/gem2/console.js",
+					"@rubygems/gem2/lib/gem2/console.js": "@rubygems/gem1/lib/gem1/gem1.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/bare_to_rubygems.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(`console.log("gem1");`))
+			})
+
+			// Same chain, with the unbundle attribute on the import. Re-reading the prefix after
+			// the alias used to ASSIGN the flag rather than raise it, clearing the attribute the
+			// importer had set - and esbuild then rejected the build for an attribute nothing
+			// had consumed.
+			It("keeps the unbundle attribute across an alias chain", func() {
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias":                       "@rubygems/gem2/lib/gem2/console.js",
+					"@rubygems/gem2/lib/gem2/console.js": "@rubygems/gem2/lib/gem2/gem2.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/unbundle_attr.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`))
+			})
 		})
 	})
 

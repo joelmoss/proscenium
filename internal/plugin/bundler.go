@@ -69,15 +69,27 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 				result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
-				gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
-				if err != nil {
-					return err
-				}
-
+				// The alias is resolved BEFORE the gem, because it can name a different gem. The
+				// other order left `gemName`/`gemPath` describing the pre-alias gem, and joining
+				// that root with the post-alias suffix built a path belonging to neither -
+				// `<gem2-root>/@rubygems/gem1/lib/gem1/gem1.js`.
 				if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
 					debug.Debug(cfg.Debug, "resolveRubygemPath:alias", result.Path, aliasedPath)
 					result.Path = aliasedPath
-					unbundled = resolveUnbundledPrefix(result)
+
+					// Only ever raises the flag. Assigning it here cleared an `unbundle:` prefix or
+					// import attribute from before the alias, and esbuild then rejected the build
+					// for an attribute nothing had consumed.
+					if resolveUnbundledPrefix(result) {
+						unbundled = true
+					}
+
+					result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+				}
+
+				gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
+				if err != nil {
+					return err
 				}
 
 				if utils.IsCssImportedFromJs(result.Path, args) {
@@ -199,7 +211,14 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 							// If the aliased path is a @rubygems path, resolve it the same way the
 							// top-level `@rubygems/` handler does.
-							if utils.IsRubyGem(result.Path) {
+							//
+							// `GemFromSpecifier` rather than `IsRubyGem` because it strips the
+							// optional prefixes before testing the scope. `IsRubyGem` does not, so
+							// an alias onto `unbundle:@rubygems/...` failed this guard, skipped gem
+							// resolution entirely, and left the browser a bare specifier. The error
+							// is discarded here on purpose - this only decides ownership of the
+							// route, and `resolveRubygemPath` reports an unknown gem itself.
+							if _, isGem, _ := utils.GemFromSpecifier(result.Path, cfg); isGem {
 								if err := resolveRubygemPath(args, &result); err != nil {
 									return result, err
 								}

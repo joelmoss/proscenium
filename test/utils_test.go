@@ -108,6 +108,24 @@ var _ = Describe("utils gem references", func() {
 			Entry("a prefix of a root", "/gems"),
 		)
 
+		// Two gemspecs can share a source tree, which makes two roots identical. The "/" boundary
+		// rules out any other way for two matching roots to have equal length, so this is the only
+		// tie there is - and without a tiebreak the winner came from map order (measured 37/3
+		// over 40 calls in the function written to remove exactly that).
+		It("breaks a tie between two gems sharing a root, deterministically", func() {
+			shared := &types.ConfigT{RubyGems: map[string]string{
+				"beta":  "/gems/shared",
+				"alpha": "/gems/shared",
+			}}
+
+			for range 40 {
+				ref, found := utils.GemFromFsPath("/gems/shared/lib/x.js", shared)
+
+				Expect(found).To(BeTrue())
+				Expect(ref.Name).To(Equal("alpha"))
+			}
+		})
+
 		// The old lookup ranged a Go map and took the first match, so a path matching two roots
 		// was answered inconsistently WITHIN one process - measured at 38/2 and 33/7 over 40
 		// calls. Longest-match makes the answer a function of the input alone.
