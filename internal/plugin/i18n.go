@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -53,11 +54,42 @@ func camelCaseKeys(v any) any {
 	}
 }
 
+// Memoised per locales directory rather than per process, following the same shape as
+// `svgCaches`: `root` is derived from the build's own working directory, and one process can build
+// several apps - the test suite does. Sharing one payload between roots meant whichever built
+// first won for both.
 var (
-	i18nCachedResult *string
-	i18nFileMtimes   map[string]time.Time
-	i18nDirMtime     time.Time
+	i18nCachesMutex sync.Mutex
+	i18nCaches      = map[string]*i18nCache{}
 )
+
+// A complete answer, published in one store. The three fields used to be three bare globals with
+// three independent write points, and the directory mtime was written BEFORE the locale files were
+// read - so a file that failed to parse left a new directory mtime beside the old payload, and
+// nothing short of a restart could dislodge it.
+//
+// Immutable once published. Readers take the pointer under the mutex and then read the snapshot
+// without holding it, which is only safe while nothing mutates a published one - so replace a
+// snapshot rather than, say, adding an entry to `fileMtimes`.
+type i18nCache struct {
+	result     *string
+	dirMtime   time.Time
+	fileMtimes map[string]time.Time
+}
+
+func i18nCacheFor(root string) *i18nCache {
+	i18nCachesMutex.Lock()
+	defer i18nCachesMutex.Unlock()
+
+	return i18nCaches[root]
+}
+
+func storeI18nCache(root string, cache *i18nCache) {
+	i18nCachesMutex.Lock()
+	defer i18nCachesMutex.Unlock()
+
+	i18nCaches[root] = cache
+}
 
 func I18n(cfg *types.ConfigT) esbuild.Plugin {
 	return esbuild.Plugin{
@@ -76,28 +108,32 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 
 			build.OnLoad(esbuild.OnLoadOptions{Filter: `\.*`, Namespace: "i18n"},
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+					// Read the snapshot once. Everything below decides against this one value, so it
+					// cannot change underfoot mid-decision.
+					cache := i18nCacheFor(root)
+
 					// In production, return cached result immediately if available.
-					if cfg.Environment == types.ProdEnv && i18nCachedResult != nil {
+					if cfg.Environment == types.ProdEnv && cache != nil {
 						return esbuild.OnLoadResult{
-							Contents: i18nCachedResult,
+							Contents: cache.result,
 							Loader:   esbuild.LoaderJSON,
 						}, nil
 					}
 
 					// In non-production, check if locale files have changed via mtimes
 					// before doing any expensive work.
-					if i18nCachedResult != nil {
+					if cache != nil {
 						changed := false
 
 						// Check directory mtime for added/removed files.
 						dirInfo, err := os.Stat(root)
-						if err != nil || !dirInfo.ModTime().Equal(i18nDirMtime) {
+						if err != nil || !dirInfo.ModTime().Equal(cache.dirMtime) {
 							changed = true
 						}
 
 						// Check individual file mtimes for content changes.
 						if !changed {
-							for path, mtime := range i18nFileMtimes {
+							for path, mtime := range cache.fileMtimes {
 								info, err := os.Stat(path)
 								if err != nil || !info.ModTime().Equal(mtime) {
 									changed = true
@@ -108,24 +144,33 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 
 						if !changed {
 							return esbuild.OnLoadResult{
-								Contents: i18nCachedResult,
+								Contents: cache.result,
 								Loader:   esbuild.LoaderJSON,
 							}, nil
 						}
 					}
 
-					// Record directory mtime.
+					// Read the directory mtime into a local. It is published below along with the
+					// payload it describes, and only once that payload exists - recording it here
+					// used to hide every later failure from the next build's change detection.
+					var dirMtime time.Time
 					if dirInfo, err := os.Stat(root); err == nil {
-						i18nDirMtime = dirInfo.ModTime()
+						dirMtime = dirInfo.ModTime()
 					}
 
 					// Read locale files using os.ReadDir instead of filepath.Glob.
 					entries, err := os.ReadDir(root)
 					if err != nil {
 						empty := "{}"
-						i18nCachedResult = &empty
+						fresh := &i18nCache{
+							result:     &empty,
+							dirMtime:   dirMtime,
+							fileMtimes: map[string]time.Time{},
+						}
+						storeI18nCache(root, fresh)
+
 						return esbuild.OnLoadResult{
-							Contents: i18nCachedResult,
+							Contents: fresh.result,
 							Loader:   esbuild.LoaderJSON,
 						}, nil
 					}
@@ -158,8 +203,6 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						contents = mergemap.Merge(contents, yamlData)
 					}
 
-					i18nFileMtimes = fileMtimes
-
 					// Apply camelCase transform directly on the YAML map, then marshal
 					// to JSON once — avoiding the redundant JSON round-trip.
 					transformed := camelCaseKeys(contents)
@@ -169,11 +212,19 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						return esbuild.OnLoadResult{}, err
 					}
 
+					// The single success publish. Every failure above returns without one, leaving
+					// the previous snapshot - stale, but wholly consistent, and superseded by the
+					// next build that finds a changed mtime.
 					result := string(b)
-					i18nCachedResult = &result
+					fresh := &i18nCache{
+						result:     &result,
+						dirMtime:   dirMtime,
+						fileMtimes: fileMtimes,
+					}
+					storeI18nCache(root, fresh)
 
 					return esbuild.OnLoadResult{
-						Contents: i18nCachedResult,
+						Contents: fresh.result,
 						Loader:   esbuild.LoaderJSON,
 					}, nil
 				})

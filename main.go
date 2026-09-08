@@ -30,9 +30,15 @@ import (
 
 // Parses the given config JSON into a fresh, independent *types.ConfigT - no caching, no shared
 // state. Each call gets its own copy, so concurrent build_to_string/resolve/compile calls (Ruby
-// releases the GVL for these - see builder.rb's `blocking: true`) never touch anything shared and
-// need no lock. Measured at ~38us for a realistic 60-gem config, a few percent of a single build -
-// paid independently per concurrent call, not serialised, so it doesn't cost real parallelism.
+// releases the GVL for these - see builder.rb's `blocking: true`) share no configuration and need
+// no lock for it. Measured at ~38us for a realistic 60-gem config, a few percent of a single
+// build - paid independently per concurrent call, not serialised, so it doesn't cost real
+// parallelism.
+//
+// Config is not the only shared thing, though: the i18n and svg plugins each memoise per app root
+// (internal/plugin/i18n.go, svg.go) and carry their own mutex for it. Anything else added here
+// that outlives a single call needs the same treatment - keyed by root, because one process
+// builds several apps.
 func parseConfig(configJson *C.char) (*types.ConfigT, error) {
 	return types.NewConfig([]byte(C.GoString(configJson)))
 }
