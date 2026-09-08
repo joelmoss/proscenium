@@ -47,6 +47,7 @@ Reviewers were given the do-not-report list below so that already-tracked work i
 
 | Finding | Status |
 |---|---|
+| F-GOBUNDLE-1 | **Done** — `f685b282`. Site 1's body extracted to a `resolveRubygemPath` closure; site 2 calls it. **All three observable divergences are worse than field 3 states:** the CSS-module one yields NOTHING usable (not "raw CSS text"), and the extensionless-path and `unbundle`-attribute ones both FAIL THE BUILD outright rather than degrading — `Plugin "bundler" returned a non-absolute path` and `Importing with the "unbundle" attribute is not supported`. **Divergence D is real in the source but was not observable**, since reaching it needs the absolute path only the missing esbuild leg produces; it is fixed as a consequence of B. Predicted `__snapshots__/` churn did not occur — no spec aliases gem CSS from JS. Alias chaining at site 2 is a fifth, config-only behaviour change, stated in the commit. |
 | F-GOUTILS-1 (steps 1 and the fs-path behaviour change) | **Done** — `c7ae4da3` (additive: `GemRef`, `GemFromSpecifier`, `GemFromFsPath`, `UrlPath`, dead variadic dropped, first 25 specs for `internal/utils`) and `8284d26c` (the longest-match/boundary change, its own commit per the Convergent ruling — nothing flipped). **Field 3 understated `PathIsRubyGem`:** the non-determinism is intra-PROCESS, not between runs — measured 38/2 and 33/7 over 40 calls — and `/gems/foobar` credited to the gem at `/gems/foo` is a plain wrong answer 40/40 with no randomness at all. **Step 2 (call-site migration) and step 3 (deleting the old primitives) are still open**, and per ruling 1 step 2 waits for `F-GOBUNDLE-1` and `F-GORESOLVE-1`. |
 | F-MW-1 | **Done** — `d2730224`. Both guards now return the value they validated. `Chunks` extracts the content hash in the guard (regex byte-identical, so cached ETags do not move); `RubyGems#renderable?` uses the non-bang lookup, so an unknown gem is "not mine" like a missing app file. First tests for `Chunks`, including the positive ETag case. |
 | F-MW-2 | **Done** — `c02be7d3`. The `/vendor` strip is an argument to the file lookup, not a write to the shared `env`. **Field 3 understated it:** the leak is not a mislabelled 404 — `/vendor/lib/foo.js` was served 200 with the app root's `/lib/foo.js` contents under the client's URL, confirmed before the fix. First tests for `Vendor`, one running the real middleware stack below it. |
@@ -62,11 +63,10 @@ process, with no `recover` behind any of the five cgo exports — and both are n
 remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
 **F-GOPLUGIN-1** is done too (`ec1707af`). **F-MW-1** and **F-MW-2** are done too
 (`d2730224`, `c02be7d3`), which leaves no known defect that misserves or crashes on a
-client-supplied URL. What remains is materiality rather than breakage. **F-GOUTILS-1 step 1** is
-done (`c7ae4da3`, `8284d26c`), so the shared `GemRef` primitive its consumers need now
-exists: next is **F-GOBUNDLE-1**, the audit's highest-materiality refactor, then
-**F-GORESOLVE-1**, and only then F-GOUTILS-1's own step 2 (ruling 1 — consumers-by-deletion
-first).
+client-supplied URL. What remains is materiality rather than breakage. **F-GOUTILS-1 step 1** (`c7ae4da3`,
+`8284d26c`) and **F-GOBUNDLE-1** (`f685b282`) are both done. Next is **F-GORESOLVE-1**, the
+last of the three `@rubygems` consumers, and only then F-GOUTILS-1's own step 2 and step 3
+(ruling 1 — consumers-by-deletion first).
 
 ---
 
@@ -413,6 +413,13 @@ Note (not a finding): `compile:local` (Rakefile:35) is the one go build in the f
 6. Risks: the URL branch (:32) forces a decision. Today's `absPath` for a URL is garbage nothing consumes — lib/proscenium/importer.rb:38,59 only touch `abs_path` for `.module.css`, and lib/proscenium/runtime/server.rb:237-248 passes it through after `url_path!` has already rejected URL-shaped specifiers. ZERO-BEHAVIOUR-CHANGE migration: keep `path.Join(cfg.RootPath, filePath)` explicitly in that branch with a one-line comment noting it is meaningless. If you would rather return `""` or the URL itself, do it as a SEPARATE commit with a test — it is the only observable change in the set. Second risk: the rebased-`rootPath` claim in field 4 must hold for the :64 early exit too (gem path WITH an extension, which never reaches esbuild); that exit uses `pathSuffix` from :61, not the metafile key.
 7. Validation: existing net is good. test/resolver_test.go:79-146 covers every gem exit (with/without extension, relative-with-importer, gem inside the app tree and outside it) and asserts `absPath` exactly; :21-26, :44-77, :148-160 cover the non-gem exits; :13-19 and :28-33 cover the error exits. internal/css/mixins.go:33 exercises the absolute-fs-path-importer form of the relative branch through the CSS mixin tests. Add one test for URL input (none exists) pinning whichever `absPath` is chosen.
 8. Confidence: high on removing the reparse and the duplicate `ResolveRubyGem`; medium on the URL branch, which is a judgement call.
+
+**Bug lead found while implementing F-GOBUNDLE-1, not part of that finding.** An extensionless
+`@rubygems/` specifier that esbuild cannot resolve leaks an ABSOLUTE FILESYSTEM PATH into the
+built output — `import "/Users/.../fixtures/external/gem2"` — because the top-level
+`^(unbundle:)?(node_modules/)?@rubygems/` handler returns directly and so never passes through
+the catch-all handler's `result.External` URL-conversion tail (bundler.go:344-351), which is
+what saves the aliased route. Pre-existing, confirmed unchanged by `f685b282`. Ticket separately.
 
 **Second finding correctly withheld.** The `for key := range metadata.Inputs { break }` at resolve.go:117-120 is a latent NONDETERMINISM concern (arbitrary map key from a Go map iteration), not a simplification — **recorded as a bug lead, ticket it separately.** The `(value, err)` union in `returnResolve` folds into F-GORESOLVE-1 rather than standing alone.
 **Cross-subsystem note:** resolve.go participates in the `@rubygems` duplication twice within this one file, and lib/proscenium/resolver.rb:18-21 independently re-implements the same gem-fs-path -> `/node_modules/@rubygems/...` mapping in Ruby. Owned by F-GOBUNDLE-1 (Go) and F-BOOT-1 (Ruby). **This makes FIVE known copies of the gem-prefix rule: bundler.go x2, resolve.go x2, resolver.rb, manifest.rb — a genuine cross-cutting pattern, recorded below.**

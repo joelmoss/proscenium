@@ -110,13 +110,13 @@ panicked - with no `recover` behind any of the five cgo exports, so it aborted t
 process rather than failing one build. `@mixin foo` with no semicolon before EOF was enough.
 
 Nothing still open misserves or crashes on a client-supplied URL - the two that did, and the two
-`internal/css` defects before them, are fixed. What remains is materiality rather than breakage,
-and the largest of it is `F-GOBUNDLE-1`: the `@rubygems` path rule is re-derived in six places and
-its URL spelling in five, with the copies drifted in four distinguishable ways. `F-GOUTILS-1`'s step 1 is
-now done, so the shared `GemRef` primitive its consumers need already exists - `F-GOBUNDLE-1` can
-be written against it directly. Its own step 2, the call-site migration, still waits for
-`F-GOBUNDLE-1` and `F-GORESOLVE-1` to delete the sites it would otherwise migrate (pass 4's
-ruling 1).
+`internal/css` defects before them, are fixed. What remains is materiality rather than breakage.
+`F-GOBUNDLE-1` - the largest piece - is done, along with `F-GOUTILS-1`'s additive step 1. Next is
+`F-GORESOLVE-1`, the last of the three `@rubygems` consumers: `internal/resolver/resolve.go`
+serialises a gem name and root into a URL string at three exits and then REVERSES that parse in
+`returnResolve`, calling `ResolveRubyGem` a second time to do it. After that, `F-GOUTILS-1`'s step
+2 and step 3 can migrate the remaining call sites and delete the old primitives - that order is
+pass 4's ruling 1, consumers-by-deletion first.
 
 **Context:** Three themes carry most of the value, and they are why several individually-small
 findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
@@ -145,7 +145,8 @@ first four tests any of that code has had. Then `F-GOPLUGIN-1` (`ec1707af`) - th
 bug, plus the root keying and the data race, with the first three tests for that cache. Then the
 middleware pair, `F-MW-1` (`d2730224`) and `F-MW-2` (`c02be7d3`), which between them wrote the
 first tests for `Chunks` and `Vendor`. Then `F-GOUTILS-1` step 1 (`c7ae4da3`) and its file-system
-half (`8284d26c`), which added `GemRef` and the first tests `internal/utils` has ever had. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
+half (`8284d26c`), which added `GemRef` and the first tests `internal/utils` has ever had. Then
+`F-GOBUNDLE-1` (`f685b282`), the audit's highest-materiality finding. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
 its `merge_options` extraction and the write-through-to-shared-state half are still open.
 
 Two corrections implementation produced, for whoever reads a finding rather than this entry.
@@ -161,6 +162,12 @@ gem being picked "differently between runs"; it is picked differently between CA
 `/gems/foobar` against the gem at `/gems/foo` - is credited wrongly 40 times out of 40, with no
 randomness involved at all.
 
+`F-GOBUNDLE-1` understates all three of its observable divergences. Its field 3 has an aliased gem
+CSS module returning "raw CSS text" to a JS import - it returns nothing usable at all - and has the
+`unbundle` attribute "silently ignored" on aliased gem paths, where in fact esbuild rejects the
+whole build. The extensionless-path gap is likewise a build failure, not a degraded result. Its
+fourth divergence, D, is real in the source but was unreachable on its own.
+
 `F-MW-2` understates itself in the other direction. Its field 3 describes the leak as a vendor miss
 becoming "a hit in another middleware", which reads like a mislabelled 404; in the dummy app
 `/vendor/lib/foo.js` came back 200 with the contents of the app root's `/lib/foo.js`, under the
@@ -168,5 +175,8 @@ becoming "a hit in another middleware", which reads like a mislabelled 404; in t
 
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
-**Priority:** P3 for what remains; `F-GOBUNDLE-1` is the biggest of it, not the most urgent.
+**Priority:** P3 for what remains. One bug lead came out of `F-GOBUNDLE-1` and is recorded in
+`AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve
+leaks an absolute filesystem path into the built output, because the top-level handler returns
+without passing through the catch-all's URL-conversion tail.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
