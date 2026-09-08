@@ -109,11 +109,13 @@ two loops spun forever on truncated input, and a nil forwarded to a pointer-rece
 panicked - with no `recover` behind any of the five cgo exports, so it aborted the host Ruby
 process rather than failing one build. `@mixin foo` with no semicolon before EOF was enough.
 
-The worst still open is `F-MW-1`. `GET /_asset_chunks/anything.js` without a `-$HASH$` segment
-indexes an unchecked match and raises `NoMethodError` on nil, so an arbitrary client-supplied URL
-500s out of a middleware sitting high in the stack; a missing gem under `/node_modules/@rubygems/`
-raises out of the readability probe the same way, where the sibling app-path branch would pass the
-request through.
+Nothing still open misserves or crashes on a client-supplied URL - the two that did, and the two
+`internal/css` defects before them, are fixed. What remains is materiality rather than breakage,
+and the largest of it is `F-GOBUNDLE-1`: the `@rubygems` path rule is re-derived in six places and
+its URL spelling in five, with the copies drifted in four distinguishable ways. `F-GOUTILS-1`'s
+step 1 comes first and is purely additive - it adds the shared `GemRef` primitive without touching
+a call site, so it can land on its own (pass 4's ruling 1 puts the call-site migration *after*
+`F-GOBUNDLE-1`, not before).
 
 **Context:** Three themes carry most of the value, and they are why several individually-small
 findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
@@ -131,15 +133,17 @@ must come *after* `F-GOBUNDLE-1` and `F-GORESOLVE-1`, because both of those dele
 would otherwise migrate. Eleven ordering constraints are listed there; three were undeclared by
 the lanes that produced the findings.
 
-Six findings must write the first test for the code they touch - the Chunks, Vendor and
-SilenceRequest middleware, `ReactComponentable`, `css_module/path.rb`, `internal/utils`,
-`spawnDaemon` and the Rakefile have no coverage at all, and `test/manifest_test.rb` is entirely
-commented out. For those, the diff is small and the test is the work.
+Several findings must write the first test for the code they touch. `Chunks` and `Vendor` now have
+theirs; `SilenceRequest`, `ReactComponentable`, `css_module/path.rb`, `internal/utils`,
+`spawnDaemon` and the Rakefile still have no coverage at all, and `test/manifest_test.rb` is
+entirely commented out. For those, the diff is small and the test is the work.
 
 Done so far: the high-severity Go/CSS pair, `F-GOCSS-1` (`954209bb`) and `F-GOCSS-2`
 (`00d1455a`), which also took the P3 dead-state items inside `internal/css` and left behind the
 first four tests any of that code has had. Then `F-GOPLUGIN-1` (`ec1707af`) - the i18n staleness
-bug, plus the root keying and the data race, with the first three tests for that cache. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
+bug, plus the root keying and the data race, with the first three tests for that cache. Then the
+middleware pair, `F-MW-1` (`d2730224`) and `F-MW-2` (`c02be7d3`), which between them wrote the
+first tests for `Chunks` and `Vendor`. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
 its `merge_options` extraction and the write-through-to-shared-state half are still open.
 
 Two corrections implementation produced, for whoever reads a finding rather than this entry.
@@ -149,7 +153,12 @@ today's behaviour, so it stays. And `F-GOPLUGIN-1`'s "two roots share one payloa
 but is latent: the directory-mtime check rebuilds whenever the mtimes differ, so a crossed payload
 needs two roots whose locale directories share one. The staleness half needed no such help.
 
+`F-MW-2` understates itself in the other direction. Its field 3 describes the leak as a vendor miss
+becoming "a hit in another middleware", which reads like a mislabelled 404; in the dummy app
+`/vendor/lib/foo.js` came back 200 with the contents of the app root's `/lib/foo.js`, under the
+`/vendor/...` URL the client asked for.
+
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
-**Priority:** P2 for `F-MW-1`, P3 for the rest.
+**Priority:** P3 for what remains; `F-GOBUNDLE-1` is the biggest of it, not the most urgent.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.

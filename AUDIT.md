@@ -47,6 +47,8 @@ Reviewers were given the do-not-report list below so that already-tracked work i
 
 | Finding | Status |
 |---|---|
+| F-MW-1 | **Done** — `d2730224`. Both guards now return the value they validated. `Chunks` extracts the content hash in the guard (regex byte-identical, so cached ETags do not move); `RubyGems#renderable?` uses the non-bang lookup, so an unknown gem is "not mine" like a missing app file. First tests for `Chunks`, including the positive ETag case. |
+| F-MW-2 | **Done** — `c02be7d3`. The `/vendor` strip is an argument to the file lookup, not a write to the shared `env`. **Field 3 understated it:** the leak is not a mislabelled 404 — `/vendor/lib/foo.js` was served 200 with the app root's `/lib/foo.js` contents under the client's URL, confirmed before the fix. First tests for `Vendor`, one running the real middleware stack below it. |
 | F-GOPLUGIN-1 | **Done** — `ec1707af`. The three i18n globals are one immutable snapshot, published once after `json.Marshal` succeeds and keyed on the locales directory. Three tests added, none of which existed. **The staleness bug is exactly as described and was reproduced before the fix. The missing root key is LATENT, not live**, as field 3 implies: the directory-mtime check rebuilds whenever the mtimes differ, which they almost always do, so observing a crossed payload takes two roots whose locale directories share an mtime — the new spec forces that with `os.Chtimes`. The `-race` half is confirmed: DATA RACE on all three variables pre-fix. |
 | F-GOCSS-1 | **Done** — `954209bb`. The `:global`/`:local` rule-level stacks, the `untilFn` carcass and `nextToken`'s recursion deleted, plus the orphaned `css_test.snap` whose `TestParseCss` no longer exists. |
 | F-GOCSS-2 | **Done** — `00d1455a`. Both iteration helpers now own termination, so the hang and the panic are gone, and `nextToken` with them. Ruling 12 applied as a split: the tokenizer's helper stops at end-of-input only, the parser's on any stop token, which is what each layer already did — so malformed-CSS output is unchanged. **Field 4 was wrong that the caller-side check at mixins.go:83 could be deleted**; it terminates on the error and "bad" tokens, so it stays. The adjacent stack fix landed too: popping now truncates, which retired `position`, and `currentFilePath()` replaced mixins.go's indexing into the stack. |
@@ -57,9 +59,11 @@ Suggested order and the ordering hazards are in pass 4. The short version: **F-G
 F-GOCSS-2** was the high-severity pair — a hang and a panic that aborted the host Ruby
 process, with no `recover` behind any of the five cgo exports — and both are now done. What
 remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
-**F-GOPLUGIN-1** is done too (`ec1707af`). The worst live defect left is **F-MW-1**:
-`GET /_asset_chunks/anything.js` with no `-$HASH$` indexes a nil match and 500s from a
-middleware high in the stack, on an arbitrary client-supplied URL.
+**F-GOPLUGIN-1** is done too (`ec1707af`). **F-MW-1** and **F-MW-2** are done too
+(`d2730224`, `c02be7d3`), which leaves no known defect that misserves or crashes on a
+client-supplied URL. What remains is materiality rather than breakage: **F-GOBUNDLE-1**, the
+audit's highest-materiality refactor, preceded by **F-GOUTILS-1 step 1**, which is purely
+additive and costs nothing (see ruling 1 — step 2 comes after).
 
 ---
 
