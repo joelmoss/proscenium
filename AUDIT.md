@@ -526,7 +526,8 @@ Note: the CSS-module digest constraint is N/A here — utils.go contains no dige
 
 An independent adversarial review by Codex (gpt-5.x, 1.9M tokens) over the 16 unpushed
 commits. It found ELEVEN issues, none of which this audit had raised. Four were verified
-by measurement before acting; six are now fixed (`804ccc50`, `324e4e4c`, `7e602518`). **This is the honest score
+by measurement before acting; SEVEN are now fixed (`804ccc50`, `324e4e4c`, `7e602518`) and
+four remain (2, 3, 9, 10). **This is the honest score
 for the audit itself: a whole-repository read-only pass missed a request that serves an
 arbitrary file from the output directory under a permanent-cache header, and missed a CSS
 input that hangs a build thread forever.**

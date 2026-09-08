@@ -176,11 +176,13 @@ becoming "a hit in another middleware", which reads like a mislabelled 404; in t
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
 An adversarial Codex pass on 2026-09-08 found ELEVEN issues this audit never raised, listed
-in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Six are fixed, and the middleware lane is
-closed. The five left are all lower-reach: two i18n detector weaknesses (an edit that preserves
-mtime is invisible, and `{}` is cached forever after a `ReadDir` failure), the same-root publish
-ordering, and vendor's permanent caching with no ETag or versioned URL, which is a policy call
-about URL versioning rather than a bug.
+in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Seven are fixed, and the middleware lane
+is closed. Four remain, and three of them are the same function: `internal/plugin/i18n.go`'s
+change detector and publish path, where an edit preserving mtime is invisible (finding 3),
+concurrent rebuilds can publish an older payload over a newer one (9), and a `ReadDir` failure
+caches `{}` forever while reporting itself as a successful load (10). Worth doing as one diff
+rather than three. The fourth is vendor's permanent caching with no ETag or versioned URL (2),
+which is a policy call about URL versioning rather than a bug.
 
 The middleware fixes converged on one rule worth keeping: normalise a request path once, then
 route, check and build from that single value. Three separate defects were the same shape -
