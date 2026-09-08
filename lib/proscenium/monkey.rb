@@ -58,14 +58,18 @@ module Proscenium
            template.respond_to?(:type) && template.type == :html &&
            view.controller.respond_to?(:sideload_assets_options)
           options = view.controller.sideload_assets_options
-          sideload_template_assets layout, options if layout
-          sideload_template_assets template, options
+          sideload_template_assets layout, view.controller, options if layout
+          sideload_template_assets template, view.controller, options
         end
 
         result
       end
 
-      def sideload_template_assets(tpl, options)
+      # `controller` is passed in rather than read off `self`: unlike TemplateRenderer, an
+      # ActionView::PartialRenderer has no `controller` - so a Proc option reaching a partial
+      # raised NameError until it was threaded through here, as its TemplateRenderer twin
+      # already did.
+      def sideload_template_assets(tpl, controller, options)
         return unless (tpl_path = Pathname.new(tpl.identifier)).file?
 
         options = {} if options.nil?

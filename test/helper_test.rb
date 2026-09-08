@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'test_helper'
 class Proscenium::HelperTest < ActionDispatch::IntegrationTest
   describe '#css_module' do
     it 'transforms class names beginning with @' do
@@ -92,6 +93,22 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
 
         assert_not_includes @response.body, '<script'
         assert_not_includes @response.body, '<link'
+      ensure
+        BarePagesController.sideload_assets nil
+      end
+    end
+
+    # A proc was only ever evaluated for view templates. `PartialRenderer#sideload_template_assets`
+    # took `(tpl, options)` and called `controller.instance_eval`, with no `controller` in scope -
+    # so every proc reaching a partial raised NameError. The proc test above uses `/`, whose view
+    # renders no partials, which is why it never fired.
+    context 'proc in controller, rendering partials' do
+      it 'evaluates the proc against the controller for partials too' do
+        BarePagesController.sideload_assets proc { true }
+        get '/include_assets'
+
+        assert_dom 'script[src="/app/views/pages/_side.js"]'
+        assert_dom 'link[rel="stylesheet"][href="/app/views/pages/_side_layout.css"]'
       ensure
         BarePagesController.sideload_assets nil
       end
