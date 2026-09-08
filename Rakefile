@@ -91,11 +91,14 @@ PLATFORMS.each do |ruby_platform, go_platform|
   task "push:#{ruby_platform}" do
     sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem"
   end
+end
 
-  desc 'Push built gem'
-  task 'push:gem' do
-    sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}.gem"
-  end
+# Outside the loop above. Rake appends actions to an existing task rather than replacing it, so
+# defining this once per platform gave it one action per platform - and `rake push` pushed the
+# plain gem four times, prompting for an OTP on each and failing every attempt after the first.
+desc 'Push built gem'
+task 'push:gem' do
+  sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}.gem"
 end
 
 desc 'Clobber ext'
