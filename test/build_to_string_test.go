@@ -394,6 +394,56 @@ var _ = Describe("BuildToString", func() {
 				AssertCode(`@import "/node_modules/@rubygems/gem2/lib/gem2/blue.css";`, Unbundle)
 			})
 		})
+
+		// The aliased route into @rubygems resolution used to be a hand-copied branch that had
+		// drifted from the top-level handler. These are the three gaps it had; each one is a
+		// behaviour an alias could not reach but a directly-written specifier could.
+		Describe("to an @rubygems path, via the shared resolver", func() {
+			BeforeEach(func() {
+				addGem("gem2", "external")
+			})
+
+			It("treats an aliased gem css module imported from js as a css module", func() {
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias": "@rubygems/gem2/lib/gem2/styles.module.css",
+				}
+
+				_, result, _ := b.BuildToString("lib/aliases/rubygems_css_module.js", testConfig)
+
+				// `new Proxy` is the class-name object. Without `PluginData.ImportedFromJs` the css
+				// plugin never builds one, and the import received nothing usable.
+				Expect(result).To(ContainCode(`new Proxy`))
+				Expect(result).To(ContainCode(`.foo_`))
+			})
+
+			It("resolves an aliased gem path that has no extension", func() {
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias": "@rubygems/gem2/lib/gem2/gem2",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/bare_to_rubygems.js", testConfig)
+
+				// Previously esbuild was handed the unresolved specifier itself and failed the build
+				// with `Plugin "bundler" returned a non-absolute path`. Now the extensionless path
+				// goes through esbuild, which finds `gem2.js` and bundles it.
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(`console.log("gem2");`))
+			})
+
+			It("honours the unbundle import attribute on an aliased gem path", func() {
+				testConfig.Aliases = map[string]string{
+					"my-gem-alias": "@rubygems/gem2/lib/gem2/console.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/unbundle_attr.js", testConfig)
+
+				// The attribute was not consumed, so esbuild rejected the build outright with
+				// `Importing with the "unbundle" attribute is not supported`.
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem2/lib/gem2/console.js";`))
+			})
+		})
 	})
 
 	EntryPoint("lib/env_vars.js", func() {

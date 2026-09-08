@@ -57,6 +57,76 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				return true
 			}
 
+			// The one definition of how an `@rubygems/` path resolves. Called from the top-level
+			// handler below, and from the aliased-path branch of the catch-all handler, which used
+			// to carry a hand-copied version of this that had drifted in four ways - see the commit
+			// that extracted it. Mutates `result`; a nil error means "resolved, keep going".
+			resolveRubygemPath := func(args esbuild.OnResolveArgs, result *esbuild.OnResolveResult) error {
+				unbundled := resolveUnbundledPrefix(result)
+				if args.With["unbundle"] == "true" {
+					unbundled = true
+				}
+
+				result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+
+				gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
+				if err != nil {
+					return err
+				}
+
+				if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
+					debug.Debug(cfg.Debug, "resolveRubygemPath:alias", result.Path, aliasedPath)
+					result.Path = aliasedPath
+					unbundled = resolveUnbundledPrefix(result)
+				}
+
+				if utils.IsCssImportedFromJs(result.Path, args) {
+					// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
+					// the css plugin to return the CSS as a JS object of class names (css module).
+					result.PluginData = types.PluginData{ImportedFromJs: true}
+				}
+
+				ext, hasExt := utils.HasExtension(result.Path)
+
+				if hasExt {
+					if ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".eot" {
+						unbundled = true
+					} else if utils.IsSvgImportedFromJsx(result.Path, args) {
+						result.Namespace = "svgFromJsx"
+					} else if utils.IsSvgImportedFromCss(result.Path, args) {
+						unbundled = true
+					}
+				} else {
+					// == Unqualified path! - use esbuild to resolve.
+
+					resolveArgs := cloneResolveArgs(args)
+					resolveArgs.ResolveDir = gemPath
+
+					suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
+					result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
+
+					if ok := resolveWithEsbuild(resolveArgs, result); !ok {
+						// `resolveWithEsbuild` has marked the result external so the browser reports the
+						// failure. Nothing below applies to a path it could not resolve.
+						return nil
+					}
+				}
+
+				if unbundled {
+					result.External = true
+
+					if urlPath, ok := utils.RubyGemPathToUrlPath(result.Path, cfg); ok {
+						result.Path = urlPath
+					} else {
+						result.Path = "/node_modules/" + result.Path
+					}
+				} else if hasExt {
+					result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+				}
+
+				return nil
+			}
+
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `^(unbundle:)?(node_modules/)?@rubygems/`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					// Pass through paths that are currently resolving.
@@ -68,65 +138,8 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 					result := esbuild.OnResolveResult{Path: args.Path}
 
-					unbundled := resolveUnbundledPrefix(&result)
-					if args.With["unbundle"] == "true" {
-						unbundled = true
-					}
-
-					result.Path = strings.TrimPrefix(result.Path, "node_modules/")
-
-					gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
-					if err != nil {
+					if err := resolveRubygemPath(args, &result); err != nil {
 						return result, err
-					}
-
-					if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
-						debug.Debug(cfg.Debug, "OnResolve(@rubygems/*):alias", result.Path, aliasedPath)
-						result.Path = aliasedPath
-						unbundled = resolveUnbundledPrefix(&result)
-					}
-
-					if utils.IsCssImportedFromJs(result.Path, args) {
-						// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
-						// the css plugin to return the CSS as a JS object of class names (css module).
-						result.PluginData = types.PluginData{ImportedFromJs: true}
-					}
-
-					ext, hasExt := utils.HasExtension(result.Path)
-
-					if hasExt {
-						if ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".eot" {
-							unbundled = true
-						} else if utils.IsSvgImportedFromJsx(result.Path, args) {
-							result.Namespace = "svgFromJsx"
-						} else if utils.IsSvgImportedFromCss(result.Path, args) {
-							unbundled = true
-						}
-					} else {
-						// == Unqualified path! - use esbuild to resolve.
-
-						resolveArgs := cloneResolveArgs(args)
-						resolveArgs.ResolveDir = gemPath
-
-						suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
-						result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
-
-						ok := resolveWithEsbuild(resolveArgs, &result)
-						if !ok {
-							return result, nil
-						}
-					}
-
-					if unbundled {
-						result.External = true
-
-						if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path, cfg); ok {
-							result.Path = gemPath
-						} else {
-							result.Path = "/node_modules/" + result.Path
-						}
-					} else if hasExt {
-						result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 					}
 
 					debug.Debug(cfg.Debug, "OnResolve(@rubygems/*):end", result)
@@ -184,33 +197,11 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								goto FINISH
 							}
 
-							// If the aliased path is a @rubygems path, resolve it inline.
+							// If the aliased path is a @rubygems path, resolve it the same way the
+							// top-level `@rubygems/` handler does.
 							if utils.IsRubyGem(result.Path) {
-								unbundled = resolveUnbundledPrefix(&result)
-								result.Path = strings.TrimPrefix(result.Path, "node_modules/")
-
-								gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
-								if err != nil {
+								if err := resolveRubygemPath(args, &result); err != nil {
 									return result, err
-								}
-
-								ext, hasExt := utils.HasExtension(result.Path)
-
-								if hasExt {
-									if ext == ".woff" || ext == ".woff2" || ext == ".ttf" || ext == ".eot" {
-										unbundled = true
-									} else if utils.IsSvgImportedFromJsx(result.Path, args) {
-										result.Namespace = "svgFromJsx"
-									} else if utils.IsSvgImportedFromCss(result.Path, args) {
-										unbundled = true
-									}
-								}
-
-								if unbundled {
-									result.External = true
-									result.Path = "/node_modules/" + result.Path
-								} else if hasExt {
-									result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 								}
 
 								goto FINISH
