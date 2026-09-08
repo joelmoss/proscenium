@@ -19,7 +19,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 	findAndInsertMixin := func(filePath string, mixinName string) bool {
 		def, ok := p.mixins[filePath+"#"+mixinName]
 		if ok {
-			p.tokens.insertTokens(def, filePath, mixinName)
+			p.tokens.insertTokens(def, filePath)
 			return true
 		}
 
@@ -30,7 +30,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	if uri != "" {
 		// Resolve the uri.
-		_, absPath, err := resolver.Resolve(uri, p.tokens.tokenizers[p.tokens.position].filePath, p.cfg)
+		_, absPath, err := resolver.Resolve(uri, p.tokens.currentFilePath(), p.cfg)
 		if err != nil {
 			p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
 			return false
@@ -52,7 +52,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
 		return false
 	} else {
-		filePath := p.tokens.tokenizers[p.tokens.position].filePath
+		filePath := p.tokens.currentFilePath()
 		if findAndInsertMixin(filePath, mixinIdent) {
 			return true
 		}
@@ -80,6 +80,8 @@ func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 	// Iterate through all the tokens in the file, and find any @define-mixin declarations at the root
 	// nesting. Definition blocks are not parsed here.
 	tokens.forEachToken(func(token *tokenizer.Token) bool {
+		// `forEachToken` stops at the end of the input on its own; this stops on the error and "bad"
+		// tokens too, which it deliberately passes through as content.
 		if token.Type.StopToken() {
 			return false
 		}

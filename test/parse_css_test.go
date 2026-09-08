@@ -4,6 +4,7 @@ import (
 	"joelmoss/proscenium/internal/css"
 	. "joelmoss/proscenium/test/support"
 	"strings"
+	"time"
 
 	"github.com/MakeNowJust/heredoc"
 	. "github.com/onsi/ginkgo/v2"
@@ -326,6 +327,70 @@ var _ = Describe("Build(parseCss)", func() {
 					`, "/foo.css"))
 				})
 			})
+
+			// Every one of these hung or panicked before the parser's iteration helpers took
+			// ownership of the end of the stream. They are asserted through `parseWithDeadline`
+			// because the tokenizer returns its end-of-input token forever once the input is
+			// exhausted: a loop that fails to stop spins without allocating, so a regression would
+			// wedge the suite rather than fail it.
+			Describe("truncated input", func() {
+				It("passes through a mixin declaration with no terminating semicolon", func() {
+					code, warnings := parseWithDeadline("@mixin foo", "/foo.css")
+
+					Expect(code).To(Equal("@mixin foo"))
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "foo" not defined in "/foo.css"`))
+				})
+
+				It("consumes a mixin definition with no body", func() {
+					code, warnings := parseWithDeadline("@define-mixin foo", "/foo.css")
+
+					Expect(code).To(BeEmpty())
+					Expect(warnings).To(BeEmpty())
+				})
+
+				It("consumes a mixin definition with an unclosed body", func() {
+					code, warnings := parseWithDeadline("@define-mixin foo {", "/foo.css")
+
+					Expect(code).To(BeEmpty())
+					Expect(warnings).To(BeEmpty())
+				})
+
+				It("includes what it captured of an unclosed definition in a mixin file", func() {
+					code, warnings := parseWithDeadline(
+						"header {\n\t@mixin red from url('/lib/mixins/unterminated.css');\n}", "/foo.css")
+
+					Expect(code).To(Equal("header {\n\ncolor: red;\n}"))
+					Expect(warnings).To(BeEmpty())
+				})
+			})
 		})
 	})
 })
+
+// Parse the given CSS, failing the spec if it does not terminate. Returns the output and warnings.
+func parseWithDeadline(input string, filePath string) (string, []css.CssWarning) {
+	type parsed struct {
+		code     string
+		warnings []css.CssWarning
+	}
+
+	done := make(chan parsed, 1)
+
+	go func() {
+		defer GinkgoRecover()
+
+		code, warnings, err := css.ParseCss(input, filePath, testConfig)
+		Expect(err).NotTo(HaveOccurred())
+
+		done <- parsed{code, warnings}
+	}()
+
+	select {
+	case result := <-done:
+		return result.code, result.warnings
+	case <-time.After(5 * time.Second):
+		Fail("ParseCss did not terminate within 5s")
+		return "", nil
+	}
+}

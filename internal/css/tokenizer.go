@@ -18,10 +18,9 @@ type cssTokenizers struct {
 }
 
 type cssTokenizer struct {
+	// Stack of tokenizers - one for the file being parsed, plus one for each mixin definition
+	// inserted into the stream. The last element is the current one.
 	tokenizers []*cssTokenizers
-
-	// Position of the current tokenizer in the tokenizers slice.
-	position int
 
 	// Nesting level of the current block.
 	nesting int
@@ -48,8 +47,9 @@ func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) 
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
 
-	if token.Type.StopToken() && x.position > 0 {
-		x.position--
+	// An inserted mixin definition has run out, so pop back to the stream that included it.
+	if token.Type.StopToken() && len(x.tokenizers) > 1 {
+		x.tokenizers = x.tokenizers[:len(x.tokenizers)-1]
 		return x.next()
 	}
 
@@ -72,21 +72,23 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 }
 
 func (x *cssTokenizer) currentTokenizer() *tokenizer.Tokenizer {
-	return x.tokenizers[x.position].tokenizer
+	return x.tokenizers[len(x.tokenizers)-1].tokenizer
 }
 
 func (x *cssTokenizer) currentToken() tokenizer.Token {
 	return x.currentTokenizer().Token()
 }
 
-func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinName string) {
-	t := &cssTokenizers{
+// The file path of the stream currently being tokenized.
+func (x *cssTokenizer) currentFilePath() string {
+	return x.tokenizers[len(x.tokenizers)-1].filePath
+}
+
+func (x *cssTokenizer) insertTokens(tokens string, filePath string) {
+	x.tokenizers = append(x.tokenizers, &cssTokenizers{
 		tokenizer: tokenizer.NewTokenizer(strings.NewReader(tokens)),
 		filePath:  filePath,
-	}
-
-	x.position = len(x.tokenizers)
-	x.tokenizers = append(x.tokenizers, t)
+	})
 }
 
 // Fetch the mixin definition at the current token, and return its name and definition.
@@ -147,11 +149,19 @@ func (x *cssTokenizer) captureBlock(level int) string {
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
 // Returning false from that function will break from the iteration.
+//
+// Iteration always stops at the end of the input, so a caller that is waiting for a token which
+// never arrives - an unterminated mixin definition, say - terminates instead of spinning on the
+// end-of-input token, which the tokenizer returns forever once reached. Only the end of input stops
+// it: the error and "bad" tokens are passed to `iterFn` as content, as they always have been.
 func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	for {
 		token := x.currentToken()
-		iterResult := iterFn(&token)
-		if !iterResult {
+		if token.Type == tokenizer.TokenEOF {
+			break
+		}
+
+		if !iterFn(&token) {
 			break
 		}
 
@@ -183,5 +193,5 @@ func (x *cssTokenizer) logToken() {
 	}
 
 	token := x.currentToken()
-	log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, x.position)
+	log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, len(x.tokenizers)-1)
 }

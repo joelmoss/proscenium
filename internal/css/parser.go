@@ -92,25 +92,21 @@ func (p *cssParser) append(input string) {
 	p.output.WriteString(input)
 }
 
-// Returns the next token, or nil if the end or an error is reached.
-func (p *cssParser) nextToken() *tokenizer.Token {
-	token := p.tokens.next()
-
-	if token.Type.StopToken() {
-		return nil
-	}
-
-	return token
-}
-
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
 // Returning false from that function will break from the iteration.
+//
+// Iteration stops at the end of the stream, so `iterFn` is guaranteed a renderable token and can
+// only decide whether to keep going. A stop token ends the stylesheet here just as it does in
+// `handleNextToken`, so a truncated declaration terminates rather than handing the callback the
+// end of the stream.
 func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	for {
-		token := p.nextToken()
+		token := p.tokens.next()
+		if token.Type.StopToken() {
+			break
+		}
 
-		iterResult := iterFn(token)
-		if !iterResult {
+		if !iterFn(token) {
 			break
 		}
 	}
@@ -118,8 +114,8 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 
 // Handle the next token and return the output, and whether we should continue.
 func (p *cssParser) handleNextToken() (string, bool) {
-	token := p.nextToken()
-	if token == nil {
+	token := p.tokens.next()
+	if token.Type.StopToken() {
 		return "", false
 	}
 
@@ -149,7 +145,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				if token.Type == tokenizer.TokenSemicolon {
 					// Current token is a semicolon, so we're done. But we need to skip to the next token,
 					// otherwise we get duplicates of the semicolon.
-					p.nextToken()
+					p.tokens.next()
 
 					return false
 				}
