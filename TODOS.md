@@ -176,13 +176,16 @@ becoming "a hit in another middleware", which reads like a mislabelled 404; in t
 **Effort:** XL in total; individual findings range from one line to a day. What is left of the
 dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
 An adversarial Codex pass on 2026-09-08 found ELEVEN issues this audit never raised, listed
-in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Five are fixed; six are open and are
-now the better-value queue than the rest of the audit's own backlog. The sharpest of those
-left is `RubyGems` validating a cleaned path and building the original - the same
-check-one-string-act-on-another shape as the chunk-path fix, and the last of the middleware
-lane. The other five are the two i18n detector weaknesses (mtime-preserving edits, and `{}`
-cached after a `ReadDir` failure), the same-root publish ordering, and vendor's permanent
-caching with no ETag or versioned URL, which is a policy call rather than a bug.
+in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Six are fixed, and the middleware lane is
+closed. The five left are all lower-reach: two i18n detector weaknesses (an edit that preserves
+mtime is invisible, and `{}` is cached forever after a `ReadDir` failure), the same-root publish
+ordering, and vendor's permanent caching with no ETag or versioned URL, which is a policy call
+about URL versioning rather than a bug.
+
+The middleware fixes converged on one rule worth keeping: normalise a request path once, then
+route, check and build from that single value. Three separate defects were the same shape -
+`Chunks` reading a raw path the file handler later normalised, and `find_type` /
+`file_readable?` / `path_to_build` disagreeing three ways.
 
 **Priority:** P3 for what remains. One bug lead came out of `F-GOBUNDLE-1` and is recorded in
 `AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve
