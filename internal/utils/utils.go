@@ -244,13 +244,10 @@ func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 	return ref, found
 }
 
+// Deprecated: use GemFromFsPath, which returns the suffix this drops.
 func PathIsRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, found bool) {
-	for gemName, gemPath := range cfg.RubyGems {
-		if strings.HasPrefix(path, gemPath) {
-			return gemName, gemPath, true
-		}
-	}
-	return "", "", false
+	ref, ok := GemFromFsPath(path, cfg)
+	return ref.Name, ref.Root, ok
 }
 
 // Checks if the given path is a Ruby gem, ie. starts with "@rubygems/" or "node_modules/@rubygems".
@@ -275,9 +272,8 @@ func ResolveRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath st
 //
 //	"/full/path/to/rubygems/@rubygems/foo/bar" -> "/node_modules/@rubygems/foo/bar"
 func RubyGemPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, found bool) {
-	if gemName, gemPath, ok := PathIsRubyGem(fsPath, cfg); ok {
-		suffix := strings.TrimPrefix(fsPath, gemPath)
-		return path.Join("/node_modules", types.RubyGemsScope, gemName, suffix), true
+	if ref, ok := GemFromFsPath(fsPath, cfg); ok {
+		return ref.UrlPath(), true
 	}
 
 	return "", false
