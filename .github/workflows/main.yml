@@ -29,11 +29,24 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rails: [rails-7.1, rails-7.2, rails-8, rails-8.1]
+        rails: [rails_7.1, rails_7.2, rails_8, rails_8.1]
+        # Rails-version differences are OS-independent; OS differences are the Go shared library
+        # and FFI, which go-test and bun-test already cover on macOS. One macOS Rails job is
+        # enough, and it keeps the run under the macOS runner concurrency cap.
+        exclude:
+          - os: macos-latest
+            rails: rails_7.1
+          - os: macos-latest
+            rails: rails_7.2
+          - os: macos-latest
+            rails: rails_8
     runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
       GOWORK: off
+      # Point Bundler straight at the Appraisal gemfile so setup-ruby installs and caches only
+      # that one, instead of `appraisal install` resolving all four uncached on every run.
+      BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.rails }}.gemfile
     steps:
       - uses: actions/checkout@v7
 
@@ -46,8 +59,7 @@ jobs:
           bundler-cache: true
 
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - run: bundle exec appraisal install
-      - run: bundle exec appraisal ${{ matrix.rails }} bin/test
+      - run: bin/test
 
   bun-test:
     strategy:
