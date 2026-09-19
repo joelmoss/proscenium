@@ -1,136 +1,35 @@
 # TODOS
 
-## Infrastructure
+## Robustness
 
-### Skip the extension-finding `Resolve` in the Bundler plugin
+### Recover from panics in esbuild plugin callbacks (esbuild fork)
 
-**What:** 58 of the distinct specifiers London's `appointment/create/component.jsx` sends to
-`build.Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls
-`Resolve` for them only to find the extension before it applies aliases and gem URL mapping.
-Avoiding that call means doing that work in Proscenium, or letting esbuild resolve them and
-applying aliases afterwards.
+**What:** Wrap the plugin callbacks in the esbuild fork (`OnResolve`, `OnLoad` and the plugin
+`Resolve` API) in `recover()`, so a panic becomes a build error. Ship it with the one reachable
+unchecked `PluginData` assertion, `bundless.go:376-377`: a gem CSS file loaded in the rubygems
+namespace has nil `PluginData` (`css.go`'s `OnLoad` supersedes bundless's), so an unresolvable bare
+`@import` in it panics with `interface conversion: interface {} is nil`, recovered today into a
+500 with an unhelpful message. The other bare assertions (`bundless.go` 108, 207, 213, 246;
+`bundler.go` 145, 176; `css.go` 26) are unreachable by construction and are what the recover is
+for. `replacements.go:19` asserts `[]byte`, which is consistent with its own resolver.
 
-**Why:** It is the lever left over after the directory-listing cache below took the easy half. The
-cache made each of those calls cheap; this removes them.
+**Why:** There is no `recover()` anywhere in the shipped Go code, and a panic in a plugin goroutine
+aborts the whole process, which for this library is the Ruby server that loaded it. In the fork,
+`parseFile` calls `runOnLoadPlugins` (`bundler/bundler.go:164`) before its own `defer recover()`
+(`:258`), so an `OnLoad` panic is unrecovered, while an `OnResolve` panic raised while resolving a
+parsed file's imports is recovered into a build error.
 
-**Context:** Riskier than the cache, because it moves resolution logic across the esbuild boundary
-rather than making the existing calls faster. Also tried and rejected on the way to the cache: a
-process-wide directory cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second
-racy-timestamp gap). About -50% on the big builds, no better than the per-build cache, and it adds
-staleness risk across builds.
+**Context:** One recover in the fork protects every present and future plugin, so that is where the
+leverage is. A `defer recover()` in `main.go`'s cgo exports is not a substitute: `recover` is
+per-goroutine and esbuild parses each file on its own goroutine, so the export would never see an
+`OnLoad` panic. It is a cheap addition for the calling goroutine only. A test that reaches a panic
+today aborts the whole test binary with no Ginkgo output, so a recover would also turn such a
+regression into an ordinary spec failure. The real cost is the fork release: commit, tag on
+`release/0.28.2`, `go.mod` bump.
 
-**Effort:** M
-**Priority:** P3
-**Depends on:** None
-
-### Persistent esbuild Context/Rebuild
-
-**What:** Switch `build_to_string`/`resolve` from one-shot `esbuild.Build()` calls to esbuild's
-persistent `Context()`+`Rebuild()` API so that parsed files and file contents survive across calls.
-
-**Why (revised):** This item used to say the directory-scan cache would survive across calls. It
-would not. In esbuild's `api_impl.go`, `contextImpl` creates the long-lived file system with
-`DoNotCache: true` ("do not cache calls to ReadDirectory()"), and `rebuildImpl` creates a new
-`realFS` for every rebuild, so directory listings are cached for one rebuild only. That is where the
-time went on a real app (see the item above, now done: about 46% `readdir`, 10% `lstat`, 8.5% GC,
-about 11% reading files), so this change would have left most of it in place. What does survive is
-the `CacheSet`: file contents (revalidated with `ModKey` on every read), parsed JS, CSS and JSON, and
-source indexes. That saves parse and read work on files that have not changed, and nobody has
-measured how much that is.
-
-**Context:** The two questions this item was blocked on are answered. (1) Can `EntryPoints` change
-between `Rebuild()` calls? No: `contextImpl` validates the options once and captures the entry
-points in `rebuildArgs`, so it would take one Context per entry point, and per config. Proscenium
-builds a different entry point per request, so the memory cost of holding them is unknown. (2)
-Is cache invalidation safe? For file contents esbuild's `FSCache` stats the file on every read and
-re-reads it when the `ModKey` differs, and when the mtime is within 3 seconds of now it does not
-trust it. Directory listings are never cached across rebuilds, by design. Before spending L effort,
-measure what an unchanged-entry `Rebuild()` actually saves on a real app.
-
-**Effort:** L
-**Priority:** P4 (was P3)
-**Depends on:** A measurement showing parse and read time is worth saving
-
-### Full concurrency audit of esbuild-internal
-
-**What:** A general audit of the vendored esbuild-internal fork (`../esbuild-internal`) for package-level globals unsafe under concurrent use - broader than the specific concurrent-`Build()`/`Resolve()` workload in the global config refactor's Phase 4.
-
-**Why:** Phase 4's audit only exercises the specific code paths Proscenium calls (`Build`, `Resolve`). A general audit would cover the rest of the fork's surface (`Transform`, other entry points) that this refactor doesn't touch but that you maintain.
-
-**Context:** Only came up as a byproduct of scoping the global config refactor's Phase 4. The fork is large; a general audit is a separate, open-ended effort with no clear trigger or deadline. Phase 4's narrower audit already covers the load-bearing case (what Proscenium actually calls) - this would only matter if something outside that surface starts getting exercised concurrently too.
-
-**Effort:** XL
-**Priority:** P4
-**Depends on:** Global config refactor Phase 4 landing first
-
-## Frontend
-
-### One esbuild build per module, not two
-
-**What:** Return a module's source map from the same `esbuild.Build()` that produced its code,
-instead of rebuilding. Today `internal/builder/build.go` strips a `.map` suffix from the entry
-point and runs a complete independent build, so any module whose map is fetched costs two full
-builds.
-
-**Mostly handled.** `SourcemapInline` embeds the map in the code, so one build returns both, and
-the Bun daemon uses it for every module it builds. What is left is the case where the map has to
-be a separate file: a browser in development with devtools open, which fetches `<path>.map` after
-the code, and the unbundled Bun path, where each module is served rather than built.
-
-**Separately: Bun does not apply the map at all.** Measured on 1.3.13, a module returned from a
-plugin's `onLoad` gets no source-map treatment - a thrown error names the bundled entry point at
-line 1, identically with an inline map, with a fetched-and-inlined one, and with none. Setting
-esbuild's `SourceRoot` (the map's `sources` are written relative to `OutputDir`, which is nowhere
-near where Bun loaded the module from) changes nothing, which is what says Bun is not reading the
-map rather than misreading it. So the maps the harness ships are inert until Bun supports this;
-they are kept because they now cost nothing. Debugging a test failure means reading built output.
-
-**Why:** `TODOS.md` records that most of a build's CPU is esbuild reading and resolving files, not
-transforming them (about 55% in `readdir` and `lstat` on a real app), so build count is most of the
-cost. Measured in the dummy app,
-development, mean of 20 builds each - code plus separate map against a single inlined build:
-
-| entry point | two builds | one inlined build |
-|---|---|---|
-| `lib/importing/package.js` | 29.2ms | 12.2ms |
-| `lib/css_modules/bare_import.js` | 13.7ms | 4.0ms |
-| `app/views/articles/index.jsx` | 2.9ms | 1.5ms |
-
-The map is free when it rides along, and costs as much as the code when it does not.
-
-**Context:** esbuild already emits both output files from one call (`Sourcemap: SourceMapExternal`),
-and `build_to_string.go` already contains the logic to pick one of two output files by suffix - so
-the build is being thrown away rather than being unavailable. The fix needs a way to ask for both
-at once, which means the cgo surface in `main.go` and its mirror in `lib/proscenium/builder.rb`
-(CLAUDE.md flags that pairing). The daemon would then cache the pair under one key.
-`register({ sourcemaps: false })` in `lib/proscenium/runtime/bun.js` skips what remains, at the
-cost of readable failures in a minified build.
-
-**Effort:** M
+**Effort:** S
 **Priority:** P2
-**Depends on:** None.
-
-### Node, Vitest and Deno test adapters
-
-**What:** Adapters so `node --test`, Vitest and Deno can run app JavaScript, driving the same
-daemon protocol as the Bun plugin (`lib/proscenium/runtime/server.rb`).
-
-**Why:** Issue #65 asks for "Bun, Deno or Node". v1 ships Bun only, so the issue is half answered.
-The daemon is mostly runtime-agnostic, but not entirely: `op_handshake` hands every client the Bun
-plugin's path, and `RUNTIME_MODULES` adds Bun's own module namespaces to the entry build's
-externals. An adapter is a new plugin file plus letting the client say which runtime is asking.
-
-**Context:** Three constraints are already established and are the expensive part to rediscover.
-Node's `resolve` hook sees extensionless and bare specifiers directly, so the Node adapter is
-*simpler* than Bun's - but it must use async `module.register`, not the synchronous
-`module.registerHooks`, which cannot await the daemon. Node also rejects unknown import attributes
-at parse time (`ERR_IMPORT_ATTRIBUTE_UNSUPPORTED`), so every file has to go through the load hook
-for `with { unbundle: 'true' }` to survive. Deno has no load hook at all, so it can only ever do
-resolution - no CSS modules, SVG components or i18n.
-
-**Effort:** M
-**Priority:** P3
-**Depends on:** The Bun harness landing first.
+**Depends on:** None
 
 ## Simplification audit
 
@@ -154,12 +53,32 @@ defects before them, are fixed. What remains is materiality rather than breakage
 must write the first test for the code they touch; `AUDIT.md`'s pattern P7 lists which, and for
 those the diff is small and the test is the work.
 
-**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"): findings 3,
-9 and 10 are all one function, `internal/plugin/i18n.go`'s change detector and publish path - an
-edit preserving mtime is invisible, concurrent rebuilds can publish an older payload over a newer
-one, and a `ReadDir` failure caches `{}` forever while reporting itself as a successful load. Worth
-doing as one diff rather than three. Finding 2, vendor's permanent caching with no ETag or
-versioned URL, is a policy call about URL versioning rather than a bug.
+**Step 2 absorbs two items that used to stand alone here.** The alias-then-strip-prefixes-then-join
+sequence exists in three places (`bundler.go:136`, `bundless.go:160`, `resolve.go:61` and `:152`),
+and step 2 is the consolidation, so both land there as one function with one check. (1) Align
+how the two plugins treat an alias onto a non-gem path: `bundless.go` fails the build with
+`alias "@rubygems/gem2" maps to "/lib/foo.js", which is not an @rubygems path`, while `bundler.go`'s
+`resolveRubygemPath` calls `ResolveRubyGem` unconditionally and reports `could not resolve Ruby
+gem "lib"`, which blames the Gemfile; gate it on `GemFromSpecifier` the same way. (2) Contain the
+joined path to the gem root: reject when `filepath.Rel(gemPath, realPath)` starts with `..`.
+Aliases come from `cfg.Aliases`, developer config, so this is misconfiguration hardening rather
+than a trust boundary. Check first whether any real alias relies on `..`. Also from that review:
+alias chains follow both hops at import time when bundling, but only the first when unbundled -
+the second happens on the browser's request, and needs the intermediate file to exist in the
+first gem.
+
+**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). Findings 3,
+9 and 10 are one function, `internal/plugin/i18n.go`'s change detector and publish path, and are
+one S diff. Finding 10 is narrower than the table says: a missing locales directory fails `Stat`
+too, which invalidates the snapshot, so `{}` is re-read every build rather than cached forever.
+It only sticks when `Stat` succeeds and `ReadDir` fails, so the fix is to publish `{}` for
+`fs.ErrNotExist` and return every other error. Finding 9 needs the store to refuse when the
+snapshot pointer read at the top of the load has moved. Finding 3, an edit that preserves mtime,
+is not something editors do: won't-fix, with a line in `AUDIT.md` saying so. The `-race` test that
+pins the snapshots, `test/i18n_race_test.go`, only compiles under `go test -race`. Finding 2,
+vendor's `immutable, max-age=100.years` on an unversioned URL, is a one-header decision: drop
+`immutable` and shorten `max-age` so `Last-Modified` revalidates, or record it as accepted. Do not
+leave it open.
 
 **Worth keeping from the middleware fixes:** normalise a request path once, then route, check and
 build from that single value. Three separate defects were the same shape - `Chunks` reading a raw
@@ -173,80 +92,109 @@ leaks an absolute filesystem path into the built output, because the top-level h
 without passing through the catch-all's URL-conversion tail.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
 
-## Robustness
+## Frontend
 
-### Recover from panics in esbuild plugin callbacks (esbuild fork)
+### One esbuild build per module, not two
 
-**What:** Wrap the plugin callbacks in the esbuild fork (`OnResolve`, `OnLoad` and the plugin
-`Resolve` API) in `recover()`, so a panic becomes a build error.
+**What:** Return a module's source map from the same `esbuild.Build()` that produced its code,
+instead of rebuilding. Today `internal/builder/build.go` strips a `.map` suffix from the entry
+point and runs a complete independent build, so any module whose map is fetched costs two full
+builds.
 
-**Why:** There is no `recover()` anywhere in the shipped Go code, and a panic in a plugin goroutine
-aborts the whole process, which for this library is the Ruby server that loaded it. In the fork,
-`parseFile` calls `runOnLoadPlugins` (`bundler/bundler.go:164`) before its own `defer recover()`
-(`:257-258`), so an `OnLoad` panic is unrecovered, while an `OnResolve` panic raised while resolving
-a parsed file's imports is recovered into a build error. The one explicit `panic(err)` in the
-rubygems `OnLoad` was removed by the bundless alias fix; implicit ones (a nil dereference, an
-unchecked type assertion) are still possible. The five cgo exports in `main.go` have no recover
-either (`AUDIT.md`).
+**Mostly handled.** `SourcemapInline` embeds the map in the code, so one build returns both, and
+the Bun daemon uses it for every module it builds. What is left is the case where the map has to
+be a separate file: a browser in development with devtools open, which fetches `<path>.map` after
+the code, and the unbundled Bun path, where each module is served rather than built.
 
-**Context:** One recover in the fork protects every present and future plugin, so that is where the
-leverage is. A recover per handler in Proscenium covers only that handler and can hide real bugs.
-A test that reaches a panic today aborts the whole test binary with no Ginkgo output, so a recover
-would also turn such a regression into an ordinary spec failure.
+**Why:** Build count is most of the cost, because most of a build is esbuild reading and resolving
+files rather than transforming them (the profile is in the Done section below). The one-vs-two
+measurements that put this at P2 predate the directory-listing cache, which cut the big builds by
+about half, and what remains is development-only with devtools open. Re-measure before doing it.
 
-**Effort:** S
-**Priority:** P2
-**Depends on:** None (the fork release above is done).
+**Context:** esbuild already emits both output files from one call (`Sourcemap: SourceMapExternal`),
+and `build_to_string.go` already contains the logic to pick one of two output files by suffix - so
+the build is being thrown away rather than being unavailable. The fix needs a way to ask for both
+at once, which means the cgo surface in `main.go` and its mirror in `lib/proscenium/builder.rb`
+(CLAUDE.md flags that pairing). The daemon would then cache the pair under one key.
+`register({ sourcemaps: false })` in `lib/proscenium/runtime/bun.js` skips what remains, at the
+cost of readable failures in a minified build. Bun does not apply the harness's maps at all; the
+README's `bun test` section records that.
 
-### Contain `@rubygems/` entry paths to the gem root
+**Effort:** M
+**Priority:** P3 (was P2)
+**Depends on:** A post-cache measurement of the separate-map case.
 
-**What:** In the rubygems `OnLoad` (`internal/plugin/bundless.go`), reject the entry when
-`filepath.Rel(gemPath, realPath)` starts with `..`.
+### Node, Vitest and Deno test adapters
 
-**Why:** `filepath.Join(gemPath, RemoveRubygemPrefix(result.Path, gemName))` has no containment
-check. An alias target containing `..` builds a file outside every gem root and outside the app
-root, and the file's first line can appear in the build error. The Ruby middleware normalises URL
-paths before calling Go, but it cannot help here: the `..` is injected inside Go, from config.
-Identical before and after the bundless alias fix; found in its review.
+**What:** Adapters so `node --test`, Vitest and Deno can run app JavaScript, driving the same
+daemon protocol as the Bun plugin (`lib/proscenium/runtime/server.rb`).
 
-**Context:** Check first whether any real alias relies on `..`. `bundler.go` builds the same join.
+**Why:** Issue #65 asked for "Bun, Deno or Node" and is closed with Bun shipped. Nobody is asking
+for the rest. The item stays only because the constraints below were expensive to establish. The
+daemon is mostly runtime-agnostic, but not entirely: `op_handshake` hands every client the Bun
+plugin's path, and `RUNTIME_MODULES` adds Bun's own module namespaces to the entry build's
+externals. An adapter is a new plugin file plus letting the client say which runtime is asking.
 
-**Effort:** S
+**Context:** Node's `resolve` hook sees extensionless and bare specifiers directly, so the Node
+adapter is *simpler* than Bun's - but it must use async `module.register`, not the synchronous
+`module.registerHooks`, which cannot await the daemon. Node also rejects unknown import attributes
+at parse time (`ERR_IMPORT_ATTRIBUTE_UNSUPPORTED`), so every file has to go through the load hook
+for `with { unbundle: 'true' }` to survive. Deno has no load hook at all, so it can only ever do
+resolution - no CSS modules, SVG components or i18n.
+
+**Effort:** M
+**Priority:** P4 (was P3)
+**Depends on:** Someone asking.
+
+## Infrastructure
+
+### Skip the extension-finding `Resolve` in the Bundler plugin
+
+**What:** 58 of the distinct specifiers London's `appointment/create/component.jsx` sends to
+`build.Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls
+`Resolve` for them only to find the extension before it applies aliases and gem URL mapping.
+Avoiding that call means doing that work in Proscenium, or letting esbuild resolve them and
+applying aliases afterwards.
+
+**Why:** It is the lever left over after the directory-listing cache took the easy half. The cache
+made each of those calls cheap; this removes them. Nobody has measured what they cost now.
+
+**Context:** Riskier than the cache, because it moves resolution logic across the esbuild boundary
+rather than making the existing calls faster. Also tried and rejected on the way to the cache: a
+process-wide directory cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second
+racy-timestamp gap). About -50% on the big builds, no better than the per-build cache, and it adds
+staleness risk across builds.
+
+**Next:** Profile one big London build post-cache and read off the time under those 58 `Resolve`
+calls. Under about 10% of the build, delete this item.
+
+**Effort:** M
 **Priority:** P3
-**Depends on:** None
+**Depends on:** That measurement.
 
-### Guard the unchecked `PluginData` type assertions
+### Persistent esbuild Context/Rebuild
 
-**What:** Replace `args.PluginData.(types.PluginData)` with a comma-ok helper at every site:
-`bundless.go` (lines 105, 199, 205, 231, 361-362), `bundler.go` (145, 176) and `css.go` (26).
-`replacements.go:19` asserts `[]byte`, which is consistent with its own resolver.
+**What:** Switch `build_to_string`/`resolve` from one-shot `esbuild.Build()` calls to esbuild's
+persistent `Context()`+`Rebuild()` API so that parsed files and file contents survive across calls.
 
-**Why:** `bundless.go:361-362` is reachable today. A gem CSS file loaded in the rubygems namespace
-has nil `PluginData` (`css.go`'s `OnLoad` supersedes bundless's), so an unresolvable bare `@import`
-in it panics with `interface conversion: interface {} is nil`. That one is recovered into a 500 with
-an unhelpful message. The `OnLoad` sites are unreachable by construction, but they would abort the
-process if they were ever reached.
+**Why:** What survives a `Rebuild()` is the `CacheSet`: file contents (revalidated with `ModKey` on
+every read), parsed JS, CSS and JSON, and source indexes. Directory listings do not: `contextImpl`
+creates its file system with `DoNotCache: true` and `rebuildImpl` makes a new `realFS` per rebuild,
+and directory reads are where most of a real build went. Nobody has measured what the surviving
+parse and read work is worth.
 
-**Effort:** S
-**Priority:** P3
-**Depends on:** None (pairs with the recover item above)
+**Context:** `EntryPoints` cannot change between `Rebuild()` calls: `contextImpl` validates the
+options once and captures the entry points in `rebuildArgs`, so it would take one Context per
+entry point and per config, and Proscenium builds a different entry point per request, so the
+memory cost of holding them is unknown. File-content invalidation is safe: `FSCache` stats on every
+read and re-reads when the `ModKey` differs, distrusting an mtime within 3 seconds of now.
 
-### Align how the bundler and bundless plugins handle an alias onto a non-gem path
+**Next:** Time an unchanged-entry `Rebuild()` against a fresh `Build()` on one big London entry.
+Under about 10%, delete this item.
 
-**What:** `bundless.go` now fails the build with `alias "@rubygems/gem2" maps to "/lib/foo.js", which
-is not an @rubygems path`. `bundler.go`'s `resolveRubygemPath` still calls `ResolveRubyGem` on the
-aliased path unconditionally and reports `could not resolve Ruby gem "lib"`, which blames the
-Gemfile. Gate it on `GemFromSpecifier` the same way.
-
-**Context:** Two related differences. Alias chains follow both hops at import time when bundling,
-but only the first when unbundled: the second happens on the browser's request, and needs the
-intermediate file to exist in the first gem. And the alias-then-strip-prefixes sequence now exists
-in three places (`resolveRubygemPath`, and bundless's top-level and catch-all handlers);
-`AUDIT.md` `F-GOUTILS-1` step 2 is the consolidation.
-
-**Effort:** S
+**Effort:** L
 **Priority:** P4
-**Depends on:** None
+**Depends on:** That measurement.
 
 ## Done
 
@@ -264,3 +212,10 @@ output, allocations fell from about 1.16M to 0.76M, and a file a plugin creates 
 build is no longer seen by a later `Resolve` if its directory was already listed in that build. The
 profile that motivated it: about 46% of a real build in `readdir` and 10% in `lstat`, from about
 2,800 directory reads against esbuild's own resolver's 75.
+
+### Full concurrency audit of esbuild-internal
+
+Dropped. Its prerequisite, the global config refactor's Phase 4, landed in `768021ee` with
+`test/phase4_esbuild_concurrency_test.go`, which exercises the only surface Proscenium calls
+concurrently (`Build`, `Resolve`) across independent roots. A general audit of the rest of the
+fork was XL with no trigger; reopen if something outside that surface is ever called concurrently.
