@@ -66,7 +66,7 @@ cd fixtures/dummy && bun test test/js/
 
 ### Run Go benchmarks
 ```bash
-go test ./internal/builder -bench=. -run="^$" -count=10 -benchmem
+go test ./test -bench=. -run="^$" -count=10 -benchmem
 ```
 
 ### Build gems for all platforms

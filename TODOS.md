@@ -2,56 +2,25 @@
 
 ## Infrastructure
 
-### Cache directory listings for plugin `Resolve` calls (esbuild fork)
+### Skip the extension-finding `Resolve` in the Bundler plugin
 
-**What:** Let a one-shot `esbuild.Build()` read directories through a caching file system when a
-plugin calls `Resolve`. In the esbuild fork's `contextImpl` (`pkg/api/api_impl.go`), `Build()` passes
-`oneShot: true` and the file system is created with `DoNotCache: !oneShot`. `Context()` passes
-`false` and behaves as before.
+**What:** 58 of the distinct specifiers London's `appointment/create/component.jsx` sends to
+`build.Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls
+`Resolve` for them only to find the extension before it applies aliases and gem URL mapping.
+Avoiding that call means doing that work in Proscenium, or letting esbuild resolve them and
+applying aliases afterwards.
 
-**Status:** Done. Released as `esbuild-internal` `v0.28.2-d551d879` (fork commit `d551d879`, tagged
-`v0.28.2-d551d879` on `release/0.28.2` of `github.com/joelmoss/esbuild`; 3 files, +99 -7) and pinned
-in `go.mod` by `91b50057`. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` pin both
-halves: a one-shot `Build()` caches the listing across two plugin `Resolve` calls, and a `Context()`
-does not. The first fails without the change. Re-measured on the published module, old pin against
-new, with byte-identical output: the two largest builds went from 149.7ms to 63.2ms (-58%) and from
-138.3ms to 67.0ms (-52%). Kept as a record of the measurements and of what was tried.
+**Why:** It is the lever left over after the directory-listing cache below took the easy half. The
+cache made each of those calls cheap; this removes them.
 
-**Why:** Every `build.Resolve` a plugin makes reads directories through the context's file system,
-which esbuild creates with `DoNotCache: true` (a long-lived `Context` would otherwise serve stale
-listings between rebuilds), and it gets a brand-new resolver, so nothing is shared between calls.
-The Bundler plugin calls it for every extensionless or bare import. On London (the Harley Therapy
-multi-repo: 289 gems, 402 front-end files) `appointment/create/component.jsx` makes 171 such calls
-and does about 2,800 directory reads per build; esbuild's own resolver, which caches per build, does
-about 75. A CPU profile of that build put about 46% in `readdir` and 10% in `lstat`. Measured with
-the patch, alternating runs, output byte-identical (bytes, sha256, ETag):
+**Context:** Riskier than the cache, because it moves resolution logic across the esbuild boundary
+rather than making the existing calls faster. Also tried and rejected on the way to the cache: a
+process-wide directory cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second
+racy-timestamp gap). About -50% on the big builds, no better than the per-build cache, and it adds
+staleness risk across builds.
 
-| London entry point | before | after | change |
-|---|---|---|---|
-| `appointment/create/component.jsx` | 144.4ms | 63.7ms | -56% |
-| `sheet/component.js` | 138.4ms | 63.8ms | -54% |
-| `calendar/context_menu.jsx` | 41.8ms | 34.4ms | -18% |
-| `ibiza/store.js` | 10.3ms | 7.7ms | -25% |
-| `calendar/component.module.css` | 3.6ms | 3.4ms | -6% |
-
-Allocations on the two largest builds fall from about 1.2M to 0.8M. Proscenium's Go suite and the
-fork's `pkg/api`, `internal/fs`, `internal/resolver` and `internal/bundler_tests` pass.
-
-**Context:** One behaviour change: a file that a plugin creates part-way through a build is not seen
-by a later `Resolve` in the same build if its directory was already listed in that build; a
-directory not listed yet is read fresh. The bundler's own resolver already behaves that way, and
-Proscenium's plugins do not generate source or module files (the SVG plugin only writes its download
-cache, `tmp/proscenium/svg-cache`). Tried and not recommended: a process-wide directory
-cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second racy-timestamp gap). It
-gave about -50% on the big builds, no better than the per-build cache, and adds staleness risk
-across builds. A related lever, riskier: 58 of the distinct specifiers `component.jsx` sends to
-`Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls `Resolve`
-for them to find the extension before it applies aliases and gem URL mapping. Avoiding that call
-means doing that work in Proscenium, or letting esbuild resolve them and applying aliases
-afterwards.
-
-**Effort:** S
-**Priority:** Done (was P2)
+**Effort:** M
+**Priority:** P3
 **Depends on:** None
 
 ### Persistent esbuild Context/Rebuild
@@ -172,92 +141,32 @@ commit `5edd7363` covering the Ruby engine, the Go/esbuild core, the FFI contrac
 the Bun harness and the browser React manager. 34 accepted findings, each with `file:line`
 evidence, a smallest-credible scope, regression risks and the validation it needs.
 
-**Why:** Twelve of them fix something reachable today, not just clarify. The severest,
-`F-GOCSS-2`, is now fixed (`00d1455a`): `internal/css` encoded end-of-stream three different ways,
-two loops spun forever on truncated input, and a nil forwarded to a pointer-receiver `Render()`
-panicked - with no `recover` behind any of the five cgo exports, so it aborted the host Ruby
-process rather than failing one build. `@mixin foo` with no semicolon before EOF was enough.
+**`AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it, and
+every correction implementation produced along the way. Read its "AUDIT-THE-AUDIT — pass 4"
+section before starting anything: it is the final adjudication and overrides the per-lane
+priorities earlier in that file, rejecting three findings, demoting five and reversing one
+dependency chain. Do not copy any of that here - two copies drift.
 
-Nothing still open misserves or crashes on a client-supplied URL - the two that did, and the two
-`internal/css` defects before them, are fixed. What remains is materiality rather than breakage.
-`F-GOBUNDLE-1` - the largest piece - is done, along with `F-GOUTILS-1`'s additive step 1. Next is
-`F-GORESOLVE-1`, the last of the three `@rubygems` consumers: `internal/resolver/resolve.go`
-serialises a gem name and root into a URL string at three exits and then REVERSES that parse in
-`returnResolve`, calling `ResolveRubyGem` a second time to do it. After that, `F-GOUTILS-1`'s step
-2 and step 3 can migrate the remaining call sites and delete the old primitives - that order is
-pass 4's ruling 1, consumers-by-deletion first.
+**Next:** `F-GORESOLVE-1`, the last of the three `@rubygems` consumers, and only then
+`F-GOUTILS-1`'s step 2 and step 3 (pass 4 ruling 1, consumers-by-deletion first). Nothing still
+open misserves or crashes on a client-supplied URL - the two that did, and the two `internal/css`
+defects before them, are fixed. What remains is materiality rather than breakage. Several findings
+must write the first test for the code they touch; `AUDIT.md`'s pattern P7 lists which, and for
+those the diff is small and the test is the work.
 
-**Context:** Three themes carry most of the value, and they are why several individually-small
-findings are worth landing as a set: the `@rubygems` path rule is re-derived in six places and its
-URL spelling in five, with the copies now drifted in four distinguishable ways (`F-GOBUNDLE-1`);
-roughly 250 lines of state outlived the refactors meant to remove it, including three
-unsynchronised globals the config-threading pass missed (`F-GOPLUGIN-1`, pattern P3, whose
-`internal/css` items are now deleted); and three places index an unchecked match behind a guard
-that checked less (`F-MW-1` is the last of those - the two `internal/css` panics of that shape are
-fixed).
+**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"): findings 3,
+9 and 10 are all one function, `internal/plugin/i18n.go`'s change detector and publish path - an
+edit preserving mtime is invisible, concurrent rebuilds can publish an older payload over a newer
+one, and a `ReadDir` failure caches `{}` forever while reporting itself as a successful load. Worth
+doing as one diff rather than three. Finding 2, vendor's permanent caching with no ETag or
+versioned URL, is a policy call about URL versioning rather than a bug.
 
-Read `AUDIT.md`'s "AUDIT-THE-AUDIT — pass 4" section before starting anything: it is the final
-adjudication and overrides the per-lane priorities earlier in that file. It rejects three
-findings, demotes five, and reverses one dependency chain - `F-GOUTILS-1`'s call-site migration
-must come *after* `F-GOBUNDLE-1` and `F-GORESOLVE-1`, because both of those delete the sites it
-would otherwise migrate. Eleven ordering constraints are listed there; three were undeclared by
-the lanes that produced the findings.
+**Worth keeping from the middleware fixes:** normalise a request path once, then route, check and
+build from that single value. Three separate defects were the same shape - `Chunks` reading a raw
+path the file handler later normalised, and `find_type` / `file_readable?` / `path_to_build`
+disagreeing three ways.
 
-Several findings must write the first test for the code they touch. `Chunks` and `Vendor` now have
-theirs; `internal/utils` has 28; `SilenceRequest`, `ReactComponentable`, `css_module/path.rb`,
-`spawnDaemon` and the Rakefile still have no coverage at all, and `test/manifest_test.rb` is
-entirely commented out. For those, the diff is small and the test is the work.
-
-Done so far: the high-severity Go/CSS pair, `F-GOCSS-1` (`954209bb`) and `F-GOCSS-2`
-(`00d1455a`), which also took the P3 dead-state items inside `internal/css` and left behind the
-first four tests any of that code has had. Then `F-GOPLUGIN-1` (`ec1707af`) - the i18n staleness
-bug, plus the root keying and the data race, with the first three tests for that cache. Then the
-middleware pair, `F-MW-1` (`d2730224`) and `F-MW-2` (`c02be7d3`), which between them wrote the
-first tests for `Chunks` and `Vendor`. Then `F-GOUTILS-1` step 1 (`c7ae4da3`) and its file-system
-half (`8284d26c`), which added `GemRef` and the first tests `internal/utils` has ever had. Then
-`F-GOBUNDLE-1` (`f685b282`), the audit's highest-materiality finding. `F-SIDELOAD-1`'s `NameError` half is done (`52ad154e`);
-its `merge_options` extraction and the write-through-to-shared-state half are still open.
-
-Two corrections implementation produced, for whoever reads a finding rather than this entry.
-`F-GOCSS-2`'s field 4 claims the caller-side stop check at `mixins.go:83` can be deleted. It
-cannot - it terminates on the error and "bad" tokens, which pass 4's ruling 12 requires to keep
-today's behaviour, so it stays. And `F-GOPLUGIN-1`'s "two roots share one payload" reads as live
-but is latent: the directory-mtime check rebuilds whenever the mtimes differ, so a crossed payload
-needs two roots whose locale directories share one. The staleness half needed no such help.
-
-`F-GOUTILS-1`'s field 3 understates `PathIsRubyGem` the same way `F-MW-2` does. It has the wrong
-gem being picked "differently between runs"; it is picked differently between CALLS in one process
-(38/2 and 33/7 over 40), and a path under a directory whose name merely starts with a gem root's -
-`/gems/foobar` against the gem at `/gems/foo` - is credited wrongly 40 times out of 40, with no
-randomness involved at all.
-
-`F-GOBUNDLE-1` understates all three of its observable divergences. Its field 3 has an aliased gem
-CSS module returning "raw CSS text" to a JS import - it returns nothing usable at all - and has the
-`unbundle` attribute "silently ignored" on aliased gem paths, where in fact esbuild rejects the
-whole build. The extensionless-path gap is likewise a build failure, not a degraded result. Its
-fourth divergence, D, is real in the source but was unreachable on its own.
-
-`F-MW-2` understates itself in the other direction. Its field 3 describes the leak as a vendor miss
-becoming "a hit in another middleware", which reads like a mislabelled 404; in the dummy app
-`/vendor/lib/foo.js` came back 200 with the contents of the app root's `/lib/foo.js`, under the
-`/vendor/...` URL the client asked for.
-
-**Effort:** XL in total; individual findings range from one line to a day. What is left of the
-dead-state sweep (P3) is the cheapest opener now that its `internal/css` half has landed.
-An adversarial Codex pass on 2026-09-08 found ELEVEN issues this audit never raised, listed
-in `AUDIT.md` under "CODEX ADVERSARIAL PASS". Seven are fixed, and the middleware lane
-is closed. Four remain, and three of them are the same function: `internal/plugin/i18n.go`'s
-change detector and publish path, where an edit preserving mtime is invisible (finding 3),
-concurrent rebuilds can publish an older payload over a newer one (9), and a `ReadDir` failure
-caches `{}` forever while reporting itself as a successful load (10). Worth doing as one diff
-rather than three. The fourth is vendor's permanent caching with no ETag or versioned URL (2),
-which is a policy call about URL versioning rather than a bug.
-
-The middleware fixes converged on one rule worth keeping: normalise a request path once, then
-route, check and build from that single value. Three separate defects were the same shape -
-`Chunks` reading a raw path the file handler later normalised, and `find_type` /
-`file_readable?` / `path_to_build` disagreeing three ways.
-
+**Effort:** XL in total; individual findings range from one line to a day.
 **Priority:** P3 for what remains. One bug lead came out of `F-GOBUNDLE-1` and is recorded in
 `AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve
 leaks an absolute filesystem path into the built output, because the top-level handler returns
@@ -338,3 +247,20 @@ in three places (`resolveRubygemPath`, and bundless's top-level and catch-all ha
 **Effort:** S
 **Priority:** P4
 **Depends on:** None
+
+## Done
+
+### Cache directory listings for plugin `Resolve` calls (esbuild fork)
+
+Released as `esbuild-internal` `v0.28.2-d551d879` (fork commit `d551d879`, tagged on
+`release/0.28.2` of `github.com/joelmoss/esbuild`) and pinned in `go.mod` by `91b50057`. A one-shot
+`esbuild.Build()` now reads directories through a caching file system when a plugin calls
+`Resolve`; `Context()` is unchanged, because a long-lived context would serve stale listings
+between rebuilds. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` pin both halves.
+
+`91b50057`'s message holds the measurements and the one behaviour change: the two largest London
+builds went from 149.7ms to 63.2ms (-58%) and from 138.3ms to 67.0ms (-52%) with byte-identical
+output, allocations fell from about 1.16M to 0.76M, and a file a plugin creates part-way through a
+build is no longer seen by a later `Resolve` if its directory was already listed in that build. The
+profile that motivated it: about 46% of a real build in `readdir` and 10% in `lstat`, from about
+2,800 directory reads against esbuild's own resolver's 75.
