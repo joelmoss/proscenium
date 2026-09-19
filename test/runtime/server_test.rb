@@ -453,6 +453,33 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
 
   # A regression in either of these leaves an orphaned Rails daemon behind after every test run,
   # which no other spec would catch.
+  describe '#socket_path' do
+    # `start` reads it on the server thread while a caller may read it on another. The memo was an
+    # unguarded `||=`, so both saw nil and each made its own directory, and a caller waiting on
+    # the path it was given waited for a socket the server had not bound.
+    it 'is one path, whichever thread asks first' do
+      paths = []
+
+      100.times do
+        srv = Proscenium::Runtime::Server.new(watch: nil)
+        go = false
+        askers = Array.new(4) do
+          Thread.new do
+            Thread.pass until go
+            srv.socket_path
+          end
+        end
+        go = true
+        results = askers.map(&:value)
+        paths.concat(results)
+
+        assert_equal 1, results.uniq.size, 'threads were given different socket paths'
+      end
+    ensure
+      paths&.each { |path| FileUtils.rm_rf(File.dirname(path)) }
+    end
+  end
+
   describe 'parent liveness' do
     it 'shuts down when the watched stream reaches EOF' do
       reader, writer = IO.pipe
@@ -559,9 +586,7 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
   # Runs a started daemon for the duration of the block, then shuts it down. `start` is where the
   # process-wide overrides happen, so anything asserting one has to go through it rather than
   # driving `handle` directly.
-  # Waits on the announcement rather than on `srv.socket_path`: `start` memoises that path on the
-  # server thread, and a test thread reading it first would race the memo and get a second
-  # directory. The announcement comes after the bind, so by then there is one agreed path.
+  # Waits on the announcement, which comes after the bind, rather than polling for the socket.
   def started
     out = StringIO.new
     srv = Proscenium::Runtime::Server.new(watch: nil, stdout: out)

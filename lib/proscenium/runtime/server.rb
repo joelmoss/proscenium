@@ -99,6 +99,7 @@ module Proscenium
         @key_mutexes = {}
         @cache_mutex = Mutex.new
         @resolve_mutex = Mutex.new
+        @socket_mutex = Mutex.new
         @shutdown = false
       end
 
@@ -112,8 +113,15 @@ module Proscenium
       # Resolved on first use rather than in the constructor, because `handle` can be driven
       # without ever binding anything - most of this class' own tests do - and a constructor that
       # creates a directory would leave one behind for every such instance.
+      #
+      # Guarded, because `start` reads it on the server thread while a caller may read it on
+      # another: an unguarded `||=` let both see nil and make a directory each, and the caller then
+      # waited for a socket the server had not bound.
       def socket_path
-        @socket_path ||= File.join(@socket_dir ||= Dir.mktmpdir('proscenium-', '/tmp'), SOCKET_NAME)
+        @socket_mutex.synchronize do
+          @socket_dir ||= Dir.mktmpdir('proscenium-', '/tmp')
+          @socket_path ||= File.join(@socket_dir, SOCKET_NAME)
+        end
       end
 
       def start
