@@ -25,6 +25,16 @@ var _ = Describe("Resolve", func() {
 		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/lib/foo.js")))
 	})
 
+	// A URL has no file on disk. The file half used to be `path.Join(cfg.RootPath, url)`: a path
+	// under the app root that could not exist.
+	It("resolves a URL to itself, with no file", func() {
+		relPath, absPath, err := r.Resolve("https://cdn.example/x.js", "", testConfig)
+
+		Expect(err).NotTo(HaveOccurred())
+		Expect(relPath).To(Equal("https://cdn.example/x.js"))
+		Expect(absPath).To(Equal(""))
+	})
+
 	When("relative path without importer", func() {
 		It("returns errors", func() {
 			_, _, err := r.Resolve("./lib/foo.js", "", testConfig)

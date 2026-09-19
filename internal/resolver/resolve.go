@@ -28,7 +28,7 @@ import (
 // other. `<key>` below is the one input esbuild's metafile records for the resolve-only build.
 //
 //	input                              urlPath                                 absPath
-//	https://…                          the URL                                 (meaningless: no file)
+//	https://…                          the URL                                 "" (no file)
 //	./x, importer in a gem             /node_modules/@rubygems/<gem><rest>     the joined path
 //	./x, importer under the root       joined path minus the root              the joined path
 //	./x, importer elsewhere            error
@@ -43,9 +43,8 @@ func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	debug.Debug(cfg.Debug, "Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
 
 	if utils.IsUrl(filePath) {
-		// A URL has no file on disk, and nothing reads this value. It is what the old code
-		// produced, kept so this change is limited to the inputs that have a file.
-		return returnResolve(filePath, path.Join(rootPath, filePath), nil, cfg)
+		// A URL has no file on disk.
+		return returnResolve(filePath, "", nil, cfg)
 	}
 
 	if utils.PathIsRelative(filePath) {
