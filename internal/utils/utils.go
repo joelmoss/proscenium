@@ -229,7 +229,12 @@ func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 
 	for name, root := range cfg.RubyGems {
 		trimmed := strings.TrimSuffix(root, "/")
-		if fsPath != trimmed && !strings.HasPrefix(fsPath, trimmed+"/") {
+
+		// The "/" boundary is an index check, not `HasPrefix(fsPath, trimmed+"/")`: that built a
+		// string per gem per call, and this runs for every module a build loads, against every gem
+		// in the Gemfile.
+		if !strings.HasPrefix(fsPath, trimmed) ||
+			(len(fsPath) != len(trimmed) && fsPath[len(trimmed)] != '/') {
 			continue
 		}
 
