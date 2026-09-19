@@ -611,7 +611,9 @@ var _ = Describe("BuildToString", func() {
 
 			// Whatever path ends up wrong, a missing file must fail the build, not the process. The
 			// error has to come from the loader reading the file: a resolver error would also fail the
-			// build, and so would a loader that swallowed the read error.
+			// build, and so would a loader that swallowed the read error. It names the gem file by its
+			// virtual path and never by where the gem is installed, because the build error is shown
+			// to whoever asked for the file.
 			It("fails the build, and does not panic, for a gem file that does not exist", func() {
 				success, result, _ := b.BuildToString(
 					"node_modules/@rubygems/gem2/lib/gem2/does_not_exist.js", testConfig)
@@ -619,7 +621,9 @@ var _ = Describe("BuildToString", func() {
 				Expect(success).To(BeFalse())
 				plugin, text := firstBuildError(result)
 				Expect(plugin).To(Equal("bundless"))
-				Expect(text).To(ContainSubstring("does_not_exist.js: no such file or directory"))
+				Expect(text).To(Equal(
+					"could not read @rubygems/gem2/lib/gem2/does_not_exist.js: no such file or directory"))
+				Expect(result).NotTo(ContainSubstring(testConfig.RubyGems["gem2"]))
 			})
 		})
 	})

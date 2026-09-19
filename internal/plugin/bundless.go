@@ -1,7 +1,9 @@
 package plugin
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
@@ -216,8 +218,16 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						// Get file contents.
 						contents, err := os.ReadFile(realPath)
 						if err != nil {
-							// Fail the build. A panic here aborts the process that loaded this library.
-							return esbuild.OnLoadResult{}, err
+							// Fail the build. A panic here aborts the process that loaded this library. The
+							// error names the virtual path and keeps only the OS cause: the one from ReadFile
+							// carries the gem's install path, and the build error is shown to whoever asked
+							// for the file.
+							var pathErr *fs.PathError
+							if errors.As(err, &pathErr) {
+								err = pathErr.Err
+							}
+
+							return esbuild.OnLoadResult{}, fmt.Errorf("could not read %s: %w", args.Path, err)
 						}
 
 						contentsAsString := string(contents)
