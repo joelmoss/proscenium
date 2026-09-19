@@ -10,7 +10,7 @@ Proscenium is a Rails engine that provides real-time frontend asset bundling and
 
 - Ruby >= 3.3.0 (project uses 3.3.8)
 - Go 1.25+
-- Rails 7.1 to 8.x
+- Rails 7.2 to 8.x
 
 ## Architecture
 
@@ -110,7 +110,7 @@ golangci-lint run
 - `bun test` runs the app's real modules through a Rails daemon, so it needs the Go library compiled first, same as the Ruby tests
 - A dummy Rails app for integration testing is at `fixtures/dummy/`
 - Dummy app uses pnpm as its package manager
-- Multi-Rails version testing uses Appraisals (gemfiles for Rails 7.1, 7.2, 8.0, 8.1)
+- Multi-Rails version testing uses Appraisals (gemfiles for Rails 7.2, 8.0, 8.1)
 
 ## CI
 

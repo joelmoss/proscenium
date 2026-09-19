@@ -29,13 +29,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
-        rails: [rails_7.1, rails_7.2, rails_8, rails_8.1]
+        rails: [rails_7.2, rails_8, rails_8.1]
         # Rails-version differences are OS-independent; OS differences are the Go shared library
         # and FFI, which go-test and bun-test already cover on macOS. One macOS Rails job is
         # enough, and it keeps the run under the macOS runner concurrency cap.
         exclude:
-          - os: macos-latest
-            rails: rails_7.1
           - os: macos-latest
             rails: rails_7.2
           - os: macos-latest

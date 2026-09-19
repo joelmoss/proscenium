@@ -3,7 +3,7 @@ PATH
   specs:
     proscenium (0.25.2)
       ffi (~> 1.17.0)
-      rails (>= 7.1.0, < 9.0)
+      rails (>= 7.2.0, < 9.0)
 
 PATH
   remote: fixtures/dummy/vendor/bundle/ruby/3.3.0/bundler/gems/gem5
