@@ -96,6 +96,7 @@ var _ = Describe("utils gem references", func() {
 				"foo-ext", "/gems/foo-ext", "/lib/a.js"),
 			Entry("a nested root", "/gems/foo/vendor/nested/lib/a.js",
 				"nested", "/gems/foo/vendor/nested", "/lib/a.js"),
+			Entry("the root and a slash", "/gems/foo/", "foo", "/gems/foo", "/"),
 		)
 
 		DescribeTable("is not in any gem",
@@ -109,7 +110,22 @@ var _ = Describe("utils gem references", func() {
 			Entry("a sibling directory sharing a prefix", "/gems/foobar/lib/a.js"),
 			Entry("outside every root", "/somewhere/else/a.js"),
 			Entry("a prefix of a root", "/gems"),
+			// The byte after the root has to be "/". These are one byte past it, and a multibyte
+			// character that starts with the same prefix.
+			Entry("a root and exactly one more byte", "/gems/foox"),
+			Entry("a sibling with a multibyte name", "/gems/foo\u00e9/lib/a.js"),
 		)
+
+		// Longest root wins, and a map range visits the roots in a random order, so one call proves
+		// little: a first-match-wins lookup gets this right about half the time.
+		It("credits a nested root, not the root containing it, whatever the map order", func() {
+			for range 40 {
+				ref, found := utils.GemFromFsPath("/gems/foo/vendor/nested/lib/a.js", cfg)
+
+				Expect(found).To(BeTrue())
+				Expect(ref.Name).To(Equal("nested"))
+			}
+		})
 
 		// Gem roots may be stored with a trailing separator; the lookup must behave the same.
 		It("matches a root stored with a trailing slash", func() {
@@ -124,16 +140,41 @@ var _ = Describe("utils gem references", func() {
 
 			_, found = utils.GemFromFsPath("/gems/slashedother/lib/a.js", slashed)
 			Expect(found).To(BeFalse())
+
+			ref, found = utils.GemFromFsPath("/gems/slashed", slashed)
+			Expect(found).To(BeTrue())
+			Expect(ref.Suffix).To(Equal(""))
+
+			ref, found = utils.GemFromFsPath("/gems/slashed/", slashed)
+			Expect(found).To(BeTrue())
+			Expect(ref.Suffix).To(Equal("/"))
 		})
 
-		// It runs for every module a build loads, against every gem in the Gemfile (all of
-		// Gemfile.lock, not only gems that ship JS or CSS) - 289 in a real app. It used to build a
-		// string per gem per call to test the "/" boundary, which cost 18us and 400 allocations at
-		// 400 gems, and the miss path (every app file) is the common one.
+		// The same directory stored with and without the slash is one root twice, so it is a tie, and
+		// the tie is broken on name. Comparing the untrimmed lengths would make it a length contest.
+		It("ties a root stored with a slash and the same root without one on name", func() {
+			twins := &types.ConfigT{RubyGems: map[string]string{
+				"b": "/gems/shared/",
+				"a": "/gems/shared",
+			}}
+
+			for range 40 {
+				ref, found := utils.GemFromFsPath("/gems/shared/lib/x.js", twins)
+
+				Expect(found).To(BeTrue())
+				Expect(ref.Name).To(Equal("a"))
+			}
+		})
+
+		// It runs for every module a build loads, against every gem in Gemfile.lock (not only the gems
+		// that ship JS or CSS), and the common case is a path in no gem, which scans them all. It used
+		// to build a string per gem per call to test the "/" boundary, so a per-gem allocation was
+		// multiplied by hundreds on every module.
 		It("does not allocate, whether the path is in a gem or not", func() {
-			// Roots must be as long as real ones (a full install path, ~100 characters): Go builds a
-			// concatenation of up to 32 bytes on the stack, so a short root hides the allocation.
+			// Roots must be as long as real install paths. Go builds a short concatenation on the
+			// stack, so short roots hide the allocation and this would pass on the old code.
 			const installDir = "/Users/someone/.local/share/mise/installs/ruby/3.4.9/lib/ruby/gems/3.4.0/gems"
+			Expect(len(installDir)).To(BeNumerically(">", 64))
 
 			gems := make(map[string]string, 300)
 			for i := range 300 {

@@ -1,7 +1,9 @@
 package proscenium_test
 
 import (
+	"fmt"
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path/filepath"
 	"testing"
@@ -53,6 +55,26 @@ func BenchmarkUtils(bm *testing.B) {
 			utils.PathIsRelative("../parent/path.js")
 			utils.PathIsRelative("/absolute/path.js")
 			utils.PathIsRelative("bare-module")
+		}
+	})
+
+	// Runs for every module a build loads, against every gem in Gemfile.lock. The roots are as long
+	// as real install paths, so a per-gem allocation shows up here as well as in the spec that counts
+	// them.
+	bm.Run("GemFromFsPath", func(bm *testing.B) {
+		const installDir = "/Users/someone/.local/share/mise/installs/ruby/3.4.9/lib/ruby/gems/3.4.0/gems"
+
+		gems := make(map[string]string, 300)
+		for i := range 300 {
+			gems[fmt.Sprintf("gem-%03d", i)] = fmt.Sprintf("%s/gem-%03d-1.2.3", installDir, i)
+		}
+		cfg := &types.ConfigT{RubyGems: gems}
+
+		bm.ReportAllocs()
+
+		for bm.Loop() {
+			utils.GemFromFsPath("/Users/someone/dev/app/app/javascript/x.js", cfg)
+			utils.GemFromFsPath(installDir+"/gem-150-1.2.3/lib/x.js", cfg)
 		}
 	})
 

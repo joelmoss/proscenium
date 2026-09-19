@@ -221,8 +221,9 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 // of a bare HasPrefix from a Go map range, and gem roots are stored without a trailing separator -
 // so a path under a root that merely shares a string prefix with another (`/gems/foo-ext` against
 // `/gems/foo`) or sits under a nested root could be credited to the wrong gem, and picked
-// differently from one call to the next in a single process. lib/proscenium/resolver.rb:18 already
-// requires the boundary, comparing against `"#{root}/"`; this is the Go side agreeing.
+// differently from one call to the next in a single process. Proscenium::Resolver.resolve already
+// requires the boundary, comparing against `"#{root}/"`; this is the Go side agreeing, except that
+// it also accepts a path equal to the root itself.
 func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 	var ref GemRef
 	found := false
@@ -232,7 +233,8 @@ func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 
 		// The "/" boundary is an index check, not `HasPrefix(fsPath, trimmed+"/")`: that built a
 		// string per gem per call, and this runs for every module a build loads, against every gem
-		// in the Gemfile.
+		// in the Gemfile. HasPrefix has to stay first: it guarantees `len(fsPath) >= len(trimmed)`,
+		// which is what makes the index safe.
 		if !strings.HasPrefix(fsPath, trimmed) ||
 			(len(fsPath) != len(trimmed) && fsPath[len(trimmed)] != '/') {
 			continue
