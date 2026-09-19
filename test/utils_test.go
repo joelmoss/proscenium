@@ -1,6 +1,9 @@
 package proscenium_test
 
 import (
+	"fmt"
+	"testing"
+
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 
@@ -107,6 +110,46 @@ var _ = Describe("utils gem references", func() {
 			Entry("outside every root", "/somewhere/else/a.js"),
 			Entry("a prefix of a root", "/gems"),
 		)
+
+		// Gem roots may be stored with a trailing separator; the lookup must behave the same.
+		It("matches a root stored with a trailing slash", func() {
+			slashed := &types.ConfigT{RubyGems: map[string]string{"slashed": "/gems/slashed/"}}
+
+			ref, found := utils.GemFromFsPath("/gems/slashed/lib/a.js", slashed)
+
+			Expect(found).To(BeTrue())
+			Expect(ref.Name).To(Equal("slashed"))
+			Expect(ref.Root).To(Equal("/gems/slashed/"))
+			Expect(ref.Suffix).To(Equal("/lib/a.js"))
+
+			_, found = utils.GemFromFsPath("/gems/slashedother/lib/a.js", slashed)
+			Expect(found).To(BeFalse())
+		})
+
+		// It runs for every module a build loads, against every gem in the Gemfile (all of
+		// Gemfile.lock, not only gems that ship JS or CSS) - 289 in a real app. It used to build a
+		// string per gem per call to test the "/" boundary, which cost 18us and 400 allocations at
+		// 400 gems, and the miss path (every app file) is the common one.
+		It("does not allocate, whether the path is in a gem or not", func() {
+			// Roots must be as long as real ones (a full install path, ~100 characters): Go builds a
+			// concatenation of up to 32 bytes on the stack, so a short root hides the allocation.
+			const installDir = "/Users/someone/.local/share/mise/installs/ruby/3.4.9/lib/ruby/gems/3.4.0/gems"
+
+			gems := make(map[string]string, 300)
+			for i := range 300 {
+				gems[fmt.Sprintf("gem-%03d", i)] = fmt.Sprintf("%s/gem-%03d-1.2.3", installDir, i)
+			}
+			many := &types.ConfigT{RubyGems: gems}
+
+			for _, fsPath := range []string{
+				"/Users/someone/dev/app/app/javascript/x.js",
+				installDir + "/gem-150-1.2.3/lib/x.js",
+			} {
+				allocs := testing.AllocsPerRun(50, func() { utils.GemFromFsPath(fsPath, many) })
+
+				Expect(allocs).To(BeZero(), fsPath)
+			}
+		})
 
 		// Two gemspecs can share a source tree, which makes two roots identical. The "/" boundary
 		// rules out any other way for two matching roots to have equal length, so this is the only
