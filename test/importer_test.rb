@@ -64,6 +64,10 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
     # The suffix is a pure function of the file's path, and this runs once per class name a view
     # emits, so it must not be rebuilt every time the same module is imported.
     it 'builds the css module suffix once per file, however often it is imported' do
+      # The memo lasts the life of the process, so an earlier test may already have filled it for
+      # this file, and then nothing would be counted.
+      Proscenium::Importer::SUFFIXES.clear
+
       calls = 0
       original = Proscenium::Utils.method(:css_module_suffix)
       Proscenium::Utils.define_singleton_method(:css_module_suffix) do |path|
@@ -74,7 +78,7 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       digests = Array.new(5) { subject.import('/lib/css_modules/basic2.module.css') }
 
       assert_equal 1, digests.uniq.size
-      assert_operator calls, :<=, 1
+      assert_equal 1, calls
     ensure
       Proscenium::Utils.define_singleton_method(:css_module_suffix, original)
     end
