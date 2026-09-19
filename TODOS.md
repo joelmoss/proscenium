@@ -2,17 +2,84 @@
 
 ## Infrastructure
 
+### Cache directory listings for plugin `Resolve` calls (esbuild fork)
+
+**What:** Let a one-shot `esbuild.Build()` read directories through a caching file system when a
+plugin calls `Resolve`. In the esbuild fork's `contextImpl` (`pkg/api/api_impl.go`), `Build()` passes
+`oneShot: true` and the file system is created with `DoNotCache: !oneShot`. `Context()` passes
+`false` and behaves as before.
+
+**Status:** Written, tested and measured, not released. Commit `1768c725` on branch
+`oneshot_resolve_dir_cache` in `~/dev/esbuild`, on top of `v0.28.2-2c2bc77d` (3 files, +99 -7). Two
+tests in `pkg/api/api_resolve_cache_test.go` pin both halves: a one-shot `Build()` caches the
+listing across two plugin `Resolve` calls, and a `Context()` does not. The first fails without the
+change. To ship it: tag the release branch (`v0.28.2-<hash>`, see esbuild-internal's README), run
+`./update.sh 0.28.2-<hash>` in esbuild-internal, then
+`GOWORK=off go get github.com/joelmoss/esbuild-internal@<tag>` and `GOWORK=off go mod tidy` here. CI
+builds with `GOWORK=off`, so it only sees a published tag.
+
+**Why:** Every `build.Resolve` a plugin makes reads directories through the context's file system,
+which esbuild creates with `DoNotCache: true` (a long-lived `Context` would otherwise serve stale
+listings between rebuilds), and it gets a brand-new resolver, so nothing is shared between calls.
+The Bundler plugin calls it for every extensionless or bare import. On London (the Harley Therapy
+multi-repo: 289 gems, 402 front-end files) `appointment/create/component.jsx` makes 171 such calls
+and does about 2,800 directory reads per build; esbuild's own resolver, which caches per build, does
+about 75. A CPU profile of that build put about 46% in `readdir` and 10% in `lstat`. Measured with
+the patch, alternating runs, output byte-identical (bytes, sha256, ETag):
+
+| London entry point | before | after | change |
+|---|---|---|---|
+| `appointment/create/component.jsx` | 144.4ms | 63.7ms | -56% |
+| `sheet/component.js` | 138.4ms | 63.8ms | -54% |
+| `calendar/context_menu.jsx` | 41.8ms | 34.4ms | -18% |
+| `ibiza/store.js` | 10.3ms | 7.7ms | -25% |
+| `calendar/component.module.css` | 3.6ms | 3.4ms | -6% |
+
+Allocations on the two largest builds fall from about 1.2M to 0.8M. Proscenium's Go suite and the
+fork's `pkg/api`, `internal/fs`, `internal/resolver` and `internal/bundler_tests` pass.
+
+**Context:** One behaviour change: a file that a plugin creates part-way through a build is not seen
+by a later `Resolve` in the same build. The bundler's own resolver already behaves that way, and
+Proscenium's plugins do not generate files. Tried and not recommended: a process-wide directory
+cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second racy-timestamp gap). It
+gave about -50% on the big builds, no better than the per-build cache, and adds staleness risk
+across builds. A related lever, riskier: 58 of the distinct specifiers `component.jsx` sends to
+`Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls `Resolve`
+for them to find the extension before it applies aliases and gem URL mapping. Avoiding that call
+means doing that work in Proscenium, or letting esbuild resolve them and applying aliases
+afterwards.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** None
+
 ### Persistent esbuild Context/Rebuild
 
-**What:** Switch `build_to_string`/`resolve` from one-shot `esbuild.Build()` calls to esbuild's persistent `Context()`+`Rebuild()` API so the directory-scan cache survives across calls.
+**What:** Switch `build_to_string`/`resolve` from one-shot `esbuild.Build()` calls to esbuild's
+persistent `Context()`+`Rebuild()` API so that parsed files and file contents survive across calls.
 
-**Why:** Profiling found ~48% of all allocations and 60-90% of CPU in a real build/resolve benchmark come from esbuild-internal re-scanning the same `node_modules` tree from scratch on every single call, because each `Build()` creates a brand-new cache set.
+**Why (revised):** This item used to say the directory-scan cache would survive across calls. It
+would not. In esbuild's `api_impl.go`, `contextImpl` creates the long-lived file system with
+`DoNotCache: true` ("do not cache calls to ReadDirectory()"), and `rebuildImpl` creates a new
+`realFS` for every rebuild, so directory listings are cached for one rebuild only. That is where the
+time goes on a real app (see the item above: about 46% `readdir`, 10% `lstat`, 8.5% GC, about 11%
+reading files), so this change would leave most of it in place. What does survive is the `CacheSet`:
+file contents (revalidated with `ModKey` on every read), parsed JS, CSS and JSON, and source
+indexes. That saves parse and read work on files that have not changed, and nobody has measured how
+much that is.
 
-**Context:** Blocked on two open questions: (1) does the Context API support changing `EntryPoints` between `Rebuild()` calls, since Proscenium builds a different entry point per request, and (2) cache invalidation correctness - Proscenium's whole pitch is live on-disk changes reflecting immediately in dev, so a persistent context that caches stale file info would silently break that. Shares root cause (one-shot global state) with the global config refactor - worth scoping together if either is picked up.
+**Context:** The two questions this item was blocked on are answered. (1) Can `EntryPoints` change
+between `Rebuild()` calls? No: `contextImpl` validates the options once and captures the entry
+points in `rebuildArgs`, so it would take one Context per entry point, and per config. Proscenium
+builds a different entry point per request, so the memory cost of holding them is unknown. (2)
+Is cache invalidation safe? For file contents esbuild's `FSCache` stats the file on every read and
+re-reads it when the `ModKey` differs, and when the mtime is within 3 seconds of now it does not
+trust it. Directory listings are never cached across rebuilds, by design. Before spending L effort,
+measure what an unchanged-entry `Rebuild()` actually saves on a real app.
 
 **Effort:** L
-**Priority:** P3
-**Depends on:** None
+**Priority:** P4 (was P3)
+**Depends on:** The item above, then a measurement showing parse and read time is worth saving
 
 ### Full concurrency audit of esbuild-internal
 
@@ -48,8 +115,9 @@ near where Bun loaded the module from) changes nothing, which is what says Bun i
 map rather than misreading it. So the maps the harness ships are inert until Bun supports this;
 they are kept because they now cost nothing. Debugging a test failure means reading built output.
 
-**Why:** `TODOS.md` already records that 60-90% of a build's CPU is esbuild re-scanning
-node_modules from scratch per call, so build count is the whole cost. Measured in the dummy app,
+**Why:** `TODOS.md` records that most of a build's CPU is esbuild reading and resolving files, not
+transforming them (about 55% in `readdir` and `lstat` on a real app), so build count is most of the
+cost. Measured in the dummy app,
 development, mean of 20 builds each - code plus separate map against a single inlined build:
 
 | entry point | two builds | one inlined build |
