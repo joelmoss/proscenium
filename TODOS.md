@@ -9,17 +9,13 @@ plugin calls `Resolve`. In the esbuild fork's `contextImpl` (`pkg/api/api_impl.g
 `oneShot: true` and the file system is created with `DoNotCache: !oneShot`. `Context()` passes
 `false` and behaves as before.
 
-**Status:** Written, tested and measured, not released. It is one commit, `d551d879`, on the branch
-`oneshot_resolve_dir_cache` of the esbuild fork (`github.com/joelmoss/esbuild`, on top of
-`v0.28.2-2c2bc77d`; 3 files, +99 -7). The same change is kept in this repository as
-`docs/patches/esbuild-oneshot-resolve-dir-cache.patch`, in `git format-patch` form, so it applies
-with `git am`; it was checked against the `v0.28.2-2c2bc77d` tag. Two tests in
-`pkg/api/api_resolve_cache_test.go` pin both halves: a one-shot `Build()` caches the listing across
-two plugin `Resolve` calls, and a `Context()` does not. The first fails without the change. To ship
-it: cherry-pick the commit onto the fork's release branch, tag it (`v0.28.2-<hash>`, see
-esbuild-internal's README), run `./update.sh 0.28.2-<hash>` in esbuild-internal, then
-`GOWORK=off go get github.com/joelmoss/esbuild-internal@<tag>` and `GOWORK=off go mod tidy` here. CI
-builds with `GOWORK=off`, so it only sees a published tag.
+**Status:** Done. Released as `esbuild-internal` `v0.28.2-d551d879` (fork commit `d551d879`, tagged
+`v0.28.2-d551d879` on `release/0.28.2` of `github.com/joelmoss/esbuild`; 3 files, +99 -7) and pinned
+in `go.mod` by `91b50057`. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` pin both
+halves: a one-shot `Build()` caches the listing across two plugin `Resolve` calls, and a `Context()`
+does not. The first fails without the change. Re-measured on the published module, old pin against
+new, with byte-identical output: the two largest builds went from 149.7ms to 63.2ms (-58%) and from
+138.3ms to 67.0ms (-52%). Kept as a record of the measurements and of what was tried.
 
 **Why:** Every `build.Resolve` a plugin makes reads directories through the context's file system,
 which esbuild creates with `DoNotCache: true` (a long-lived `Context` would otherwise serve stale
@@ -55,7 +51,7 @@ means doing that work in Proscenium, or letting esbuild resolve them and applyin
 afterwards.
 
 **Effort:** S
-**Priority:** P2
+**Priority:** Done (was P2)
 **Depends on:** None
 
 ### Persistent esbuild Context/Rebuild
@@ -67,11 +63,11 @@ persistent `Context()`+`Rebuild()` API so that parsed files and file contents su
 would not. In esbuild's `api_impl.go`, `contextImpl` creates the long-lived file system with
 `DoNotCache: true` ("do not cache calls to ReadDirectory()"), and `rebuildImpl` creates a new
 `realFS` for every rebuild, so directory listings are cached for one rebuild only. That is where the
-time goes on a real app (see the item above: about 46% `readdir`, 10% `lstat`, 8.5% GC, about 11%
-reading files), so this change would leave most of it in place. What does survive is the `CacheSet`:
-file contents (revalidated with `ModKey` on every read), parsed JS, CSS and JSON, and source
-indexes. That saves parse and read work on files that have not changed, and nobody has measured how
-much that is.
+time went on a real app (see the item above, now done: about 46% `readdir`, 10% `lstat`, 8.5% GC,
+about 11% reading files), so this change would have left most of it in place. What does survive is
+the `CacheSet`: file contents (revalidated with `ModKey` on every read), parsed JS, CSS and JSON, and
+source indexes. That saves parse and read work on files that have not changed, and nobody has
+measured how much that is.
 
 **Context:** The two questions this item was blocked on are answered. (1) Can `EntryPoints` change
 between `Rebuild()` calls? No: `contextImpl` validates the options once and captures the entry
@@ -84,7 +80,7 @@ measure what an unchanged-entry `Rebuild()` actually saves on a real app.
 
 **Effort:** L
 **Priority:** P4 (was P3)
-**Depends on:** The item above, then a measurement showing parse and read time is worth saving
+**Depends on:** A measurement showing parse and read time is worth saving
 
 ### Full concurrency audit of esbuild-internal
 
@@ -291,7 +287,7 @@ would also turn such a regression into an ordinary spec failure.
 
 **Effort:** S
 **Priority:** P2
-**Depends on:** The fork release steps in "Cache directory listings for plugin `Resolve` calls".
+**Depends on:** None (the fork release above is done).
 
 ### Contain `@rubygems/` entry paths to the gem root
 
