@@ -5,7 +5,8 @@ namespace :assets do
   task precompile: :environment do
     puts "\nPre-compiling assets..."
 
-    raise 'Assets pre-compilation failed!' unless Proscenium::Builder.compile
+    # Raises Proscenium::Builder::CompileError, with esbuild's messages, when the build fails.
+    Proscenium::Builder.compile
 
     puts "\nAssets pre-compiled successfully."
 

@@ -26,7 +26,21 @@ var extensionMap = map[string]string{
 //
 // Only used by the Esbuild middleware, so requires `filePath` argument to be an absolute URL path.
 // See Proscenium::Middleware::Esbuild.
+//
+// A panic anywhere below, on this goroutine, is returned as a failed build rather than taking down
+// the Ruby process that called in. Plugin callbacks run on esbuild's goroutines and are recovered
+// by the esbuild fork itself.
 func BuildToString(filePath string, cfg *types.ConfigT) (success bool, code string, contentHash string) {
+	if err := utils.Recover(func() {
+		success, code, contentHash = buildToString(filePath, cfg)
+	}); err != nil {
+		return buildError(err.Error())
+	}
+
+	return success, code, contentHash
+}
+
+func buildToString(filePath string, cfg *types.ConfigT) (success bool, code string, contentHash string) {
 	var pathPrefix = path.Join(cfg.RootPath, cfg.OutputDir) + "/"
 	var output esbuild.OutputFile
 

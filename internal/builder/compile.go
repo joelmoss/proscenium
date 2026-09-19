@@ -5,6 +5,7 @@ import (
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path"
 
@@ -16,7 +17,19 @@ type compileResult struct {
 	Warnings []esbuild.Message
 }
 
-func Compile(cfg *types.ConfigT) (bool, string) {
+// A panic anywhere below, on this goroutine, is returned as a failed compile rather than taking
+// down the Ruby process that called in. See BuildToString.
+func Compile(cfg *types.ConfigT) (success bool, messages string) {
+	if err := utils.Recover(func() {
+		success, messages = compile(cfg)
+	}); err != nil {
+		return compileError("Build panicked", err.Error())
+	}
+
+	return success, messages
+}
+
+func compile(cfg *types.ConfigT) (bool, string) {
 	// Check if Precompile is empty
 	if len(cfg.Precompile) == 0 {
 		return compileError(

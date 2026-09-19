@@ -61,6 +61,30 @@ func TestNewConfig(t *testing.T) {
 	})
 }
 
+// Every plugin used to assert `args.PluginData.(types.PluginData)` bare, and a gem stylesheet's
+// imports arrive with nil - so the assertion panicked. The accessor answers the zero value for
+// anything that is not plugin data.
+func TestPluginDataOf(t *testing.T) {
+	t.Run("nil is the zero value", func(t *testing.T) {
+		if got := types.PluginDataOf(nil); got != (types.PluginData{}) {
+			t.Errorf("expected the zero value, got %+v", got)
+		}
+	})
+
+	t.Run("plugin data is returned as is", func(t *testing.T) {
+		want := types.PluginData{IsResolvingPath: true, GemPath: "/gems/foo"}
+		if got := types.PluginDataOf(want); got != want {
+			t.Errorf("expected %+v, got %+v", want, got)
+		}
+	})
+
+	t.Run("anything else is the zero value", func(t *testing.T) {
+		if got := types.PluginDataOf([]byte("replacement contents")); got != (types.PluginData{}) {
+			t.Errorf("expected the zero value for a []byte, got %+v", got)
+		}
+	})
+}
+
 func TestShouldMinify(t *testing.T) {
 	t.Run("derives from the environment", func(t *testing.T) {
 		if (&types.ConfigT{Environment: types.ProdEnv}).ShouldMinify() != true {

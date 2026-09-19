@@ -105,7 +105,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `^(unbundle:)?(node_modules/)?@rubygems/`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					// Pass through paths that are currently resolving.
-					if args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath {
+					if types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
 
@@ -204,14 +204,13 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 					debug.Debug(cfg.Debug, "OnLoad(rubygems):begin", args)
 
-					realPath := args.PluginData.(types.PluginData).RealPath
+					pluginData := types.PluginDataOf(args.PluginData)
+					realPath := pluginData.RealPath
 
 					result := esbuild.OnLoadResult{
 						Loader:     esbuild.LoaderDefault,
 						ResolveDir: filepath.Dir(realPath),
-						PluginData: types.PluginData{
-							GemPath: args.PluginData.(types.PluginData).GemPath,
-						},
+						PluginData: types.PluginData{GemPath: pluginData.GemPath},
 					}
 
 					if !utils.PathIsCss(realPath) {
@@ -242,8 +241,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 			build.OnResolve(esbuild.OnResolveOptions{Filter: ".*"},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					// Pass through entrypoint and paths that are currently resolving.
-					if args.Kind == esbuild.ResolveEntryPoint ||
-						(args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath) {
+					if args.Kind == esbuild.ResolveEntryPoint || types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
 
@@ -372,9 +370,10 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						}
 
 						// 2
+						gemPath := types.PluginDataOf(args.PluginData).GemPath
 						if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-							resolveArgs.ResolveDir != args.PluginData.(types.PluginData).GemPath {
-							resolveArgs.ResolveDir = args.PluginData.(types.PluginData).GemPath
+							gemPath != "" && resolveArgs.ResolveDir != gemPath {
+							resolveArgs.ResolveDir = gemPath
 							result.Path = originalPath
 
 							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
@@ -397,6 +396,13 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 				FINISH:
 
 					if result.Errors != nil {
+						// A panic recovered inside a nested resolve arrives here as an error too. It is
+						// not a miss: leave it in Errors so the build fails with its stack.
+						if utils.HasPanicMessage(result.Errors) {
+							return result, nil
+						}
+
+						// A miss is not an error here: the browser reports the failed import.
 						result.Warnings = result.Errors
 						result.Errors = nil
 						result.Path = args.Path

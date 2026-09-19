@@ -525,6 +525,41 @@ var _ = Describe("@rubygems __filename and __dirname", func() {
 	})
 })
 
+// A gem stylesheet's imports resolve from the gem. The css plugin's OnLoad used to return the CSS
+// without the ResolveDir and gem root that bundless had attached (esbuild drops a loader result
+// that has no contents), so when unbundling every @import arrived with an empty ResolveDir and nil
+// plugin data: the bare import below panicked at the gem-root fallback (`interface conversion:
+// interface {} is nil`, recovered by esbuild into a failed build) and the relative one could not
+// be joined. When bundling the file is loaded by its real path, which never had the problem.
+var _ = Describe("gem stylesheet imports", func() {
+	BeforeEach(func() {
+		addGem("gem2", "external")
+	})
+
+	EntryPoint("node_modules/@rubygems/gem2/app/views/imports.css", func() {
+		// Bundling resolves a bare import from a gem that is not linked into the app's node_modules
+		// against the app root (bundler.go, "If importer is a RubyGem..."), so an app without the
+		// package keeps the @import for the browser. Unbundling resolves from the gem's own
+		// node_modules, which is the path that used to panic.
+		Describe("bare import which is a dependency of the gem", func() {
+			AssertCode(`@import "open-props/shadows";`)
+			AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/open-props/shadows.css";`, Unbundle)
+		})
+
+		Describe("relative import", func() {
+			AssertCode(`.gem2_sibling { content: "@rubygems/gem2/app/views/sibling.css"; }`)
+			AssertCode(`@import "/node_modules/@rubygems/gem2/app/views/sibling.css";`, Unbundle)
+		})
+
+		// A miss is not an error here: the browser reports the failed import. What must not
+		// happen is a panic on the way to that answer.
+		Describe("bare import that nothing provides", func() {
+			AssertCode(`@import "does-not-exist";`)
+			AssertCode(`@import "does-not-exist";`, Unbundle)
+		})
+	})
+})
+
 func addGem(name string, path string) {
 	if testConfig.RubyGems == nil {
 		testConfig.RubyGems = map[string]string{}
