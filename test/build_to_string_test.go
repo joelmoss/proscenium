@@ -729,3 +729,18 @@ func BenchmarkBuildToString(bm *testing.B) {
 		}
 	}
 }
+
+// A CSS module imported from JS by a relative path that climbs out of the app root. The css plugin
+// used to derive the module's URL path by trimming the app root off the file path, which did
+// nothing here, and then build that as if it were root-relative: the error named a path like
+// `Users/.../outside.module.css` that exists nowhere.
+var _ = Describe("BuildToString(css module outside the app root)", func() {
+	EntryPoint("lib/outside_root.js", func() {
+		It("fails naming the file and why", func() {
+			success, result, _ := b.BuildToString(fileToAssertCode, testConfig)
+
+			Expect(success).To(BeFalse())
+			Expect(result).To(ContainSubstring("outside.module.css is outside the app root and every bundled gem"))
+		})
+	})
+})

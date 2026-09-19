@@ -121,6 +121,24 @@ var _ = Describe("Build(parseCss)", func() {
 					Describe("from relative url", func() {
 						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`)
 						AssertCode(`.mixin2 { content: "/lib/css_all/mixin2.css"; font-size: 20px; }`, Unbundle)
+
+						// The stylesheet is under neither the app root nor a gem, so its relative
+						// url() has no URL path. The warning used to carry no reason: Resolve handed
+						// back a path under the app root that did not exist, and the failed read
+						// fell through to the same message.
+						It("warns with the resolver's reason when the stylesheet is outside the app root", func() {
+							input := strings.TrimSpace(heredoc.Doc(`
+								header {
+									@mixin red from url("./colors.css");
+								}
+							`))
+							stylesheet := filepath.Join(fixturesRoot, "external/one/outside.css")
+							_, warnings, err := css.ParseCss(input, stylesheet, testConfig)
+							Expect(err).NotTo(HaveOccurred())
+							Expect(warnings).To(HaveLen(1))
+							Expect(warnings[0].Text).To(ContainSubstring(`Could not resolve mixin file "./colors.css" for mixin "red": `))
+							Expect(warnings[0].Text).To(ContainSubstring("outside the app root and every bundled gem"))
+						})
 					})
 
 					Describe("from package", func() {

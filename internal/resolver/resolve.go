@@ -3,11 +3,11 @@ package resolver
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
-	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -20,66 +20,80 @@ import (
 // actually build the file, but returns the URL path that will then usually be requested and served
 // by the Rails middleware.
 //
-// If `importer` is given, then the `filePath` is resolved relative to the `importer` path.
+// If `importer` is given, then the `filePath` is resolved relative to the `importer` path. The
+// importer is the absolute file system path of the file doing the importing.
 //
 // Returns an URL path (has a leading slash and can be appended to the app domain), and the absolute
-// file system path.
+// file system path. Every exit knows both halves and returns both; neither is re-derived from the
+// other. `<key>` below is the one input esbuild's metafile records for the resolve-only build.
+//
+//	input                              urlPath                                 absPath
+//	https://…                          the URL                                 (meaningless: no file)
+//	./x, importer in a gem             /node_modules/@rubygems/<gem><rest>     the joined path
+//	./x, importer under the root       joined path minus the root              the joined path
+//	./x, importer elsewhere            error
+//	@rubygems/<gem>/x.js               /node_modules/@rubygems/<gem>/x.js      <gem root>/x.js
+//	  (also with a leading "/", "node_modules/" or "unbundle:" prefix)
+//	@rubygems/<gem>/x  (no extension)  /node_modules/@rubygems/<gem>/<key>     <gem root>/<key>
+//	/lib/x.js                          /lib/x.js                               <root>/lib/x.js
+//	/lib/x, pkg  (no extension, bare)  /<key>                                  <root>/<key>
 func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath string, absPath string, err error) {
 	rootPath := cfg.RootPath
 
 	debug.Debug(cfg.Debug, "Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})
 
 	if utils.IsUrl(filePath) {
-		return returnResolve(filePath, nil, cfg)
+		// A URL has no file on disk, and nothing reads this value. It is what the old code
+		// produced, kept so this change is limited to the inputs that have a file.
+		return returnResolve(filePath, path.Join(rootPath, filePath), nil, cfg)
 	}
 
 	if utils.PathIsRelative(filePath) {
 		if importer == "" {
-			return returnResolve("", errors.New("relative paths are not supported when an importer is not given"), cfg)
+			return returnResolve("", "", errors.New("relative paths are not supported when an importer is not given"), cfg)
 		}
 
 		filePath = path.Join(path.Dir(importer), filePath)
 
-		// TODO: while filePath is relative, the importer could be a ruby gem. Check now, and return
-		// correct path (beginning /node_modules/@rubygems/...)
-		gemName, gemPath, found := utils.PathIsRubyGem(filePath, cfg)
-		if found {
-			return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+strings.TrimPrefix(filePath, gemPath), nil, cfg)
+		// Under neither root, the path used to go out unchanged: an absolute file system path
+		// as a URL.
+		urlPath, ok := utils.UrlPathFromFsPath(filePath, cfg)
+		if !ok {
+			return returnResolve("", "", fmt.Errorf("%q is outside the app root and every bundled gem", filePath), cfg)
 		}
 
-		return returnResolve(strings.TrimPrefix(filePath, rootPath), nil, cfg)
+		return returnResolve(urlPath, filePath, nil, cfg)
 	}
 
-	gemName := ""
-	if utils.IsRubyGem(filePath) {
-		var err error
-		gemName, rootPath, err = utils.ResolveRubyGem(filePath, cfg)
-		if err != nil {
-			return returnResolve(filePath, err, cfg)
-		}
+	// The served form, `/node_modules/@rubygems/…`, is parsed here too. It used to miss the gem
+	// branch, take the absolute-path exit, and rely on the URL string being parsed a second time
+	// at the end to find the gem's file.
+	gem, isGem, err := utils.GemFromSpecifier(filePath, cfg)
+	if err != nil {
+		return returnResolve("", "", err, cfg)
+	}
 
-		pathSuffix := utils.RemoveRubygemPrefix(filePath, gemName)
+	if isGem {
+		rootPath = gem.Root
 
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve("/node_modules/"+filePath, nil, cfg)
+			return returnResolve(gem.UrlPath(), path.Join(gem.Root, gem.Suffix), nil, cfg)
 		}
 
-		if pathSuffix == "" {
+		if gem.Suffix == "" {
 			filePath = "./"
 		} else {
-			filePath = pathSuffix
+			filePath = "." + gem.Suffix
 		}
-	}
-
-	if !utils.IsBareModule(filePath) {
+	} else if !utils.IsBareModule(filePath) {
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve(filePath, nil, cfg)
+			return returnResolve(filePath, path.Join(rootPath, filePath), nil, cfg)
 		}
-	}
 
-	// Replace leading slash with `./` for absolute paths.
-	if path.IsAbs(filePath) {
-		filePath = "." + filePath
+		// Replace leading slash with `./` for absolute paths.
+		if path.IsAbs(filePath) {
+			filePath = "." + filePath
+		}
 	}
 
 	logLevel := esbuild.LogLevelWarning
@@ -105,57 +119,45 @@ func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	})
 
 	if len(result.Errors) > 0 {
-		return returnResolve("", errors.New(result.Errors[0].Text), cfg)
+		return returnResolve("", "", errors.New(result.Errors[0].Text), cfg)
 	}
 
 	var metadata struct{ Inputs map[string]any }
 	jsonErr := json.Unmarshal([]byte(result.Metafile), &metadata)
 	if jsonErr != nil {
-		return returnResolve("", jsonErr, cfg)
+		return returnResolve("", "", jsonErr, cfg)
 	}
 
-	for key := range metadata.Inputs {
-		filePath = key
-		break
+	// The build above does not bundle, so esbuild parses the entry point and nothing else: one
+	// input, whose key is the resolved path relative to `rootPath`. Taking "the" key from a map
+	// without this check would answer with a random one the day that assumption breaks.
+	if len(metadata.Inputs) != 1 {
+		return returnResolve("", "", fmt.Errorf("expected one input for %q, esbuild reported %d", filePath, len(metadata.Inputs)), cfg)
 	}
 
-	if gemName != "" {
-		return returnResolve("/node_modules/"+types.RubyGemsScope+gemName+"/"+filePath, nil, cfg)
+	key := ""
+	for k := range metadata.Inputs {
+		key = k
 	}
 
-	return returnResolve("/"+filePath, nil, cfg)
+	if isGem {
+		return returnResolve(utils.GemRef{Name: gem.Name, Suffix: "/" + key}.UrlPath(), path.Join(gem.Root, key), nil, cfg)
+	}
+
+	return returnResolve("/"+key, path.Join(rootPath, key), nil, cfg)
 }
 
-func returnResolve(filePath string, err error, cfg *types.ConfigT) (string, string, error) {
-	absPath := filePath
+func returnResolve(urlPath string, absPath string, err error, cfg *types.ConfigT) (string, string, error) {
 	errStr := ""
 	if err != nil {
 		errStr = err.Error()
 	}
 
-	debug.Debug(cfg.Debug, "Resolve:end", map[string]string{"filePath": filePath, "error": errStr})
+	debug.Debug(cfg.Debug, "Resolve:end", map[string]string{"urlPath": urlPath, "absPath": absPath, "error": errStr})
 
 	if err != nil {
 		return "", "", err
 	}
 
-	// We need the absolute file system path
-	isRubyGem := false
-	relativePath := strings.TrimPrefix(filePath, "/node_modules/")
-	if utils.IsRubyGem(relativePath) {
-		gemName, gemPath, err := utils.ResolveRubyGem(relativePath, cfg)
-		if err != nil {
-			return "", "", err
-		}
-
-		isRubyGem = true
-		suffix := utils.RemoveRubygemPrefix(relativePath, gemName)
-		absPath = path.Join(gemPath, suffix)
-	}
-
-	if !isRubyGem {
-		absPath = path.Join(cfg.RootPath, absPath)
-	}
-
-	return filePath, absPath, err
+	return urlPath, absPath, nil
 }

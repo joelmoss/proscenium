@@ -36,7 +36,13 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 					// contents in a <style> tag in the <head> of the page, and if the stylesheet is a CSS
 					// module, it exports a plain object of class names.
 					if pluginData.ImportedFromJs && isCssModule {
-						urlPath := buildUrlPath(args.Path, cfg)
+						// A file under neither root used to fall through with its file system
+						// path, and the build below then looked for that under the app root.
+						urlPath, ok := utils.UrlPathFromFsPath(args.Path, cfg)
+						if !ok {
+							return esbuild.OnLoadResult{}, fmt.Errorf("%s is outside the app root and every bundled gem", args.Path)
+						}
+
 						cssResult := cssBuild(urlPath[1:], cfg)
 						if len(cssResult.Errors) != 0 {
 							return esbuild.OnLoadResult{
@@ -162,15 +168,6 @@ func cssWarningsToMessages(warnings []css.CssWarning) []esbuild.Message {
 		}
 	}
 	return msgs
-}
-
-func buildUrlPath(fsPath string, cfg *types.ConfigT) string {
-	gemName, gemPath, found := utils.PathIsRubyGem(fsPath, cfg)
-	if found {
-		return "/node_modules/" + types.RubyGemsScope + gemName + strings.TrimPrefix(fsPath, gemPath)
-	} else {
-		return strings.TrimPrefix(fsPath, cfg.RootPath)
-	}
 }
 
 func cssModulesProxyTemplate(hash string) string {
