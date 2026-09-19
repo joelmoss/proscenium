@@ -9,11 +9,14 @@ plugin calls `Resolve`. In the esbuild fork's `contextImpl` (`pkg/api/api_impl.g
 `oneShot: true` and the file system is created with `DoNotCache: !oneShot`. `Context()` passes
 `false` and behaves as before.
 
-**Status:** Written, tested and measured, not released. Commit `1768c725` on branch
-`oneshot_resolve_dir_cache` in `~/dev/esbuild`, on top of `v0.28.2-2c2bc77d` (3 files, +99 -7). Two
-tests in `pkg/api/api_resolve_cache_test.go` pin both halves: a one-shot `Build()` caches the
-listing across two plugin `Resolve` calls, and a `Context()` does not. The first fails without the
-change. To ship it: tag the release branch (`v0.28.2-<hash>`, see esbuild-internal's README), run
+**Status:** Written, tested and measured, not released. It is one commit for the esbuild fork
+(`github.com/joelmoss/esbuild`, on top of `v0.28.2-2c2bc77d`; 3 files, +99 -7) that has not been
+pushed there, so the patch is kept in this repository:
+`docs/patches/esbuild-oneshot-resolve-dir-cache.patch`. It applies with `git am` on the fork's
+release branch, and it was checked against the `v0.28.2-2c2bc77d` tag. Two tests in
+`pkg/api/api_resolve_cache_test.go` pin both halves: a one-shot `Build()` caches the listing across
+two plugin `Resolve` calls, and a `Context()` does not. The first fails without the change. To ship
+it: apply the patch, tag the release branch (`v0.28.2-<hash>`, see esbuild-internal's README), run
 `./update.sh 0.28.2-<hash>` in esbuild-internal, then
 `GOWORK=off go get github.com/joelmoss/esbuild-internal@<tag>` and `GOWORK=off go mod tidy` here. CI
 builds with `GOWORK=off`, so it only sees a published tag.
@@ -39,8 +42,10 @@ Allocations on the two largest builds fall from about 1.2M to 0.8M. Proscenium's
 fork's `pkg/api`, `internal/fs`, `internal/resolver` and `internal/bundler_tests` pass.
 
 **Context:** One behaviour change: a file that a plugin creates part-way through a build is not seen
-by a later `Resolve` in the same build. The bundler's own resolver already behaves that way, and
-Proscenium's plugins do not generate files. Tried and not recommended: a process-wide directory
+by a later `Resolve` in the same build if its directory was already listed in that build; a
+directory not listed yet is read fresh. The bundler's own resolver already behaves that way, and
+Proscenium's plugins do not generate source or module files (the SVG plugin only writes its download
+cache, `tmp/proscenium/svg-cache`). Tried and not recommended: a process-wide directory
 cache validated by each directory's `ModKey` (mtime, with esbuild's 3 second racy-timestamp gap). It
 gave about -50% on the big builds, no better than the per-build cache, and adds staleness risk
 across builds. A related lever, riskier: 58 of the distinct specifiers `component.jsx` sends to
