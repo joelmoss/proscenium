@@ -1,36 +1,5 @@
 # TODOS
 
-## Robustness
-
-### Recover from panics in esbuild plugin callbacks (esbuild fork)
-
-**What:** Wrap the plugin callbacks in the esbuild fork (`OnResolve`, `OnLoad` and the plugin
-`Resolve` API) in `recover()`, so a panic becomes a build error. Ship it with the one reachable
-unchecked `PluginData` assertion, `bundless.go:376-377`: a gem CSS file loaded in the rubygems
-namespace has nil `PluginData` (`css.go`'s `OnLoad` supersedes bundless's), so an unresolvable bare
-`@import` in it panics with `interface conversion: interface {} is nil`, recovered today into a
-500 with an unhelpful message. The other bare assertions (`bundless.go` 108, 207, 213, 246;
-`bundler.go` 145, 176; `css.go` 26) are unreachable by construction and are what the recover is
-for. `replacements.go:19` asserts `[]byte`, which is consistent with its own resolver.
-
-**Why:** There is no `recover()` anywhere in the shipped Go code, and a panic in a plugin goroutine
-aborts the whole process, which for this library is the Ruby server that loaded it. In the fork,
-`parseFile` calls `runOnLoadPlugins` (`bundler/bundler.go:164`) before its own `defer recover()`
-(`:258`), so an `OnLoad` panic is unrecovered, while an `OnResolve` panic raised while resolving a
-parsed file's imports is recovered into a build error.
-
-**Context:** One recover in the fork protects every present and future plugin, so that is where the
-leverage is. A `defer recover()` in `main.go`'s cgo exports is not a substitute: `recover` is
-per-goroutine and esbuild parses each file on its own goroutine, so the export would never see an
-`OnLoad` panic. It is a cheap addition for the calling goroutine only. A test that reaches a panic
-today aborts the whole test binary with no Ginkgo output, so a recover would also turn such a
-regression into an ordinary spec failure. The real cost is the fork release: commit, tag on
-`release/0.28.2`, `go.mod` bump.
-
-**Effort:** S
-**Priority:** P2
-**Depends on:** None
-
 ## Simplification audit
 
 ### Structural simplifications from the 2026-09-08 audit
@@ -229,6 +198,29 @@ output, allocations fell from about 1.16M to 0.76M, and a file a plugin creates 
 build is no longer seen by a later `Resolve` if its directory was already listed in that build. The
 profile that motivated it: about 46% of a real build in `readdir` and 10% in `lstat`, from about
 2,800 directory reads against esbuild's own resolver's 75.
+
+### Recover from panics in esbuild plugin callbacks (esbuild fork)
+
+Released as `esbuild-internal` `v0.28.2-7db68371` (fork commit `7db68371` on `release/0.28.2`)
+and pinned in `go.mod`. Each plugin callback wrapper in the fork's `pkg/api/api_impl.go` recovers
+into a build error, `panic: <value> (in OnLoad callback)` with the stack in a note, the shape
+`parseFile`'s own recover uses; five fork tests pin every callback type, the nested
+`build.Resolve` path, and a following build succeeding. The OnLoad one aborted the test binary
+before the change.
+
+On this side: `utils.Recover` wraps `BuildToString`, `Resolve` and `Compile` for the calling
+goroutine (`test/panic_test.go`, where a nil config is the injection); `utils.HasPanicMessage`
+keeps a nested-resolve panic from being externalised as a miss in both `resolveWithEsbuild`
+closures; `types.PluginDataOf` replaced the nine bare `PluginData` assertions; and the one
+reachable panic's root cause is fixed rather than guarded - `css.go` returned gem CSS without the
+`ResolveDir` and gem root bundless had attached (esbuild drops a loader result with no contents),
+so unbundled gem stylesheets can now `@import` their own `node_modules` and their siblings
+(`test/rubygems_test.go`, "gem stylesheet imports"). Two more from the outside review: the nested
+CSS-module build returns its structured errors, so the location is the CSS line rather than the JS
+importer; and `Builder#compile` raises `CompileError` with esbuild's messages instead of
+returning `false` and discarding them. `BuildError` prints notes, so a stack reaches the error
+page. Plan and review record:
+`~/.gstack/projects/joelmoss-proscenium/joelmoss-master-recover-panics-plan-20260920.md`.
 
 ### Full concurrency audit of esbuild-internal
 
