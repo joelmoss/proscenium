@@ -43,7 +43,7 @@ jobs:
       RAILS_ENV: test
       GOWORK: off
       # Point Bundler straight at the Appraisal gemfile so setup-ruby installs and caches only
-      # that one, instead of `appraisal install` resolving all four uncached on every run.
+      # that one, instead of `appraisal install` resolving every gemfile uncached on every run.
       BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.rails }}.gemfile
     steps:
       - uses: actions/checkout@v7
