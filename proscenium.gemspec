@@ -29,5 +29,5 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'ffi', '~> 1.17.0'
-  spec.add_dependency 'rails', ['>= 7.1.0', '< 9.0']
+  spec.add_dependency 'rails', ['>= 7.2.0', '< 9.0']
 end

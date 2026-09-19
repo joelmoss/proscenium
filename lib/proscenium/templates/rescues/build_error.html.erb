@@ -1,6 +1,6 @@
 <header>
   <h1>
-    <%= Rails.gem_version >= Gem::Version.new('7.1.0') ? @exception_wrapper.exception_class_name : @exception.class.to_s %>
+    <%= @exception_wrapper.exception_class_name %>
     <% if params_valid? && @request.parameters['controller'] %>
       in <%= @request.parameters['controller'].camelize %>Controller<% if @request.parameters['action'] %>#<%= @request.parameters['action'] %><% end %>
     <% end %>
@@ -8,7 +8,7 @@
 </header>
 
 <main role="main" id="container">
-  <%= render "rescues/message_and_suggestions", exception: @exception, exception_wrapper: Rails.gem_version >= Gem::Version.new('7.1.0') ? @exception_wrapper : nil %>
+  <%= render "rescues/message_and_suggestions", exception: @exception, exception_wrapper: @exception_wrapper %>
 
   <% if @exception.error['location'] %>
     <div class="source">
