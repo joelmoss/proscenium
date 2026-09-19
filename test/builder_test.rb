@@ -53,6 +53,12 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
       ], subject.resolve('pkg')
     end
 
+    # Go answers a URL with no file path. Pinned on this side as well, because the empty string
+    # crosses the FFI and `Proscenium::Resolver.resolve` hands it on as `abs_path`.
+    it 'returns an empty absolute path for a URL' do
+      assert_equal ['https://cdn.example/x.js', ''], subject.resolve('https://cdn.example/x.js')
+    end
+
     # The FFI hands back ASCII-8BIT, but these are paths and Go writes them as UTF-8. Left binary, a
     # non-ASCII character is several "characters" to anything that works on the string.
     it 'returns paths tagged as UTF-8' do
