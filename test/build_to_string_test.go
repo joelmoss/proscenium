@@ -1,6 +1,8 @@
 package proscenium_test
 
 import (
+	"encoding/json"
+	"fmt"
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
 	. "joelmoss/proscenium/test/support"
@@ -8,6 +10,7 @@ import (
 	"path"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -20,6 +23,14 @@ import (
 // 	AssertCode("different package", `console.log("pkg/three.js");`)
 // 	AssertCode("app", `console.log("/lib/foo.js");`)
 // })
+
+// The first error of a failed build, decoded from the JSON the builder returns.
+func firstBuildError(result string) (pluginName string, text string) {
+	var e struct{ PluginName, Text string }
+	_ = json.NewDecoder(strings.NewReader(result)).Decode(&e)
+
+	return e.PluginName, e.Text
+}
 
 var _ = Describe("BuildToString", func() {
 	Describe("source maps", func() {
@@ -519,7 +530,31 @@ var _ = Describe("BuildToString", func() {
 					`import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";`))
 			})
 
-			// The request the browser makes for the URL of an aliased import.
+			It("imports the URL of an alias target with a node_modules/ prefix", func() {
+				testConfig.Aliases = map[string]string{
+					"@rubygems/gem2": "node_modules/@rubygems/gem1/lib/gem1/gem1.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/rubygems.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";`))
+			})
+
+			It("resolves an alias target that has no extension", func() {
+				testConfig.Aliases = map[string]string{
+					"@rubygems/gem2": "@rubygems/gem1/lib/gem1/gem1",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/rubygems.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";`))
+			})
+
+			// Serving an entry whose path matches an alias must build the alias target's file.
 			It("builds the file the alias names when the aliased URL is requested", func() {
 				testConfig.Aliases = map[string]string{
 					"@rubygems/gem2/lib/gem2/console.js": "@rubygems/gem1/lib/gem1/gem1.js",
@@ -530,15 +565,61 @@ var _ = Describe("BuildToString", func() {
 
 				Expect(success).To(BeTrue(), result)
 				Expect(result).To(ContainCode(`console.log("gem1");`))
+				// gem1 has another file that prints the same thing.
+				Expect(result).To(ContainSubstring("rubygems:@rubygems/gem1/lib/gem1/gem1.js"))
 			})
 
-			// Whatever path ends up wrong, a missing file must fail the build, not the process.
+			// A CSS entry is not read by this plugin's loader, so it takes a different route.
+			It("builds the css file the alias names when the aliased URL is requested", func() {
+				testConfig.Aliases = map[string]string{
+					"@rubygems/gem2/lib/gem2/blue.css": "@rubygems/gem1/table.css",
+				}
+
+				success, result, _ := b.BuildToString(
+					"node_modules/@rubygems/gem2/lib/gem2/blue.css", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainSubstring("rubygems:@rubygems/gem1/table.css"))
+			})
+
+			// The gem the rest of the resolution is built from comes from the aliased path, so an
+			// alias has to name another gem. The old lookup read the second path segment of anything,
+			// which gave the wrong URL for a target whose second segment happens to be a gem's name
+			// (`lib/gem1/gem1.js` gave `.../@rubygems/gem1lib/gem1/gem1.js`), and blamed the Gemfile
+			// for the rest (`could not resolve Ruby gem "lib"`).
+			DescribeTable("fails the build, naming the alias, for a target that is not an @rubygems path",
+				func(target string) {
+					testConfig.Aliases = map[string]string{"@rubygems/gem2": target}
+
+					success, result, _ := b.BuildToString("lib/aliases/rubygems.js", testConfig)
+
+					Expect(success).To(BeFalse())
+					plugin, text := firstBuildError(result)
+					Expect(plugin).To(Equal("bundless"))
+					Expect(text).To(Equal(fmt.Sprintf(
+						"alias %q maps to %q, which is not an @rubygems path", "@rubygems/gem2", target)))
+				},
+				Entry("an app path", "/lib/foo.js"),
+				Entry("a relative path", "./gem1.js"),
+				Entry("a bare package", "lodash"),
+				Entry("a URL", "https://esm.sh/x"),
+				Entry("nothing", ""),
+				Entry("an unbundled path", "unbundle:/lib/foo.js"),
+				Entry("a path whose second segment names a gem", "lib/gem1/gem1.js"),
+				Entry("a scoped package whose second segment names a gem", "@scope/gem1/x.js"),
+			)
+
+			// Whatever path ends up wrong, a missing file must fail the build, not the process. The
+			// error has to come from the loader reading the file: a resolver error would also fail the
+			// build, and so would a loader that swallowed the read error.
 			It("fails the build, and does not panic, for a gem file that does not exist", func() {
 				success, result, _ := b.BuildToString(
 					"node_modules/@rubygems/gem2/lib/gem2/does_not_exist.js", testConfig)
 
 				Expect(success).To(BeFalse())
-				Expect(result).To(ContainSubstring("does_not_exist.js"))
+				plugin, text := firstBuildError(result)
+				Expect(plugin).To(Equal("bundless"))
+				Expect(text).To(ContainSubstring("does_not_exist.js: no such file or directory"))
 			})
 		})
 	})

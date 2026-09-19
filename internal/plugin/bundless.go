@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"fmt"
 	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
@@ -115,15 +116,20 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					resolveUnbundledPrefix(&result)
 					result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
-					// The alias is applied BEFORE the gem is resolved, because it can name a different
-					// gem. The other order left `gemName` and `gemPath` describing the pre-alias gem, so
-					// the URL was built from one gem's name and another's path, and an entry point was
-					// loaded from a file that does not exist. bundler.go's resolveRubygemPath is the
-					// same rule.
+					// Apply the alias before resolving the gem: it can name a different gem, and the gem's
+					// name and root have to come from the aliased path.
+					aliasKey := result.Path
 					if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
 						result.Path = aliasedPath
 						resolveUnbundledPrefix(&result)
 						result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+
+						// Everything below is built from that gem, so the alias has to name one. Without
+						// this, the gem is read from the second segment of whatever the target is.
+						if _, isGem, _ := utils.GemFromSpecifier(result.Path, cfg); !isGem {
+							return result, fmt.Errorf("alias %q maps to %q, which is not an @rubygems path",
+								aliasKey, aliasedPath)
+						}
 					}
 
 					gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
@@ -208,10 +214,9 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					if !utils.PathIsCss(realPath) {
 						// Get file contents.
-						// An error fails the build. A panic here would abort the whole process that loaded
-						// this library, and a path that does not exist is not worth that.
 						contents, err := os.ReadFile(realPath)
 						if err != nil {
+							// Fail the build. A panic here aborts the process that loaded this library.
 							return esbuild.OnLoadResult{}, err
 						}
 
