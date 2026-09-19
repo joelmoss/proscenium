@@ -44,6 +44,25 @@ var _ = Describe("utils gem references", func() {
 			Entry("node_modules prefixed", "node_modules/@rubygems/foo/bar.js", "/bar.js"),
 			Entry("rooted node_modules prefixed", "/node_modules/@rubygems/foo/bar.js", "/bar.js"),
 			Entry("unbundle prefixed", "unbundle:@rubygems/foo/bar.js", "/bar.js"),
+			Entry("a dot segment", "@rubygems/foo/./bar.js", "/bar.js"),
+			Entry("a dot-dot segment that stays inside", "@rubygems/foo/lib/../bar.js", "/bar.js"),
+		)
+
+		// The URL half of an answer cleans the suffix (GemRef.UrlPath is path.Join) and the file
+		// half joins it onto the root as given, so an escaping suffix named one gem in the browser
+		// and a directory beside another on disk.
+		DescribeTable("refuses a suffix that escapes the gem root",
+			func(spec string) {
+				ref, isGem, err := utils.GemFromSpecifier(spec, cfg)
+
+				Expect(isGem).To(BeTrue())
+				Expect(err).To(MatchError(fmt.Sprintf("%q escapes the root of gem %q", spec, "foo")))
+				Expect(ref).To(Equal(utils.GemRef{}))
+			},
+			Entry("into a sibling", "@rubygems/foo/../bar/x.js"),
+			Entry("to the parent", "@rubygems/foo/.."),
+			Entry("out and back in", "@rubygems/foo/../foo/x.js"),
+			Entry("from below", "@rubygems/foo/lib/../../x.js"),
 		)
 
 		// The prefixed forms are the ones that mattered: the old predicate accepted them and the
@@ -245,6 +264,60 @@ var _ = Describe("utils gem references", func() {
 
 			Expect(found).To(BeTrue())
 			Expect(urlPath).To(Equal("/node_modules/@rubygems/nested/lib/a.js"))
+		})
+	})
+
+	Describe("UrlPathFromFsPath", func() {
+		BeforeEach(func() {
+			cfg.RootPath = "/app"
+			cfg.RubyGems["vendored"] = "/app/vendor/vendored"
+		})
+
+		DescribeTable("names the URL a file is served from",
+			func(fsPath string, urlPath string) {
+				got, ok := utils.UrlPathFromFsPath(fsPath, cfg)
+
+				Expect(ok).To(BeTrue())
+				Expect(got).To(Equal(urlPath))
+			},
+			Entry("in a gem", "/gems/foo/lib/a.js", "/node_modules/@rubygems/foo/lib/a.js"),
+			Entry("in a gem vendored under the app root", "/app/vendor/vendored/x.js",
+				"/node_modules/@rubygems/vendored/x.js"),
+			Entry("under the app root", "/app/lib/a.js", "/lib/a.js"),
+			Entry("the app root itself", "/app", ""),
+		)
+
+		DescribeTable("has no URL for a file under neither root",
+			func(fsPath string) {
+				got, ok := utils.UrlPathFromFsPath(fsPath, cfg)
+
+				Expect(ok).To(BeFalse())
+				Expect(got).To(Equal(""))
+			},
+			// A bare prefix match accepted this and answered "-other/x.css".
+			Entry("a sibling of the app root", "/app-other/x.css"),
+			Entry("a prefix of the app root", "/ap"),
+			Entry("outside every root", "/elsewhere/a.js"),
+		)
+
+		It("matches an app root stored with a trailing slash", func() {
+			cfg.RootPath = "/app/"
+
+			got, ok := utils.UrlPathFromFsPath("/app/lib/a.js", cfg)
+
+			Expect(ok).To(BeTrue())
+			Expect(got).To(Equal("/lib/a.js"))
+		})
+
+		// Through GemFromFsPath, so the longest-root rule applies; looped because a map range
+		// visits the roots in a random order.
+		It("credits a prefix-sharing gem root the same way every time", func() {
+			for range 40 {
+				got, ok := utils.UrlPathFromFsPath("/gems/foo-ext/lib/a.js", cfg)
+
+				Expect(ok).To(BeTrue())
+				Expect(got).To(Equal("/node_modules/@rubygems/foo-ext/lib/a.js"))
+			}
 		})
 	})
 

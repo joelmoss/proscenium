@@ -51,7 +51,9 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		// Resolve the uri.
 		_, absPath, err := resolver.Resolve(uri, p.tokens.currentFilePath(), p.cfg)
 		if err != nil {
-			p.addWarning(search, "Could not resolve mixin file %q for mixin %q", uri, mixinIdent)
+			// With the reason, because the fall-through warning below has the same first half:
+			// a file that resolves but cannot be read reports itself in the same words.
+			p.addWarning(search, "Could not resolve mixin file %q for mixin %q: %s", uri, mixinIdent, err)
 			return false
 		}
 

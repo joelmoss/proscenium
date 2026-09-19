@@ -206,9 +206,19 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 			name, name)
 	}
 
-	suffix := strings.TrimPrefix(spec, types.RubyGemsScope+name)
-	if suffix == "/" {
-		suffix = ""
+	// Cleaned as a relative path so that a leading ".." survives to be caught: path.Clean on a
+	// rooted path rewrites "/../x" to "/x", which would fold an escape back into the gem. The URL
+	// half of an answer cleans the suffix (UrlPath is path.Join) while the file half joins it onto
+	// the root as given, so "@rubygems/foo/../bar/x.js" named gem "bar" in the browser and a
+	// directory beside foo's root on disk.
+	cleaned := path.Clean("." + strings.TrimPrefix(spec, types.RubyGemsScope+name))
+	if cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+		return GemRef{}, true, fmt.Errorf("%q escapes the root of gem %q", spec, name)
+	}
+
+	suffix := ""
+	if cleaned != "." {
+		suffix = "/" + cleaned
 	}
 
 	return GemRef{Name: name, Root: root, Suffix: suffix}, true, nil
@@ -293,6 +303,29 @@ func ResolveRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath st
 func RubyGemPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, found bool) {
 	if ref, ok := GemFromFsPath(fsPath, cfg); ok {
 		return ref.UrlPath(), true
+	}
+
+	return "", false
+}
+
+// The URL Proscenium serves the file at `fsPath` from: a bundled gem's file under its
+// `/node_modules/@rubygems/<name>` prefix, a file under the app root at its root-relative path, and
+// nothing for a file under neither. Gem roots are tried first, because a vendored gem sits under the
+// app root. The app root matches at a "/" boundary only, the rule GemFromFsPath applies to gem
+// roots: `/app-other/x.css` is not under `/app`.
+//
+// This rule used to be spelled by hand in five places, two of which fell through with the raw
+// filesystem path when neither root matched. internal/plugin still carries three copies
+// (dirname.go, and `rootPathToUrlPath` in bundless.go, which has no boundary); they move here in
+// the F-GOUTILS-1 step-2 pass.
+func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bool) {
+	if ref, found := GemFromFsPath(fsPath, cfg); found {
+		return ref.UrlPath(), true
+	}
+
+	root := strings.TrimSuffix(cfg.RootPath, "/")
+	if strings.HasPrefix(fsPath, root) && (len(fsPath) == len(root) || fsPath[len(root)] == '/') {
+		return fsPath[len(root):], true
 	}
 
 	return "", false
