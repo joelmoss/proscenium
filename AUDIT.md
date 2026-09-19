@@ -55,6 +55,7 @@ Reviewers were given the do-not-report list below so that already-tracked work i
 | F-GOCSS-1 | **Done** — `954209bb`. The `:global`/`:local` rule-level stacks, the `untilFn` carcass and `nextToken`'s recursion deleted, plus the orphaned `css_test.snap` whose `TestParseCss` no longer exists. |
 | F-GOCSS-2 | **Done** — `00d1455a`. Both iteration helpers now own termination, so the hang and the panic are gone, and `nextToken` with them. Ruling 12 applied as a split: the tokenizer's helper stops at end-of-input only, the parser's on any stop token, which is what each layer already did — so malformed-CSS output is unchanged. **Field 4 was wrong that the caller-side check at mixins.go:83 could be deleted**; it terminates on the error and "bad" tokens, so it stays. The adjacent stack fix landed too: popping now truncates, which retired `position`, and `currentFilePath()` replaced mixins.go's indexing into the stack. |
 | F-SIDELOAD-1 (NameError half only) | **Done** — `52ad154e`. `PartialRenderer#sideload_template_assets` now receives `controller`. The `merge_options` extraction and the write-through-to-shared-state half are still open. |
+| F-GORESOLVE-1 | **Done** — `8452092a` (return shape, `GemFromSpecifier` at the top, `UrlPathFromFsPath`) and `4cf61406` (URL input → empty `absPath`). **Field 4's zero-behaviour-change migration was not available:** the reparse at `:144-153` was the only thing that turned the served form `/node_modules/@rubygems/<gem>/x.js` back into the gem's file, because `IsRubyGem` rejected the leading slash; a return-shape-only commit would have changed `abs_path` for that form, and with it the CSS-module class digest `importer.rb:44` derives from it. So the return shape and the `GemFromSpecifier` migration landed as one commit, with a spec pinning that form. **Field 6's URL branch:** `""`, its own commit, pinned in Go and Ruby. The path-leak lead below (`:50` and `css.go:167`) is closed by one `utils.UrlPathFromFsPath`, with the app root matched at a "/" boundary — the naive `CutPrefix` accepted `/app-other`. Found on the way: `GemFromSpecifier` kept `..` in the suffix while `UrlPath()` cleaned it, so `@rubygems/foo/../bar/x.js` named gem bar in the URL and a directory beside foo on disk; the suffix is now cleaned as a relative path and refused when it escapes (`resolve.go` acts on the error; the two plugin callers discard it until step 2). The `metadata.Inputs` map-range lead below is a `len != 1` guard now. |
 | Everything else | Open. |
 
 Suggested order and the ordering hazards are in pass 4. The short version: **F-GOCSS-1 →
@@ -64,8 +65,8 @@ remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
 **F-GOPLUGIN-1** is done too (`ec1707af`). **F-MW-1** and **F-MW-2** are done too
 (`d2730224`, `c02be7d3`), which leaves no known defect that misserves or crashes on a
 client-supplied URL. What remains is materiality rather than breakage. **F-GOUTILS-1 step 1** (`c7ae4da3`,
-`8284d26c`) and **F-GOBUNDLE-1** (`f685b282`) are both done. Next is **F-GORESOLVE-1**, the
-last of the three `@rubygems` consumers, and only then F-GOUTILS-1's own step 2 and step 3
+`8284d26c`), **F-GOBUNDLE-1** (`f685b282`) and **F-GORESOLVE-1** (`8452092a`, `4cf61406`) are all
+done, which closes the three `@rubygems` consumers. Next is F-GOUTILS-1's own step 2 and step 3
 (ruling 1 — consumers-by-deletion first).
 
 ---

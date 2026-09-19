@@ -46,26 +46,35 @@ section before starting anything: it is the final adjudication and overrides the
 priorities earlier in that file, rejecting three findings, demoting five and reversing one
 dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** `F-GORESOLVE-1`, the last of the three `@rubygems` consumers, and only then
-`F-GOUTILS-1`'s step 2 and step 3 (pass 4 ruling 1, consumers-by-deletion first). Nothing still
+**Next:** `F-GOUTILS-1`'s step 2, then step 3. `F-GORESOLVE-1` landed in `8452092a`, so all three
+`@rubygems` consumers are done (pass 4 ruling 1, consumers-by-deletion first). Nothing still
 open misserves or crashes on a client-supplied URL - the two that did, and the two `internal/css`
 defects before them, are fixed. What remains is materiality rather than breakage. Several findings
 must write the first test for the code they touch; `AUDIT.md`'s pattern P7 lists which, and for
 those the diff is small and the test is the work.
 
 **Step 2 absorbs two items that used to stand alone here.** The alias-then-strip-prefixes-then-join
-sequence exists in three places (`bundler.go:136`, `bundless.go:160`, `resolve.go:61` and `:152`),
-and step 2 is the consolidation, so both land there as one function with one check. (1) Align
-how the two plugins treat an alias onto a non-gem path: `bundless.go` fails the build with
-`alias "@rubygems/gem2" maps to "/lib/foo.js", which is not an @rubygems path`, while `bundler.go`'s
-`resolveRubygemPath` calls `ResolveRubyGem` unconditionally and reports `could not resolve Ruby
-gem "lib"`, which blames the Gemfile; gate it on `GemFromSpecifier` the same way. (2) Contain the
-joined path to the gem root: reject when `filepath.Rel(gemPath, realPath)` starts with `..`.
-Aliases come from `cfg.Aliases`, developer config, so this is misconfiguration hardening rather
-than a trust boundary. Check first whether any real alias relies on `..`. Also from that review:
-alias chains follow both hops at import time when bundling, but only the first when unbundled -
-the second happens on the browser's request, and needs the intermediate file to exist in the
-first gem.
+sequence still exists in the two plugins (`bundler.go:136`, `bundless.go:160`; `resolve.go`'s
+copies went with `F-GORESOLVE-1`), and step 2 is the consolidation, so both land there as one
+function with one check. (1) Align how the two plugins treat an alias onto a non-gem path:
+`bundless.go` fails the build with `alias "@rubygems/gem2" maps to "/lib/foo.js", which is not an
+@rubygems path`, while `bundler.go`'s `resolveRubygemPath` calls `ResolveRubyGem` unconditionally
+and reports `could not resolve Ruby gem "lib"`, which blames the Gemfile; gate it on
+`GemFromSpecifier` the same way. (2) Contain the path to the gem root. `GemFromSpecifier` does
+this now (`8452092a`: the suffix is cleaned as a relative path, and one that escapes is an error
+naming the specifier and the gem), and `resolve.go` acts on it - but `bundler.go:221` and
+`bundless.go:131` discard that error and go on to `ResolveRubyGem`, so step 2 is where the plugins
+start honouring it. No fixture alias uses `..`. Also from that review: alias chains follow both
+hops at import time when bundling, but only the first when unbundled - the second happens on the
+browser's request, and needs the intermediate file to exist in the first gem.
+
+**The other direction, file path to URL path, has one home now.** `utils.UrlPathFromFsPath`
+(`8452092a`) answers it for `resolve.go` and `plugin/css.go`, gem roots first, then the app root
+matched at a "/" boundary. Three copies remain: `dirname.go:32`, and `bundler.go:356` /
+`bundless.go:406` through `rootPathToUrlPath` (`bundless.go:427`), which has no boundary - root
+`/app` claims `/app-other/x.css`, the hole `8284d26c` closed for gem roots. Step 2 moves those
+three to the helper and deletes `rootPathToUrlPath`. The plugins need the "leave the path
+unchanged" arm when neither root matches, which is why they did not move with the first two.
 
 **Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). Findings 3,
 9 and 10 are one function, `internal/plugin/i18n.go`'s change detector and publish path, and are
