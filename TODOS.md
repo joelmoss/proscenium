@@ -9,15 +9,15 @@ plugin calls `Resolve`. In the esbuild fork's `contextImpl` (`pkg/api/api_impl.g
 `oneShot: true` and the file system is created with `DoNotCache: !oneShot`. `Context()` passes
 `false` and behaves as before.
 
-**Status:** Written, tested and measured, not released. It is one commit for the esbuild fork
-(`github.com/joelmoss/esbuild`, on top of `v0.28.2-2c2bc77d`; 3 files, +99 -7) that has not been
-pushed there, so the patch is kept in this repository:
-`docs/patches/esbuild-oneshot-resolve-dir-cache.patch`. It applies with `git am` on the fork's
-release branch, and it was checked against the `v0.28.2-2c2bc77d` tag. Two tests in
+**Status:** Written, tested and measured, not released. It is one commit, `d551d879`, on the branch
+`oneshot_resolve_dir_cache` of the esbuild fork (`github.com/joelmoss/esbuild`, on top of
+`v0.28.2-2c2bc77d`; 3 files, +99 -7). The same change is kept in this repository as
+`docs/patches/esbuild-oneshot-resolve-dir-cache.patch`, in `git format-patch` form, so it applies
+with `git am`; it was checked against the `v0.28.2-2c2bc77d` tag. Two tests in
 `pkg/api/api_resolve_cache_test.go` pin both halves: a one-shot `Build()` caches the listing across
 two plugin `Resolve` calls, and a `Context()` does not. The first fails without the change. To ship
-it: apply the patch, tag the release branch (`v0.28.2-<hash>`, see esbuild-internal's README), run
-`./update.sh 0.28.2-<hash>` in esbuild-internal, then
+it: cherry-pick the commit onto the fork's release branch, tag it (`v0.28.2-<hash>`, see
+esbuild-internal's README), run `./update.sh 0.28.2-<hash>` in esbuild-internal, then
 `GOWORK=off go get github.com/joelmoss/esbuild-internal@<tag>` and `GOWORK=off go mod tidy` here. CI
 builds with `GOWORK=off`, so it only sees a published tag.
 
