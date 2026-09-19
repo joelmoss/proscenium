@@ -1,11 +1,17 @@
 # frozen_string_literal: true
 
 require 'active_support/current_attributes'
+require 'concurrent/map'
 
 module Proscenium
   class Importer < ActiveSupport::CurrentAttributes
     JS_EXTENSIONS = %w[.tsx .ts .jsx .js].freeze
     CSS_EXTENSIONS = %w[.module.css .css].freeze
+
+    # The readable suffix of a CSS module class name, by absolute path. It is a pure function of the
+    # path, but `import` runs once per class name a view emits and `relative_path_from` is most of
+    # its cost, so it is built once per file for the life of the process.
+    SUFFIXES = Concurrent::Map.new
 
     # Holds the JS and CSS files to include in the current request.
     #
@@ -56,8 +62,9 @@ module Proscenium
           # Mirrors ConfigT#ShouldMinify - the suffix exists whenever identifiers are not
           # minified, and a class name the stylesheet does not define is worse than a long one.
           if Proscenium.config.debug || !Rails.env.production?
-            rel_path = Pathname.new(abs_path).relative_path_from(Rails.root)
-            transformed_path = "_#{Utils.css_module_suffix(rel_path)}"
+            transformed_path = SUFFIXES.compute_if_absent(abs_path) do
+              "_#{Utils.css_module_suffix(Pathname.new(abs_path).relative_path_from(Rails.root))}"
+            end
           end
 
           "#{digest}#{transformed_path}"

@@ -61,6 +61,24 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       assert_equal({ '/app/views/layouts/application.js' => {} }, subject.imported)
     end
 
+    # The suffix is a pure function of the file's path, and this runs once per class name a view
+    # emits, so it must not be rebuilt every time the same module is imported.
+    it 'builds the css module suffix once per file, however often it is imported' do
+      calls = 0
+      original = Proscenium::Utils.method(:css_module_suffix)
+      Proscenium::Utils.define_singleton_method(:css_module_suffix) do |path|
+        calls += 1
+        original.call(path)
+      end
+
+      digests = Array.new(5) { subject.import('/lib/css_modules/basic2.module.css') }
+
+      assert_equal 1, digests.uniq.size
+      assert_operator calls, :<=, 1
+    ensure
+      Proscenium::Utils.define_singleton_method(:css_module_suffix, original)
+    end
+
     it 'imports @rubygems/* runtime files' do
       subject.import '@rubygems/proscenium/react-manager/index.jsx'
 

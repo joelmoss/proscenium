@@ -161,8 +161,9 @@ module Proscenium
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         raw = Request.resolve(path, @request_config)
         success = raw[:success]
-        url_path = read_and_free(raw[:url_path])
-        abs_path = read_and_free(raw[:abs_path])
+        # The FFI hands back ASCII-8BIT. These are paths, and Go writes them as UTF-8.
+        url_path = read_and_free(raw[:url_path])&.force_encoding(Encoding::UTF_8)
+        abs_path = read_and_free(raw[:abs_path])&.force_encoding(Encoding::UTF_8)
 
         raise ResolveError.new(path, url_path) unless success
 
