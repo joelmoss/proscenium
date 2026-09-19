@@ -52,6 +52,15 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         Proscenium.root.join('fixtures/dummy/node_modules/pkg/index.js').to_s
       ], subject.resolve('pkg')
     end
+
+    # The FFI hands back ASCII-8BIT, but these are paths and Go writes them as UTF-8. Left binary, a
+    # non-ASCII character is several "characters" to anything that works on the string.
+    it 'returns paths tagged as UTF-8' do
+      url_path, abs_path = subject.resolve('pkg')
+
+      assert_equal Encoding::UTF_8, url_path.encoding
+      assert_equal Encoding::UTF_8, abs_path.encoding
+    end
   end
 
   describe 'config overrides' do

@@ -18,14 +18,20 @@ module Proscenium
     #
     # This is a port of `CssLocalAppendice` in esbuild-internal, which builds the class names in the
     # stylesheet. The two must agree byte for byte or the style silently does not apply, so change
-    # them together. The rules: drop the file extension, turn `/`, `\` and `.` into `-`, turn any
-    # other character outside `A-Z a-z 0-9 - _` into `_`, and start with `_` if the result would
-    # start with a digit.
+    # them together (test/css_module_suffixes.json is checked against both). The rules: drop the
+    # file extension, turn `/`, `\` and `.` into `-`, turn any other character outside
+    # `A-Z a-z 0-9 - _` into `_`, and start with `_` if the result would start with a digit.
+    #
+    # Go works in runes, so the path is read as UTF-8 whatever its tag: the FFI hands paths back as
+    # ASCII-8BIT, where each byte of a multibyte character would become a `_` of its own. A byte
+    # that is not valid UTF-8 becomes one `_`, as it does in Go.
     #
     # @param path [#to_s] path of the CSS module file, relative to the app root.
     # @return [String]
     def css_module_suffix(path)
       path.to_s
+          .dup.force_encoding(Encoding::UTF_8)
+          .scrub { |bytes| '_' * bytes.bytesize }
           .sub(%r{\.[^./]*\z}, '')
           .gsub(%r{[/\\.]}, '-')
           .gsub(/[^A-Za-z0-9_-]/, '_')

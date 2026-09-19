@@ -52,6 +52,9 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 						hash := ast.CssLocalHash(args.Path)
 						hashIdent := hash
 						if !build.InitialOptions.MinifyIdentifiers {
+							// Proscenium::Utils.css_module_suffix (lib/proscenium/utils.rb) mirrors this in
+							// Ruby, for the class names a view emits. Change them together;
+							// test/css_module/suffix_test.rb checks that they agree.
 							relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
 							hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
 						}

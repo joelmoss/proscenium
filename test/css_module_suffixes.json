@@ -1,0 +1,94 @@
+[
+  {
+    "path": "lib/styles.module.css",
+    "suffix": "lib-styles-module"
+  },
+  {
+    "path": "app/components/button/component.module.css",
+    "suffix": "app-components-button-component-module"
+  },
+  {
+    "path": "node_modules/@scope/pkg/x.module.css",
+    "suffix": "node_modules-_scope-pkg-x-module"
+  },
+  {
+    "path": "lib/a+b/x.module.css",
+    "suffix": "lib-a_b-x-module"
+  },
+  {
+    "path": "lib/sp ace/x~y.module.css",
+    "suffix": "lib-sp_ace-x_y-module"
+  },
+  {
+    "path": "../../gems/foo-1.2.3/app/x.module.css",
+    "suffix": "------gems-foo-1-2-3-app-x-module"
+  },
+  {
+    "path": "2024/x.module.css",
+    "suffix": "_2024-x-module"
+  },
+  {
+    "path": "lib/Café/x.module.css",
+    "suffix": "lib-Caf_-x-module"
+  },
+  {
+    "path": "lib/日本/x.module.css",
+    "suffix": "lib-__-x-module"
+  },
+  {
+    "path": "lib/back\\slash/x.module.css",
+    "suffix": "lib-back-slash-x-module"
+  },
+  {
+    "path": "lib/dots.in.dir/x.module.css",
+    "suffix": "lib-dots-in-dir-x-module"
+  },
+  {
+    "path": "lib/under_score-dash/x.module.css",
+    "suffix": "lib-under_score-dash-x-module"
+  },
+  {
+    "path": "lib/emoji😀/x.module.css",
+    "suffix": "lib-emoji_-x-module"
+  },
+  {
+    "path": "lib/a$b#c%d(e)/x.module.css",
+    "suffix": "lib-a_b_c_d_e_-x-module"
+  },
+  {
+    "path": "x.module.css",
+    "suffix": "x-module"
+  },
+  {
+    "path": "lib/no_ext",
+    "suffix": "lib-no_ext"
+  },
+  {
+    "path": "lib/dir.d/noext",
+    "suffix": "lib-dir-d-noext"
+  },
+  {
+    "path": "x.",
+    "suffix": "x"
+  },
+  {
+    "path": "lib/a.b/",
+    "suffix": "lib-a-b-"
+  },
+  {
+    "path": "lib/.hidden",
+    "suffix": "lib-"
+  },
+  {
+    "path": "9",
+    "suffix": "_9"
+  },
+  {
+    "hex": "6c69622fff2f782e6d6f64756c652e637373",
+    "suffix": "lib-_-x-module"
+  },
+  {
+    "hex": "6c69622fe2822f782e6d6f64756c652e637373",
+    "suffix": "lib-__-x-module"
+  }
+]
