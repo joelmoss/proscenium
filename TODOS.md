@@ -267,3 +267,78 @@ route, check and build from that single value. Three separate defects were the s
 leaks an absolute filesystem path into the built output, because the top-level handler returns
 without passing through the catch-all's URL-conversion tail.
 **Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
+
+## Robustness
+
+### Recover from panics in esbuild plugin callbacks (esbuild fork)
+
+**What:** Wrap the plugin callbacks in the esbuild fork (`OnResolve`, `OnLoad` and the plugin
+`Resolve` API) in `recover()`, so a panic becomes a build error.
+
+**Why:** There is no `recover()` anywhere in the shipped Go code, and a panic in a plugin goroutine
+aborts the whole process, which for this library is the Ruby server that loaded it. In the fork,
+`parseFile` calls `runOnLoadPlugins` (`bundler/bundler.go:164`) before its own `defer recover()`
+(`:257-258`), so an `OnLoad` panic is unrecovered, while an `OnResolve` panic raised while resolving
+a parsed file's imports is recovered into a build error. The one explicit `panic(err)` in the
+rubygems `OnLoad` was removed by the bundless alias fix; implicit ones (a nil dereference, an
+unchecked type assertion) are still possible. The five cgo exports in `main.go` have no recover
+either (`AUDIT.md`).
+
+**Context:** One recover in the fork protects every present and future plugin, so that is where the
+leverage is. A recover per handler in Proscenium covers only that handler and can hide real bugs.
+A test that reaches a panic today aborts the whole test binary with no Ginkgo output, so a recover
+would also turn such a regression into an ordinary spec failure.
+
+**Effort:** S
+**Priority:** P2
+**Depends on:** The fork release steps in "Cache directory listings for plugin `Resolve` calls".
+
+### Contain `@rubygems/` entry paths to the gem root
+
+**What:** In the rubygems `OnLoad` (`internal/plugin/bundless.go`), reject the entry when
+`filepath.Rel(gemPath, realPath)` starts with `..`.
+
+**Why:** `filepath.Join(gemPath, RemoveRubygemPrefix(result.Path, gemName))` has no containment
+check. An alias target containing `..` builds a file outside every gem root and outside the app
+root, and the file's first line can appear in the build error. The Ruby middleware normalises URL
+paths before calling Go, but it cannot help here: the `..` is injected inside Go, from config.
+Identical before and after the bundless alias fix; found in its review.
+
+**Context:** Check first whether any real alias relies on `..`. `bundler.go` builds the same join.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+
+### Guard the unchecked `PluginData` type assertions
+
+**What:** Replace `args.PluginData.(types.PluginData)` with a comma-ok helper at every site:
+`bundless.go` (lines 105, 199, 205, 231, 361-362), `bundler.go` (145, 176) and `css.go` (26).
+`replacements.go:19` asserts `[]byte`, which is consistent with its own resolver.
+
+**Why:** `bundless.go:361-362` is reachable today. A gem CSS file loaded in the rubygems namespace
+has nil `PluginData` (`css.go`'s `OnLoad` supersedes bundless's), so an unresolvable bare `@import`
+in it panics with `interface conversion: interface {} is nil`. That one is recovered into a 500 with
+an unhelpful message. The `OnLoad` sites are unreachable by construction, but they would abort the
+process if they were ever reached.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None (pairs with the recover item above)
+
+### Align how the bundler and bundless plugins handle an alias onto a non-gem path
+
+**What:** `bundless.go` now fails the build with `alias "@rubygems/gem2" maps to "/lib/foo.js", which
+is not an @rubygems path`. `bundler.go`'s `resolveRubygemPath` still calls `ResolveRubyGem` on the
+aliased path unconditionally and reports `could not resolve Ruby gem "lib"`, which blames the
+Gemfile. Gate it on `GemFromSpecifier` the same way.
+
+**Context:** Two related differences. Alias chains follow both hops at import time when bundling,
+but only the first when unbundled: the second happens on the browser's request, and needs the
+intermediate file to exist in the first gem. And the alias-then-strip-prefixes sequence now exists
+in three places (`resolveRubygemPath`, and bundless's top-level and catch-all handlers);
+`AUDIT.md` `F-GOUTILS-1` step 2 is the consolidation.
+
+**Effort:** S
+**Priority:** P4
+**Depends on:** None
