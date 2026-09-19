@@ -1,10 +1,12 @@
 package proscenium_test
 
 import (
+	"encoding/json"
 	b "joelmoss/proscenium/internal/builder"
 	. "joelmoss/proscenium/test/support"
 	"path/filepath"
 
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 	ast "github.com/joelmoss/esbuild-internal/ast"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -429,5 +431,25 @@ var _ = Describe("BuildToString(css)", func() {
 				Expect(result).To(ContainCode(`.myClass_` + hsh + `_---external-gem2-styles-module { color: pink; }`))
 			})
 		})
+	})
+})
+
+// A CSS module imported from JS is built in a second, nested esbuild build. Its errors used to be
+// returned beside a plain error made from the first one's text, and esbuild handles the plain
+// error first: the location pointed at the JS importer, and the structured messages - the CSS
+// line, and any note such as a recovered panic's stack - were dropped before Ruby could see them.
+var _ = Describe("BuildToString(css module) when the nested build fails", func() {
+	It("reports the failing CSS line, and the JS importer as a note", func() {
+		success, result, _ := b.BuildToString("lib/css_modules/broken_import.js", testConfig)
+
+		Expect(success).To(BeFalse())
+
+		var message esbuild.Message
+		Expect(json.Unmarshal([]byte(result), &message)).To(Succeed())
+		Expect(message.Text).To(Equal(`Could not resolve "./missing.css"`))
+		Expect(message.Location).NotTo(BeNil())
+		Expect(message.Location.File).To(Equal("lib/css_modules/broken_import.module.css"))
+		Expect(message.Notes).To(HaveLen(1))
+		Expect(message.Notes[0].Location.File).To(Equal("lib/css_modules/broken_import.js"))
 	})
 })

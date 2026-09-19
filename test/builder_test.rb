@@ -43,6 +43,31 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
                    'Entrypoints must be bare specifiers',
                    error.message
     end
+
+    # A note is where a recovered Go panic carries its stack, and where a failure inside a nested
+    # build names its importer. Constructed directly: nothing in the fixtures panics on purpose.
+    it 'appends notes to the message on their own lines' do
+      error = Proscenium::Builder::BuildError.new('x.js', {
+        Text: 'panic: boom (in OnLoad callback)',
+        Location: { File: 'lib/x.js', Line: 2, Column: 1 },
+        Notes: [{ Text: 'stack line one' }, { Text: 'stack line two' }]
+      }.to_json)
+
+      assert_equal "Failed to build x.js - panic: boom (in OnLoad callback) at lib/x.js:2:1\n" \
+                   "stack line one\nstack line two",
+                   error.message
+    end
+  end
+
+  describe '.compile' do
+    it 'raises with the messages when the build fails' do
+      error = assert_raises(Proscenium::Builder::CompileError) do
+        subject.compile(Precompile: [])
+      end
+
+      assert_includes error.message, 'Failed to compile assets - No precompile paths specified - '
+      assert_equal 1, error.messages['Errors'].length
+    end
   end
 
   describe '.resolve' do

@@ -21,10 +21,7 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
 					debug.Debug(cfg.Debug, "OnLoad:begin", args)
 
-					var pluginData types.PluginData
-					if args.PluginData != nil {
-						pluginData = args.PluginData.(types.PluginData)
-					}
+					pluginData := types.PluginDataOf(args.PluginData)
 
 					if args.Namespace == "rubygems" && pluginData.RealPath != "" {
 						args.Path = pluginData.RealPath
@@ -47,10 +44,14 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 
 						cssResult := cssBuild(urlPath[1:], cfg)
 						if len(cssResult.Errors) != 0 {
+							// The messages alone, with no error beside them. esbuild handles a returned
+							// error first and drops the structured messages, so the failure used to point
+							// at the JS importer rather than the CSS line, and any note (a recovered
+							// panic's stack) was lost. Non-empty Errors fail the build on their own.
 							return esbuild.OnLoadResult{
 								Errors:   cssResult.Errors,
 								Warnings: cssResult.Warnings,
-							}, fmt.Errorf("%s", cssResult.Errors[0].Text)
+							}, nil
 						}
 
 						if len(cssResult.OutputFiles) > 1 {
@@ -111,11 +112,23 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 						loader = esbuild.LoaderLocalCSS
 					}
 
-					return esbuild.OnLoadResult{
-						Contents: &contents,
-						Loader:   loader,
-						Warnings: cssWarningsToMessages(warnings),
-					}, nil
+					result := esbuild.OnLoadResult{
+						Contents:   &contents,
+						Loader:     loader,
+						Warnings:   cssWarningsToMessages(warnings),
+						ResolveDir: filepath.Dir(args.Path),
+					}
+
+					// A gem stylesheet's imports resolve from the gem. bundless's OnLoad attaches the gem
+					// root but returns no contents for CSS, and esbuild drops a loader result that has no
+					// contents, so this is the only place the root can be carried. Without it, and
+					// without the ResolveDir above (esbuild only defaults it for the file namespace),
+					// every @import in gem CSS arrived with an empty ResolveDir and nil plugin data.
+					if args.Namespace == "rubygems" {
+						result.PluginData = types.PluginData{GemPath: pluginData.GemPath}
+					}
+
+					return result, nil
 				})
 		},
 	}

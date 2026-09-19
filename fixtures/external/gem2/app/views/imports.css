@@ -1,0 +1,5 @@
+@import 'open-props/shadows';
+@import './sibling.css';
+@import 'does-not-exist';
+
+.gem2_imports { content: "@rubygems/gem2/app/views/imports.css"; }

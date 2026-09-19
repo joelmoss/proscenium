@@ -34,6 +34,15 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				})
 
 				if len(r.Errors) > 0 {
+					// A panic recovered inside a nested resolve arrives here as an error too. It is
+					// not a miss: hand it back so the build fails with its stack, rather than
+					// externalising the import and hiding it.
+					if utils.HasPanicMessage(r.Errors) {
+						onResolveResult.Errors = r.Errors
+
+						return false
+					}
+
 					// Could not resolve the path, so mark as external. This ensures we receive no
 					// error, and instead allows the browser to handle the import failure.
 					onResolveResult.External = true
@@ -142,7 +151,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 			build.OnResolve(esbuild.OnResolveOptions{Filter: `^(unbundle:)?(node_modules/)?@rubygems/`},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					// Pass through paths that are currently resolving.
-					if args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath {
+					if types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
 
@@ -172,8 +181,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 			build.OnResolve(esbuild.OnResolveOptions{Filter: ".*"},
 				func(args esbuild.OnResolveArgs) (esbuild.OnResolveResult, error) {
 					// Pass through entrypoint and paths that are currently resolving.
-					if args.Kind == esbuild.ResolveEntryPoint ||
-						(args.PluginData != nil && args.PluginData.(types.PluginData).IsResolvingPath) {
+					if args.Kind == esbuild.ResolveEntryPoint || types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
 

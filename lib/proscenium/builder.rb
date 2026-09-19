@@ -56,17 +56,42 @@ module Proscenium
     class BuildError < Error
       attr_reader :error, :path
 
+      # One esbuild message as text: its text, detail and location on one line, then each note on
+      # a line of its own. A note is where a recovered Go panic carries its stack, and where a
+      # failure inside a nested build names the file that imported it - without this they never
+      # left the JSON.
+      def self.format_message(message)
+        msg = message['Text'].dup
+        msg << ' - ' << message['Detail'] if message['Detail'].is_a?(String)
+        if (location = message['Location'])
+          msg << " at #{location['File']}:#{location['Line']}:#{location['Column']}"
+        end
+        if (notes = message['Notes']).is_a?(Array) && notes.any?
+          msg << "\n" << notes.filter_map { |note| note['Text'] }.join("\n")
+        end
+
+        msg
+      end
+
       def initialize(path, error)
         @path = path
         @error = JSON.parse(error, strict: true)
 
-        msg = @error['Text']
-        msg << ' - ' << @error['Detail'] if @error['Detail'].is_a?(String)
-        if (location = @error['Location'])
-          msg << " at #{location['File']}:#{location['Line']}:#{location['Column']}"
-        end
+        super("Failed to build #{path} - #{self.class.format_message(@error)}")
+      end
+    end
 
-        super("Failed to build #{path} - #{msg}")
+    # Raised by `compile` with every error esbuild reported. It used to return `false` and throw
+    # the messages away, so a failed precompile gave no reason at all.
+    class CompileError < Error
+      attr_reader :messages
+
+      def initialize(messages)
+        @messages = JSON.parse(messages, strict: true)
+
+        errors = Array(@messages['Errors']).map { |message| BuildError.format_message(message) }
+
+        super("Failed to compile assets - #{errors.join("\n")}")
       end
     end
 
@@ -171,9 +196,13 @@ module Proscenium
       end
     end
 
+    # Returns true, or raises CompileError with esbuild's messages.
     def compile
       raw = Request.compile(@request_config)
-      read_and_free(raw[:messages])
+      messages = read_and_free(raw[:messages])
+
+      raise CompileError, messages unless raw[:success]
+
       raw[:success]
     end
 

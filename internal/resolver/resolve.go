@@ -37,7 +37,20 @@ import (
 //	@rubygems/<gem>/x  (no extension)  /node_modules/@rubygems/<gem>/<key>     <gem root>/<key>
 //	/lib/x.js                          /lib/x.js                               <root>/lib/x.js
 //	/lib/x, pkg  (no extension, bare)  /<key>                                  <root>/<key>
+//
+// A panic anywhere below, on this goroutine, is returned as the error rather than taking down the
+// Ruby process that called in. See BuildToString.
 func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath string, absPath string, err error) {
+	if perr := utils.Recover(func() {
+		urlPath, absPath, err = resolve(filePath, importer, cfg)
+	}); perr != nil {
+		return "", "", perr
+	}
+
+	return urlPath, absPath, err
+}
+
+func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath string, absPath string, err error) {
 	rootPath := cfg.RootPath
 
 	debug.Debug(cfg.Debug, "Resolve:begin", map[string]string{"filePath": filePath, "importer": importer})

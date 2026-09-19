@@ -83,6 +83,17 @@ type PluginData = struct {
 	GemPath         string
 }
 
+// The plugin data on a resolve or load argument, or the zero value when there is none. Every
+// plugin used to assert `args.PluginData.(PluginData)` bare, which panics on nil - and a gem
+// stylesheet's imports arrived with nil, because the css plugin's OnLoad did not carry the data
+// bundless had attached. Zero means "no gem, not resolving, not imported from JS", which is what
+// each caller falls through to anyway.
+func PluginDataOf(v any) PluginData {
+	pd, _ := v.(PluginData)
+
+	return pd
+}
+
 func UnmarshalConfig(data []byte) error {
 	return json.Unmarshal(data, &Config)
 }
