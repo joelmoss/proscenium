@@ -115,6 +115,17 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					resolveUnbundledPrefix(&result)
 					result.Path = strings.TrimPrefix(result.Path, "node_modules/")
 
+					// The alias is applied BEFORE the gem is resolved, because it can name a different
+					// gem. The other order left `gemName` and `gemPath` describing the pre-alias gem, so
+					// the URL was built from one gem's name and another's path, and an entry point was
+					// loaded from a file that does not exist. bundler.go's resolveRubygemPath is the
+					// same rule.
+					if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
+						result.Path = aliasedPath
+						resolveUnbundledPrefix(&result)
+						result.Path = strings.TrimPrefix(result.Path, "node_modules/")
+					}
+
 					gemName, gemPath, err := utils.ResolveRubyGem(result.Path, cfg)
 					if err != nil {
 						return result, err
@@ -125,11 +136,6 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							pluginData.GemPath = gemPath
 							result.PluginData = pluginData
 						}
-					}
-
-					if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
-						result.Path = aliasedPath
-						resolveUnbundledPrefix(&result)
 					}
 
 					if utils.IsCssImportedFromJs(result.Path, args) {
@@ -202,9 +208,11 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					if !utils.PathIsCss(realPath) {
 						// Get file contents.
+						// An error fails the build. A panic here would abort the whole process that loaded
+						// this library, and a path that does not exist is not worth that.
 						contents, err := os.ReadFile(realPath)
 						if err != nil {
-							panic(err)
+							return esbuild.OnLoadResult{}, err
 						}
 
 						contentsAsString := string(contents)

@@ -493,6 +493,54 @@ var _ = Describe("BuildToString", func() {
 					`import "/node_modules/@rubygems/gem2/lib/gem2/gem2.js";`))
 			})
 		})
+
+		// The same alias-onto-another-gem cases when NOT bundling, which goes through a separate
+		// plugin (bundless) with its own copy of the resolution. It resolved the gem BEFORE the
+		// alias, so once an alias named a different gem, `gemName` and `gemPath` still described the
+		// first one: an import got the URL `/node_modules/@rubygems/gem2@rubygems/gem1/...`, and the
+		// request for an aliased URL joined gem2's root with gem1's path and then panicked when the
+		// file was not there - which aborts the process that loaded the library.
+		Describe("to an @rubygems path when unbundled, via an alias onto another gem", func() {
+			BeforeEach(func() {
+				addGem("gem2", "external")
+				addGem("gem1", "dummy/vendor")
+				testConfig.Bundle = false
+			})
+
+			It("imports the URL of the gem the alias names", func() {
+				testConfig.Aliases = map[string]string{
+					"@rubygems/gem2": "@rubygems/gem1/lib/gem1/gem1.js",
+				}
+
+				success, result, _ := b.BuildToString("lib/aliases/rubygems.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(
+					`import "/node_modules/@rubygems/gem1/lib/gem1/gem1.js";`))
+			})
+
+			// The request the browser makes for the URL of an aliased import.
+			It("builds the file the alias names when the aliased URL is requested", func() {
+				testConfig.Aliases = map[string]string{
+					"@rubygems/gem2/lib/gem2/console.js": "@rubygems/gem1/lib/gem1/gem1.js",
+				}
+
+				success, result, _ := b.BuildToString(
+					"node_modules/@rubygems/gem2/lib/gem2/console.js", testConfig)
+
+				Expect(success).To(BeTrue(), result)
+				Expect(result).To(ContainCode(`console.log("gem1");`))
+			})
+
+			// Whatever path ends up wrong, a missing file must fail the build, not the process.
+			It("fails the build, and does not panic, for a gem file that does not exist", func() {
+				success, result, _ := b.BuildToString(
+					"node_modules/@rubygems/gem2/lib/gem2/does_not_exist.js", testConfig)
+
+				Expect(success).To(BeFalse())
+				Expect(result).To(ContainSubstring("does_not_exist.js"))
+			})
+		})
 	})
 
 	EntryPoint("lib/env_vars.js", func() {
