@@ -146,12 +146,35 @@ collapses `//server/share` and does not understand drive roots. Note `css.go` ha
 for CSS module class names and Ruby mirrors that hash, so changing the form of those paths changes
 user-visible class names silently.
 
-**Blocked by, but not on Proscenium:** `bin/test` cannot run on Windows because sqlite3's
-precompiled `x64-mingw-ucrt` gem fails to load with `127: The specified procedure could not be
-found`. Not the Ruby version - 3.3.12 fails identically, so sqlite3-ruby#628 does not describe it -
-and not a malformed artifact: its PE imports are 90 standard Ruby C API symbols against the correct
-DLL per ABI directory. The dummy app needs ActiveRecord, so the suite cannot boot. `go test` and
-the FFI-load CI step are the Windows coverage until this is solved.
+**Not blocked any more, and two earlier readings here were wrong.** `bin/test` now boots and runs
+on `windows-latest`: 255 runs, 1 failure, 6 errors, 48 skips. Every one of the 6 errors is the same
+path bug the Go suite shows - `styles.module.css is outside the app root and every bundled gem` -
+so the Ruby suite and `go test` now fail for one reason between them, which is the work described
+above. The failure is `importer_test.rb:31`, a pre-compiled asset path that comes back
+`/app/components/css_module_import.js` without its digest.
+
+Two corrections, both recorded here because both were stated as settled:
+
+1. sqlite3's `127: The specified procedure could not be found` was diagnosable. The symbol is
+   `clock_gettime`. Up to sqlite3 2.8.0 the Windows gem imports it from `x64-ucrt-ruby340.dll`,
+   where it used to live; Ruby 3.4.5 moved it to `libwinpthread-1.dll`, and sqlite3 2.8.1 links
+   there instead. Diffing the import tables of 2.5.0 through 2.9.0 shows that line appear. It is
+   sparklemotion/sqlite3-ruby#628 after all. The earlier note called the artifact well-formed
+   because its imports were ordinary Ruby C API symbols - `clock_gettime` sitting in that list was
+   itself the defect. Nothing pinned us to 2.7.4 but the Appraisal lockfiles, and the root
+   `Gemfile.lock` was already on 2.9.6, which is why it never reproduced locally.
+
+2. The FFI-load CI step was not working coverage. It printed `FFI OK` and then segfaulted at
+   interpreter exit on three runs in five. ffi's `library_free` calls `FreeLibrary` on every
+   platform but macOS, Ruby runs every `T_DATA` free during VM teardown, and Go's c-shared runtime
+   cannot be unloaded - Linux escapes it only because the Go linker marks the library nodelete.
+   Five of five runs exited 0 when the script ended in `exit!`, which skips teardown. `builder.rb`
+   pins the module on Windows so the reference count never reaches zero, and the CI step runs the
+   load five times, because a crash that happens three times in five is invisible to a single run.
+
+Windows also needs `tzinfo-data`, which it has no system copy of, and which is a plain dependency
+rather than a `platforms: :windows` one - a platform-gated dependency is recorded in the lockfile's
+DEPENDENCIES and resolved to no spec, so the Windows job would re-resolve it at install time.
 
 **Effort:** L. **Priority:** P3.
 
