@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+# Resolve and install Proscenium the way a user gets it, from a real gem index, and prove the
+# library actually loads.
+#
+# This exists because checking the gemspec's file list cannot see a compiled library left on disk
+# between two rake tasks - which is how 0.25.2 published a platform-less gem containing an x86-64
+# Linux binary. Installing a .gem file directly would also miss the point: platform selection is
+# the thing under test, and that only happens against an index.
+#
+# Usage: bin/verify-gem <image> <version> <expected-platform>
+#   e.g. bin/verify-gem ruby:3.3-alpine 0.25.2 x86_64-linux-musl
+set -euo pipefail
+
+image=${1:?usage: verify-gem <image> <version> <expected-platform>}
+version=${2:?usage: verify-gem <image> <version> <expected-platform>}
+expected=${3:?usage: verify-gem <image> <version> <expected-platform>}
+source_url=${GEM_SOURCE_URL:-http://localhost:8808}
+
+echo "---> $image expects platform $expected"
+
+docker run --rm --network host \
+  -e VERSION="$version" -e EXPECTED="$expected" -e SOURCE_URL="$source_url" \
+  "$image" sh -s <<'GUEST'
+set -eu
+
+gem install proscenium -v "$VERSION" --clear-sources --source "$SOURCE_URL" --no-document
+
+ruby -e '
+  spec = Gem::Specification.find_by_name("proscenium")
+  puts "resolved platform: #{spec.platform}"
+
+  unless spec.platform.to_s == ENV.fetch("EXPECTED")
+    abort "expected #{ENV.fetch("EXPECTED")}, resolved #{spec.platform}"
+  end
+
+  # Loading is the half a file listing cannot prove: a gem can carry a shared library built for
+  # a different libc and still install cleanly. This is where that fails.
+  #
+  # pathname first because builder.rb uses Pathname at require time without requiring it - in an
+  # app Rails has already loaded it. Requiring builder.rb reaches ffi_lib and nothing past it,
+  # which is precisely the boundary under test.
+  require "pathname"
+  require "proscenium/builder"
+  puts "library loaded"
+'
+GUEST
+
+echo "---> ok"
