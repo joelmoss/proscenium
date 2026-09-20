@@ -13,6 +13,36 @@ import (
 	. "github.com/onsi/gomega"
 )
 
+// A throwaway app root with one locale file and one entry point, cleaned up with the spec.
+// Returns the root and its locales directory.
+func i18nRoot() (string, string) {
+	root, err := os.MkdirTemp("", "proscenium-i18n")
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(func() {
+		Expect(os.RemoveAll(root)).To(Succeed())
+	})
+
+	locales := filepath.Join(root, "config", "locales")
+	Expect(os.MkdirAll(locales, 0o755)).To(Succeed())
+	Expect(os.WriteFile(filepath.Join(locales, "en.yml"),
+		[]byte("en:\n  who: someone\n"), 0o644)).To(Succeed())
+	Expect(os.WriteFile(filepath.Join(root, "entry.js"),
+		[]byte("import locales from \"proscenium/i18n\";\nconsole.log(locales);\n"), 0o644)).To(Succeed())
+
+	return root, locales
+}
+
+func i18nConfig(root string) *types.ConfigT {
+	return &types.ConfigT{
+		RootPath:        root,
+		OutputDir:       "public/assets",
+		Environment:     types.TestEnv,
+		InternalTesting: true,
+		CodeSplitting:   true,
+		Bundle:          true,
+	}
+}
+
 var _ = Describe("b.BuildToString(i18n)", func() {
 	It("exports json", func() {
 		_, code, _ := b.BuildToString("lib/i18n/benchmark/index.js", testConfig)
@@ -53,6 +83,41 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 		success, code, _ := b.BuildToString("lib/i18n/benchmark/index.js", testConfig)
 		Expect(success).To(BeTrue())
 		Expect(code).To(ContainSubstring(`addedKey: "fixed"`))
+	})
+
+	// A locales directory that stats but refuses to list used to publish {} beside an unchanged
+	// directory mtime, so the change detector found nothing to do and the empty payload was served
+	// for the life of the process - a build reporting success with every translation missing.
+	It("fails the build when the locales directory cannot be listed", func() {
+		if os.Geteuid() == 0 {
+			Skip("root reads a 0o111 directory regardless of its mode")
+		}
+
+		root, locales := i18nRoot()
+		// Registered after i18nRoot's own RemoveAll, so LIFO runs it first: RemoveAll cannot list
+		// a 0o111 directory, and a restore registered earlier would fail the cleanup and mask
+		// whatever this spec found.
+		Expect(os.Chmod(locales, 0o111)).To(Succeed())
+		DeferCleanup(func() {
+			Expect(os.Chmod(locales, 0o755)).To(Succeed())
+		})
+
+		success, result, _ := b.BuildToString("entry.js", i18nConfig(root))
+
+		Expect(success).To(BeFalse())
+		Expect(result).To(ContainSubstring("permission denied"))
+	})
+
+	// The other half of the same branch, and the reason it is a branch: an app with no locales at
+	// all is ordinary, not an error.
+	It("exports an empty payload when there is no locales directory", func() {
+		root, locales := i18nRoot()
+		Expect(os.RemoveAll(locales)).To(Succeed())
+
+		success, code, _ := b.BuildToString("entry.js", i18nConfig(root))
+
+		Expect(success).To(BeTrue())
+		Expect(code).To(ContainCode(`var i18n_default = {};`))
 	})
 
 	// The cache is keyed by locales directory because one process builds several apps - the suite

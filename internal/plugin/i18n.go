@@ -2,6 +2,8 @@ package plugin
 
 import (
 	"encoding/json"
+	"errors"
+	"io/fs"
 	"joelmoss/proscenium/internal/types"
 	"os"
 	"path/filepath"
@@ -84,11 +86,25 @@ func i18nCacheFor(root string) *i18nCache {
 	return i18nCaches[root]
 }
 
-func storeI18nCache(root string, cache *i18nCache) {
+// Publishes fresh only if the snapshot this build decided against is still the published one. Two
+// builds for one root can be in flight - the daemon's worker pool and esbuild's own plugin
+// goroutines both produce that - and the assignment alone ordered the write, not the generations:
+// a slow build published its older payload over a newer one. The first to publish now wins, and
+// the loser returns its own payload rather than overwriting a generation newer than what it read.
+// The next build corrects the store, because the winner's file mtimes are compared against disk.
+//
+// gstack-shortcut(dec-760a3bbc): no direct test - this is unexported and test/ is a separate
+// package. Upgrade when internal/ gets a test package (AUDIT.md pattern P7 needs one anyway), or
+// when this is reported wrong.
+func storeI18nCache(root string, prev, fresh *i18nCache) {
 	i18nCachesMutex.Lock()
 	defer i18nCachesMutex.Unlock()
 
-	i18nCaches[root] = cache
+	if i18nCaches[root] != prev {
+		return
+	}
+
+	i18nCaches[root] = fresh
 }
 
 func I18n(cfg *types.ConfigT) esbuild.Plugin {
@@ -161,13 +177,22 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 					// Read locale files using os.ReadDir instead of filepath.Glob.
 					entries, err := os.ReadDir(root)
 					if err != nil {
+						// An app with no config/locales is ordinary: it gets an empty payload.
+						// Anything else - a directory that stats but refuses to list, an I/O
+						// error - is reported. Publishing {} for those satisfied the mtime
+						// comparison below on every later build, so the empty payload was served
+						// for the life of the process and the error was never seen.
+						if !errors.Is(err, fs.ErrNotExist) {
+							return esbuild.OnLoadResult{}, err
+						}
+
 						empty := "{}"
 						fresh := &i18nCache{
 							result:     &empty,
 							dirMtime:   dirMtime,
 							fileMtimes: map[string]time.Time{},
 						}
-						storeI18nCache(root, fresh)
+						storeI18nCache(root, cache, fresh)
 
 						return esbuild.OnLoadResult{
 							Contents: fresh.result,
@@ -185,10 +210,20 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 
 						path := filepath.Join(root, entry.Name())
 
-						// Track file mtime for change detection.
-						if info, err := entry.Info(); err == nil {
-							fileMtimes[path] = info.ModTime()
+						// Track file mtime for change detection. A failure here used to be
+						// skipped, which put the file in the payload and outside the detector:
+						// the loop below merges it either way, and change detection only stats
+						// files it recorded, so later edits to it never invalidated the snapshot.
+						//
+						// gstack-shortcut(dec-760a3bbc): unexercised by any test - the branch
+						// needs a file to vanish between the directory listing and this stat,
+						// which a spec cannot schedule without a seam. Upgrade when this loop is
+						// extracted for other reasons.
+						info, err := entry.Info()
+						if err != nil {
+							return esbuild.OnLoadResult{}, err
 						}
+						fileMtimes[path] = info.ModTime()
 
 						data, err := os.ReadFile(path)
 						if err != nil {
@@ -221,7 +256,7 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						dirMtime:   dirMtime,
 						fileMtimes: fileMtimes,
 					}
-					storeI18nCache(root, fresh)
+					storeI18nCache(root, cache, fresh)
 
 					return esbuild.OnLoadResult{
 						Contents: fresh.result,
