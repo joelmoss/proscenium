@@ -2,12 +2,14 @@ package builder
 
 import (
 	"encoding/json"
+	"fmt"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path"
+	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -46,17 +48,20 @@ func compile(cfg *types.ConfigT) (bool, string) {
 		)
 	}
 
-	// Guarded before the delete below: with no output directory the join is the root itself, and
-	// nothing else stops `Builder.compile(OutputDir: nil)` from removing the whole application.
-	if cfg.OutputDir == "" {
+	// The delete below removes whatever OutputDir names, so it has to name a directory strictly
+	// inside the root. Empty joins to the root itself (`Builder.compile(OutputDir: nil)` was enough
+	// to delete the whole application), and `..` segments join to something above it: path.Join
+	// cleans them before RemoveAll sees the path.
+	outputPath, ok := outputDirUnderRoot(cfg)
+	if !ok {
 		return compileError(
-			"No output directory specified",
-			"The `output_dir` configuration option must name the directory, under the root, that compiled assets are written to.",
+			"Invalid output directory",
+			fmt.Sprintf("The `output_dir` configuration option must name a directory inside the root, that compiled assets are written to. Got %q.", cfg.OutputDir),
 		)
 	}
 
 	// Delete old compiled assets.
-	os.RemoveAll(path.Join(cfg.RootPath, cfg.OutputDir))
+	os.RemoveAll(outputPath)
 
 	_, err := replacements.Build()
 	if err != nil {
@@ -151,6 +156,15 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	}
 
 	return true, string(messages)
+}
+
+// The absolute path OutputDir names, and whether it is strictly inside the root: not the root
+// itself, and not above or beside it.
+func outputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
+	root := path.Clean(cfg.RootPath)
+	target := path.Join(root, cfg.OutputDir)
+
+	return target, strings.HasPrefix(target, root+"/")
 }
 
 func compileError(msg string, detail string) (bool, string) {
