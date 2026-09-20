@@ -16,9 +16,16 @@ version=${2:?usage: verify-gem <image> <version> <expected-platform>}
 expected=${3:?usage: verify-gem <image> <version> <expected-platform>}
 source_url=${GEM_SOURCE_URL:-http://localhost:8808}
 
-echo "---> $image expects platform $expected"
+# Set DOCKER_PLATFORM to check a gem for an architecture the runner is not, e.g. linux/arm64 on
+# an x86-64 runner. Needs binfmt registered first (docker/setup-qemu-action in CI).
+platform_args=()
+if [ -n "${DOCKER_PLATFORM:-}" ]; then
+  platform_args=(--platform "$DOCKER_PLATFORM")
+fi
 
-docker run --rm --network host \
+echo "---> $image${DOCKER_PLATFORM:+ (${DOCKER_PLATFORM})} expects platform $expected"
+
+docker run --rm --network host ${platform_args[@]+"${platform_args[@]}"} \
   -e VERSION="$version" -e EXPECTED="$expected" -e SOURCE_URL="$source_url" \
   "$image" sh -s <<'GUEST'
 set -eu

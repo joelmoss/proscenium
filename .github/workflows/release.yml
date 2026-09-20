@@ -143,7 +143,10 @@ jobs:
           bundler-cache: true
       # xgo builds the glibc gems in a container. The musl gems build in a container too, but a
       # different one - see the compile task in the Rakefile.
-      - run: go install src.techknowlogick.com/xgo@latest
+      # Pinned, not @latest: this tool produces the Linux binaries that end up inside published
+      # gems, and @latest resolves to whatever is newest at run time. Same reasoning the test
+      # workflow already applies to bun and golangci-lint.
+      - run: go install src.techknowlogick.com/xgo@v1.9.0
       # Emulation for any target whose architecture is not this runner's. Cheap when unused.
       - uses: docker/setup-qemu-action@v3
       - run: bundle exec rake "build:${{ matrix.platform }}"
@@ -206,7 +209,11 @@ jobs:
       matrix:
         include:
           - image: ruby:3.3
+            platform: linux/amd64
             expect: x86_64-linux
+          - image: ruby:3.3
+            platform: linux/arm64
+            expect: aarch64-linux
     steps:
       - uses: actions/checkout@v7
       # The gems land in index/gems/ because that is the layout `gem generate_index` expects:
@@ -234,7 +241,12 @@ jobs:
             sleep 1
           done
           echo "::error::local gem index never came up"; cat /tmp/index.log; exit 1
-      - run: bin/verify-gem "${{ matrix.image }}" "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}"
+      # Emulated for any architecture that is not the runner's, which is how the arm64 leg runs
+      # on an x86-64 runner.
+      - uses: docker/setup-qemu-action@v3
+      - env:
+          DOCKER_PLATFORM: ${{ matrix.platform }}
+        run: bin/verify-gem "${{ matrix.image }}" "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}"
 
   publish:
     needs: [platforms, verify]
@@ -253,9 +265,10 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-      # Pinned for the reason bun and golangci-lint are: a release of this action should not be
-      # able to change how we authenticate to RubyGems without anybody deciding to.
-      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+      # Pinned to a commit, not a tag. This is the only job that can publish a gem, and a tag can
+      # be repointed by whoever owns the action. Everything else in these workflows stays on a
+      # version tag, where a compromise would be annoying rather than catastrophic.
+      - uses: rubygems/configure-rubygems-credentials@dc5a8d8553e6ee01fc26761a49e99e733d17954a # v2.1.0
       # `rake push` skips any gem RubyGems already has at this version, so re-running a failed
       # release finishes it instead of failing on everything that already went up.
       - run: bundle exec rake push
