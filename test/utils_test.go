@@ -324,7 +324,19 @@ var _ = Describe("utils gem references", func() {
 			Entry("a sibling of the app root", "/app-other/x.css"),
 			Entry("a prefix of the app root", "/ap"),
 			Entry("outside every root", "/elsewhere/a.js"),
+			// Compared as text, so a `..` left in the path walked out of a root that still
+			// looked like a prefix: these answered "/../outside.css" and "/vendor/../../x.js".
+			Entry("out of the app root through ..", "/app/../outside.css"),
+			Entry("out of the app root through .. from below", "/app/lib/../../outside.css"),
+			Entry("out of a gem root through ..", "/gems/foo/../../outside.js"),
 		)
+
+		It("cleans the path before deciding, and reports the cleaned URL", func() {
+			got, ok := utils.UrlPathFromFsPath("/app/lib/../lib/./a.js", cfg)
+
+			Expect(ok).To(BeTrue())
+			Expect(got).To(Equal("/lib/a.js"))
+		})
 
 		It("matches an app root stored with a trailing slash", func() {
 			cfg.RootPath = "/app/"

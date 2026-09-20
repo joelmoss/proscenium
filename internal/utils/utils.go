@@ -328,6 +328,12 @@ func RubyGemPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, fo
 // (dirname.go, and `rootPathToUrlPath` in bundless.go, which has no boundary); they move here in
 // the F-GOUTILS-1 step-2 pass.
 func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bool) {
+	// Both sides are compared as text, so a `..` left in either would walk out of a root that
+	// still looks like a prefix: `/app/../outside.css` answered "/../outside.css", inside "/app".
+	// Today's callers pass a path esbuild or path.Join has already cleaned; this does not rely on
+	// that.
+	fsPath = path.Clean(fsPath)
+
 	if ref, found := GemFromFsPath(fsPath, cfg); found {
 		return ref.UrlPath(), true
 	}
@@ -338,7 +344,7 @@ func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bo
 		return "", false
 	}
 
-	root := strings.TrimSuffix(cfg.RootPath, "/")
+	root := strings.TrimSuffix(path.Clean(cfg.RootPath), "/")
 	if fsPath == root {
 		return "/", true
 	}
