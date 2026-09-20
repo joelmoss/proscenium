@@ -223,9 +223,11 @@ jobs:
   # it. Checking the gemspec's file list cannot see a stray binary left on disk between two rake
   # tasks, which is exactly how 0.25.2 shipped an x86-64 Linux library inside the plain gem.
   #
-  # glibc only for now. The musl leg arrives with the musl gems: today a musl host resolves the
-  # bare `x86_64-linux` gem and fails to load it, which is the bug those gems exist to fix, and a
-  # permanently red job here would block every release until then.
+  # glibc only: Proscenium ships no musl gem, because Go c-shared libraries cannot be dlopen'd on
+  # musl (golang/go#54805). See the supported-platforms section of the README.
+  #
+  # `gem install` succeeds whether or not the library can be loaded, which is why this asserts the
+  # resolved platform and then requires it.
   verify:
     needs: [platforms, build-darwin, build-linux, build-plain]
     runs-on: ubuntu-latest
@@ -235,10 +237,10 @@ jobs:
         include:
           - image: ruby:3.3
             platform: linux/amd64
-            expect: x86_64-linux
+            expect: x86_64-linux-gnu
           - image: ruby:3.3
             platform: linux/arm64
-            expect: aarch64-linux
+            expect: aarch64-linux-gnu
     steps:
       - uses: actions/checkout@v7
         with:

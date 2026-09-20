@@ -13,22 +13,40 @@ task default: %i[test rubocop]
 task release: %i[build push]
 
 #
-# GO Binary                 | Ruby Gem        |
-# --------------------------|-----------------|
+# Go target      | Ruby gem platform  | built by
+# ---------------|--------------------|----------------------------------
+# darwin/arm64   | arm64-darwin       | native, CGO_ENABLED=1
+# darwin/amd64   | x86_64-darwin      | native, CGO_ENABLED=1
+# linux/arm64    | aarch64-linux-gnu  | xgo
+# linux/amd64    | x86_64-linux-gnu   | xgo
 #
-# darwin-10.12-arm64.dylib  | arm64-darwin    |
-# darwin-10.12-amd64.dylib  | x86_64-darwin   |
+# The Linux gems name their libc. A BARE `x86_64-linux` matches glibc and musl alike, so an
+# Alpine host installed it and got a glibc shared library it could not load, with a dlopen
+# failure naming a path and nothing to say the platform was the problem. `-gnu` is never
+# selected on musl, so after this rename an Alpine host matches no platform gem at all: it gets
+# the platform-less gem and Proscenium::Builder::UnsupportedPlatform, which says so.
 #
-# linux-arm64.so            | aarch64-linux   |
-# linux-amd64.so            | x86_64-linux    |
+# There are deliberately NO musl gems. Go's c-shared libraries cannot be dlopen'd on musl -
+# they carry initial-exec TLS relocations that musl refuses by design - and Ruby's FFI loads
+# this library with dlopen. The build succeeds and produces a correctly musl-linked library;
+# it simply cannot be loaded, failing with:
 #
+#   Error relocating ...: free: initial-exec TLS resolves to dynamic definition
+#
+# That is golang/go#54805, open since 2022. The linker flag that would fix it is in neither
+# Go 1.25 nor Go 1.27. Revisit when it ships; nothing else here needs to change.
+#
+# Consequence for existing users: `x86_64-linux` is no longer a platform Proscenium publishes,
+# so a lockfile pinned to it wants `bundle lock --add-platform x86_64-linux-gnu`. The Linux gems
+# declare required_rubygems_version >= 3.3.22 (see the gemspec) so an older RubyGems, which
+# cannot tell the variants apart, refuses them instead of installing the wrong one.
 
 # Ruby => Go
 PLATFORMS = {
   'x86_64-darwin' => 'darwin/amd64',
   'arm64-darwin' => 'darwin/arm64',
-  'aarch64-linux' => 'linux/arm64',
-  'x86_64-linux' => 'linux/amd64'
+  'aarch64-linux-gnu' => 'linux/arm64',
+  'x86_64-linux-gnu' => 'linux/amd64'
 }.freeze
 
 base = FileUtils.pwd
@@ -75,7 +93,10 @@ task push: PLATFORMS.keys.map { |platform| "push:#{platform}" } << 'push:gem'
 
 PLATFORMS.each do |ruby_platform, go_platform|
   task "build:#{ruby_platform}" => ["compile:#{ruby_platform}"] do
-    sh 'gem', 'build', '-V', '--platform', ruby_platform do
+    # Set for this subprocess only. Exporting it would defeat the point: `rake build` builds the
+    # platform gems and then the platform-less one in a single process, and the plain gem must
+    # not see it. See the gate in the gemspec.
+    sh({ 'PROSCENIUM_PACKAGE_EXT' => '1' }, 'gem', 'build', '-V', '--platform', ruby_platform) do
       gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{ruby_platform}.gem",
                                              base).max_by do |f|
         File.mtime(f)
@@ -94,8 +115,9 @@ PLATFORMS.each do |ruby_platform, go_platform|
     puts ''
     puts "---> Compiling for #{ruby_platform} (#{go_platform})"
 
-    if go_platform.include?('darwin')
-      goos, goarch = go_platform.split('/')
+    goos, goarch = go_platform.split('/')
+
+    if goos == 'darwin'
       # rubocop:disable-next Layout/LineLength
       sh %(GOWORK=off GOOS=#{goos} GOARCH=#{goarch} CGO_ENABLED=1 go build -buildmode=c-shared -v -o #{ext_dir}/proscenium main.go)
     else
