@@ -145,18 +145,12 @@ matched at a "/" boundary. Three copies remain: `dirname.go:32`, and `bundler.go
 three to the helper and deletes `rootPathToUrlPath`. The plugins need the "leave the path
 unchanged" arm when neither root matches, which is why they did not move with the first two.
 
-**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). Findings 3,
-9 and 10 are one function, `internal/plugin/i18n.go`'s change detector and publish path, and are
-one S diff. Finding 10 is narrower than the table says: a missing locales directory fails `Stat`
-too, which invalidates the snapshot, so `{}` is re-read every build rather than cached forever.
-It only sticks when `Stat` succeeds and `ReadDir` fails, so the fix is to publish `{}` for
-`fs.ErrNotExist` and return every other error. Finding 9 needs the store to refuse when the
-snapshot pointer read at the top of the load has moved. Finding 3, an edit that preserves mtime,
-is not something editors do: won't-fix, with a line in `AUDIT.md` saying so. The `-race` test that
-pins the snapshots, `test/i18n_race_test.go`, only compiles under `go test -race`. Finding 2,
-vendor's `immutable, max-age=100.years` on an unversioned URL, is a one-header decision: drop
-`immutable` and shorten `max-age` so `Last-Modified` revalidates, or record it as accepted. Do not
-leave it open.
+**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). One item
+left: finding 2, vendor's `immutable, max-age=100.years` on an unversioned URL. It is a one-header
+decision - drop `immutable` and shorten `max-age` so `Last-Modified` revalidates, or record it as
+accepted. Do not leave it open. Findings 9 and 10 are fixed in `407921ba` and finding 3 is recorded
+won't-fix there; the reasoning, including the measurements that rejected a per-root load lock, is
+in `AUDIT.md`'s table rather than repeated here.
 
 **Worth keeping from the middleware fixes:** normalise a request path once, then route, check and
 build from that single value. Three separate defects were the same shape - `Chunks` reading a raw
