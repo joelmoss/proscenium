@@ -133,7 +133,9 @@ golangci-lint run
 
 The gem ships with precompiled Go binaries per platform. `PLATFORMS` in the Rakefile is the single
 source of truth; the release workflow derives its build matrix from it via `rake platforms:json`,
-so adding a platform is a one-line change there.
+so another target one of the existing builders already covers - a darwin arch, or a glibc Linux
+arch - is a one-line change there. A platform needing a builder that does not exist yet needs a
+build job as well; Windows is the live example, see below.
 
 - `x86_64-darwin`, `arm64-darwin` (macOS) - built natively, `CGO_ENABLED=1`
 - `x86_64-linux-gnu`, `aarch64-linux-gnu` (Linux) - cross-compiled with
@@ -163,10 +165,19 @@ paths. What remains is the path work. Note `xgo` cannot build the Windows DLL - 
 Releases run from `.github/workflows/release.yml`, not from a laptop. Push a `v*` tag.
 
 The workflow builds every platform gem plus the platform-less one, then refuses to publish until
-those exact archives have been served from a generated index, resolved, installed and loaded on
-their own architecture (`bin/verify-gem`). Checking the gemspec's file list cannot catch a stray
-binary left on disk between two rake tasks, which is how 0.25.2 shipped an x86-64 Linux ELF inside
-its platform-less gem.
+those exact archives have passed two different checks.
+
+`bin/verify-gem` serves the built gems from a generated index and installs from it, so RubyGems
+performs the same platform selection a user gets, and then loads the library. **It runs on Linux
+only** - `x86_64-linux-gnu`, and `aarch64-linux-gnu` under QEMU. The darwin gems are published
+without ever being installed anywhere, and no leg resolves to the platform-less gem, because on
+both legs a platform gem wins. Widening that is a TODO, not a claim this workflow already meets.
+
+The platform-less gem is covered a different way: `build-plain` builds it in a job that never
+compiles anything, then lists the archive and fails on any `lib/proscenium/ext/` entry. That is
+what addresses 0.25.2, where `rake build` ran the platform compiles first and packed the plain gem
+last in the same tree, so it shipped an x86-64 Linux ELF. Reading the gemspec's file list cannot
+see a stray file left on disk between two rake tasks; only the archive can.
 
 Publishing uses RubyGems trusted publishing (OIDC), so there is no API key anywhere. It needs the
 `release` GitHub environment, which has a required reviewer, so a publish waits for approval.

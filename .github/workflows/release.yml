@@ -219,9 +219,6 @@ jobs:
   # Nothing publishes until a real archive has been resolved and installed the way a user gets
   # it. Checking the gemspec's file list cannot see a stray binary left on disk between two rake
   # tasks, which is exactly how 0.25.2 shipped an x86-64 Linux library inside the plain gem.
-  # Nothing publishes until a real archive has been resolved and installed the way a user gets
-  # it. Checking the gemspec's file list cannot see a stray binary left on disk between two rake
-  # tasks, which is exactly how 0.25.2 shipped an x86-64 Linux library inside the plain gem.
   #
   # glibc only: Proscenium ships no musl gem, because Go c-shared libraries cannot be dlopen'd on
   # musl (golang/go#54805). See the supported-platforms section of the README.
