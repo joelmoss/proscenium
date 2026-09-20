@@ -9,6 +9,7 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path"
+	"path/filepath"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -52,7 +53,7 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	// inside the root. Empty joins to the root itself (`Builder.compile(OutputDir: nil)` was enough
 	// to delete the whole application), and `..` segments join to something above it: path.Join
 	// cleans them before RemoveAll sees the path.
-	outputPath, ok := outputDirUnderRoot(cfg)
+	outputPath, ok := OutputDirUnderRoot(cfg)
 	if !ok {
 		return compileError(
 			"Invalid output directory",
@@ -158,13 +159,19 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	return true, string(messages)
 }
 
-// The absolute path OutputDir names, and whether it is strictly inside the root: not the root
-// itself, and not above or beside it.
-func outputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
-	root := path.Clean(cfg.RootPath)
-	target := path.Join(root, cfg.OutputDir)
+// The path OutputDir names under the root, and whether it is strictly inside it: not the root
+// itself, and not above or beside it. Compared as a relative path rather than by string prefix, so
+// a root of "/" or "." is judged the same as any other.
+func OutputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
+	root := filepath.Clean(cfg.RootPath)
+	target := filepath.Join(root, cfg.OutputDir)
 
-	return target, strings.HasPrefix(target, root+"/")
+	rel, err := filepath.Rel(root, target)
+	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+		return target, false
+	}
+
+	return target, true
 }
 
 func compileError(msg string, detail string) (bool, string) {
