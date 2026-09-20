@@ -18,6 +18,10 @@ on:
         description: Build and verify, but do not publish
         type: boolean
         default: true
+      verify_publisher:
+        description: Only check that trusted publishing works, then stop
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -28,7 +32,50 @@ env:
 jobs:
   # The platform list lives in the Rakefile and nowhere else. Both build jobs filter this, so
   # adding a platform there is the only edit a new platform needs.
+  # Proves trusted publishing is configured, without publishing anything.
+  #
+  # Worth having as its own thing: every other path to finding out involves pushing a real gem,
+  # and a misconfigured publisher would then surface at the worst possible moment, halfway
+  # through a release. The credential exchange is the whole test - RubyGems mints a scoped key
+  # only if the OIDC token's repository, workflow filename and environment all match the trusted
+  # publisher registered for this gem, so the action failing IS the negative result.
+  #
+  # Nothing is pushed, and the key is never printed.
+  verify-publisher:
+    if: inputs.verify_publisher
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      - uses: rubygems/configure-rubygems-credentials@v2.1.0
+      - name: A scoped credential was issued
+        run: |
+          ruby -e '
+            require "yaml"
+            # The action may hand the key back as an environment variable or write it to the
+            # credentials file, so accept either rather than failing on the shape.
+            if (ENV["GEM_HOST_API_KEY"] || "") != ""
+              puts "trusted publishing OK: RubyGems issued a key via GEM_HOST_API_KEY"
+              exit
+            end
+
+            path = File.join(Gem.user_home, ".gem", "credentials")
+            abort "the OIDC exchange produced no key: no GEM_HOST_API_KEY and no #{path}" unless File.exist?(path)
+
+            keys = YAML.safe_load_file(path, permitted_classes: [Symbol]) || {}
+            abort "credentials file at #{path} is empty" if keys.empty?
+
+            puts "trusted publishing OK: RubyGems issued #{keys.size} credential(s)"
+          '
+
   platforms:
+    if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
     outputs:
       darwin: ${{ steps.split.outputs.darwin }}
@@ -57,6 +104,7 @@ jobs:
 
   build-darwin:
     needs: platforms
+    if: '!inputs.verify_publisher'
     runs-on: macos-latest
     strategy:
       fail-fast: false
@@ -79,6 +127,7 @@ jobs:
 
   build-linux:
     needs: platforms
+    if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -113,6 +162,7 @@ jobs:
   # The assertion below is the guard, not the fix - it fails loudly if that ever stops being true.
   build-plain:
     needs: platforms
+    if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
