@@ -2,6 +2,8 @@
 
 require 'bundler/setup'
 require 'bundler/gem_tasks'
+require 'json'
+require 'open3'
 
 CLOBBER.include 'pkg'
 
@@ -35,6 +37,30 @@ ext_dir = 'lib/proscenium/ext'
 ext_path = Pathname.new(base).join(ext_dir)
 built_path = ext_path.join('joelmoss')
 gemspec = Bundler.load_gemspec('proscenium.gemspec')
+
+# Pushing has to be resumable. A release publishes one gem per platform, and a run that dies
+# partway leaves some of them up: re-running it then failed on every gem that had already gone,
+# so the version stayed half-published and the platforms that missed out resolved to an older
+# release instead. Nothing warned about it.
+#
+# RubyGems answers a duplicate push with "has already been pushed", which is the outcome we want
+# - the artifact is where it should be - so treat it as success and carry on to the next gem.
+# Checked from the push's own output rather than by asking the API first, so a network blip
+# cannot make us skip a gem that was never published.
+push_gem = lambda do |gem_file|
+  out, status = Open3.capture2e('gem', 'push', gem_file)
+  puts out
+
+  return if status.success?
+  raise "gem push failed for #{gem_file}" unless out.include?('has already been pushed')
+
+  puts "---> Already published, skipping #{File.basename(gem_file)}"
+end
+
+desc 'Print the platform list as JSON, for the release workflow matrix'
+task 'platforms:json' do
+  puts PLATFORMS.keys.to_json
+end
 
 desc 'Compile for local os/arch'
 task 'compile:local' => 'clobber:ext' do
@@ -89,7 +115,7 @@ PLATFORMS.each do |ruby_platform, go_platform|
 
   desc "Push built gem (#{ruby_platform})"
   task "push:#{ruby_platform}" do
-    sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem"
+    push_gem.call("pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem")
   end
 end
 
@@ -98,7 +124,7 @@ end
 # plain gem four times, prompting for an OTP on each and failing every attempt after the first.
 desc 'Push built gem'
 task 'push:gem' do
-  sh 'gem', 'push', "pkg/proscenium-#{gemspec.version}.gem"
+  push_gem.call("pkg/proscenium-#{gemspec.version}.gem")
 end
 
 desc 'Clobber ext'
