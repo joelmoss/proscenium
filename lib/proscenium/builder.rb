@@ -23,10 +23,37 @@ module Proscenium
              :messages, :pointer
     end
 
+    # The compiled Go library. It ships in the platform gems only, gated in the gemspec, so a
+    # host that matches no platform gem installs the platform-less gem and finds nothing here.
+    LIBRARY_PATH = Pathname.new(__dir__).join('ext/proscenium')
+
+    # Raised in place of letting `ffi_lib` fail on its own. FFI reports a missing library as
+    # `Could not open library <path>` followed by the system search paths, which reads like a
+    # broken install and says nothing about platforms - so the one thing the reader needs to know,
+    # that Proscenium ships no binary for their platform, is the one thing it leaves out.
+    class UnsupportedPlatform < Error
+      def initialize(path)
+        super(<<~MESSAGE)
+          Proscenium has no compiled library for this platform (#{Gem::Platform.local}).
+
+          Proscenium is a Ruby gem wrapped around a Go library, so it ships a separate gem per
+          platform. Yours matched none of them, so you have the platform-less gem, which carries
+          no library at all. Nothing is corrupted - this platform is simply not built for.
+
+          Expected the library at: #{path}
+
+          The supported platforms are listed in the README. If yours should be among them, please
+          open an issue at https://github.com/joelmoss/proscenium/issues.
+        MESSAGE
+      end
+    end
+
     module Request
       extend FFI::Library
 
-      ffi_lib Pathname.new(__dir__).join('ext/proscenium').to_s
+      raise UnsupportedPlatform, LIBRARY_PATH unless LIBRARY_PATH.exist?
+
+      ffi_lib LIBRARY_PATH.to_s
 
       enum :environment, [:development, 1, :test, :production]
 

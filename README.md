@@ -75,6 +75,56 @@ gem 'proscenium'
 
 Please note that Proscenium is designed solely for use with Rails.
 
+### Supported platforms
+
+Proscenium is a Ruby gem wrapped around a Go library, so it ships a precompiled gem per platform.
+Bundler picks the right one for you.
+
+| Platform | Gem |
+| --- | --- |
+| macOS, Apple silicon | `arm64-darwin` |
+| macOS, Intel | `x86_64-darwin` |
+| Linux glibc, arm64 | `aarch64-linux-gnu` |
+| Linux glibc, x86-64 | `x86_64-linux-gnu` |
+
+The Linux gems need **RubyGems 3.3.22 or newer**, which is the first version able to tell
+`-gnu` from `-musl`. Older versions cannot, so they refuse the gem rather than installing one your
+machine cannot load. Ruby 3.3 already ships a newer RubyGems than this, so you are almost certainly
+fine; if not, `gem update --system`. Bundler 2.5.6 or newer resolves the platform names without
+needing anything else from you.
+
+Installing on a platform not listed here gets you the platform-less gem, which carries no compiled
+library, and Proscenium will say so by name when it loads rather than failing somewhere inside FFI.
+If your platform should be supported, please [open an
+issue](https://github.com/joelmoss/proscenium/issues).
+
+The Linux gems name their libc. Earlier releases shipped bare `x86_64-linux` and `aarch64-linux`
+names, which RubyGems matches on glibc and musl alike. If your `Gemfile.lock` is pinned to either,
+add the matching `-gnu` platform:
+
+```sh
+bundle lock --add-platform x86_64-linux-gnu   # or aarch64-linux-gnu, on ARM
+```
+
+Adding it is enough. There is no need to remove the old platform.
+
+### Alpine and other musl Linux distributions are not supported
+
+Use a glibc base image, such as `ruby:3.3-slim` rather than `ruby:3.3-alpine`.
+
+This is not an oversight. Proscenium's Go library is built with `-buildmode=c-shared` and loaded
+at runtime through Ruby's FFI, which uses `dlopen`. Go emits initial-exec TLS relocations into
+such libraries, and musl refuses to `dlopen` anything carrying them, by design:
+
+```
+Error relocating ...: free: initial-exec TLS resolves to dynamic definition
+```
+
+The library builds and links against musl perfectly well; it just cannot be loaded the way
+Proscenium needs to load it. This is [golang/go#54805](https://github.com/golang/go/issues/54805),
+open since 2022, and the linker flag that resolves it has not shipped as of Go 1.27. Musl gems
+will follow when it does.
+
 Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be transformed, bundled, and minified [in production] in real time.
 
 ## Client-Side Code Anywhere
