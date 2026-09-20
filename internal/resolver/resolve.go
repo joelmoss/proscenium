@@ -44,6 +44,7 @@ func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	if perr := utils.Recover(func() {
 		urlPath, absPath, err = resolve(filePath, importer, cfg)
 	}); perr != nil {
+		// Ruby's ResolveError takes a string, so the stack rides in the message itself.
 		return "", "", perr
 	}
 
@@ -133,7 +134,9 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	})
 
 	if len(result.Errors) > 0 {
-		return returnResolve("", "", errors.New(result.Errors[0].Text), cfg)
+		// Text plus notes: a panic the esbuild fork recovered in a plugin carries its stack in a
+		// note, and Ruby's ResolveError only takes a string.
+		return returnResolve("", "", errors.New(utils.MessageText(result.Errors[0])), cfg)
 	}
 
 	var metadata struct{ Inputs map[string]any }

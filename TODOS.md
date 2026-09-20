@@ -1,5 +1,47 @@
 # TODOS
 
+## Robustness
+
+### Classify recovered panics by a typed marker, not a text prefix
+
+**What:** `utils.IsPanicMessage` recognises a panic the esbuild fork recovered in a plugin callback
+by the `panic:` prefix of the message text. Give the fork's `pluginPanicMsg` a message ID instead
+(`logger.MsgID`, surfaced as `Message.ID`) and check that.
+
+**Why:** Free text that happens to start with `panic:` - a CSS parser warning, an alias error built
+from a config value - would fail a build that should have externalised a miss. Fail-closed, and
+only the developer's own config can produce it, which is why it waited.
+
+**Context:** Raised by the /review adversarial pass on the recover work, 2026-09-20. Needs a new
+`MsgID` in the fork's `internal/logger/msg_ids.go` and a fork release (tag, `update.sh`, `go.mod`).
+The fork's `api_plugin_panic_test.go` pins the exact text today, and the contract is written at
+both ends (`pluginPanicMsg`, `IsPanicMessage`).
+
+**Effort:** S
+**Priority:** P4
+**Depends on:** None
+
+### Resolve a gem's bare-with-extension imports against the gem when unbundling
+
+**What:** `bundless.go`'s catch-all turns a bare specifier that already has an extension
+(`open-props/shadows.css`, `pkg/index.js`) straight into `/node_modules/<specifier>` without
+resolving it, so an import from a gem file of a package installed only in that gem's own
+`node_modules` points at the app's `node_modules` instead: missing, or a different version, and
+the build reports success either way. The extensionless form (`open-props/shadows`) goes through
+esbuild and resolves from the gem correctly since the gem-stylesheet fix.
+
+**Why:** Found by the /review outside pass on the recover work, 2026-09-20, as the one gap left in
+gem CSS resolution. Pre-existing and shared with gem JavaScript; a resolution-policy change, not
+a bug fix, so it was not folded into that branch.
+
+**Context:** The shortcut is the `isBare != "" && hasExt` branch before the resolve ladder. Route
+it through `resolveWithEsbuild` when the importer is in the rubygems namespace, and pin it with a
+`@import 'open-props/shadows.css'` case beside the existing "gem stylesheet imports" spec.
+
+**Effort:** S
+**Priority:** P4
+**Depends on:** None
+
 ## Simplification audit
 
 ### Structural simplifications from the 2026-09-08 audit
@@ -206,7 +248,9 @@ and pinned in `go.mod`. Each plugin callback wrapper in the fork's `pkg/api/api_
 into a build error, `panic: <value> (in OnLoad callback)` with the stack in a note, the shape
 `parseFile`'s own recover uses; five fork tests pin every callback type, the nested
 `build.Resolve` path, and a following build succeeding. The OnLoad one aborted the test binary
-before the change.
+before the change. Not covered, on either side: esbuild's own internal goroutines (the linker's
+chunk, source-map and renaming workers), so a panic inside esbuild itself still takes the process
+down.
 
 On this side: `utils.Recover` wraps `BuildToString`, `Resolve` and `Compile` for the calling
 goroutine (`test/panic_test.go`, where a nil config is the injection); `utils.HasPanicMessage`

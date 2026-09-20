@@ -6,6 +6,7 @@ import (
 	"embed"
 	"errors"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"strings"
 	"sync"
 
@@ -47,29 +48,43 @@ func get(name string) ([]byte, bool) {
 
 // Build builds the npm replacements. Safe to call concurrently - the embedded source files are
 // only ever walked and transformed once, via sync.Once.
+//
+// Built into a local table and published only once complete: a panic part-way through would
+// otherwise leave Once done, buildErr nil and a partial table published, and every later call
+// would report success against it. The callers recover panics now, so this one has to as well.
 func Build() (n int, err error) {
 	buildOnce.Do(func() {
-		buildErr = walkEmbedFS("src", func(path string) error {
-			sourceCode, err := efs.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			ret := esbuild.Transform(string(sourceCode), esbuild.TransformOptions{
-				Target:            esbuild.ES2022,
-				Format:            esbuild.FormatESModule,
-				Platform:          esbuild.PlatformBrowser,
-				MinifyWhitespace:  true,
-				MinifyIdentifiers: true,
-				MinifySyntax:      true,
-				Loader:            esbuild.LoaderJS,
+		built := map[string][]byte{}
+
+		if perr := utils.Recover(func() {
+			buildErr = walkEmbedFS("src", func(path string) error {
+				sourceCode, err := efs.ReadFile(path)
+				if err != nil {
+					return err
+				}
+				ret := esbuild.Transform(string(sourceCode), esbuild.TransformOptions{
+					Target:            esbuild.ES2022,
+					Format:            esbuild.FormatESModule,
+					Platform:          esbuild.PlatformBrowser,
+					MinifyWhitespace:  true,
+					MinifyIdentifiers: true,
+					MinifySyntax:      true,
+					Loader:            esbuild.LoaderJS,
+				})
+				if len(ret.Errors) > 0 {
+					return errors.New(ret.Errors[0].Text)
+				}
+				specifier := strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(path, "src/"), ".mjs"), "/index")
+				built[specifier] = ret.Code
+				return nil
 			})
-			if len(ret.Errors) > 0 {
-				return errors.New(ret.Errors[0].Text)
-			}
-			specifier := strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(path, "src/"), ".mjs"), "/index")
-			npmReplacements[specifier] = ret.Code
-			return nil
-		})
+		}); perr != nil {
+			buildErr = perr
+		}
+
+		if buildErr == nil {
+			npmReplacements = built
+		}
 	})
 
 	return len(npmReplacements), buildErr

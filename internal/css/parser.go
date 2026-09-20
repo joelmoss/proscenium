@@ -21,6 +21,10 @@ type cssParser struct {
 
 	// Warnings accumulated during parsing.
 	warnings []CssWarning
+
+	// A failure that has to fail the build rather than become a warning: a panic the resolver
+	// recovered while looking up a mixin file. Warnings are for the stylesheet's own mistakes.
+	err error
 }
 
 func (p *cssParser) parse() (string, []CssWarning, error) {
@@ -33,7 +37,7 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 		p.append(result)
 	}
 
-	return p.output.String(), p.warnings, nil
+	return p.output.String(), p.warnings, p.err
 }
 
 // addWarning adds a warning associated with the current file. The search string is used to locate

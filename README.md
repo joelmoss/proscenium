@@ -804,6 +804,8 @@ Proscenium is designed to bundle and minify your frontend code in real time, on 
 rails assets:precompile
 ```
 
+If any entry point fails to build, the task raises `Proscenium::Builder::CompileError` with esbuild's messages.
+
 Be sure to specify a `Set` of paths which you want to pre-compile via the `config.proscenium.precompile` configuration option. Each path should be a glob pattern that matches the files which are your entry points. Don't include paths that are not entry points. For example:
 
 ```ruby

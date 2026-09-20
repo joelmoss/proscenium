@@ -127,8 +127,9 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
 
 					if ok := resolveWithEsbuild(resolveArgs, result); !ok {
-						// `resolveWithEsbuild` has marked the result external so the browser reports the
-						// failure. Nothing below applies to a path it could not resolve.
+						// `resolveWithEsbuild` has either marked the result external (a miss, for the
+						// browser to report) or set Errors (a recovered panic, to fail the build).
+						// Nothing below applies either way.
 						return nil
 					}
 				}

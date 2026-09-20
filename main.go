@@ -66,7 +66,8 @@ func free_cstr(ptr *C.char) {
 func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 	cfg, err := parseConfig(configJson)
 	if err != nil {
-		return C.struct_Result{C.int(0), C.CString(err.Error()), C.CString("")}
+		// Ruby parses the response as an esbuild message, so the config error has to be one too.
+		return C.struct_Result{C.int(0), C.CString(builder.BuildErrorJSON("Invalid config - " + err.Error())), C.CString("")}
 	}
 
 	success, result, contentHash := builder.BuildToString(C.GoString(filePath), cfg)
@@ -106,7 +107,9 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 func compile(configJson *C.char) C.struct_CompileResult {
 	cfg, err := parseConfig(configJson)
 	if err != nil {
-		return C.struct_CompileResult{C.int(0), C.CString("")}
+		// Ruby parses the response as esbuild's messages, so the config error has to be one too.
+		// This used to hand back "", which threw the reason away.
+		return C.struct_CompileResult{C.int(0), C.CString(builder.CompileErrorJSON("Invalid config", err.Error()))}
 	}
 
 	success, messages := builder.Compile(cfg)

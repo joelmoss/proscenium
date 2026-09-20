@@ -1,11 +1,52 @@
 package proscenium_test
 
 import (
+	"encoding/json"
 	b "joelmoss/proscenium/internal/builder"
+
+	esbuild "github.com/joelmoss/esbuild-internal/api"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+var _ = Describe("Compile", func() {
+	// The branch nothing covered: esbuild itself failing on an entry point. Ruby's CompileError
+	// exists to show exactly these messages.
+	It("reports esbuild's errors when an entry point does not build", func() {
+		testConfig.Precompile = []string{"./lib/css_modules/broken_import.js"}
+
+		success, messages := b.Compile(testConfig)
+
+		Expect(success).To(BeFalse())
+
+		var result struct{ Errors []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Errors).To(HaveLen(1))
+		Expect(result.Errors[0].Text).To(Equal(`Could not resolve "./missing.css"`))
+		Expect(result.Errors[0].Location.File).To(Equal("lib/css_modules/broken_import.module.css"))
+	})
+
+	// The delete of old assets joins RootPath and OutputDir; with OutputDir empty that is the
+	// application itself. This was reachable through `Builder.compile(OutputDir: nil)`.
+	It("refuses an empty output directory before deleting anything", func() {
+		testConfig.Precompile = []string{"./lib/foo.js"}
+		testConfig.OutputDir = ""
+
+		success, messages := b.Compile(testConfig)
+
+		Expect(success).To(BeFalse())
+		Expect(messages).To(ContainSubstring("No output directory specified"))
+		Expect(testConfig.RootPath).To(BeADirectory())
+	})
+
+	It("reports a config that does not parse as a message", func() {
+		var result struct{ Errors []esbuild.Message }
+		Expect(json.Unmarshal([]byte(b.CompileErrorJSON("Invalid config", "detail")), &result)).To(Succeed())
+		Expect(result.Errors[0].Text).To(Equal("Invalid config"))
+		Expect(result.Errors[0].Detail).To(Equal("detail"))
+	})
+})
 
 var _ = Describe("BuildToString", func() {
 	It("compiles!", func() {

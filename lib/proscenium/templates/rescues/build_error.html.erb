@@ -10,16 +10,18 @@
 <main role="main" id="container">
   <%= render "rescues/message_and_suggestions", exception: @exception, exception_wrapper: @exception_wrapper %>
 
-  <% if @exception.error['location'] %>
+  <%# Go marshals esbuild's Message without JSON tags, so the keys are the Go field names. This
+      block read lowercase keys and had never rendered. %>
+  <% if (location = @exception.error['Location']) %>
     <div class="source">
       <div class="data">
 <pre>
 
-    <%= @exception.error['location']['file'] %>:<%= @exception.error['location']['line'] %>:<%= @exception.error['location']['column'] %>
+    <%= location['File'] %>:<%= location['Line'] %>:<%= location['Column'] %>
 
-<%= @exception.error['location']['line'].to_s.rjust 5 %> │    <%= @exception.error['location']['line_text'] %>
-      │    <%= (@exception.error['location']['length'] > 1 ? "~" * @exception.error['location']['length'] : "^").rjust(@exception.error['location']['column'] + @exception.error['location']['length']) %>
-<%- if @exception.error['location']['suggestion'].present? %>    + │    <%= @exception.error['location']['suggestion'].rjust(@exception.error['location']['column'] + 1) %>
+<%= location['Line'].to_s.rjust 5 %> │    <%= location['LineText'] %>
+      │    <%= (location['Length'].to_i > 1 ? "~" * location['Length'] : "^").rjust(location['Column'].to_i + location['Length'].to_i) %>
+<%- if location['Suggestion'].present? %>    + │    <%= location['Suggestion'].rjust(location['Column'].to_i + 1) %>
 <% else %> <%- end %>
 </pre>
       </div>
