@@ -6,7 +6,6 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
-	"joelmoss/proscenium/internal/types"
 	"os"
 	"path/filepath"
 	"strings"
@@ -51,14 +50,9 @@ func TestI18nConcurrentBuildRace(t *testing.T) {
 		want := `who: "` + rootName(i) + `"`
 
 		wg.Go(func() {
-			cfg := &types.ConfigT{
-				RootPath:        root,
-				OutputDir:       "public/assets",
-				Environment:     types.TestEnv,
-				InternalTesting: true,
-				CodeSplitting:   true,
-				Bundle:          true,
-			}
+			// i18nConfig is Ginkgo-free, so it is safe from a plain Test function; i18nRoot is
+			// not, which is why the roots above are built by hand.
+			cfg := i18nConfig(root)
 
 			for range 20 {
 				success, result, _ := b.BuildToString("entry.js", cfg)

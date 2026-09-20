@@ -371,6 +371,10 @@ import translations from "proscenium/i18n";
 
 If you have multiple locale files, they will be merged together. into one json object.
 
+An app with no `config/locales` directory exports an empty object. A directory that exists but
+cannot be read - wrong permissions, an I/O error - fails the build instead, because the alternative
+is an app that silently ships with every translation missing.
+
 Note that because it is assumed that you will be consuming these translations in the browser, all keys are converted to camelCase, as per the JavaScript conventions.
 
 ## Javascript
