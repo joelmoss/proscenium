@@ -60,6 +60,7 @@ var _ = Describe("Compile", func() {
 		Entry("the parent", ".."),
 		Entry("a sibling of the root", "../keep"),
 		Entry("a traversal hidden behind a subdirectory", "public/../../keep"),
+		Entry("an absolute path, which esbuild would write to as given", "/nonexistent-output-dir"),
 	)
 
 	// Judged by relative path, not string prefix: a root of "/" or "." has no "<root>/" prefix to
@@ -83,6 +84,8 @@ var _ = Describe("Compile", func() {
 		Entry("a sibling whose name starts with the root's", "/app", "../app2", "", false),
 		Entry("above a root of /", "/", "..", "", false),
 		Entry("above a relative root", ".", "..", "", false),
+		Entry("an absolute path elsewhere", "/app", "/etc", "", false),
+		Entry("an absolute path that happens to be under the root", "/app", "/app/public/assets", "", false),
 	)
 
 	It("reports a config that does not parse as a message", func() {
