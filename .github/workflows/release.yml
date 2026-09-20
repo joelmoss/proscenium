@@ -50,6 +50,11 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
@@ -83,6 +88,11 @@ jobs:
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
@@ -112,6 +122,11 @@ jobs:
         platform: ${{ fromJSON(needs.platforms.outputs.darwin) }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
@@ -135,6 +150,11 @@ jobs:
         platform: ${{ fromJSON(needs.platforms.outputs.linux) }}
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
@@ -169,6 +189,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
@@ -216,6 +241,11 @@ jobs:
             expect: aarch64-linux
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       # The gems land in index/gems/ because that is the layout `gem generate_index` expects:
       # it indexes <dir>/gems/*.gem and writes the metadata beside it. Pointed at a flat
       # directory it reports success and produces an index listing nothing, and `gem install`
@@ -258,6 +288,11 @@ jobs:
       id-token: write
     steps:
       - uses: actions/checkout@v7
+        with:
+          # actions/checkout leaves the GitHub token in .git/config until post-job cleanup, so
+          # everything that runs in between - xgo, docker, bundler, the gems' own build - could
+          # read it. Nothing here needs to talk to git after the clone.
+          persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
           path: pkg
