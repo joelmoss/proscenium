@@ -32,7 +32,10 @@ module Proscenium
 
       # `blocking: true` releases the GVL for the duration of the call, so a build/resolve
       # doesn't stall unrelated Ruby threads (eg. other requests in a multi-threaded server).
-      # Safe to do because the Go side serialises these calls itself with a mutex - see main.go.
+      # Safe to do because the Go side shares nothing between calls: each call parses its own
+      # config, and the caches that outlive a call (i18n, svg, npm replacements) carry their own
+      # locks. See the note in main.go. There is no serialising mutex any more; a new piece of
+      # global state on the Go side needs its own.
 
       attach_function :build_to_string, [
         :string, # Path or entry point.
@@ -56,26 +59,38 @@ module Proscenium
     class BuildError < Error
       attr_reader :error, :path
 
-      # One esbuild message as text: its text, detail and location on one line, then each note on
-      # a line of its own. A note is where a recovered Go panic carries its stack, and where a
-      # failure inside a nested build names the file that imported it - without this they never
-      # left the JSON.
+      # One esbuild message as text: its text, detail and location on one line, then each note
+      # with its own location on a line of its own. A note is where a recovered Go panic carries
+      # its stack, and where a failure inside a nested build names the file that imported it -
+      # without this they never left the JSON.
       def self.format_message(message)
-        msg = message['Text'].dup
+        msg = message['Text'].to_s.dup
         msg << ' - ' << message['Detail'] if message['Detail'].is_a?(String)
-        if (location = message['Location'])
-          msg << " at #{location['File']}:#{location['Line']}:#{location['Column']}"
-        end
-        if (notes = message['Notes']).is_a?(Array) && notes.any?
-          msg << "\n" << notes.filter_map { |note| note['Text'] }.join("\n")
+        msg << format_location(message['Location'])
+        Array(message['Notes']).each do |note|
+          msg << "\n" << note['Text'].to_s << format_location(note['Location'])
         end
 
         msg
       end
 
+      def self.format_location(location)
+        location ? " at #{location['File']}:#{location['Line']}:#{location['Column']}" : ''
+      end
+
+      # Go always answers with a JSON object. Anything else - a nil pointer, a bare scalar, text -
+      # is a contract violation, and is shown as the message rather than replaced by a parse error
+      # that hides it.
+      def self.parse_json(json)
+        parsed = JSON.parse(json, strict: true)
+        parsed if parsed.is_a?(Hash)
+      rescue JSON::ParserError, TypeError
+        nil
+      end
+
       def initialize(path, error)
         @path = path
-        @error = JSON.parse(error, strict: true)
+        @error = self.class.parse_json(error) || { 'Text' => error.to_s }
 
         super("Failed to build #{path} - #{self.class.format_message(@error)}")
       end
@@ -87,7 +102,7 @@ module Proscenium
       attr_reader :messages
 
       def initialize(messages)
-        @messages = JSON.parse(messages, strict: true)
+        @messages = BuildError.parse_json(messages) || { 'Errors' => [{ 'Text' => messages.to_s }] }
 
         errors = Array(@messages['Errors']).map { |message| BuildError.format_message(message) }
 

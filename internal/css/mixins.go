@@ -2,6 +2,7 @@ package css
 
 import (
 	"joelmoss/proscenium/internal/resolver"
+	"joelmoss/proscenium/internal/utils"
 	"os"
 
 	"github.com/riking/cssparse/tokenizer"
@@ -51,6 +52,14 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		// Resolve the uri.
 		_, absPath, err := resolver.Resolve(uri, p.tokens.currentFilePath(), p.cfg)
 		if err != nil {
+			// A panic the resolver recovered is not a missing file. Keep it, so the parse fails
+			// with the stack instead of a warning beside an unexpanded mixin.
+			if utils.IsPanicError(err) {
+				p.err = err
+
+				return false
+			}
+
 			// With the reason, because the fall-through warning below has the same first half:
 			// a file that resolves but cannot be read reports itself in the same words.
 			p.addWarning(search, "Could not resolve mixin file %q for mixin %q: %s", uri, mixinIdent, err)

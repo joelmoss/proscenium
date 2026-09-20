@@ -26,18 +26,28 @@ var _ = Describe("panic handling", func() {
 			Expect(utils.Recover(func() {})).To(Succeed())
 		})
 
-		It("turns a panic into an error carrying the value and the stack", func() {
-			err := utils.Recover(func() { panic("boom") })
+		It("turns a panic into its value and the stack, kept apart", func() {
+			perr := utils.Recover(func() { panic("boom") })
 
-			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(HavePrefix("panic: boom\n"))
-			Expect(err.Error()).To(ContainSubstring("panic_test.go"))
+			Expect(perr).To(HaveOccurred())
+			Expect(perr.Text()).To(Equal("panic: boom"))
+			Expect(perr.Stack).To(ContainSubstring("panic_test.go"))
+			Expect(perr.Error()).To(HavePrefix("panic: boom\n"))
 		})
 
 		It("keeps an error value's message", func() {
-			err := utils.Recover(func() { panic(errors.New("wrapped")) })
+			perr := utils.Recover(func() { panic(errors.New("wrapped")) })
 
-			Expect(err.Error()).To(HavePrefix("panic: wrapped\n"))
+			Expect(perr.Text()).To(Equal("panic: wrapped"))
+		})
+	})
+
+	Describe("utils.MessageText", func() {
+		It("joins the text and each note on its own line", func() {
+			m := esbuild.Message{Text: "panic: boom", Notes: []esbuild.Note{{Text: "frame one"}, {Text: "frame two"}}}
+
+			Expect(utils.MessageText(m)).To(Equal("panic: boom\nframe one\nframe two"))
+			Expect(utils.MessageText(esbuild.Message{Text: "plain"})).To(Equal("plain"))
 		})
 	})
 
@@ -66,10 +76,13 @@ var _ = Describe("panic handling", func() {
 			Expect(success).To(BeFalse())
 			Expect(hash).To(BeEmpty())
 
+			// Same shape as a panic the esbuild fork recovers: short text, stack in a note.
 			var message esbuild.Message
 			Expect(json.Unmarshal([]byte(result), &message)).To(Succeed())
 			Expect(message.Text).To(HavePrefix("panic: runtime error: invalid memory address"))
-			Expect(message.Text).To(ContainSubstring("build_to_string.go"))
+			Expect(message.Text).NotTo(ContainSubstring("\n"))
+			Expect(message.Notes).To(HaveLen(1))
+			Expect(message.Notes[0].Text).To(ContainSubstring("build_to_string.go"))
 		})
 	})
 
@@ -93,12 +106,12 @@ var _ = Describe("panic handling", func() {
 
 			var result struct{ Errors []esbuild.Message }
 			Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+			// Text is the panic line, the stack is the detail: the shape compileError already has.
 			Expect(result.Errors).To(HaveLen(1))
-			Expect(result.Errors[0].Text).To(Equal("Build panicked"))
+			Expect(result.Errors[0].Text).To(HavePrefix("panic: runtime error: invalid memory address"))
 
 			detail, _ := result.Errors[0].Detail.(string)
-			Expect(strings.HasPrefix(detail, "panic: runtime error: invalid memory address")).To(BeTrue(), detail)
-			Expect(detail).To(ContainSubstring("compile.go"))
+			Expect(strings.Contains(detail, "compile.go")).To(BeTrue(), detail)
 		})
 	})
 })

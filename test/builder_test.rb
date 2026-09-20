@@ -46,20 +46,49 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
     # A note is where a recovered Go panic carries its stack, and where a failure inside a nested
     # build names its importer. Constructed directly: nothing in the fixtures panics on purpose.
-    it 'appends notes to the message on their own lines' do
+    it 'appends notes, each with its location, on their own lines' do
       error = Proscenium::Builder::BuildError.new('x.js', {
         Text: 'panic: boom (in OnLoad callback)',
         Location: { File: 'lib/x.js', Line: 2, Column: 1 },
-        Notes: [{ Text: 'stack line one' }, { Text: 'stack line two' }]
+        Notes: [
+          { Text: 'stack line one' },
+          { Text: 'triggered by this import', Location: { File: 'app/y.js', Line: 9, Column: 3 } }
+        ]
       }.to_json)
 
       assert_equal "Failed to build x.js - panic: boom (in OnLoad callback) at lib/x.js:2:1\n" \
-                   "stack line one\nstack line two",
+                   "stack line one\ntriggered by this import at app/y.js:9:3",
                    error.message
+    end
+
+    it 'shows a payload that is not JSON as the message' do
+      error = Proscenium::Builder::BuildError.new('x.js', 'not json')
+
+      assert_equal 'Failed to build x.js - not json', error.message
+    end
+
+    it 'survives a missing or scalar payload' do
+      missing = Proscenium::Builder::BuildError.new('x.js', nil)
+      scalar = Proscenium::Builder::BuildError.new('x.js', '123')
+
+      assert_equal 'Failed to build x.js - ', missing.message
+      assert_equal 'Failed to build x.js - 123', scalar.message
+    end
+
+    it 'raises with the config error when the config does not parse' do
+      error = assert_raises(Proscenium::Builder::BuildError) do
+        subject.build_to_string('lib/foo.js', Precompile: 'not an array')
+      end
+
+      assert_includes error.message, 'Failed to build lib/foo.js - Invalid config - '
     end
   end
 
   describe '.compile' do
+    it 'returns true when every entry point builds' do
+      assert subject.compile(Precompile: ['./lib/foo.js'])
+    end
+
     it 'raises with the messages when the build fails' do
       error = assert_raises(Proscenium::Builder::CompileError) do
         subject.compile(Precompile: [])
@@ -67,6 +96,26 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
       assert_includes error.message, 'Failed to compile assets - No precompile paths specified - '
       assert_equal 1, error.messages['Errors'].length
+    end
+
+    it 'raises with the config error when the config does not parse' do
+      error = assert_raises(Proscenium::Builder::CompileError) do
+        subject.compile(Precompile: 'not an array')
+      end
+
+      assert_includes error.message, 'Failed to compile assets - Invalid config - '
+    end
+
+    it 'lists every error on its own line' do
+      messages = { Errors: [{ Text: 'first' }, { Text: 'second' }] }.to_json
+      error = Proscenium::Builder::CompileError.new(messages)
+
+      assert_equal "Failed to compile assets - first\nsecond", error.message
+    end
+
+    it 'shows a payload that is not JSON as the message' do
+      assert_equal 'Failed to compile assets - garbage',
+                   Proscenium::Builder::CompileError.new('garbage').message
     end
   end
 

@@ -54,8 +54,8 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 							}, nil
 						}
 
-						if len(cssResult.OutputFiles) > 1 {
-							return esbuild.OnLoadResult{}, fmt.Errorf("multiple output files generated for %s", args.Path)
+						if len(cssResult.OutputFiles) != 1 {
+							return esbuild.OnLoadResult{}, fmt.Errorf("expected one output file for %s, got %d", args.Path, len(cssResult.OutputFiles))
 						}
 
 						hash := ast.CssLocalHash(args.Path)

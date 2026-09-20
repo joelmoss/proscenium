@@ -31,13 +31,21 @@ var extensionMap = map[string]string{
 // the Ruby process that called in. Plugin callbacks run on esbuild's goroutines and are recovered
 // by the esbuild fork itself.
 func BuildToString(filePath string, cfg *types.ConfigT) (success bool, code string, contentHash string) {
-	if err := utils.Recover(func() {
+	if perr := utils.Recover(func() {
 		success, code, contentHash = buildToString(filePath, cfg)
-	}); err != nil {
-		return buildError(err.Error())
+	}); perr != nil {
+		return buildErrorWithNote(perr.Text(), perr.Stack)
 	}
 
 	return success, code, contentHash
+}
+
+// The JSON a failed build hands to Ruby, for the cgo export in main.go: the config it was given
+// did not parse, so there is no build to report on, but Ruby still expects a message.
+func BuildErrorJSON(msg string) string {
+	_, j, _ := buildError(msg)
+
+	return j
 }
 
 func buildToString(filePath string, cfg *types.ConfigT) (success bool, code string, contentHash string) {
@@ -169,7 +177,16 @@ func findOutputPathForEntryPoint(filePath string, metadata struct{ Outputs map[s
 }
 
 func buildError(msg string) (bool, string, string) {
+	return buildErrorWithNote(msg, "")
+}
+
+// A note is where the esbuild fork puts a recovered panic's stack, so a panic caught on this side
+// takes the same shape: short text, stack in the note.
+func buildErrorWithNote(msg string, note string) (bool, string, string) {
 	message := esbuild.Message{Text: msg}
+	if note != "" {
+		message.Notes = []esbuild.Note{{Text: note}}
+	}
 
 	j, err := json.Marshal(message)
 	if err != nil {

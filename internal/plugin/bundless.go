@@ -28,32 +28,51 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 		Setup: func(build esbuild.PluginBuild) {
 			root := build.InitialOptions.AbsWorkingDir
 
-			// Absolute file system path for an asset that must be loaded rather than externalised
-			// when unbundling. assetFsPath covers the shapes a path join can answer; a bare
-			// specifier (`pkg/at.svg`, `pkg/one.module.css`) cannot be joined - it has to go
-			// through node resolution, which is why it needs esbuild and therefore this closure
-			// rather than the package-level helper.
-			resolveAssetPath := func(args esbuild.OnResolveArgs, p string) (string, bool) {
-				if absPath, ok := assetFsPath(p, args, root); ok {
-					return absPath, true
+			// Loads an asset that must be bundled even when unbundling: a CSS module or an SVG
+			// imported from JS(X), whose OnLoad produces the JS the importer needs. assetFsPath
+			// covers the shapes a path join can answer; a bare specifier (`pkg/at.svg`,
+			// `pkg/one.module.css`) has to go through node resolution, which is why this needs
+			// esbuild and therefore a closure rather than the package-level helper.
+			//
+			// Reports whether the handler is done: `result` now names the asset, or carries a panic
+			// recovered inside the nested resolve. A miss is not an error here - the caller keeps
+			// the existing unbundled behaviour - but a panic must fail the build rather than be
+			// externalised with the import.
+			loadAsset := func(args esbuild.OnResolveArgs, result *esbuild.OnResolveResult, namespace string) bool {
+				absPath, ok := assetFsPath(result.Path, args, root)
+				if !ok {
+					if utils.ExtractBareModule(result.Path) == "" {
+						return false
+					}
+
+					// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
+					r := build.Resolve(result.Path, esbuild.ResolveOptions{
+						ResolveDir: args.ResolveDir,
+						Importer:   args.Importer,
+						Kind:       args.Kind,
+						PluginData: types.PluginData{IsResolvingPath: true},
+					})
+					if utils.HasPanicMessage(r.Errors) {
+						result.Errors = r.Errors
+
+						return true
+					}
+					if len(r.Errors) > 0 || r.Path == "" {
+						return false
+					}
+
+					absPath = r.Path
 				}
 
-				if utils.ExtractBareModule(p) == "" {
-					return "", false
+				result.Path = absPath
+				result.External = false
+				if namespace != "" {
+					result.Namespace = namespace
 				}
 
-				// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
-				r := build.Resolve(p, esbuild.ResolveOptions{
-					ResolveDir: args.ResolveDir,
-					Importer:   args.Importer,
-					Kind:       args.Kind,
-					PluginData: types.PluginData{IsResolvingPath: true},
-				})
-				if len(r.Errors) > 0 || r.Path == "" {
-					return "", false
-				}
+				debug.Debug(cfg.Debug, "OnResolve(.*):end asset", result)
 
-				return r.Path, true
+				return true
 			}
 
 			// Resolve with esbuild. Try and avoid this call as much as possible!
@@ -68,14 +87,15 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					realImporter, err := filepath.EvalSymlinks(args.Importer)
-					if err != nil {
-						debug.Debug(cfg.Debug, "EvalSymlinks of Importer failed!", err)
-						return false
-					}
-
 					args.ResolveDir = realResolveDir
-					args.Importer = realImporter
+
+					// The importer may be a virtual path - a rubygems-namespaced file is imported
+					// under its `@rubygems/` name - with nothing on disk to evaluate. The resolve
+					// directory is what node resolution needs; failing here used to turn a resolvable
+					// import into a silent miss.
+					if realImporter, err := filepath.EvalSymlinks(args.Importer); err == nil {
+						args.Importer = realImporter
+					}
 				}
 
 				r := build.Resolve(onResolveResult.Path, esbuild.ResolveOptions{
@@ -86,6 +106,15 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						IsResolvingPath: true,
 					},
 				})
+
+				// A panic recovered inside the nested resolve is not a miss. Hand it back and stop
+				// here, before the gem-root and app-root retries below can overwrite it with their
+				// own result and let the build succeed.
+				if utils.HasPanicMessage(r.Errors) {
+					onResolveResult.Errors = r.Errors
+
+					return false
+				}
 
 				onResolveResult.Path = r.Path
 				onResolveResult.Errors = r.Errors
@@ -206,6 +235,12 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					pluginData := types.PluginDataOf(args.PluginData)
 					realPath := pluginData.RealPath
+					if realPath == "" {
+						// The resolver attaches it for every rubygems entry. Without it,
+						// filepath.Dir("") would hand esbuild "." - the app root - as the resolve
+						// directory, and the missing file would be reported under the wrong name.
+						return esbuild.OnLoadResult{}, fmt.Errorf("no real path attached to %s: its resolver dropped the plugin data", args.Path)
+					}
 
 					result := esbuild.OnLoadResult{
 						Loader:     esbuild.LoaderDefault,
@@ -291,31 +326,16 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						// `import styles from "/x.module.css"`, and the separate request for that path
 						// arrives with no importer, so nothing can know it came from JS and raw CSS is
 						// served to a JS import.
-						if utils.PathIsCssModule(result.Path) {
-							if absPath, ok := resolveAssetPath(args, result.Path); ok {
-								result.Path = absPath
-								result.External = false
-
-								debug.Debug(cfg.Debug, "OnResolve(.*):end css module from js", result)
-
-								return result, nil
-							}
+						if utils.PathIsCssModule(result.Path) && loadAsset(args, &result, "") {
+							return result, nil
 						}
 					}
 
 					// An SVG imported from JS(X) is loaded rather than externalised for the same reason:
 					// the svg plugin's OnLoad wraps the source as a component, and it only runs for the
 					// `svgFromJsx` namespace. Externalising would hand raw XML to the JS runtime.
-					if utils.IsSvgImportedFromJsx(result.Path, args) {
-						if absPath, ok := resolveAssetPath(args, result.Path); ok {
-							result.Path = absPath
-							result.Namespace = "svgFromJsx"
-							result.External = false
-
-							debug.Debug(cfg.Debug, "OnResolve(.*):end svg from jsx", result)
-
-							return result, nil
-						}
+					if utils.IsSvgImportedFromJsx(result.Path, args) && loadAsset(args, &result, "svgFromJsx") {
+						return result, nil
 					}
 
 					if utils.IsUrl(result.Path) {
@@ -363,6 +383,15 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						// 2. use the gem path as the ResolveDir (if different), which will apply for non-NPM installed modules.
 						// 3. try again using the root as the ResolveDir (if different), which will be the app.
 
+						// A rubygems-namespaced import always carries its gem root: the loaders attach
+						// it (bundless's OnLoad for JS, the css plugin's for CSS). Missing means a
+						// loader dropped it, which used to panic here and would otherwise resolve
+						// silently against the app root instead.
+						gemPath := types.PluginDataOf(args.PluginData).GemPath
+						if args.Namespace == "rubygems" && gemPath == "" {
+							return result, fmt.Errorf("no gem root attached to %s: its loader dropped the plugin data", args.Path)
+						}
+
 						// 1
 						ok := resolveWithEsbuild(resolveArgs, &result)
 						if !ok {
@@ -370,9 +399,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						}
 
 						// 2
-						gemPath := types.PluginDataOf(args.PluginData).GemPath
 						if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-							gemPath != "" && resolveArgs.ResolveDir != gemPath {
+							resolveArgs.ResolveDir != gemPath {
 							resolveArgs.ResolveDir = gemPath
 							result.Path = originalPath
 
@@ -396,13 +424,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 				FINISH:
 
 					if result.Errors != nil {
-						// A panic recovered inside a nested resolve arrives here as an error too. It is
-						// not a miss: leave it in Errors so the build fails with its stack.
-						if utils.HasPanicMessage(result.Errors) {
-							return result, nil
-						}
-
-						// A miss is not an error here: the browser reports the failed import.
+						// A miss is not an error here: the browser reports the failed import. (A
+						// recovered panic never reaches this point; resolveWithEsbuild returns early.)
 						result.Warnings = result.Errors
 						result.Errors = nil
 						result.Path = args.Path

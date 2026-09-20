@@ -20,13 +20,21 @@ type compileResult struct {
 // A panic anywhere below, on this goroutine, is returned as a failed compile rather than taking
 // down the Ruby process that called in. See BuildToString.
 func Compile(cfg *types.ConfigT) (success bool, messages string) {
-	if err := utils.Recover(func() {
+	if perr := utils.Recover(func() {
 		success, messages = compile(cfg)
-	}); err != nil {
-		return compileError("Build panicked", err.Error())
+	}); perr != nil {
+		return compileError(perr.Text(), perr.Stack)
 	}
 
 	return success, messages
+}
+
+// The JSON a failed compile hands to Ruby, for the cgo export in main.go: the config it was given
+// did not parse, so there is no build to report on, but Ruby still expects the messages shape.
+func CompileErrorJSON(msg string, detail string) string {
+	_, j := compileError(msg, detail)
+
+	return j
 }
 
 func compile(cfg *types.ConfigT) (bool, string) {
@@ -35,6 +43,15 @@ func compile(cfg *types.ConfigT) (bool, string) {
 		return compileError(
 			"No precompile paths specified",
 			"The `precompile` configuration option must be an array, and specify at least one path or glob path to compile.",
+		)
+	}
+
+	// Guarded before the delete below: with no output directory the join is the root itself, and
+	// nothing else stops `Builder.compile(OutputDir: nil)` from removing the whole application.
+	if cfg.OutputDir == "" {
+		return compileError(
+			"No output directory specified",
+			"The `output_dir` configuration option must name the directory, under the root, that compiled assets are written to.",
 		)
 	}
 
