@@ -8,9 +8,10 @@ module Proscenium
     JS_EXTENSIONS = %w[.tsx .ts .jsx .js].freeze
     CSS_EXTENSIONS = %w[.module.css .css].freeze
 
-    # The readable suffix of a CSS module class name, by absolute path. It is a pure function of the
-    # path, but `import` runs once per class name a view emits and `relative_path_from` is most of
-    # its cost, so it is built once per file for the life of the process.
+    # The readable suffix of a CSS module class name, by absolute path - or by URL, for a remote
+    # module, which has no file. It is a pure function of that identity, but `import` runs once per
+    # class name a view emits and `relative_path_from` is most of its cost, so it is built once per
+    # file for the life of the process.
     SUFFIXES = Concurrent::Map.new
 
     # Holds the JS and CSS files to include in the current request.
@@ -27,8 +28,9 @@ module Proscenium
     class << self
       # Import the given `filepath`. This is idempotent - it will never include duplicates.
       #
-      # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import.
-      #   Should be the actual asset file, eg. app.css, some/component.js.
+      # @param filepath [String] Absolute URL path (relative to Rails root) of the file to import,
+      #   or a URL, which has no file on disk. Should be the actual asset file, eg. app.css,
+      #   some/component.js.
       # @return [String|nil] the digest of the imported file path if a css module (*.module.css).
       def import(filepath = nil, sideloaded: false, **)
         self.imported ||= {}
@@ -41,8 +43,10 @@ module Proscenium
             abs_path = imported[filepath][:abs_path]
           else
             manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
-            digest = Utils.css_module_digest(abs_path)
             filepath = Array(manifest_path || non_manifest_path)[0]
+            # A URL has no file on disk, so the URL is the module's identity. Taken after the
+            # reassignment above, so the digest and the suffix cache below agree on it.
+            digest = Utils.css_module_digest(abs_path.presence || filepath)
 
             if sideloaded
               ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
@@ -62,8 +66,17 @@ module Proscenium
           # Mirrors ConfigT#ShouldMinify - the suffix exists whenever identifiers are not
           # minified, and a class name the stylesheet does not define is worse than a long one.
           if Proscenium.config.debug || !Rails.env.production?
-            transformed_path = SUFFIXES.compute_if_absent(abs_path) do
-              "_#{Utils.css_module_suffix(Pathname.new(abs_path).relative_path_from(Rails.root))}"
+            # Keyed and built from the file's path under the app, or from the URL when there is
+            # no file: `Pathname.new('').relative_path_from(Rails.root)` raises.
+            identity = abs_path.presence || filepath
+            transformed_path = SUFFIXES.compute_if_absent(identity) do
+              relative = if abs_path.present?
+                           Pathname.new(abs_path).relative_path_from(Rails.root)
+                         else
+                           identity
+                         end
+
+              "_#{Utils.css_module_suffix(relative)}"
             end
           end
 

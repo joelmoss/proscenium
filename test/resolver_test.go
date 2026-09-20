@@ -61,7 +61,7 @@ var _ = Describe("Resolve", func() {
 			importer := filepath.Join(fixturesRoot, "external/one/index.css")
 			relPath, absPath, err := r.Resolve("./foo.css", importer, testConfig)
 
-			Expect(err).To(MatchError(ContainSubstring("outside the app root and every bundled gem")))
+			Expect(err).To(MatchError(`"./foo.css" from "index.css" is outside the app root and every bundled gem`))
 			Expect(relPath).To(Equal(""))
 			Expect(absPath).To(Equal(""))
 		})
@@ -211,6 +211,20 @@ var _ = Describe("Resolve", func() {
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem2/lib/gem2/gem2.js"))
 			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
+		})
+
+		// The gem has both `dir.js` and `dir/index.js`. esbuild reads the trailing slash as "the
+		// directory", and cleaning the suffix used to drop it, silently picking the file.
+		It("keeps a trailing slash, which picks the directory over the file of the same name", func() {
+			addGem("gem4", "external")
+
+			relPath, absPath, _ := r.Resolve("@rubygems/gem4/dir/", "", testConfig)
+			Expect(relPath).To(Equal("/node_modules/@rubygems/gem4/dir/index.js"))
+			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem4/dir/index.js")))
+
+			relPath, absPath, _ = r.Resolve("@rubygems/gem4/dir", "", testConfig)
+			Expect(relPath).To(Equal("/node_modules/@rubygems/gem4/dir.js"))
+			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem4/dir.js")))
 		})
 
 		// Used to answer with a URL naming gem4 and a file path under gem2's parent directory.

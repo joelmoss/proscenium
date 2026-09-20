@@ -38,9 +38,11 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 					if pluginData.ImportedFromJs && isCssModule {
 						// A file under neither root used to fall through with its file system
 						// path, and the build below then looked for that under the app root.
+						// The error names the file, not its path: esbuild's location already
+						// says who imported it, and the path is a machine path (see 6e046d87).
 						urlPath, ok := utils.UrlPathFromFsPath(args.Path, cfg)
 						if !ok {
-							return esbuild.OnLoadResult{}, fmt.Errorf("%s is outside the app root and every bundled gem", args.Path)
+							return esbuild.OnLoadResult{}, fmt.Errorf("%s is outside the app root and every bundled gem", filepath.Base(args.Path))
 						}
 
 						cssResult := cssBuild(urlPath[1:], cfg)

@@ -52,16 +52,18 @@ func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 			return returnResolve("", "", errors.New("relative paths are not supported when an importer is not given"), cfg)
 		}
 
-		filePath = path.Join(path.Dir(importer), filePath)
+		joined := path.Join(path.Dir(importer), filePath)
 
 		// Under neither root, the path used to go out unchanged: an absolute file system path
-		// as a URL.
-		urlPath, ok := utils.UrlPathFromFsPath(filePath, cfg)
+		// as a URL. The error names the import as written and the importer's file name, not the
+		// joined path: it reaches browsers, logs and error trackers, and a machine path is not
+		// theirs to see (see 6e046d87).
+		urlPath, ok := utils.UrlPathFromFsPath(joined, cfg)
 		if !ok {
-			return returnResolve("", "", fmt.Errorf("%q is outside the app root and every bundled gem", filePath), cfg)
+			return returnResolve("", "", fmt.Errorf("%q from %q is outside the app root and every bundled gem", filePath, path.Base(importer)), cfg)
 		}
 
-		return returnResolve(urlPath, filePath, nil, cfg)
+		return returnResolve(urlPath, joined, nil, cfg)
 	}
 
 	// The served form, `/node_modules/@rubygems/…`, is parsed here too. It used to miss the gem
@@ -140,7 +142,7 @@ func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	}
 
 	if isGem {
-		return returnResolve(utils.GemRef{Name: gem.Name, Suffix: "/" + key}.UrlPath(), path.Join(gem.Root, key), nil, cfg)
+		return returnResolve(utils.GemRef{Name: gem.Name, Root: gem.Root, Suffix: "/" + key}.UrlPath(), path.Join(gem.Root, key), nil, cfg)
 	}
 
 	return returnResolve("/"+key, path.Join(rootPath, key), nil, cfg)
