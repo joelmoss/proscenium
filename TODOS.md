@@ -62,11 +62,19 @@ function with one check. (1) Align how the two plugins treat an alias onto a non
 and reports `could not resolve Ruby gem "lib"`, which blames the Gemfile; gate it on
 `GemFromSpecifier` the same way. (2) Contain the path to the gem root. `GemFromSpecifier` does
 this now (`8452092a`: the suffix is cleaned as a relative path, and one that escapes is an error
-naming the specifier and the gem), and `resolve.go` acts on it - but `bundler.go:221` and
-`bundless.go:131` discard that error and go on to `ResolveRubyGem`, so step 2 is where the plugins
-start honouring it. No fixture alias uses `..`. Also from that review: alias chains follow both
-hops at import time when bundling, but only the first when unbundled - the second happens on the
-browser's request, and needs the intermediate file to exist in the first gem.
+naming the specifier and the gem), and `resolve.go` acts on it - but neither plugin does, for any
+`@rubygems/` import, aliased or not. `bundler.go`'s `resolveRubygemPath` (`:90`, `:136`) and
+`bundless.go`'s entry-point join (`:160`) never call `GemFromSpecifier`; they join the raw suffix
+onto the gem root, so `import "@rubygems/gem2/../../x.json"` in a bundled graph reads outside the
+gem. The alias branches (`bundler.go:221`, `bundless.go:131`) call it and discard the error. Not a
+new read capability - esbuild resolves a plain `../../x.json` from any dependency with no root
+check either - but the rule should hold everywhere it is spelled. Two `resolve.go` exits are in
+the same state: the absolute-path exit and the non-gem esbuild exit join the specifier onto the
+root with no under-a-root check (`/../../etc/x.css` joins outside it; the URL goes back as
+written), while the relative branch now refuses. One `UrlPathFromFsPath` check on each closes
+them; fold that in here. No fixture alias uses `..`. Also from that review: alias chains follow
+both hops at import time when bundling, but only the first when unbundled - the second happens
+on the browser's request, and needs the intermediate file to exist in the first gem.
 
 **The other direction, file path to URL path, has one home now.** `utils.UrlPathFromFsPath`
 (`8452092a`) answers it for `resolve.go` and `plugin/css.go`, gem roots first, then the app root

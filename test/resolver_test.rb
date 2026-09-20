@@ -27,6 +27,10 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       assert_equal '/lib/foo.js', subject.resolve(Rails.root.join('lib/foo.js').to_s)
     end
 
+    it 'resolves a URL, which has no file' do
+      assert_equal 'https://cdn.example/x.js', subject.resolve('https://cdn.example/x.js')
+    end
+
     test 'absolute URL path' do
       assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
     end
@@ -59,6 +63,17 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
         assert_raises Proscenium::Builder::ResolveError do
           subject.resolve('unknown', as_array: true)
         end
+      end
+
+      # Go answers a URL with an empty file path, and this is the wrapper importer.rb and the
+      # runtime server actually call.
+      it 'resolves a URL, which has no file' do
+        manifest_path, non_manifest_path, abs_path =
+          subject.resolve('https://cdn.example/x.js', as_array: true)
+
+        assert_nil manifest_path
+        assert_equal 'https://cdn.example/x.js', non_manifest_path
+        assert_equal '', abs_path
       end
 
       test 'bare specifier (NPM package)' do

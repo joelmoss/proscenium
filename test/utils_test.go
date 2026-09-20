@@ -46,6 +46,10 @@ var _ = Describe("utils gem references", func() {
 			Entry("unbundle prefixed", "unbundle:@rubygems/foo/bar.js", "/bar.js"),
 			Entry("a dot segment", "@rubygems/foo/./bar.js", "/bar.js"),
 			Entry("a dot-dot segment that stays inside", "@rubygems/foo/lib/../bar.js", "/bar.js"),
+			// esbuild resolves `./lib/` and `./lib` differently when both `lib.js` and
+			// `lib/index.js` exist, so the slash that asks for the directory survives cleaning.
+			Entry("a directory", "@rubygems/foo/lib/", "/lib/"),
+			Entry("a directory reached through a dot-dot segment", "@rubygems/foo/lib/../src/", "/src/"),
 		)
 
 		// The URL half of an answer cleans the suffix (GemRef.UrlPath is path.Join) and the file
@@ -284,8 +288,30 @@ var _ = Describe("utils gem references", func() {
 			Entry("in a gem vendored under the app root", "/app/vendor/vendored/x.js",
 				"/node_modules/@rubygems/vendored/x.js"),
 			Entry("under the app root", "/app/lib/a.js", "/lib/a.js"),
-			Entry("the app root itself", "/app", ""),
+			Entry("the app root itself", "/app", "/"),
 		)
+
+		// A missing root would otherwise be a prefix of every path, and the whole point of this
+		// function is to be able to say "no".
+		It("matches nothing when the app root is empty", func() {
+			cfg.RootPath = ""
+
+			got, ok := utils.UrlPathFromFsPath("/app/lib/a.js", cfg)
+
+			Expect(ok).To(BeFalse())
+			Expect(got).To(Equal(""))
+		})
+
+		// "/" trims to the same empty string as an unset root, and it is a real root: every
+		// absolute path is under it, and is its own URL path.
+		It("treats the file system root as a root, not as unset", func() {
+			cfg.RootPath = "/"
+
+			got, ok := utils.UrlPathFromFsPath("/srv/app/lib/a.js", cfg)
+
+			Expect(ok).To(BeTrue())
+			Expect(got).To(Equal("/srv/app/lib/a.js"))
+		})
 
 		DescribeTable("has no URL for a file under neither root",
 			func(fsPath string) {

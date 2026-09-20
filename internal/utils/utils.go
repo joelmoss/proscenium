@@ -168,8 +168,9 @@ type GemRef struct {
 }
 
 // The URL path Proscenium serves this gem reference at. The one spelling of the
-// `/node_modules/@rubygems/<name><suffix>` rule, which is otherwise rebuilt by hand in five
-// places across this package, internal/plugin and internal/resolver.
+// `/node_modules/@rubygems/<name><suffix>` rule, which used to be rebuilt by hand in five places.
+// One hand-built copy is left, at internal/plugin/bundless.go:190; it goes with the F-GOUTILS-1
+// step-2 pass.
 func (g GemRef) UrlPath() string {
 	return path.Join("/node_modules", types.RubyGemsScope, g.Name, g.Suffix)
 }
@@ -211,7 +212,8 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 	// half of an answer cleans the suffix (UrlPath is path.Join) while the file half joins it onto
 	// the root as given, so "@rubygems/foo/../bar/x.js" named gem "bar" in the browser and a
 	// directory beside foo's root on disk.
-	cleaned := path.Clean("." + strings.TrimPrefix(spec, types.RubyGemsScope+name))
+	rest := strings.TrimPrefix(spec, types.RubyGemsScope+name)
+	cleaned := path.Clean("." + rest)
 	if cleaned == ".." || strings.HasPrefix(cleaned, "../") {
 		return GemRef{}, true, fmt.Errorf("%q escapes the root of gem %q", spec, name)
 	}
@@ -219,6 +221,13 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 	suffix := ""
 	if cleaned != "." {
 		suffix = "/" + cleaned
+
+		// A trailing slash asks for a directory, and esbuild honours the difference: given both
+		// `lib.js` and `lib/index.js`, `./lib/` is the second and `./lib` the first. Clean drops
+		// it, so it is put back.
+		if strings.HasSuffix(rest, "/") {
+			suffix += "/"
+		}
 	}
 
 	return GemRef{Name: name, Root: root, Suffix: suffix}, true, nil
@@ -323,8 +332,18 @@ func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bo
 		return ref.UrlPath(), true
 	}
 
+	// An unset root would be a prefix of everything, and this function exists to say "no". Checked
+	// before the trim: a root of "/" trims to "" too, and that one is real.
+	if cfg.RootPath == "" {
+		return "", false
+	}
+
 	root := strings.TrimSuffix(cfg.RootPath, "/")
-	if strings.HasPrefix(fsPath, root) && (len(fsPath) == len(root) || fsPath[len(root)] == '/') {
+	if fsPath == root {
+		return "/", true
+	}
+
+	if strings.HasPrefix(fsPath, root) && len(fsPath) > len(root) && fsPath[len(root)] == '/' {
 		return fsPath[len(root):], true
 	}
 

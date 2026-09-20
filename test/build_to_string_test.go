@@ -741,6 +741,8 @@ var _ = Describe("BuildToString(css module outside the app root)", func() {
 
 			Expect(success).To(BeFalse())
 			Expect(result).To(ContainSubstring("outside.module.css is outside the app root and every bundled gem"))
+			// The error reaches browsers and error trackers; the machine path stays out of it.
+			Expect(result).NotTo(ContainSubstring(fixturesRoot))
 		})
 	})
 })

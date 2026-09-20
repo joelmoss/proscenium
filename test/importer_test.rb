@@ -83,6 +83,21 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       Proscenium::Utils.define_singleton_method(:css_module_suffix, original)
     end
 
+    # A URL has no file on disk, so `abs_path` comes back empty. The class-name suffix used to be
+    # built from a path under Rails.root that could not exist, and with no path at all it raised
+    # `ArgumentError: different prefix`.
+    it 'imports a remote css module, which has no file' do
+      digest = subject.import('https://cdn.example/x.module.css')
+
+      assert_match(/\A[0-9a-f]{8}_https/, digest)
+      assert_equal '', subject.imported['https://cdn.example/x.module.css'][:abs_path]
+    end
+
+    it 'tells two remote css modules apart' do
+      refute_equal subject.import('https://cdn.example/a.module.css'),
+                   subject.import('https://cdn.example/b.module.css')
+    end
+
     it 'imports @rubygems/* runtime files' do
       subject.import '@rubygems/proscenium/react-manager/index.jsx'
 
