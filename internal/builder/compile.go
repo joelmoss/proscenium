@@ -162,7 +162,15 @@ func compile(cfg *types.ConfigT) (bool, string) {
 // The path OutputDir names under the root, and whether it is strictly inside it: not the root
 // itself, and not above or beside it. Compared as a relative path rather than by string prefix, so
 // a root of "/" or "." is judged the same as any other.
+//
+// An absolute OutputDir is refused outright. filepath.Join would nest it under the root and pass
+// this check, but esbuild's Outdir takes the raw value and would write where it points, outside
+// the root; the manifest path joins it under the root as well. It is a path relative to the root.
 func OutputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
+	if filepath.IsAbs(cfg.OutputDir) {
+		return "", false
+	}
+
 	root := filepath.Clean(cfg.RootPath)
 	target := filepath.Join(root, cfg.OutputDir)
 
