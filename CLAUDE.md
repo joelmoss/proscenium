@@ -131,11 +131,55 @@ golangci-lint run
 
 ## Cross-Platform Builds
 
-The gem ships with precompiled Go binaries for multiple platforms. The Rakefile defines compile tasks for:
-- `x86_64-darwin`, `arm64-darwin` (macOS)
-- `x86_64-linux`, `aarch64-linux` (Linux)
+The gem ships with precompiled Go binaries per platform. `PLATFORMS` in the Rakefile is the single
+source of truth; the release workflow derives its build matrix from it via `rake platforms:json`,
+so adding a platform is a one-line change there.
 
-Linux builds use [xgo](https://github.com/techknowlogick/xgo) for cross-compilation.
+- `x86_64-darwin`, `arm64-darwin` (macOS) - built natively, `CGO_ENABLED=1`
+- `x86_64-linux-gnu`, `aarch64-linux-gnu` (Linux) - cross-compiled with
+  [xgo](https://github.com/techknowlogick/xgo), pinned to a version
+
+The Linux gems name their libc deliberately. A bare `x86_64-linux` matches glibc and musl alike, so
+Alpine used to install a glibc library it could not load. `-gnu` is never selected on musl, so a
+musl host now matches no platform gem, gets the platform-less gem, and sees
+`Proscenium::Builder::UnsupportedPlatform` naming its platform. That gem carries no compiled
+library at all: the gemspec ships `lib/proscenium/ext/**` only when `PROSCENIUM_PACKAGE_EXT` is
+set, which the platform build tasks set for the `gem build` subprocess alone.
+
+**There are no musl gems, and this is not an oversight.** Go's `-buildmode=c-shared` libraries
+carry initial-exec TLS relocations, which musl refuses to `dlopen` by design, and FFI loads this
+library with `dlopen`. The build succeeds and is correctly musl-linked; it simply cannot be loaded.
+That is [golang/go#54805](https://github.com/golang/go/issues/54805), and the linker flag that
+fixes it is in neither Go 1.25 nor 1.27. Revisit when it ships - nothing else needs to change.
+
+**Windows is not blocked, just unfinished.** A CI probe confirmed the DLL loads through FFI on
+`windows-latest`, the fixture symlinks survive checkout, and the esbuild fork hands back OS-form
+paths. What remains is the path work. Note `xgo` cannot build the Windows DLL - it fails with
+`x86_64-w64-mingw32-ld: export_file.def:1: syntax error` - so Windows must build natively on a
+`windows-latest` runner, the way darwin builds natively on macOS.
+
+## Releasing
+
+Releases run from `.github/workflows/release.yml`, not from a laptop. Push a `v*` tag.
+
+The workflow builds every platform gem plus the platform-less one, then refuses to publish until
+those exact archives have been served from a generated index, resolved, installed and loaded on
+their own architecture (`bin/verify-gem`). Checking the gemspec's file list cannot catch a stray
+binary left on disk between two rake tasks, which is how 0.25.2 shipped an x86-64 Linux ELF inside
+its platform-less gem.
+
+Publishing uses RubyGems trusted publishing (OIDC), so there is no API key anywhere. It needs the
+`release` GitHub environment, which has a required reviewer, so a publish waits for approval.
+`rake push` skips any gem already published at that version, so a run that dies partway is
+finished by re-running it rather than by pushing the remainder by hand.
+
+To check the credential path without publishing, dispatch the workflow with `verify_publisher`. It
+performs the OIDC exchange, confirms RubyGems issued a scoped key, and stops. Worth doing before a
+first release so that is not also the first test of trusted publishing.
+
+`bundle exec rake build` still builds everything locally, but note it needs Docker for the
+cross-compiled Linux gems, and the plain gem it produces inherits whatever the last compile left
+behind unless `PROSCENIUM_PACKAGE_EXT` is unset for that build. Prefer the workflow.
 
 ## Gotchas
 

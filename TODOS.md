@@ -92,6 +92,69 @@ into `fixtures/`, where it would not survive every platform and git config.
 **Priority:** P4
 **Depends on:** None
 
+## Give the two path spaces distinct types
+
+**What:** Named Go types for URL paths and filesystem paths, so the compiler refuses to mix them.
+
+**Why:** The same bug class has surfaced three times, caught by a person every time, never by a test.
+
+1. 2026-02-10, `9da6f14f` through `954b414f`: Windows support added, patched twice as separator
+   handling broke in new places, reverted three and a half hours later.
+2. 2026-09, `a4d5fa58`: `UrlPathFromFsPath` compared text, so `/app/../outside.css` walked out of a
+   root that still looked like a prefix. Raised by CodeRabbit, not by the suite.
+3. 2026-09-20, planning issue #73: the proposed Windows fix was one drive-letter-aware absoluteness
+   predicate used at every `path.IsAbs`. At `bundler.go:263` the comment reads "Absolute path -
+   prepend the root", so that would have produced `C:/app/C:/app/x.js`; at `resolve.go:109` it
+   turns a drive path into `.C:/...`.
+
+One root cause each time: both kinds of path are `string`, both are called `path`, and nothing in a
+signature says which space a value is in.
+
+**Pros:** The only remedy that makes the mistake impossible rather than merely visible. Conversion
+points become named functions, which is where the normalisation and containment rules already want
+to live.
+
+**Cons:** esbuild's API is plain `string` on both sides, so every callback boundary needs an
+explicit conversion. Go's named string types are weak protection against a careless cast.
+
+**Context:** Declined once, deliberately, in favour of a diagram and a doc comment - the right
+trade while the copies are still scattered. `internal/utils/utils.go` is the natural seam:
+`UrlPathFromFsPath` is already documented as the one place the rule lives.
+
+**Depends on / blocked by:** `F-GOUTILS-1` step 2 below. Do that first, so there are three fewer
+conversion sites to type.
+
+**Effort:** L. **Priority:** P3.
+
+## Finish Windows support
+
+**What:** The path work behind issue #73. A CI probe (draft PR #79) already answered whether it is
+worth doing.
+
+**Why:** Windows is not blocked. The probe confirmed on `windows-latest` that the compiled DLL
+loads through Ruby FFI, that the 24 tracked fixture symlinks survive checkout given
+`core.symlinks`, `core.longpaths` and a `symlink=dir` attribute, and that the esbuild fork hands
+back OS-form paths. `go test` there runs 480 specs: 313 pass, 167 fail, all on one signature -
+`Plugin "bundler" returned a non-absolute path: fixtures\dummy\vendor\gem1\...`. Backslashes,
+and relative where the code assumed absolute.
+
+**Context:** The design is two predicates classified per call site, not one smarter predicate
+swapped in everywhere - that blanket swap is the February mistake inverted, and would break
+`bundler.go:263` and `resolve.go:109`. Slash-form internally with normalisation at the esbuild
+boundary, but keep `filepath` behind named helpers for genuine filesystem construction: `path.Join`
+collapses `//server/share` and does not understand drive roots. Note `css.go` hashes `args.Path`
+for CSS module class names and Ruby mirrors that hash, so changing the form of those paths changes
+user-visible class names silently.
+
+**Blocked by, but not on Proscenium:** `bin/test` cannot run on Windows because sqlite3's
+precompiled `x64-mingw-ucrt` gem fails to load with `127: The specified procedure could not be
+found`. Not the Ruby version - 3.3.12 fails identically, so sqlite3-ruby#628 does not describe it -
+and not a malformed artifact: its PE imports are 90 standard Ruby C API symbols against the correct
+DLL per ABI directory. The dummy app needs ActiveRecord, so the suite cannot boot. `go test` and
+the FFI-load CI step are the Windows coverage until this is solved.
+
+**Effort:** L. **Priority:** P3.
+
 ## Simplification audit
 
 ### Structural simplifications from the 2026-09-08 audit
