@@ -2,6 +2,9 @@ package proscenium_test
 
 import (
 	"encoding/json"
+	"os"
+	"path/filepath"
+
 	b "joelmoss/proscenium/internal/builder"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -27,18 +30,36 @@ var _ = Describe("Compile", func() {
 		Expect(result.Errors[0].Location.File).To(Equal("lib/css_modules/broken_import.module.css"))
 	})
 
-	// The delete of old assets joins RootPath and OutputDir; with OutputDir empty that is the
-	// application itself. This was reachable through `Builder.compile(OutputDir: nil)`.
-	It("refuses an empty output directory before deleting anything", func() {
-		testConfig.Precompile = []string{"./lib/foo.js"}
-		testConfig.OutputDir = ""
+	// The delete of old assets removes whatever OutputDir names. Empty joins to the application
+	// itself (reachable through `Builder.compile(OutputDir: nil)`), and `..` segments are cleaned by
+	// path.Join into something above it. Each of these deleted what it named before the guard.
+	DescribeTable("refuses an output directory that is not strictly inside the root",
+		func(outputDir string) {
+			base := GinkgoT().TempDir()
+			root := filepath.Join(base, "app")
+			keep := filepath.Join(base, "keep")
+			Expect(os.MkdirAll(root, 0o755)).To(Succeed())
+			Expect(os.MkdirAll(keep, 0o755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(keep, "precious.txt"), []byte("x"), 0o644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(root, "app.rb"), []byte("x"), 0o644)).To(Succeed())
 
-		success, messages := b.Compile(testConfig)
+			testConfig.RootPath = root
+			testConfig.Precompile = []string{"./lib/foo.js"}
+			testConfig.OutputDir = outputDir
 
-		Expect(success).To(BeFalse())
-		Expect(messages).To(ContainSubstring("No output directory specified"))
-		Expect(testConfig.RootPath).To(BeADirectory())
-	})
+			success, messages := b.Compile(testConfig)
+
+			Expect(success).To(BeFalse())
+			Expect(messages).To(ContainSubstring("Invalid output directory"))
+			Expect(filepath.Join(root, "app.rb")).To(BeARegularFile())
+			Expect(filepath.Join(keep, "precious.txt")).To(BeARegularFile())
+		},
+		Entry("empty", ""),
+		Entry("the root itself", "."),
+		Entry("the parent", ".."),
+		Entry("a sibling of the root", "../keep"),
+		Entry("a traversal hidden behind a subdirectory", "public/../../keep"),
+	)
 
 	It("reports a config that does not parse as a message", func() {
 		var result struct{ Errors []esbuild.Message }
