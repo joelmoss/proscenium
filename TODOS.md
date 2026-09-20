@@ -42,6 +42,56 @@ it through `resolveWithEsbuild` when the importer is in the rubygems namespace, 
 **Priority:** P4
 **Depends on:** None
 
+### Key the Bun daemon's build cache on the whole module graph
+
+**What:** `lib/proscenium/runtime/server.rb`'s `cached(:build, path, sourcemap)` keys an entry on
+the mtime of the keyed file alone. A bundled build inlines that file's whole import graph - and
+bundling is the default - so under `bun test --watch` editing any module a test imports serves the
+previous bundle until the test file itself is touched. Unbundled it is narrower but still real: a
+CSS module, an SVG and i18n data are inlined either way.
+
+**Why:** A watching suite can pass against bytes the app no longer produces, which is the one
+failure mode a test harness must not have. It only bites in `--watch`; a one-shot run builds once,
+which is why it was left as a marked shortcut (`server.rb:470`) rather than fixed with the daemon.
+
+**Context:** `Metafile: true` is already set in `internal/builder/build.go` and
+`build_to_string.go` already unmarshals the metafile to pick an output, so the input list exists
+inside Go and is thrown away. The fix is to key on the newest mtime across the metafile's inputs,
+which means returning them alongside the code - the same cgo surface question as "One esbuild build
+per module, not two", and `op_build` fetches through the middleware stack, which serves code only.
+One cheaper fallback if that is too much: key on the newest mtime under the app's source roots,
+which is coarse - any edit rebuilds every module - but needs nothing new across the boundary. The
+Bun plugin cannot help here; it sees `onResolve` and `onLoad` only, not what the watcher changed.
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** Nothing, though it shares a boundary change with the source map item.
+
+### Judge output directory containment after resolving symlinks
+
+**What:** `builder.OutputDirUnderRoot` (`internal/builder/compile.go`) compares root and target
+lexically with `filepath.Rel`, so a symlinked directory *component* in `OutputDir` escapes it: with
+`public` a symlink to `/etc`, `public/assets` passes the check and the `os.RemoveAll` below it
+deletes `/etc/assets`. Resolving the link itself is not the hole - `RemoveAll` unlinks a symlink
+rather than following it - only an intermediate component is.
+
+**Why:** Completes the containment work of `da4c285a`, `4f2983a7` and `ebfb2b78`, which closed the
+empty, `..` and absolute cases. Unlike the two items above this one is destructive rather than
+fail-closed - it deletes outside the root rather than failing a build that should pass - but it is
+reachable only through the developer's own `output_dir` against their own directory layout, and a
+symlinked `public` is unusual, which is why it is not urgent.
+
+**Context:** `filepath.EvalSymlinks` on both root and target before `Rel`, with the target's parent
+resolved when the target does not exist yet (the first compile), and `os.RemoveAll` then taking the
+resolved path rather than the lexical one. The plugins already do this for resolve dirs
+(`bundless.go:84`, `bundler.go:316`). `test/compile_test.go`'s table drives `OutputDirUnderRoot`
+directly, so the case is one entry plus a symlink the spec creates in a tempdir - not one checked
+into `fixtures/`, where it would not survive every platform and git config.
+
+**Effort:** S
+**Priority:** P4
+**Depends on:** None
+
 ## Simplification audit
 
 ### Structural simplifications from the 2026-09-08 audit
