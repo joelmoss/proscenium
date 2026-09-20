@@ -13,10 +13,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// A throwaway app root with one locale file and one entry point, cleaned up with the spec.
-// Returns the root and its locales directory.
-func i18nRoot() (string, string) {
-	root, err := os.MkdirTemp("", "proscenium-i18n")
+// A throwaway app root whose single locale file says `who: <who>`, plus an entry point that
+// imports the translations. Cleaned up with the spec. Returns the root and its locales directory,
+// because a caller that wants to change the directory itself needs both.
+func i18nRoot(who string) (string, string) {
+	root, err := os.MkdirTemp("", "proscenium-i18n-"+who)
 	Expect(err).NotTo(HaveOccurred())
 	DeferCleanup(func() {
 		Expect(os.RemoveAll(root)).To(Succeed())
@@ -25,7 +26,7 @@ func i18nRoot() (string, string) {
 	locales := filepath.Join(root, "config", "locales")
 	Expect(os.MkdirAll(locales, 0o755)).To(Succeed())
 	Expect(os.WriteFile(filepath.Join(locales, "en.yml"),
-		[]byte("en:\n  who: someone\n"), 0o644)).To(Succeed())
+		[]byte("en:\n  who: "+who+"\n"), 0o644)).To(Succeed())
 	Expect(os.WriteFile(filepath.Join(root, "entry.js"),
 		[]byte("import locales from \"proscenium/i18n\";\nconsole.log(locales);\n"), 0o644)).To(Succeed())
 
@@ -93,7 +94,7 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 			Skip("root reads a 0o111 directory regardless of its mode")
 		}
 
-		root, locales := i18nRoot()
+		root, locales := i18nRoot("someone")
 		// Registered after i18nRoot's own RemoveAll, so LIFO runs it first: RemoveAll cannot list
 		// a 0o111 directory, and a restore registered earlier would fail the cleanup and mask
 		// whatever this spec found.
@@ -105,13 +106,33 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 		success, result, _ := b.BuildToString("entry.js", i18nConfig(root))
 
 		Expect(success).To(BeFalse())
-		Expect(result).To(ContainSubstring("permission denied"))
+		Expect(result).To(ContainSubstring("could not read config/locales: permission denied"))
+		// The error reaches browsers and error trackers; the machine path stays out of it.
+		Expect(result).NotTo(ContainSubstring(root))
+	})
+
+	// A readable directory holding an unreadable file is the other half of the permission case:
+	// the listing and the stat both succeed, and only the read fails - a different error path, and
+	// one whose OS error names the file's absolute path.
+	It("fails the build when a locale file cannot be read", func() {
+		if os.Geteuid() == 0 {
+			Skip("root reads a 0o000 file regardless of its mode")
+		}
+
+		root, locales := i18nRoot("someone")
+		Expect(os.Chmod(filepath.Join(locales, "en.yml"), 0o000)).To(Succeed())
+
+		success, result, _ := b.BuildToString("entry.js", i18nConfig(root))
+
+		Expect(success).To(BeFalse())
+		Expect(result).To(ContainSubstring("could not read config/locales/en.yml: permission denied"))
+		Expect(result).NotTo(ContainSubstring(root))
 	})
 
 	// The other half of the same branch, and the reason it is a branch: an app with no locales at
 	// all is ordinary, not an error.
 	It("exports an empty payload when there is no locales directory", func() {
-		root, locales := i18nRoot()
+		root, locales := i18nRoot("someone")
 		Expect(os.RemoveAll(locales)).To(Succeed())
 
 		success, code, _ := b.BuildToString("entry.js", i18nConfig(root))
@@ -128,34 +149,17 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 		stamp := time.Now().Add(-time.Hour)
 
 		rootFor := func(name string) string {
-			root, err := os.MkdirTemp("", "proscenium-i18n-"+name)
-			Expect(err).NotTo(HaveOccurred())
-			DeferCleanup(func() {
-				Expect(os.RemoveAll(root)).To(Succeed())
-			})
-
-			locales := filepath.Join(root, "config", "locales")
-			Expect(os.MkdirAll(locales, 0o755)).To(Succeed())
-			Expect(os.WriteFile(filepath.Join(locales, "en.yml"),
-				[]byte("en:\n  who: "+name+"\n"), 0o644)).To(Succeed())
-			Expect(os.WriteFile(filepath.Join(root, "entry.js"),
-				[]byte("import locales from \"proscenium/i18n\";\nconsole.log(locales);\n"), 0o644)).To(Succeed())
+			root, locales := i18nRoot(name)
+			// The one thing this spec needs beyond a plain root: both directories carry the same
+			// mtime, so the change detector has nothing to react to and the keying is what is
+			// under test.
 			Expect(os.Chtimes(locales, stamp, stamp)).To(Succeed())
 
 			return root
 		}
 
 		for name, root := range map[string]string{"alpha": rootFor("alpha"), "beta": rootFor("beta")} {
-			cfg := &types.ConfigT{
-				RootPath:        root,
-				OutputDir:       "public/assets",
-				Environment:     types.TestEnv,
-				InternalTesting: true,
-				CodeSplitting:   true,
-				Bundle:          true,
-			}
-
-			success, code, _ := b.BuildToString("entry.js", cfg)
+			success, code, _ := b.BuildToString("entry.js", i18nConfig(root))
 			Expect(success).To(BeTrue())
 			Expect(code).To(ContainSubstring(`who: "`+name+`"`), "root %q served another root's locales", name)
 		}

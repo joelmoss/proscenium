@@ -3,6 +3,7 @@ package plugin
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/fs"
 	"joelmoss/proscenium/internal/types"
 	"os"
@@ -79,6 +80,18 @@ type i18nCache struct {
 	fileMtimes map[string]time.Time
 }
 
+// The cause of a filesystem error, without the absolute path the OS names in it. Build errors
+// reach the browser's error overlay, the logs and any error tracker, so the machine's paths stay
+// out of them - `6e046d87` removed a gem's install path for the same reason.
+func osCause(err error) error {
+	var pathErr *fs.PathError
+	if errors.As(err, &pathErr) {
+		return pathErr.Err
+	}
+
+	return err
+}
+
 func i18nCacheFor(root string) *i18nCache {
 	i18nCachesMutex.Lock()
 	defer i18nCachesMutex.Unlock()
@@ -91,7 +104,11 @@ func i18nCacheFor(root string) *i18nCache {
 // goroutines both produce that - and the assignment alone ordered the write, not the generations:
 // a slow build published its older payload over a newer one. The first to publish now wins, and
 // the loser returns its own payload rather than overwriting a generation newer than what it read.
-// The next build corrects the store, because the winner's file mtimes are compared against disk.
+// In development the next build corrects the store, because the winner's file mtimes are compared
+// against disk. Production has no such correction - the early return above serves the published
+// snapshot without a freshness check - so a refused newer payload would stick there. It takes
+// locale files changing while two cold builds for one root are mid-load, which a deployed app,
+// whose files do not move during a build, does not do.
 //
 // gstack-shortcut(dec-760a3bbc): no direct test - this is unexported and test/ is a separate
 // package. Upgrade when internal/ gets a test package (AUDIT.md pattern P7 needs one anyway), or
@@ -183,7 +200,8 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						// comparison below on every later build, so the empty payload was served
 						// for the life of the process and the error was never seen.
 						if !errors.Is(err, fs.ErrNotExist) {
-							return esbuild.OnLoadResult{}, err
+							return esbuild.OnLoadResult{}, fmt.Errorf(
+								"could not read config/locales: %w", osCause(err))
 						}
 
 						empty := "{}"
@@ -221,13 +239,15 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						// extracted for other reasons.
 						info, err := entry.Info()
 						if err != nil {
-							return esbuild.OnLoadResult{}, err
+							return esbuild.OnLoadResult{}, fmt.Errorf(
+								"could not read config/locales/%s: %w", entry.Name(), osCause(err))
 						}
 						fileMtimes[path] = info.ModTime()
 
 						data, err := os.ReadFile(path)
 						if err != nil {
-							return esbuild.OnLoadResult{}, err
+							return esbuild.OnLoadResult{}, fmt.Errorf(
+								"could not read config/locales/%s: %w", entry.Name(), osCause(err))
 						}
 
 						var yamlData map[string]any
