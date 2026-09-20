@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/types"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 
@@ -59,6 +60,29 @@ var _ = Describe("Compile", func() {
 		Entry("the parent", ".."),
 		Entry("a sibling of the root", "../keep"),
 		Entry("a traversal hidden behind a subdirectory", "public/../../keep"),
+	)
+
+	// Judged by relative path, not string prefix: a root of "/" or "." has no "<root>/" prefix to
+	// match, and a sibling that merely starts with the root's name is still outside it.
+	DescribeTable("OutputDirUnderRoot",
+		func(root string, outputDir string, want string, ok bool) {
+			got, gotOK := b.OutputDirUnderRoot(&types.ConfigT{RootPath: root, OutputDir: outputDir})
+
+			Expect(gotOK).To(Equal(ok))
+			if ok {
+				Expect(got).To(Equal(want))
+			}
+		},
+		Entry("a directory under the root", "/app", "public/assets", "/app/public/assets", true),
+		Entry("a nested directory with a redundant segment", "/app", "public/./x/../assets", "/app/public/assets", true),
+		Entry("a directory under a root of /", "/", "public/assets", "/public/assets", true),
+		Entry("a directory under a relative root", ".", "public/assets", "public/assets", true),
+		Entry("empty", "/app", "", "", false),
+		Entry("the root itself", "/app", ".", "", false),
+		Entry("the parent", "/app", "..", "", false),
+		Entry("a sibling whose name starts with the root's", "/app", "../app2", "", false),
+		Entry("above a root of /", "/", "..", "", false),
+		Entry("above a relative root", ".", "..", "", false),
 	)
 
 	It("reports a config that does not parse as a message", func() {
