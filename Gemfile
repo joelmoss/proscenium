@@ -34,4 +34,13 @@ group :test do
   gem 'minitest-focus'
   gem 'minitest-spec-rails'
   gem 'sqlite3'
+
+  # Windows has no system zoneinfo database, so TZInfo finds no data source and the dummy app
+  # cannot boot. Every other platform reads /usr/share/zoneinfo and never needs this.
+  #
+  # Deliberately not `platforms: :windows`. A platform-gated dependency is recorded in the
+  # lockfile's DEPENDENCIES but resolved to no spec, so the Windows job would have to re-resolve
+  # it at install time instead of installing what the lockfile says. It is a data gem with no
+  # extension, so carrying it everywhere costs a megabyte and nothing else.
+  gem 'tzinfo-data'
 end

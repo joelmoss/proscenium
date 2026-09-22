@@ -159,6 +159,8 @@ GEM
     debug (1.11.1)
       irb (~> 1.10)
       reline (>= 0.3.8)
+    difftastic (0.8.0)
+      pretty_please
     difftastic (0.8.0-arm64-darwin)
       pretty_please
     difftastic (0.8.0-x86_64-linux)
@@ -170,6 +172,7 @@ GEM
     erubi (1.13.1)
     fakefs (3.2.1)
     ffi (1.17.4-arm64-darwin)
+    ffi (1.17.4-x64-mingw-ucrt)
     ffi (1.17.4-x86_64-linux-gnu)
     globalid (1.4.0)
       activesupport (>= 6.1)
@@ -220,6 +223,8 @@ GEM
       net-protocol
     nio4r (2.7.5)
     nokogiri (1.19.4-arm64-darwin)
+      racc (~> 1.4)
+    nokogiri (1.19.4-x64-mingw-ucrt)
       racc (~> 1.4)
     nokogiri (1.19.4-x86_64-linux-gnu)
       racc (~> 1.4)
@@ -318,12 +323,15 @@ GEM
     ruby-progressbar (1.13.0)
     securerandom (0.4.1)
     sqlite3 (2.9.6-arm64-darwin)
+    sqlite3 (2.9.6-x64-mingw-ucrt)
     sqlite3 (2.9.6-x86_64-linux-gnu)
     thor (1.5.0)
     timeout (0.6.1)
     tsort (0.2.0)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    tzinfo-data (1.2026.4)
+      tzinfo (>= 1.0.0)
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.2.0)
@@ -343,6 +351,7 @@ PLATFORMS
   arm64-darwin-23
   arm64-darwin-24
   arm64-darwin-25
+  x64-mingw-ucrt
   x86_64-linux
 
 DEPENDENCIES
@@ -371,6 +380,7 @@ DEPENDENCIES
   rubocop-performance
   rubocop-rake
   sqlite3
+  tzinfo-data
 
 BUNDLED WITH
   4.0.7
