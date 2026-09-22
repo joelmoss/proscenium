@@ -1,0 +1,4 @@
+# Git for Windows chooses per link whether to create a file symlink or a directory symlink, and a
+# file symlink pointing at a directory cannot be traversed. Every tracked link under this tree
+# points at a directory, and the resolver tests walk through them.
+fixtures/dummy/node_modules/** symlink=dir

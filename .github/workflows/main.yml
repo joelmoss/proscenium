@@ -13,11 +13,31 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
       GOWORK: off
     steps:
+      # The fixture tree under fixtures/dummy/node_modules is 24 tracked symlinks, all pointing
+      # at directories, and most of what the resolver tests exercise routes through them. Git for
+      # Windows defaults core.symlinks to false, which checks them out as text files holding
+      # their target path - the tests then fail for a reason that has nothing to do with the code
+      # under test. `symlink=dir` in .gitattributes is the other half: Git for Windows picks file
+      # or directory symlinks per link, and a file symlink to a directory cannot be traversed.
+      #
+      # longpaths because the deepest tracked path is 185 characters and the runner's workspace
+      # prefix takes it to roughly 212, which is close enough to the 260 limit to matter.
+      #
+      # autocrlf because the runner defaults it on, and the fixtures are test data: a CRLF
+      # checkout changes their bytes, and esbuild's chunk hash is built from file contents. Every
+      # other assertion here compares code through a whitespace-normalising matcher and cannot
+      # see the difference, so it surfaced as one chunk name disagreeing and nothing else.
+      - name: Windows checkout needs symlinks and long paths
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+          git config --global core.autocrlf false
       - uses: actions/checkout@v7
       - uses: actions/setup-go@v6
         with:
@@ -28,15 +48,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         rails: [rails_7.2, rails_8, rails_8.1]
         # Rails-version differences are OS-independent; OS differences are the Go shared library
         # and FFI, which go-test and bun-test already cover on macOS. One macOS Rails job is
-        # enough, and it keeps the run under the macOS runner concurrency cap.
+        # enough, and it keeps the run under the macOS runner concurrency cap. One Windows cell
+        # for the same reason, and because Windows runners are the slowest of the three.
         exclude:
           - os: macos-latest
             rails: rails_7.2
           - os: macos-latest
+            rails: rails_8
+          - os: windows-latest
+            rails: rails_7.2
+          - os: windows-latest
             rails: rails_8
     runs-on: ${{ matrix.os }}
     env:
@@ -46,6 +71,14 @@ jobs:
       # that one, instead of `appraisal install` resolving every gemfile uncached on every run.
       BUNDLE_GEMFILE: ${{ github.workspace }}/gemfiles/${{ matrix.rails }}.gemfile
     steps:
+      # See the note in go-test: the fixture symlinks do not survive a default Windows checkout.
+      - name: Windows checkout needs symlinks and long paths
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+          git config --global core.autocrlf false
+
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
@@ -56,19 +89,68 @@ jobs:
         with:
           bundler-cache: true
 
-      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os != 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os == 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
+
+      # The narrowest check that the FFI boundary works on this platform: open the compiled
+      # library and attach every exported function, and nothing else. Deliberately before
+      # bin/test, which boots a Rails app - anything broken in a third-party gem there masks
+      # this, as sqlite3's native extension once did on Windows. Requiring
+      # proscenium first because builder.rb needs Proscenium::Error at class-definition time.
+      #
+      # Failing on the pin warning as well, because builder.rb only warns - a user should not lose
+      # their app over it - and a warning nobody reads is how a failed pin would go unnoticed.
+      - name: The compiled library loads
+        shell: bash
+        run: |
+          # `|| status=$?`, because the step runs under `bash -e`: a bare failing assignment would
+          # exit before the echo, and the load error would never reach the log.
+          status=0
+          out=$(bundle exec ruby -Ilib -rpathname -e '
+            require "proscenium"
+            require "proscenium/builder"
+            puts "FFI OK, loaded #{Proscenium::Builder::LIBRARY_PATH}"
+          ' 2>&1) || status=$?
+          echo "$out"
+          [ "$status" -eq 0 ] || exit "$status"
+          if grep -q "could not pin" <<<"$out"; then exit 1; fi
+
+      # Windows only, and not a formality: ffi calls FreeLibrary on the Go library during VM
+      # teardown, which used to segfault the interpreter on roughly three runs in five. The
+      # module pin in builder.rb is what stops it, and a flaky crash needs repetition to catch -
+      # a single run passing proves nothing. See the comment above the pin.
+      - name: The interpreter exits cleanly with the library loaded
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          for i in 1 2 3 4 5; do
+            bundle exec ruby -Ilib -e 'require "proscenium"; require "proscenium/builder"'
+            echo "run $i exited $?"
+          done
+
       - run: bin/test
+        shell: bash
 
   bun-test:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
       GOWORK: off
     steps:
+      # See the note in go-test: the fixture symlinks do not survive a default Windows checkout.
+      - name: Windows checkout needs symlinks and long paths
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+          git config --global core.autocrlf false
+
       - uses: actions/checkout@v7
 
       - uses: actions/setup-go@v6
@@ -85,11 +167,15 @@ jobs:
         with:
           bun-version: 1.3.13
 
-      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os != 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os == 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
 
       # fixtures/dummy's node_modules is committed, because its @rubygems/* dependencies are
       # served by the app's own registry and a clean install would need it running.
       - run: bun test test/js/
+        shell: bash
         working-directory: fixtures/dummy
 
   rubocop:
