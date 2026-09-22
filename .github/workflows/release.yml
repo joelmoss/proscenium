@@ -328,12 +328,24 @@ jobs:
           DOCKER_PLATFORM: ${{ matrix.platform }}
         run: bin/verify-gem "${{ matrix.image }}" "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}"
 
-  # The same checks as `verify`, on Windows itself: a container cannot run there, so
-  # bin/verify-installed-gem runs directly. The index holds every gem, so this is also where a
-  # Windows host is shown to pick the Windows gem over the platform-less one.
-  verify-windows:
+  # The same checks as `verify`, on the hosts that cannot run a Linux container: Windows, and macOS
+  # for the darwin gems, which until this leg were published without ever being installed
+  # anywhere. bin/verify-installed-gem runs directly on each. The index holds every gem, so this is
+  # also where each host is shown to pick its own platform gem over the platform-less one.
+  verify-native:
     needs: [platforms, build-darwin, build-linux, build-windows, build-plain]
-    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: windows-latest
+            expect: x64-mingw-ucrt
+          - runner: macos-latest
+            expect: arm64-darwin
+          # Intel, because an arm64 Mac would resolve the arm64 gem.
+          - runner: macos-15-intel
+            expect: x86_64-darwin
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -346,23 +358,26 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.3'
-      # One step, because the index server is a background process of this shell.
+      # One step, because the index server is a background process of this shell. Windows names
+      # its Python `python`; macOS only has `python3`.
       - name: Serve the built gems from a local index, and install from it
         shell: bash
+        env:
+          PYTHON: ${{ runner.os == 'Windows' && 'python' || 'python3' }}
         run: |
           gem install rubygems-generate_index --no-document
           gem generate_index -d index
           test -s index/info/proscenium || { echo "::error::index is empty - check the gems/ layout"; exit 1; }
-          python -m http.server 8808 --directory index >index.log 2>&1 &
+          "$PYTHON" -m http.server 8808 --directory index >index.log 2>&1 &
           for _ in $(seq 30); do
             curl -sf http://localhost:8808/versions >/dev/null && break
             sleep 1
           done
           curl -sf http://localhost:8808/versions >/dev/null || { echo "::error::local gem index never came up"; cat index.log; exit 1; }
-          sh bin/verify-installed-gem "${{ needs.platforms.outputs.version }}" x64-mingw-ucrt http://localhost:8808
+          sh bin/verify-installed-gem "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}" http://localhost:8808
 
   publish:
-    needs: [platforms, verify, verify-windows]
+    needs: [platforms, verify, verify-native]
     if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
     runs-on: ubuntu-latest
     environment: release
