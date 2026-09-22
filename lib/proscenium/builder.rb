@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require 'ffi'
+require 'pathname'
+require_relative 'error'
 
 module Proscenium
   class Builder

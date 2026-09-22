@@ -1,0 +1,54 @@
+#!/bin/sh
+# Install Proscenium from a gem index the way a user gets it, then prove the library it resolved
+# loads and runs.
+#
+# Run inside a container by bin/verify-gem, and directly on a Windows runner, which has no
+# container to run it in. Plain sh, so it runs in both.
+#
+# Usage: bin/verify-installed-gem <version> <expected-platform> <source-url>
+set -eu
+
+version=${1:?usage: verify-installed-gem <version> <expected-platform> <source-url>}
+expected=${2:?usage: verify-installed-gem <version> <expected-platform> <source-url>}
+source_url=${3:?usage: verify-installed-gem <version> <expected-platform> <source-url>}
+
+# Proscenium alone, from the index under test. --clear-sources so nothing else can supply it.
+# --ignore-dependencies because that index holds only Proscenium: without it, the install fails
+# resolving rails, which is not what is under test. Resolution still chooses between the platform
+# variants, and that choice is the point.
+gem install proscenium -v "$version" --clear-sources --source "$source_url" \
+  --ignore-dependencies --no-document
+
+# ffi is the one dependency loading the library needs, installed from RubyGems at whatever the
+# gem asks for.
+ffi=$(ruby -e 'puts Gem::Specification.find_by_name("proscenium").dependencies.find { |d| d.name == "ffi" }.requirement')
+gem install ffi -v "$ffi" --no-document
+
+EXPECTED="$expected" ruby -e '
+  spec = Gem::Specification.find_by_name("proscenium")
+  puts "resolved platform: #{spec.platform}"
+  abort "expected #{ENV.fetch("EXPECTED")}, resolved #{spec.platform}" unless spec.platform.to_s == ENV.fetch("EXPECTED")
+'
+
+# Then load it and call into Go, five times, each run required to exit cleanly. Loading is what a
+# file listing cannot prove: a gem can carry a library for the wrong platform and still install.
+# reset_config is the one entry point that needs no Rails app, and calling it starts the Go
+# runtime - which is what crashed the interpreter at exit on Windows, three runs in five, before
+# builder.rb pinned the library. One clean exit proves nothing about an intermittent crash.
+#
+# A failed pin only warns, so the warning fails this too.
+#
+# Loaded from the installed gem's own lib directory rather than by activating the gem: activation
+# resolves its dependencies, and rails is deliberately not installed. These are still exactly the
+# installed gem's files.
+lib=$(ruby -e 'print File.join(Gem::Specification.find_by_name("proscenium").full_gem_path, "lib")')
+for run in 1 2 3 4 5; do
+  if ! out=$(ruby -I "$lib" -e 'require "proscenium/builder"; Proscenium::Builder.reset_config!' 2>&1); then
+    printf '%s\n' "$out"
+    echo "run $run: failed" >&2
+    exit 1
+  fi
+  [ -z "$out" ] || printf '%s\n' "$out"
+  case "$out" in *"could not pin"*) echo "run $run: the library was not pinned" >&2; exit 1 ;; esac
+  echo "run $run: loaded, called into Go, exited cleanly"
+done
