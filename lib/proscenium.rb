@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'active_support'
+require_relative 'proscenium/error'
 
 module Proscenium
   extend ActiveSupport::Autoload
@@ -45,8 +46,6 @@ module Proscenium
       Kernel.warn msg
     end
   end
-
-  class Error < StandardError; end
 
   class MissingAssetError < Error
     def initialize(path)

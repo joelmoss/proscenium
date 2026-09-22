@@ -36,11 +36,30 @@ class Proscenium::PackagingTest < ActiveSupport::TestCase
     it 'includes the compiled library when the platform build tasks ask for it' do
       # Guards the other direction: a gate that excluded the library unconditionally would pass
       # the test above and ship six platform gems with nothing in them.
-      skip 'no compiled library present - run `rake compile:local`' unless ROOT.join(
-        'lib/proscenium/ext/proscenium'
-      ).exist?
+      #
+      # Named through LIBRARY_NAME, which is `proscenium.dll` on Windows: a hard-coded name found
+      # nothing there, so this skipped on the one platform whose gem was still to be built.
+      library = "lib/proscenium/ext/#{Proscenium::Builder::LIBRARY_NAME}"
+      skip 'no compiled library present - run `rake compile:local`' unless ROOT.join(library).exist?
 
-      assert_includes gemspec_ext_files(package_ext: true), 'lib/proscenium/ext/proscenium'
+      assert_includes gemspec_ext_files(package_ext: true), library
+    end
+  end
+
+  # The release workflow proves each built gem by loading its library from an installed copy with
+  # no Rails and no app (bin/verify-installed-gem), so builder.rb has to load on its own. It used
+  # to subclass Proscenium::Error, defined only in lib/proscenium.rb, and failed with a NameError.
+  describe 'the builder' do
+    it 'loads and calls into Go without the rest of the gem' do
+      _, err, status = Open3.capture3(
+        RbConfig.ruby, '-I', ROOT.join('lib').to_s,
+        # Aborts if anything pulled Rails in, because then this would prove nothing.
+        '-e', 'require "proscenium/builder"; Proscenium::Builder.reset_config!; ' \
+              'abort "Rails was loaded" if defined?(Rails)',
+        chdir: ROOT.to_s
+      )
+
+      assert_predicate status, :success?, "builder.rb did not load on its own: #{err}"
     end
   end
 
