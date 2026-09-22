@@ -114,9 +114,12 @@ golangci-lint run
 
 ## CI
 
-- GitHub Actions (`.github/workflows/main.yml`): runs on ubuntu-latest + macos-latest
+- GitHub Actions (`.github/workflows/main.yml`): runs on ubuntu-latest, macos-latest and windows-latest.
+  The Windows jobs check out with `core.symlinks`, `core.longpaths` and `core.autocrlf false`; see
+  the comment in go-test for why each one matters
 - CI sets `GOWORK=off` and `RAILS_ENV=test`
 - CI compiles Go with: `go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go`
+  (`proscenium.dll` on Windows)
 - Rubocop runs with `-P --fail-level C`
 
 ## Go Package Structure
@@ -154,11 +157,13 @@ library with `dlopen`. The build succeeds and is correctly musl-linked; it simpl
 That is [golang/go#54805](https://github.com/golang/go/issues/54805), and the linker flag that
 fixes it is in neither Go 1.25 nor 1.27. Revisit when it ships - nothing else needs to change.
 
-**Windows is not blocked, just unfinished.** A CI probe confirmed the DLL loads through FFI on
-`windows-latest`, the fixture symlinks survive checkout, and the esbuild fork hands back OS-form
-paths. What remains is the path work. Note `xgo` cannot build the Windows DLL - it fails with
-`x86_64-w64-mingw32-ld: export_file.def:1: syntax error` - so Windows must build natively on a
-`windows-latest` runner, the way darwin builds natively on macOS.
+**Windows passes CI but is not released yet.** `go test`, `bin/test` and `bun test` all run green
+on `windows-latest`, and the path work is done - see the TWO PATH SPACES comment in
+`internal/utils/utils.go` for the convention, and `Utils.fs_path` for its Ruby side. What remains
+is packaging: there is no `x64-mingw-ucrt` entry in `PLATFORMS` and no Windows leg in the release
+workflow, so no Windows gem is built or published. Note `xgo` cannot build the Windows DLL - it
+fails with `x86_64-w64-mingw32-ld: export_file.def:1: syntax error` - so Windows must build
+natively on a `windows-latest` runner, the way darwin builds natively on macOS.
 
 ## Releasing
 

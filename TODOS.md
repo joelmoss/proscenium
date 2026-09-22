@@ -121,39 +121,66 @@ explicit conversion. Go's named string types are weak protection against a carel
 trade while the copies are still scattered. `internal/utils/utils.go` is the natural seam:
 `UrlPathFromFsPath` is already documented as the one place the rule lives.
 
-**Depends on / blocked by:** `F-GOUTILS-1` step 2 below. Do that first, so there are three fewer
-conversion sites to type.
+**Depends on / blocked by:** Nothing now. `F-GOUTILS-1` step 2's fs-to-URL half landed with the
+Windows work, which is what this waited on: the three hand-spelled conversion copies are gone.
+Windows also gave the convention a doc comment (TWO PATH SPACES, in `internal/utils/utils.go`), two
+named predicates, and three ingress doors, which are the seams types would go on.
 
 **Effort:** L. **Priority:** P3.
 
-## Finish Windows support
+## Ship a Windows gem
 
-**What:** The path work behind issue #73. A CI probe (draft PR #79) already answered whether it is
-worth doing.
+**What:** Build and publish an `x64-mingw-ucrt` platform gem. Add it to `PLATFORMS` in the
+Rakefile, and give the release workflow a job that builds the DLL natively on `windows-latest` -
+`xgo` cannot, it fails with `x86_64-w64-mingw32-ld: export_file.def:1: syntax error`. Then a
+Windows leg for `bin/verify-gem`, so the published archive is installed and loaded at least once
+before it ships.
 
-**Why:** Windows is not blocked. The probe confirmed on `windows-latest` that the compiled DLL
-loads through Ruby FFI, that the 24 tracked fixture symlinks survive checkout given
-`core.symlinks`, `core.longpaths` and a `symlink=dir` attribute, and that the esbuild fork hands
-back OS-form paths. `go test` there runs 480 specs: 313 pass, 167 fail, all on one signature -
-`Plugin "bundler" returned a non-absolute path: fixtures\dummy\vendor\gem1\...`. Backslashes,
-and relative where the code assumed absolute.
+**Why:** Everything else for issue #73 is done. `go test`, `bin/test` and `bun test` all pass on
+`windows-latest` (draft PR #79). What it took, for whoever touches it next:
 
-**Context:** The design is two predicates classified per call site, not one smarter predicate
-swapped in everywhere - that blanket swap is the February mistake inverted, and would break
-`bundler.go:263` and `resolve.go:109`. Slash-form internally with normalisation at the esbuild
-boundary, but keep `filepath` behind named helpers for genuine filesystem construction: `path.Join`
-collapses `//server/share` and does not understand drive roots. Note `css.go` hashes `args.Path`
-for CSS module class names and Ruby mirrors that hash, so changing the form of those paths changes
-user-visible class names silently.
+- the TWO PATH SPACES convention in `internal/utils/utils.go`: two absoluteness predicates chosen
+  per call site, slash-form paths internally, normalised at the three doors esbuild comes through;
+  and `Utils.fs_path` on the Ruby side, for the metafile and for the paths Bun hands the harness.
+- two esbuild fork fixes: `CssLocalHash` hashing a separator-independent path, and the metafile
+  quoting paths it substituted into already-quoted JSON strings.
+- a module pin in `builder.rb`, because ffi calls `FreeLibrary` on the Go library at VM teardown
+  and Go cannot be unloaded - it crashed the interpreter on about three exits in five.
+- sqlite3 >= 2.8.1 (locked at 2.9.6): Ruby 3.4.5 moved `clock_gettime` out of the Ruby DLL, and
+  older precompiled sqlite3 gems still import it from there, failing with `127`. Plus
+  `tzinfo-data`, because Windows has no zoneinfo.
+- checkout with `core.symlinks`, `core.longpaths` and `core.autocrlf false`. The last matters
+  because esbuild's chunk hash is built from file bytes.
 
-**Blocked by, but not on Proscenium:** `bin/test` cannot run on Windows because sqlite3's
-precompiled `x64-mingw-ucrt` gem fails to load with `127: The specified procedure could not be
-found`. Not the Ruby version - 3.3.12 fails identically, so sqlite3-ruby#628 does not describe it -
-and not a malformed artifact: its PE imports are 90 standard Ruby C API symbols against the correct
-DLL per ABI directory. The dummy app needs ActiveRecord, so the suite cannot boot. `go test` and
-the FFI-load CI step are the Windows coverage until this is solved.
+Also README's supported-platforms table, which has no Windows row, and the plan's Phase 5 doc
+note. The plan itself, with what changed from it, is `docs/plans/73-expand-os-support.md`.
 
-**Effort:** L. **Priority:** P3.
+**Effort:** M. **Priority:** P2.
+
+## Windows path edge cases the #79 review could not settle
+
+**What:** Five things found in the pre-merge review of PR #79 that need a Windows host, or a
+decision, rather than a fix from a Mac.
+
+- **Case.** Roots are compared as exact text everywhere: `bundler.go`'s alias lookup,
+  `GemFromFsPath`, `UrlPathFromFsPath`, `Resolver.resolve`, `Manifest.load!`. On Windows
+  `filepath.EvalSymlinks` returns the on-disk case and an upper-case drive letter, while Rails.root
+  is spelled however Ruby got it. A mismatch skips an alias, or sends a filesystem path out as a
+  URL, silently. CI has not hit it; the plan said to decide this on evidence, and there is none
+  yet either way.
+- **Junctions.** pnpm links with junctions on Windows, and Go 1.23+ `filepath.EvalSymlinks` may no
+  longer resolve them. CI checks the fixtures out as git symlinks, so this is untested.
+- **`bundler.go`'s alias lookup** trims the root with a bare `strings.TrimPrefix` - the missing
+  boundary `rootPathToUrlPath` had. Predates #79, and only misses or mismatches an alias, but it
+  belongs with the rest of `F-GOUTILS-1` step 2.
+- **`resolver.rb`'s gem branch** builds a regex from a gem path without escaping it, so a gem path
+  containing `+` or `(` silently fails to match. `delete_prefix` is the fix. Predates #79.
+- **`bundless.go`** sends a URL-rooted import with an extension to FINISH, where
+  `UrlPathFromFsPath` reads it as a filesystem path: with an app root of `/app`, which is
+  Docker's usual WORKDIR, `import "/app/components/x.js"` becomes `/components/x.js`. Predates
+  #79; the old `rootPathToUrlPath` did the same.
+
+**Effort:** S each, given a Windows host. **Priority:** P3.
 
 ## Simplification audit
 
@@ -170,7 +197,8 @@ section before starting anything: it is the final adjudication and overrides the
 priorities earlier in that file, rejecting three findings, demoting five and reversing one
 dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** `F-GOUTILS-1`'s step 2, then step 3. `F-GORESOLVE-1` landed in `8452092a`, so all three
+**Next:** the rest of `F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3. The
+fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so all three
 `@rubygems` consumers are done (pass 4 ruling 1, consumers-by-deletion first). Nothing still
 open misserves or crashes on a client-supplied URL - the two that did, and the two `internal/css`
 defects before them, are fixed. What remains is materiality rather than breakage. Several findings
@@ -200,13 +228,11 @@ them; fold that in here. No fixture alias uses `..`. Also from that review: alia
 both hops at import time when bundling, but only the first when unbundled - the second happens
 on the browser's request, and needs the intermediate file to exist in the first gem.
 
-**The other direction, file path to URL path, has one home now.** `utils.UrlPathFromFsPath`
-(`8452092a`) answers it for `resolve.go` and `plugin/css.go`, gem roots first, then the app root
-matched at a "/" boundary. Three copies remain: `dirname.go:32`, and `bundler.go:356` /
-`bundless.go:406` through `rootPathToUrlPath` (`bundless.go:427`), which has no boundary - root
-`/app` claims `/app-other/x.css`, the hole `8284d26c` closed for gem roots. Step 2 moves those
-three to the helper and deletes `rootPathToUrlPath`. The plugins need the "leave the path
-unchanged" arm when neither root matches, which is why they did not move with the first two.
+**The other direction, file path to URL path, is done.** `utils.UrlPathFromFsPath` is the only
+spelling: `resolve.go` and `plugin/css.go` since `8452092a`, and `dirname.go`, `bundler.go` and
+`bundless.go` since the Windows work on PR #79, which deleted `rootPathToUrlPath` and
+with it the missing boundary - root `/app` no longer claims `/app-other/x.css`.
+`test/dirname_boundary_test.go` pins that, and fails against both naive migrations.
 
 **Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). One item
 left: finding 2, vendor's `immutable, max-age=100.years` on an unversioned URL. It is a one-header
