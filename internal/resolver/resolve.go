@@ -8,6 +8,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
+	"path/filepath"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -66,7 +67,7 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 			return returnResolve("", "", errors.New("relative paths are not supported when an importer is not given"), cfg)
 		}
 
-		joined := path.Join(path.Dir(importer), filePath)
+		joined := utils.JoinFsPath(path.Dir(importer), filePath)
 
 		// Under neither root, the path used to go out unchanged: an absolute file system path
 		// as a URL. The error names the import as written and the importer's file name, not the
@@ -92,7 +93,7 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		rootPath = gem.Root
 
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve(gem.UrlPath(), path.Join(gem.Root, gem.Suffix), nil, cfg)
+			return returnResolve(gem.UrlPath(), utils.JoinFsPath(gem.Root, gem.Suffix), nil, cfg)
 		}
 
 		if gem.Suffix == "" {
@@ -102,11 +103,29 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		}
 	} else if !utils.IsBareModule(filePath) {
 		if _, ok := utils.HasExtension(filePath); ok {
-			return returnResolve(filePath, path.Join(rootPath, filePath), nil, cfg)
+			// A Windows drive or UNC path, which names a file rather than a URL. Ruby maps one under
+			// Rails.root itself, so this is reached when that prefix match missed. Treated as the
+			// relative branch above treats a joined path: served from the URL it maps to, or
+			// refused - it used to go out as the URL, with the drive joined onto the root a second
+			// time for the file. A volume name rather than the absoluteness predicates, because a
+			// UNC path is "//"-rooted and looks URL-rooted to them; outside Windows it is always
+			// empty, so nothing else changes.
+			if filepath.VolumeName(filePath) != "" {
+				urlPath, ok := utils.UrlPathFromFsPath(filePath, cfg)
+				if !ok {
+					// filepath.Base, not path.Base: this can be a backslash path, and path.Base would
+					// hand the whole machine path to the error, which reaches browsers.
+					return returnResolve("", "", fmt.Errorf("%q is outside the app root and every bundled gem", filepath.Base(filePath)), cfg)
+				}
+
+				return returnResolve(urlPath, utils.JoinFsPath(filePath), nil, cfg)
+			}
+
+			return returnResolve(filePath, utils.JoinFsPath(rootPath, filePath), nil, cfg)
 		}
 
-		// Replace leading slash with `./` for absolute paths.
-		if path.IsAbs(filePath) {
+		// URL-root, not fs-absolute: a drive path turned into "./" here would become ".C:/...".
+		if utils.UrlPathIsAbs(filePath) {
 			filePath = "." + filePath
 		}
 	}
@@ -158,10 +177,10 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	}
 
 	if isGem {
-		return returnResolve(utils.GemRef{Name: gem.Name, Root: gem.Root, Suffix: "/" + key}.UrlPath(), path.Join(gem.Root, key), nil, cfg)
+		return returnResolve(utils.GemRef{Name: gem.Name, Root: gem.Root, Suffix: "/" + key}.UrlPath(), utils.JoinFsPath(gem.Root, key), nil, cfg)
 	}
 
-	return returnResolve("/"+key, path.Join(rootPath, key), nil, cfg)
+	return returnResolve("/"+key, utils.JoinFsPath(rootPath, key), nil, cfg)
 }
 
 func returnResolve(urlPath string, absPath string, err error, cfg *types.ConfigT) (string, string, error) {

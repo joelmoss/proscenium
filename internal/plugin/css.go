@@ -19,12 +19,17 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 		Setup: func(build esbuild.PluginBuild) {
 			build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+					// The first door: esbuild hands back the path in OS form. It is converted
+					// before anything reads it, because ast.CssLocalHash below is fed this exact
+					// string and Ruby mirrors that hash from a slash-form path.
+					args.Path = filepath.ToSlash(args.Path)
+
 					debug.Debug(cfg.Debug, "OnLoad:begin", args)
 
 					pluginData := types.PluginDataOf(args.PluginData)
 
 					if args.Namespace == "rubygems" && pluginData.RealPath != "" {
-						args.Path = pluginData.RealPath
+						args.Path = filepath.ToSlash(pluginData.RealPath)
 					}
 
 					isCssModule := utils.PathIsCssModule(args.Path)
@@ -64,8 +69,16 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 							// Proscenium::Utils.css_module_suffix (lib/proscenium/utils.rb) mirrors this in
 							// Ruby, for the class names a view emits. Change them together;
 							// test/css_module/suffix_test.rb checks that they agree.
-							relPath, _ := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
-							hashIdent = hashIdent + "_" + ast.CssLocalAppendice(relPath)
+							//
+							// Slash-form, because Ruby builds its half from a slash-form path and the fork
+							// folds separators only in Windows absolute paths. A path on another drive
+							// than the app has no relative form, and falls back to itself: that is what
+							// esbuild's MakePrettyPaths does for the stylesheet's own class names.
+							relPath, err := filepath.Rel(build.InitialOptions.AbsWorkingDir, args.Path)
+							if err != nil {
+								relPath = args.Path
+							}
+							hashIdent = hashIdent + "_" + ast.CssLocalAppendice(filepath.ToSlash(relPath))
 						}
 
 						contents := strings.TrimSpace(string(cssResult.OutputFiles[0].Contents))
@@ -116,7 +129,7 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 						Contents:   &contents,
 						Loader:     loader,
 						Warnings:   cssWarningsToMessages(warnings),
-						ResolveDir: filepath.Dir(args.Path),
+						ResolveDir: filepath.ToSlash(filepath.Dir(args.Path)),
 					}
 
 					// A gem stylesheet's imports resolve from the gem. bundless's OnLoad attaches the gem
@@ -141,6 +154,8 @@ func cssOnly(cfg *types.ConfigT) esbuild.Plugin {
 			// Parse CSS files.
 			build.OnLoad(esbuild.OnLoadOptions{Filter: `\.css$`},
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+					args.Path = filepath.ToSlash(args.Path)
+
 					debug.Debug(cfg.Debug, "cssOnly.OnLoad", args)
 
 					contents, warnings, err := css.ParseCssFile(args.Path, cfg)

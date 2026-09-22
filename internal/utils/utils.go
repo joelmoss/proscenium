@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
+	"path/filepath"
 	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
@@ -44,10 +45,58 @@ func HasExtension(name string) (extension string, found bool) {
 }
 
 func IsBareModule(name string) bool {
-	return !strings.HasPrefix(name, "unbundle:") && !path.IsAbs(name) && !PathIsRelative(name)
+	return !strings.HasPrefix(name, "unbundle:") && !UrlPathIsAbs(name) && !FsPathIsAbs(name) &&
+		!PathIsRelative(name)
 }
 
 var IsBareSpecifier = IsBareModule
+
+//                    TWO PATH SPACES, ONE STRING TYPE
+//
+//  URL space                                Filesystem space
+//  always "/"                               OS-form: "/" or "\\", maybe "C:"
+//  what the browser asks for                what esbuild and os.* hand back
+//
+//  /app/views/x.css                         /Users/j/app/app/views/x.css
+//  /node_modules/@rubygems/foo/a.js         C:\\Users\\j\\app\\app\\views\\x.css
+//          ^                                            |
+//          |  UrlPathFromFsPath                         |  filepath.ToSlash at ingress
+//          |  GemRef.UrlPath()                          v
+//          +-------------------------------------  C:/Users/j/app/...
+//
+// Every path held in a Go variable below the esbuild boundary is slash-form. Go's os package and
+// the Win32 API both accept "/", and Ruby cooperates: Rails.root.to_s and
+// Gem::Specification#full_gem_path are slash-form on Windows too. Paths arriving from esbuild are
+// converted once, at the door, and paths built for esbuild go through JoinFsPath.
+//
+// ABSOLUTENESS IS SPACE-DEPENDENT, so there are two predicates and never one. Using a
+// drive-letter-aware check where the question is "is this rooted at the app?" produces
+// C:/app/C:/app/x.js; using the URL check where the question is "is this a real file?" sends a
+// resolved Windows path back round the resolver as though it were relative. The site's own
+// comment says which question it is asking.
+
+// UrlPathIsAbs reports whether p is rooted in URL space: the browser asked for it from the app
+// root. "C:/app/x.js" is not - it is a filesystem path that happens to be absolute.
+func UrlPathIsAbs(p string) bool {
+	return strings.HasPrefix(p, "/")
+}
+
+// FsPathIsAbs reports whether p names a file from the filesystem root: a leading "/", or a
+// Windows drive or UNC root when running on Windows. filepath.IsAbs alone is not enough, because
+// it answers false for "/app/x.js" on Windows, and that is the form every path takes here.
+func FsPathIsAbs(p string) bool {
+	return strings.HasPrefix(p, "/") || filepath.IsAbs(p)
+}
+
+// JoinFsPath joins filesystem path segments and returns the result in slash-form.
+//
+// filepath.Join rather than path.Join because only filepath understands what it is joining on
+// Windows: path.Join collapses "//server/share" to "/server/share", destroying a UNC root, and
+// does not know where a drive root ends when it cleans away "..". ToSlash then puts the result
+// back into the one form everything below the boundary uses.
+func JoinFsPath(elem ...string) string {
+	return filepath.ToSlash(filepath.Join(elem...))
+}
 
 func IsUrl(name string) bool {
 	return strings.HasPrefix(name, "http://") || strings.HasPrefix(name, "https://")
@@ -324,15 +373,14 @@ func RubyGemPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, fo
 // roots: `/app-other/x.css` is not under `/app`.
 //
 // This rule used to be spelled by hand in five places, two of which fell through with the raw
-// filesystem path when neither root matched. internal/plugin still carries three copies
-// (dirname.go, and `rootPathToUrlPath` in bundless.go, which has no boundary); they move here in
-// the F-GOUTILS-1 step-2 pass.
+// filesystem path when neither root matched, and one of which (`rootPathToUrlPath`) had no
+// boundary. This is now the only one.
 func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bool) {
 	// Both sides are compared as text, so a `..` left in either would walk out of a root that
 	// still looks like a prefix: `/app/../outside.css` answered "/../outside.css", inside "/app".
 	// Today's callers pass a path esbuild or path.Join has already cleaned; this does not rely on
 	// that.
-	fsPath = path.Clean(fsPath)
+	fsPath = cleanFsPath(fsPath)
 
 	if ref, found := GemFromFsPath(fsPath, cfg); found {
 		return ref.UrlPath(), true
@@ -344,7 +392,7 @@ func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bo
 		return "", false
 	}
 
-	root := strings.TrimSuffix(path.Clean(cfg.RootPath), "/")
+	root := strings.TrimSuffix(cleanFsPath(cfg.RootPath), "/")
 	if fsPath == root {
 		return "/", true
 	}
@@ -354,4 +402,12 @@ func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bo
 	}
 
 	return "", false
+}
+
+// Cleaned by the platform's own rules, in slash-form. On Windows a leading "//" is a UNC root - the
+// form a gem installed on a network share has - and path.Clean collapsed it to "/", after which
+// nothing compared against the gem roots, which are used as given, could match. Everywhere else
+// filepath.Clean is path.Clean, so Unix paths keep their meaning.
+func cleanFsPath(p string) string {
+	return filepath.ToSlash(filepath.Clean(p))
 }

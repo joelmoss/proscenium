@@ -58,7 +58,7 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 
 					return api.OnLoadResult{
 						Contents:   &contents,
-						ResolveDir: filepath.Dir(args.Path),
+						ResolveDir: filepath.ToSlash(filepath.Dir(args.Path)),
 						Loader:     loader,
 					}, nil
 				})
@@ -95,7 +95,7 @@ func svgCacheFor(cfg *types.ConfigT) *svgCache {
 	}
 
 	store := diskv.New(diskv.Options{
-		BasePath:     filepath.Join(cfg.RootPath, svgCacheDir),
+		BasePath:     utils.JoinFsPath(cfg.RootPath, svgCacheDir),
 		CacheSizeMax: 1024 * 1024, // FIXME: This doesn't seem to have any effect
 	})
 

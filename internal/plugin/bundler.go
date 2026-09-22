@@ -6,7 +6,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -59,7 +58,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				}
 
 				onResolveResult.External = r.External
-				onResolveResult.Path = r.Path
+
+				// esbuild resolved this one itself, so the path is in OS form. This is the second
+				// of the two doors it comes through; the first is the top of each callback.
+				onResolveResult.Path = filepath.ToSlash(r.Path)
 
 				debug.Debug(cfg.Debug, "resolveWithEsbuild:success", originalPath, args, onResolveResult)
 
@@ -124,7 +126,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					resolveArgs.ResolveDir = gemPath
 
 					suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
-					result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
+					result.Path = utils.JoinFsPath(resolveArgs.ResolveDir, suffix)
 
 					if ok := resolveWithEsbuild(resolveArgs, result); !ok {
 						// `resolveWithEsbuild` has either marked the result external (a miss, for the
@@ -143,7 +145,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 						result.Path = "/node_modules/" + result.Path
 					}
 				} else if hasExt {
-					result.Path = filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+					result.Path = utils.JoinFsPath(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 				}
 
 				return nil
@@ -155,6 +157,8 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					if types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
+
+					args.Importer, args.ResolveDir = toSlashArgs(args)
 
 					debug.Debug(cfg.Debug, "OnResolve(@rubygems/*):begin", args)
 
@@ -185,6 +189,8 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					if args.Kind == esbuild.ResolveEntryPoint || types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
+
+					args.Importer, args.ResolveDir = toSlashArgs(args)
 
 					debug.Debug(cfg.Debug, "OnResolve(.*):begin", args)
 
@@ -259,9 +265,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 						ensureExternal()
 					}
 
-					// Absolute path - prepend the root to prepare for resolution.
-					if !shouldBeExternal && path.IsAbs(result.Path) {
-						result.Path = filepath.Join(root, result.Path)
+					// URL-root, not fs-absolute: this prepends the root, and doing that to a path
+					// that already has one produces C:/app/C:/app/x.js.
+					if !shouldBeExternal && utils.UrlPathIsAbs(result.Path) {
+						result.Path = utils.JoinFsPath(root, result.Path)
 					}
 
 					if shouldBeExternal {
@@ -273,7 +280,9 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 						_, hasExt := utils.HasExtension(result.Path)
 
-						if path.IsAbs(result.Path) && hasExt {
+						// fs-absolute: the join above has already happened, so the question is
+						// whether this names a file on disk and needs no further resolution.
+						if utils.FsPathIsAbs(result.Path) && hasExt {
 							goto FINISH
 						}
 
@@ -284,7 +293,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 						// resolving the path, which is faster and also ensures tree shaking works.
 						if utils.PathIsRelative(result.Path) && hasExt {
 							if isCssImportedFromJs || result.Namespace == "svgFromJsx" || unbundled {
-								result.Path = filepath.Join(args.ResolveDir, result.Path)
+								result.Path = utils.JoinFsPath(args.ResolveDir, result.Path)
 							} else {
 								result.Path = ""
 							}
@@ -310,7 +319,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								// gem's node_modules directory, and not the app's node_modules directory.
 								gemName, _, foundGem := utils.PathIsRubyGem(args.Importer, cfg)
 								if foundGem {
-									nodeModulePath := filepath.Join(root, "node_modules", "@rubygems", gemName)
+									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemName)
 									_, err := os.Stat(nodeModulePath)
 									if err == nil {
 										realPath, err := filepath.EvalSymlinks(nodeModulePath)
@@ -318,7 +327,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 											return result, err
 										}
 
-										resolveArgs.ResolveDir = realPath
+										resolveArgs.ResolveDir = filepath.ToSlash(realPath)
 									} else {
 										resolveArgs.ResolveDir = root
 									}
@@ -335,7 +344,9 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 				FINISH:
 
-					if path.IsAbs(result.Path) {
+					// fs-absolute: an alias is looked up by the path's position under the root, so
+					// this has to recognise a resolved Windows path as well as a Unix one.
+					if utils.FsPathIsAbs(result.Path) {
 						relPath := strings.TrimPrefix(result.Path, root)
 
 						if aliasedPath, exists := utils.HasAlias(relPath, cfg); exists {
@@ -349,7 +360,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								result.Path = aliasedPath
 								result.External = true
 							} else {
-								result.Path = filepath.Join(root, aliasedPath)
+								result.Path = utils.JoinFsPath(root, aliasedPath)
 							}
 
 							debug.Debug(cfg.Debug, "OnResolve(.*):aliasAfter", relPath, result.Path)
@@ -362,10 +373,8 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 					if result.External {
 						// Returned path must be a URL path.
-						if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path, cfg); ok {
-							result.Path = gemPath
-						} else if rootPath, ok := rootPathToUrlPath(result.Path, cfg); ok {
-							result.Path = rootPath
+						if urlPath, ok := utils.UrlPathFromFsPath(result.Path, cfg); ok {
+							result.Path = urlPath
 						}
 					}
 
@@ -375,6 +384,14 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				})
 		},
 	}
+}
+
+// The first of the two doors esbuild's own path forms come through: Importer and ResolveDir are
+// whatever the platform produced. Everything below the boundary is slash-form, so they are
+// converted once, here, rather than at each site that reads them. args is a value, so assigning
+// back covers cloneResolveArgs too.
+func toSlashArgs(args esbuild.OnResolveArgs) (importer string, resolveDir string) {
+	return filepath.ToSlash(args.Importer), filepath.ToSlash(args.ResolveDir)
 }
 
 func cloneResolveArgs(args esbuild.OnResolveArgs) esbuild.OnResolveArgs {
