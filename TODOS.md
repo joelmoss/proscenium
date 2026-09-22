@@ -281,27 +281,24 @@ resolution - no CSS modules, SVG components or i18n.
 
 ## Infrastructure
 
-### Verify the darwin and platform-less gems before publishing
+### Verify the platform-less gem before publishing
 
-**What:** The release workflow's `verify` job installs from a generated index and loads the
-library, but only on `x86_64-linux-gnu` and `aarch64-linux-gnu`. Add a macOS leg for the two darwin
-gems, and a leg that resolves to the platform-less gem and asserts
-`Proscenium::Builder::UnsupportedPlatform`.
+**What:** A release verify leg that resolves to the platform-less gem and asserts
+`Proscenium::Builder::UnsupportedPlatform`. Every platform gem is now installed and loaded before
+publishing - Linux in containers, Windows and both darwin archs natively - but no leg resolves to
+the plain gem, because on each of them a platform gem wins.
 
-**Why:** Those two archives are published on the strength of having been built, not of having been
-installed. A darwin gem that will not `dlopen` - wrong minimum macOS version, a CGO flag that
-changed - reaches RubyGems and is found by the first person to `bundle install`, which is the
-failure this whole job exists to prevent for Linux.
+**Why:** The plain gem is what an unsupported host installs, and what it has to do there is raise
+the named error rather than an FFI `LoadError`. `test/packaging_test.rb` asserts that against a
+temp copy of `lib/`, not against the published archive.
 
 **Context:** The plain gem is not unguarded today: `build-plain` builds in a job that has never
 compiled and then fails on any `lib/proscenium/ext/` entry in the archive. That catches the 0.25.2
-defect. What is missing is the other half - that the gem an unsupported host actually resolves to
-raises the named error rather than an FFI `LoadError`. `test/packaging_test.rb` asserts that
-against a temp copy of `lib/`, not against the published archive. The darwin leg needs
-`macos-latest` runners, which the build jobs already use; the plain-gem leg needs an image matching
-no platform gem, so a musl image is the cheap way to get one.
+defect. What is missing is the other half. The leg needs a host matching no platform gem, so a
+musl image is the cheap way to get one, and it cannot use `bin/verify-installed-gem` as it stands:
+that script expects a platform and a library that loads.
 
-**Effort:** S. **Priority:** P2.
+**Effort:** S. **Priority:** P3.
 
 ### Skip the extension-finding `Resolve` in the Bundler plugin
 

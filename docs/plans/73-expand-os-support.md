@@ -16,7 +16,7 @@ decisions" - this section is current. Line numbers below are as of then.
 | PR 3 Phase 2a, fs-to-URL copies onto `UrlPathFromFsPath` | **Done**, with the boundary regression test (`test/dirname_boundary_test.go`). |
 | PR 3 Phase 2b, one path convention | **Done**, except items 1 and 6 as written: each of the three `build.Resolve` sites normalises its own result rather than going through one wrapper, and there is no `forbidigo` rule. |
 | PR 3 Phase 3, fixtures | **Done.** The symlinks survive with `core.symlinks`; `core.autocrlf false` turned out to matter too. |
-| PR 3 Phase 4, packaging | **Done.** `x64-mingw-ucrt` in `PLATFORMS`, built natively by `build-windows`, and installed, loaded and exited five times by `verify-windows` before anything publishes. Proven by a dry-run dispatch of the release workflow; ships with the next release. |
+| PR 3 Phase 4, packaging | **Done.** `x64-mingw-ucrt` in `PLATFORMS`, built natively by `build-windows`, and installed, loaded and exited five times by the release workflow's native verify leg before anything publishes. Proven by a dry-run dispatch of the release workflow; ships with the next release. |
 | PR 3 Phase 5, docs | **Done.** README lists `x64-mingw-ucrt`. |
 
 **Scope changed after writing:** the `bun test` harness runs on Windows. It was ruled out below on

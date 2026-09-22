@@ -176,10 +176,11 @@ resolved, loads the library from the installed copy, and calls into Go - five ti
 to exit cleanly, because the Windows exit crash was intermittent. It installs Proscenium with
 `--ignore-dependencies` and then only ffi: the index holds nothing but Proscenium, and resolving
 rails from it fails. `bin/verify-gem` runs it inside a container for `x86_64-linux-gnu`, and
-`aarch64-linux-gnu` under QEMU; `verify-windows` runs it directly on `windows-latest` for
-`x64-mingw-ucrt`. The darwin gems are published without ever being installed anywhere, and no leg
-resolves to the platform-less gem, because on every leg a platform gem wins. Widening that is a
-TODO, not a claim this workflow already meets.
+`aarch64-linux-gnu` under QEMU; `verify-native` runs it directly on the hosts a container cannot
+stand in for - `windows-latest` for `x64-mingw-ucrt`, `macos-latest` for `arm64-darwin`, and
+`macos-15-intel` for `x86_64-darwin`. So every platform gem is installed and loaded before anything
+publishes. No leg resolves to the platform-less gem, because on every leg a platform gem wins;
+that is still a TODO.
 
 To run all of it without publishing, dispatch the workflow from any branch with `dry_run`
 (`gh workflow run release.yml --ref <branch> -f dry_run=true`). Publishing also needs the run to
