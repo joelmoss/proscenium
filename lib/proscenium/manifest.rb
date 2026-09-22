@@ -22,9 +22,9 @@ module Proscenium
         JSON.parse(Proscenium.config.manifest_path.read)['outputs'].each do |outpath, details|
           next if !details.key?('entryPoint')
 
-          outpath = outpath.delete_prefix "#{public_path}/"
+          outpath = fs_path(outpath).delete_prefix "#{public_path}/"
 
-          ep = details['entryPoint']
+          ep = fs_path(details['entryPoint'])
           ep = if (gem = BundledGems.paths.find { |_, v| ep.start_with? "#{v}/" })
                  "@rubygems/#{gem[0]}#{ep.delete_prefix(gem[1])}"
                else
@@ -33,13 +33,19 @@ module Proscenium
 
           manifest[ep] = [
             "/#{outpath}",
-            details['cssBundle']&.delete_prefix(public_path)
+            details['cssBundle'] && fs_path(details['cssBundle']).delete_prefix(public_path)
           ].compact
         end
       end
 
       manifest
     end
+
+    # esbuild records absolute paths in the metafile in the form the platform produced. Left in
+    # Windows form, every delete_prefix above failed, the manifest was keyed by full Windows
+    # paths, and every lookup missed: the app served source paths instead of the digest URLs it
+    # had just compiled, silently.
+    def fs_path(path) = Utils.fs_path(path)
 
     def reset!
       self.manifest = {}

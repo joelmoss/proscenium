@@ -4,6 +4,20 @@ module Proscenium
   module Utils
     module_function
 
+    # A filesystem path in the slash form everything it is matched against - Rails.root, the public
+    # path, a gem's full_gem_path - already uses. Paths produced outside Ruby arrive in the form
+    # the platform produced: esbuild's metafile, and every path Bun hands the test harness. On
+    # Windows that is backslashes, so a plain `start_with?`/`delete_prefix` against Rails.root
+    # misses, and nothing raises - the path just falls through to whatever handles "not ours".
+    #
+    # Windows only, because a backslash is a legal character in a file name everywhere else.
+    #
+    # @param path [String] an absolute filesystem path.
+    # @return [String]
+    def fs_path(path)
+      Gem.win_platform? ? path.tr('\\', '/') : path
+    end
+
     # Returns a short digest for the given `value`, intended for CSS module class name suffixes.
     #
     # @param value [#to_s] The value to create the digest from. This will usually be the absolute
@@ -11,6 +25,22 @@ module Proscenium
     # @return [String] digest of the given value.
     def css_module_digest(value)
       Digest::SHA1.hexdigest(value.to_s)[..7]
+    end
+
+    # The path a CSS module's class-name suffix is built from: the file's path under the app root.
+    #
+    # Where there is no such path - a gem on another drive than the app, which is RubyInstaller's
+    # default - it is the absolute path itself. relative_path_from raised there, and failed every
+    # view using the module. The absolute path is what esbuild falls back to when it builds the
+    # stylesheet's class names (MakePrettyPaths keeps the path it could not relativise), and
+    # internal/plugin/css.go does the same, so all three agree.
+    #
+    # @param abs_path [String] absolute file system path of the CSS module.
+    # @return [Pathname, String]
+    def css_module_relative_path(abs_path)
+      Pathname.new(abs_path).relative_path_from(Rails.root)
+    rescue ArgumentError
+      abs_path
     end
 
     # Returns the readable part of a CSS module class name: the given path, made safe to use in a
