@@ -110,18 +110,22 @@ PLATFORMS.each do |ruby_platform, go_platform|
     # Set for this subprocess only. Exporting it would defeat the point: `rake build` builds the
     # platform gems and then the platform-less one in a single process, and the plain gem must
     # not see it. See the gate in the gemspec.
-    sh({ 'PROSCENIUM_PACKAGE_EXT' => '1' }, 'gem', 'build', '-V', '--platform', ruby_platform) do
-      gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{ruby_platform}.gem",
-                                             base).max_by do |f|
-        File.mtime(f)
-      end
+    #
+    # Outside Bundler, because a subprocess inherits its environment and re-resolves the Gemfile,
+    # whose `gemspec` line then reads PROSCENIUM_PLATFORM too and cannot resolve Proscenium as a
+    # platform gem. `gem build` needs nothing from the bundle.
+    env = { 'PROSCENIUM_PACKAGE_EXT' => '1', 'PROSCENIUM_PLATFORM' => ruby_platform }
+    Bundler.with_unbundled_env { sh(env, 'gem', 'build', '-V') }
 
-      FileUtils.mkdir_p pkg_dir
-      FileUtils.mv gem_path, 'pkg'
+    gem_path = Gem::Util.glob_files_in_dir("proscenium-*-#{ruby_platform}.gem", base)
+                        .max_by { |f| File.mtime(f) }
+    raise "gem build produced no proscenium-*-#{ruby_platform}.gem" unless gem_path
 
-      puts ''
-      puts "---> Built #{gemspec.version} to pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem"
-    end
+    FileUtils.mkdir_p pkg_dir
+    FileUtils.mv gem_path, 'pkg'
+
+    puts ''
+    puts "---> Built #{gemspec.version} to pkg/proscenium-#{gemspec.version}-#{ruby_platform}.gem"
   end
 
   desc "Compile for #{ruby_platform}"

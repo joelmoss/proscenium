@@ -48,6 +48,11 @@ Gem::Specification.new do |spec|
   end
 
   spec.files = files
+
+  # Set by the platform build tasks. Not `gem build --platform`, which RubyGems only applies when
+  # the target differs from the platform it is running on: on a Windows host building the Windows
+  # gem it silently changes nothing, and out comes a platform-less gem carrying a DLL.
+  spec.platform = ENV['PROSCENIUM_PLATFORM'] if ENV['PROSCENIUM_PLATFORM']
   spec.require_paths = ['lib']
 
   spec.add_dependency 'ffi', '~> 1.17.0'
