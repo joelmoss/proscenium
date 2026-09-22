@@ -162,9 +162,14 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
+      # Not bundler-cache, which installs into vendor/bundle. xgo sees any vendor/ directory and
+      # builds with -mod=vendor, overriding GOFLAGS, so every build failed with "inconsistent
+      # vendoring". The gems go outside the checkout instead, uncached.
       - uses: ruby/setup-ruby@v1
-        with:
-          bundler-cache: true
+      - name: Install gems outside the checkout
+        run: |
+          bundle config set --local path "$RUNNER_TEMP/bundle"
+          bundle install --jobs 4
       # xgo builds the glibc gems in a container. The musl gems build in a container too, but a
       # different one - see the compile task in the Rakefile.
       # Pinned, not @latest: this tool produces the Linux binaries that end up inside published
