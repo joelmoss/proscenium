@@ -3,10 +3,10 @@ package proscenium_test
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
 
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 
@@ -37,12 +37,12 @@ var _ = Describe("Compile", func() {
 	DescribeTable("refuses an output directory that is not strictly inside the root",
 		func(outputDir string) {
 			base := GinkgoT().TempDir()
-			root := filepath.Join(base, "app")
-			keep := filepath.Join(base, "keep")
+			root := utils.JoinFsPath(base, "app")
+			keep := utils.JoinFsPath(base, "keep")
 			Expect(os.MkdirAll(root, 0o755)).To(Succeed())
 			Expect(os.MkdirAll(keep, 0o755)).To(Succeed())
-			Expect(os.WriteFile(filepath.Join(keep, "precious.txt"), []byte("x"), 0o644)).To(Succeed())
-			Expect(os.WriteFile(filepath.Join(root, "app.rb"), []byte("x"), 0o644)).To(Succeed())
+			Expect(os.WriteFile(utils.JoinFsPath(keep, "precious.txt"), []byte("x"), 0o644)).To(Succeed())
+			Expect(os.WriteFile(utils.JoinFsPath(root, "app.rb"), []byte("x"), 0o644)).To(Succeed())
 
 			testConfig.RootPath = root
 			testConfig.Precompile = []string{"./lib/foo.js"}
@@ -52,8 +52,8 @@ var _ = Describe("Compile", func() {
 
 			Expect(success).To(BeFalse())
 			Expect(messages).To(ContainSubstring("Invalid output directory"))
-			Expect(filepath.Join(root, "app.rb")).To(BeARegularFile())
-			Expect(filepath.Join(keep, "precious.txt")).To(BeARegularFile())
+			Expect(utils.JoinFsPath(root, "app.rb")).To(BeARegularFile())
+			Expect(utils.JoinFsPath(keep, "precious.txt")).To(BeARegularFile())
 		},
 		Entry("empty", ""),
 		Entry("the root itself", "."),

@@ -5,9 +5,9 @@ import (
 	"fmt"
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -621,8 +621,14 @@ var _ = Describe("BuildToString", func() {
 				Expect(success).To(BeFalse())
 				plugin, text := firstBuildError(result)
 				Expect(plugin).To(Equal("bundless"))
-				Expect(text).To(Equal(
-					"could not read @rubygems/gem2/lib/gem2/does_not_exist.js: no such file or directory"))
+				// The tail is the OS's own words for a missing file, and Windows uses different
+				// ones ("The system cannot find the file specified."). What this spec is about is
+				// the head: that the error names the gem file by its virtual path.
+				Expect(text).To(HavePrefix(
+					"could not read @rubygems/gem2/lib/gem2/does_not_exist.js: "))
+				if runtime.GOOS != "windows" {
+					Expect(text).To(HaveSuffix("no such file or directory"))
+				}
 				Expect(result).NotTo(ContainSubstring(testConfig.RubyGems["gem2"]))
 			})
 		})
@@ -674,7 +680,7 @@ var _ = Describe("BuildToString", func() {
 		// in-memory result, so every build leaves hashed files behind. Callers that just want the
 		// string can turn that off.
 		var outputPath = func() string {
-			return filepath.Join(testConfig.RootPath, testConfig.OutputDir)
+			return utils.JoinFsPath(testConfig.RootPath, testConfig.OutputDir)
 		}
 
 		var outputFileCount = func() int {
@@ -713,7 +719,7 @@ var _ = Describe("BuildToString", func() {
 func BenchmarkBuildToString(bm *testing.B) {
 	_, filename, _, _ := runtime.Caller(0)
 	cfg := &types.ConfigT{
-		RootPath:        path.Join(path.Dir(filename), "..", "fixtures", "dummy"),
+		RootPath:        utils.JoinFsPath(filepath.ToSlash(filepath.Dir(filename)), "..", "fixtures", "dummy"),
 		OutputDir:       "public/assets",
 		Environment:     types.TestEnv,
 		InternalTesting: true,

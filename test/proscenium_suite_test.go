@@ -5,9 +5,10 @@ import (
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/plugin"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
 	"os"
-	"path"
+	"path/filepath"
 	"reflect"
 	"runtime"
 	"testing"
@@ -26,7 +27,7 @@ const Unbundle = unbundleType(true)
 const Production = asProduction(true)
 
 var cwd, _ = os.Getwd()
-var fixturesRoot string = path.Join(cwd, "..", "fixtures")
+var fixturesRoot string = utils.JoinFsPath(cwd, "..", "fixtures")
 
 func TestProscenium(t *testing.T) {
 	RegisterFailHandler(Fail)
@@ -35,10 +36,10 @@ func TestProscenium(t *testing.T) {
 
 var _ = BeforeSuite(func() {
 	_, filename, _, _ := runtime.Caller(0)
-	assetPath := path.Join(path.Dir(filename), "..", "fixtures", "dummy", "public", "assets")
+	assetPath := utils.JoinFsPath(filepath.ToSlash(filepath.Dir(filename)), "..", "fixtures", "dummy", "public", "assets")
 	dir, _ := os.ReadDir(assetPath)
 	for _, d := range dir {
-		os.RemoveAll(path.Join(assetPath, d.Name()))
+		os.RemoveAll(utils.JoinFsPath(assetPath, d.Name()))
 	}
 })
 
@@ -47,16 +48,16 @@ var _ = BeforeSuite(func() {
 // directly in their own BeforeEach, rather than the old shared types.Config global.
 func newTestConfig() *types.ConfigT {
 	_, filename, _, _ := runtime.Caller(0)
-	root := path.Dir(filename)
+	root := filepath.ToSlash(filepath.Dir(filename))
 
 	return &types.ConfigT{
 		CodeSplitting:   true,
 		Bundle:          true,
 		InternalTesting: true,
 		Environment:     types.TestEnv,
-		RootPath:        path.Join(root, "..", "fixtures", "dummy"),
+		RootPath:        utils.JoinFsPath(root, "..", "fixtures", "dummy"),
 		OutputDir:       "public/assets",
-		GemPath:         path.Join(root, ".."),
+		GemPath:         utils.JoinFsPath(root, ".."),
 	}
 }
 

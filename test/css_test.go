@@ -3,8 +3,8 @@ package proscenium_test
 import (
 	"encoding/json"
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
-	"path/filepath"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 	ast "github.com/joelmoss/esbuild-internal/ast"
@@ -163,7 +163,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 	EntryPoint("lib/importing/css_module.css", func() {
 		AssertCodeFromFunc(func() string {
-			abspath := filepath.Join(testConfig.RootPath, "lib/importing/app/one.module.css")
+			abspath := utils.JoinFsPath(testConfig.RootPath, "lib/importing/app/one.module.css")
 			hsh := ast.CssLocalHash(abspath)
 
 			return `.app_one_module_` + hsh + `{content:"/lib/importing/app/one.module.css"}`
@@ -172,7 +172,7 @@ var _ = Describe("BuildToString(css)", func() {
 		AssertCode(`@import "/lib/importing/app/one.module.css";`, Unbundle)
 
 		AssertCodeFromFunc(func() string {
-			abspath := filepath.Join(testConfig.RootPath, "lib/importing/app/one.module.css")
+			abspath := utils.JoinFsPath(testConfig.RootPath, "lib/importing/app/one.module.css")
 			hsh := ast.CssLocalHash(abspath)
 
 			return `.app_one_module_` + hsh + `_lib-importing-app-one-module {
@@ -182,14 +182,14 @@ var _ = Describe("BuildToString(css)", func() {
 
 		Describe("nested", func() {
 			AssertCodeFromFunc(func() string {
-				abspath := filepath.Join(testConfig.RootPath, "lib/importing/app/two.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/importing/app/two.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				return `.app_two_module_` + hsh + `{content:"/lib/importing/app/two.module.css"}`
 			}, Production)
 
 			AssertCodeFromFunc(func() string {
-				abspath := filepath.Join(testConfig.RootPath, "lib/importing/app/two.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/importing/app/two.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				return `.app_two_module_` + hsh + `_lib-importing-app-two-module { content: "/lib/importing/app/two.module.css"; }`
@@ -198,7 +198,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 		Describe("from package", func() {
 			AssertCodeFromFunc(func() string {
-				abspath := filepath.Join(testConfig.RootPath, "node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg/one.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg/one.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				return `.pkg_one_module_` + hsh + `{content:"pkg/one.module.css"}`
@@ -207,7 +207,7 @@ var _ = Describe("BuildToString(css)", func() {
 			AssertCode(`@import "/node_modules/pkg/one.module.css";`, Unbundle)
 
 			AssertCodeFromFunc(func() string {
-				abspath := filepath.Join(testConfig.RootPath, "node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg/one.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "node_modules/.pnpm/pkg@git+https+++git@gist.github.com+c3d9087f5f214e1f0d9719e4a7d38474.git+2a499df3143c5637ebaa3be5c4b983ebc094aeff/node_modules/pkg/one.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				return `.pkg_one_module_` + hsh + `_node_modules--pnpm-pkg_git_https___git_gist-github-com_c3d9087f5f214e1f0d9719e4a7d38474-git_2a499df3143c5637ebaa3be5c4b983ebc094aeff-node_modules-pkg-one-module {
@@ -239,7 +239,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("builds from npm install", func() {
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "vendor/gem_npm/index.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(code).To(ContainCode(".myClass_" + hsh + "_vendor-gem_npm-index-module { color: pink; }"))
@@ -248,7 +248,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("builds from file:* npm install", func() {
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_file/index.module.css", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "vendor/gem_file/index.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_file/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(code).To(ContainCode(".myClass_" + hsh + "_vendor-gem_file-index-module { color: pink; }"))
@@ -265,7 +265,7 @@ var _ = Describe("BuildToString(css)", func() {
 
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "vendor/gem_npm/index.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(code).To(ContainCode(`
@@ -323,7 +323,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/import_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
@@ -332,7 +332,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("import relative css module from js", func() {
 				_, result, _ := b.BuildToString("lib/import_relative_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
@@ -349,7 +349,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("import relative css module from js", func() {
 				_, result, _ := b.BuildToString("lib/import_relative_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
@@ -358,7 +358,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/import_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "lib/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(expectedCode(hsh)))
@@ -390,7 +390,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("should use the same ident for all class names", func() {
 				_, result, _ := b.BuildToString("lib/css_modules/import_css_module.module.css", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "lib/css_modules/import_css_module.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "lib/css_modules/import_css_module.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(`.foo_` + hsh + `_lib-css_modules-import_css_module-module { color: red; }`))
@@ -406,7 +406,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/internal_import_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "vendor/gem1/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem1/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(`const u = "/node_modules/@rubygems/gem1/styles.module.css";`))
@@ -423,7 +423,7 @@ var _ = Describe("BuildToString(css)", func() {
 			It("includes stylesheet and proxies class names", func() {
 				_, result, _ := b.BuildToString("lib/rubygems/external_import_css_module.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "../external/gem2/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem2/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(result).To(ContainCode(`const u = "/node_modules/@rubygems/gem2/styles.module.css";`))

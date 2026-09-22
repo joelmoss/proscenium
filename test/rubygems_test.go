@@ -2,8 +2,8 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
-	"path/filepath"
 
 	ast "github.com/joelmoss/esbuild-internal/ast"
 	. "github.com/onsi/ginkgo/v2"
@@ -57,14 +57,14 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			EntryPoint("node_modules/@rubygems/gem_npm/index.module.css", func() {
 				AssertCodeFromFunc(func() string {
-					abspath := filepath.Join(testConfig.RootPath, "vendor/gem_npm/index.module.css")
+					abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
 					hsh := ast.CssLocalHash(abspath)
 
 					return `.myClass_` + hsh + `{color:pink}`
 				}, Production)
 
 				AssertCodeFromFunc(func() string {
-					abspath := filepath.Join(testConfig.RootPath, "vendor/gem_npm/index.module.css")
+					abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
 					hsh := ast.CssLocalHash(abspath)
 
 					return `
@@ -105,21 +105,24 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 			EntryPoint("node_modules/@rubygems/gem_npm_ext/index.module.css", func() {
 				AssertCodeFromFunc(func() string {
-					abspath := filepath.Join(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
+					abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
 					hsh := ast.CssLocalHash(abspath)
 
 					return `.myClass_` + hsh + `{color:pink}`
 				}, Production)
 
 				AssertCodeFromFunc(func() string {
-					abspath := filepath.Join("rubygems:@rubygems/gem_npm_ext/index.module.css")
-					hsh := ast.CssLocalHash(abspath)
+					// Not through a path join: this is the namespaced virtual path esbuild
+					// records for a rubygems file, not a path on disk, and joining it applies
+					// rules that belong to a filesystem - which answered differently on Windows
+					// and made this expectation, not the build, the thing that was wrong.
+					hsh := ast.CssLocalHash("rubygems:@rubygems/gem_npm_ext/index.module.css")
 
 					return `.myClass_` + hsh + `_rubygems__rubygems-gem_npm_ext-index-module { color: pink; }`
 				}, Unbundle)
 
 				AssertCodeFromFunc(func() string {
-					abspath := filepath.Join(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
+					abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
 					hsh := ast.CssLocalHash(abspath)
 
 					return `
@@ -265,7 +268,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("node_modules/@rubygems/gem4/lib/gem4/gem4.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
@@ -292,7 +295,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 
 				_, code, _ := b.BuildToString("lib/gems/gem4.js", testConfig)
 
-				abspath := filepath.Join(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+				abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 				hsh := ast.CssLocalHash(abspath)
 
 				Expect(code).To(ContainCode(`d.querySelector("#_` + hsh + `")`))
@@ -565,5 +568,5 @@ func addGem(name string, path string) {
 		testConfig.RubyGems = map[string]string{}
 	}
 
-	testConfig.RubyGems[name] = filepath.Join(fixturesRoot, path, name)
+	testConfig.RubyGems[name] = utils.JoinFsPath(fixturesRoot, path, name)
 }

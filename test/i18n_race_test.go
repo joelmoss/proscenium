@@ -6,8 +6,8 @@ package proscenium_test
 
 import (
 	b "joelmoss/proscenium/internal/builder"
+	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -26,17 +26,17 @@ func TestI18nConcurrentBuildRace(t *testing.T) {
 	roots := make([]string, numRoots)
 	for i := range numRoots {
 		dir := t.TempDir()
-		locales := filepath.Join(dir, "config", "locales")
+		locales := utils.JoinFsPath(dir, "config", "locales")
 		if err := os.MkdirAll(locales, 0o755); err != nil {
 			t.Fatal(err)
 		}
 
 		name := rootName(i)
-		if err := os.WriteFile(filepath.Join(locales, "en.yml"),
+		if err := os.WriteFile(utils.JoinFsPath(locales, "en.yml"),
 			[]byte("en:\n  who: "+name+"\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
-		if err := os.WriteFile(filepath.Join(dir, "entry.js"),
+		if err := os.WriteFile(utils.JoinFsPath(dir, "entry.js"),
 			[]byte("import locales from \"proscenium/i18n\";\nconsole.log(locales);\n"), 0o644); err != nil {
 			t.Fatal(err)
 		}
