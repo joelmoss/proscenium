@@ -6,6 +6,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"path"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -49,10 +50,17 @@ func BuildErrorJSON(msg string) string {
 }
 
 func buildToString(filePath string, cfg *types.ConfigT) (success bool, code string, contentHash string) {
-	var pathPrefix = path.Join(cfg.RootPath, cfg.OutputDir) + "/"
+	var pathPrefix = utils.JoinFsPath(cfg.RootPath, cfg.OutputDir) + "/"
 	var output esbuild.OutputFile
 
 	result := build(filePath, cfg)
+
+	// The third door. Output paths come back in whatever form the platform produced, and both
+	// searches below compare them against paths built here with "/" - on Windows neither ever
+	// matched, and the build failed with "Could not find output file".
+	for i := range result.OutputFiles {
+		result.OutputFiles[i].Path = filepath.ToSlash(result.OutputFiles[i].Path)
+	}
 
 	if len(result.Errors) != 0 {
 		j, err := json.Marshal(result.Errors[0])
@@ -127,7 +135,7 @@ func buildToString(filePath string, cfg *types.ConfigT) (success bool, code stri
 				epPath = findOutputPathForEntryPoint(filePath, metadata)
 			}
 
-			epPath = path.Join(cfg.RootPath, epPath)
+			epPath = utils.JoinFsPath(cfg.RootPath, epPath)
 
 			for _, out := range result.OutputFiles {
 				if out.Path == epPath {

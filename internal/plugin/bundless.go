@@ -7,7 +7,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -59,7 +58,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					absPath = r.Path
+					absPath = filepath.ToSlash(r.Path)
 				}
 
 				result.Path = absPath
@@ -85,14 +84,14 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					args.ResolveDir = realResolveDir
+					args.ResolveDir = filepath.ToSlash(realResolveDir)
 
 					// The importer may be a virtual path - a rubygems-namespaced file is imported
 					// under its `@rubygems/` name - with nothing on disk to evaluate. The resolve
 					// directory is what node resolution needs; failing here used to turn a resolvable
 					// import into a silent miss.
 					if realImporter, err := filepath.EvalSymlinks(args.Importer); err == nil {
-						args.Importer = realImporter
+						args.Importer = filepath.ToSlash(realImporter)
 					}
 				}
 
@@ -114,7 +113,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					return false
 				}
 
-				onResolveResult.Path = r.Path
+				// esbuild resolved this one itself, so the path is in OS form.
+				onResolveResult.Path = filepath.ToSlash(r.Path)
 				onResolveResult.Errors = r.Errors
 				onResolveResult.Warnings = r.Warnings
 
@@ -135,6 +135,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					if types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
+
+					args.Importer, args.ResolveDir = toSlashArgs(args)
 
 					debug.Debug(cfg.Debug, "OnResolve(@rubygems/*):begin", args)
 
@@ -184,7 +186,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					// If the path is an entrypoint, then it must be an absolute fileystem path.
 					if args.Kind == esbuild.ResolveEntryPoint {
-						realPath := filepath.Join(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
+						realPath := utils.JoinFsPath(gemPath, utils.RemoveRubygemPrefix(result.Path, gemName))
 						if pluginData, ok := result.PluginData.(types.PluginData); ok {
 							pluginData.RealPath = realPath
 							result.PluginData = pluginData
@@ -202,7 +204,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							resolveArgs.ResolveDir = gemPath
 
 							suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
-							result.Path = filepath.Join(resolveArgs.ResolveDir, suffix)
+							result.Path = utils.JoinFsPath(resolveArgs.ResolveDir, suffix)
 
 							ok := resolveWithEsbuild(resolveArgs, &result)
 							if !ok {
@@ -229,6 +231,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 			// contents while maintaining the virtual path (ie. @rubygems/foo).
 			build.OnLoad(esbuild.OnLoadOptions{Namespace: "rubygems", Filter: ".*"},
 				func(args esbuild.OnLoadArgs) (esbuild.OnLoadResult, error) {
+					args.Path = filepath.ToSlash(args.Path)
+
 					debug.Debug(cfg.Debug, "OnLoad(rubygems):begin", args)
 
 					pluginData := types.PluginDataOf(args.PluginData)
@@ -242,7 +246,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					result := esbuild.OnLoadResult{
 						Loader:     esbuild.LoaderDefault,
-						ResolveDir: filepath.Dir(realPath),
+						ResolveDir: filepath.ToSlash(filepath.Dir(realPath)),
 						PluginData: types.PluginData{GemPath: pluginData.GemPath},
 					}
 
@@ -273,6 +277,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					if args.Kind == esbuild.ResolveEntryPoint || types.PluginDataOf(args.PluginData).IsResolvingPath {
 						return esbuild.OnResolveResult{}, nil
 					}
+
+					args.Importer, args.ResolveDir = toSlashArgs(args)
 
 					debug.Debug(cfg.Debug, "OnResolve(.*):begin", args)
 
@@ -343,19 +349,21 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						goto FINISH
 					}
 
-					if path.IsAbs(result.Path) {
+					// URL-root, not fs-absolute: an import written "/x.js" in app source. A path
+					// that already names a file must not have the root prepended to it.
+					if utils.UrlPathIsAbs(result.Path) {
 						if hasExt {
 							// Absolute path and extension, so assume this is an app relative path, and return as is.
 							goto FINISH
 						} else {
-							result.Path = filepath.Join(root, result.Path)
+							result.Path = utils.JoinFsPath(root, result.Path)
 						}
 					}
 
 					// Try to resolve the relative path manually without needing to call esbuild.Resolve, as
 					// that can get expensive.
 					if utils.PathIsRelative(result.Path) && hasExt {
-						result.Path = filepath.Join(args.ResolveDir, result.Path)
+						result.Path = utils.JoinFsPath(args.ResolveDir, result.Path)
 					} else {
 						if isBare != "" {
 							// replace some npm modules with browser native APIs
@@ -426,13 +434,13 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					}
 
 					// Returned path must be a URL path.
-					if gemPath, ok := utils.RubyGemPathToUrlPath(result.Path, cfg); ok {
-						result.Path = gemPath
-					} else if newPath, ok := rootPathToUrlPath(result.Path, cfg); ok {
-						result.Path = newPath
+					if urlPath, ok := utils.UrlPathFromFsPath(result.Path, cfg); ok {
+						result.Path = urlPath
 					}
 
-					if path.IsAbs(result.Path) {
+					// URL-root: by here the path has been converted, and an alias is keyed on the
+					// URL it is served at.
+					if utils.UrlPathIsAbs(result.Path) {
 						if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
 							result.Path, _ = strings.CutPrefix(aliasedPath, "unbundle:")
 						}
@@ -444,15 +452,6 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 				})
 		},
 	}
-}
-
-// Converts an absolute file system path that begins with the root, to a URL path.
-func rootPathToUrlPath(fsPath string, cfg *types.ConfigT) (urlPath string, found bool) {
-	if after, ok := strings.CutPrefix(fsPath, cfg.RootPath); ok {
-		return after, true
-	}
-
-	return "", false
 }
 
 // Absolute file system path for an asset that must be loaded rather than externalised when
@@ -469,12 +468,13 @@ func assetFsPath(p string, args esbuild.OnResolveArgs, root string) (string, boo
 		return p, true
 	}
 
-	if path.IsAbs(p) {
-		return filepath.Join(root, p), true
+	// URL-root: "/x.module.css" in app source means the app root, not a drive root.
+	if utils.UrlPathIsAbs(p) {
+		return utils.JoinFsPath(root, p), true
 	}
 
 	if utils.PathIsRelative(p) && args.ResolveDir != "" {
-		return filepath.Join(args.ResolveDir, p), true
+		return utils.JoinFsPath(args.ResolveDir, p), true
 	}
 
 	return "", false

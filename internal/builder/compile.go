@@ -8,7 +8,6 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -51,8 +50,8 @@ func compile(cfg *types.ConfigT) (bool, string) {
 
 	// The delete below removes whatever OutputDir names, so it has to name a directory strictly
 	// inside the root. Empty joins to the root itself (`Builder.compile(OutputDir: nil)` was enough
-	// to delete the whole application), and `..` segments join to something above it: path.Join
-	// cleans them before RemoveAll sees the path.
+	// to delete the whole application), and `..` segments join to something above it:
+	// OutputDirUnderRoot cleans them before RemoveAll sees the path.
 	outputPath, ok := OutputDirUnderRoot(cfg)
 	if !ok {
 		return compileError(
@@ -151,7 +150,7 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	// Reported rather than ignored: without the manifest, Resolver hands back source paths instead
 	// of the digest URLs under OutputDir, so a precompile that "succeeded" leaves the app serving
 	// something other than what it just built.
-	manifestPath := path.Join(cfg.RootPath, cfg.OutputDir, ".manifest.json")
+	manifestPath := utils.JoinFsPath(cfg.RootPath, cfg.OutputDir, ".manifest.json")
 	if err := os.WriteFile(manifestPath, []byte(result.Metafile), 0644); err != nil {
 		return compileError("Failed to write the asset manifest", err.Error())
 	}
@@ -166,8 +165,14 @@ func compile(cfg *types.ConfigT) (bool, string) {
 // An absolute OutputDir is refused outright. filepath.Join would nest it under the root and pass
 // this check, but esbuild's Outdir takes the raw value and would write where it points, outside
 // the root; the manifest path joins it under the root as well. It is a path relative to the root.
+// FsPathIsAbs rather than filepath.IsAbs, which answers false for "/public/assets" on Windows and
+// let exactly the value this refuses through to esbuild.
+//
+// The comparison stays in filepath, which is the one package that knows where a drive root ends,
+// and only the answer is converted - every path this hands back is used as a filesystem path by
+// code that expects slash-form.
 func OutputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
-	if filepath.IsAbs(cfg.OutputDir) {
+	if utils.FsPathIsAbs(cfg.OutputDir) {
 		return "", false
 	}
 
@@ -176,10 +181,10 @@ func OutputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
 
 	rel, err := filepath.Rel(root, target)
 	if err != nil || rel == "." || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
-		return target, false
+		return filepath.ToSlash(target), false
 	}
 
-	return target, true
+	return filepath.ToSlash(target), true
 }
 
 func compileError(msg string, detail string) (bool, string) {

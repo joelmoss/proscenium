@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	"fmt"
+	"runtime"
 	"testing"
 
 	"joelmoss/proscenium/internal/types"
@@ -356,6 +357,48 @@ var _ = Describe("utils gem references", func() {
 				Expect(ok).To(BeTrue())
 				Expect(got).To(Equal("/node_modules/@rubygems/foo-ext/lib/a.js"))
 			}
+		})
+
+		// A leading "//" is a UNC root on Windows, the form a gem installed on a network share has.
+		// path.Clean collapsed it to "/", and the gem roots are compared as given, so a file under
+		// one used to match no root at all and went out as a raw filesystem path. Windows only,
+		// because elsewhere "//" means "/" and is cleaned to it.
+		When("on Windows", func() {
+			BeforeEach(func() {
+				if runtime.GOOS != "windows" {
+					Skip("a UNC root only exists on Windows")
+				}
+			})
+
+			It("keeps a UNC root, so a gem on a network share still maps to its URL", func() {
+				cfg.RubyGems["shared"] = "//server/share/gems/shared"
+
+				got, ok := utils.UrlPathFromFsPath("//server/share/gems/shared/lib/../lib/a.js", cfg)
+
+				Expect(ok).To(BeTrue())
+				Expect(got).To(Equal("/node_modules/@rubygems/shared/lib/a.js"))
+			})
+
+			It("keeps a UNC app root", func() {
+				cfg.RootPath = "//server/share/app"
+
+				got, ok := utils.UrlPathFromFsPath("//server/share/app/lib/a.js", cfg)
+
+				Expect(ok).To(BeTrue())
+				Expect(got).To(Equal("/lib/a.js"))
+			})
+		})
+
+		// Everywhere else a leading "//" is "/", and a path spelled that way is still under the root.
+		It("reads a leading // as / outside Windows", func() {
+			if runtime.GOOS == "windows" {
+				Skip("a leading // is a UNC root on Windows")
+			}
+
+			got, ok := utils.UrlPathFromFsPath("//app/lib/a.js", cfg)
+
+			Expect(ok).To(BeTrue())
+			Expect(got).To(Equal("/lib/a.js"))
 		})
 	})
 
