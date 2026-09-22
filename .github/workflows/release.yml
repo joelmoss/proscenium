@@ -85,6 +85,7 @@ jobs:
     outputs:
       darwin: ${{ steps.split.outputs.darwin }}
       linux: ${{ steps.split.outputs.linux }}
+      windows: ${{ steps.split.outputs.windows }}
       version: ${{ steps.version.outputs.version }}
     steps:
       - uses: actions/checkout@v7
@@ -99,8 +100,11 @@ jobs:
       - id: split
         run: |
           all=$(bundle exec rake platforms:json | tail -1)
-          echo "darwin=$(jq -c '[.[] | select(test("darwin"))]' <<<"$all")" >> "$GITHUB_OUTPUT"
-          echo "linux=$(jq -c '[.[] | select(test("darwin") | not)]' <<<"$all")" >> "$GITHUB_OUTPUT"
+          {
+            echo "darwin=$(jq -c '[.[] | select(test("darwin"))]' <<<"$all")"
+            echo "windows=$(jq -c '[.[] | select(test("mingw"))]' <<<"$all")"
+            echo "linux=$(jq -c '[.[] | select(test("darwin|mingw") | not)]' <<<"$all")"
+          } >> "$GITHUB_OUTPUT"
       - id: version
         run: echo "version=$(ruby -Ilib -rproscenium/version -e 'print Proscenium::VERSION')" >> "$GITHUB_OUTPUT"
       - name: Tag must match the gem version
@@ -176,6 +180,48 @@ jobs:
           path: pkg/*.gem
           if-no-files-found: error
 
+  # Native, like darwin: xgo cannot build the Windows DLL - its mingw-w64 linker rejects the export
+  # definition Go generates for c-shared (`export_file.def:1: syntax error`). The runner's
+  # toolchain can, as the test workflow's Windows cells already show.
+  build-windows:
+    needs: platforms
+    if: '!inputs.verify_publisher'
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: ${{ fromJSON(needs.platforms.outputs.windows) }}
+    steps:
+      # Git for Windows checks text out with CRLF by default, and the gem packs the checkout as it
+      # is, so without this the Windows gem's Ruby and JavaScript would differ byte for byte from
+      # every other gem's.
+      - name: Check out with LF line endings
+        run: git config --global core.autocrlf false
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+      - run: bundle exec rake "build:${{ matrix.platform }}"
+      - name: The gem must carry the DLL
+        shell: bash
+        run: |
+          gem=$(ls pkg/*-${{ matrix.platform }}.gem)
+          tar -xOf "$gem" data.tar.gz | tar -tzf - | tee /tmp/contents.txt | grep -x 'lib/proscenium/ext/proscenium.dll' || {
+            echo "::error::$gem has no lib/proscenium/ext/proscenium.dll"
+            grep '^lib/proscenium/ext/' /tmp/contents.txt
+            exit 1
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gem-${{ matrix.platform }}
+          path: pkg/*.gem
+          if-no-files-found: error
+
   # The platform-less gem, built in a job that never compiles anything.
   #
   # That is the whole fix for the 0.25.2 bug, where the published plain gem carried an x86-64
@@ -226,7 +272,7 @@ jobs:
   # `gem install` succeeds whether or not the library can be loaded, which is why this asserts the
   # resolved platform and then requires it.
   verify:
-    needs: [platforms, build-darwin, build-linux, build-plain]
+    needs: [platforms, build-darwin, build-linux, build-windows, build-plain]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -277,8 +323,41 @@ jobs:
           DOCKER_PLATFORM: ${{ matrix.platform }}
         run: bin/verify-gem "${{ matrix.image }}" "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}"
 
+  # The same checks as `verify`, on Windows itself: a container cannot run there, so
+  # bin/verify-installed-gem runs directly. The index holds every gem, so this is also where a
+  # Windows host is shown to pick the Windows gem over the platform-less one.
+  verify-windows:
+    needs: [platforms, build-darwin, build-linux, build-windows, build-plain]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      # See `verify` for why the gems land in index/gems/.
+      - uses: actions/download-artifact@v4
+        with:
+          path: index/gems
+          merge-multiple: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.3'
+      # One step, because the index server is a background process of this shell.
+      - name: Serve the built gems from a local index, and install from it
+        shell: bash
+        run: |
+          gem install rubygems-generate_index --no-document
+          gem generate_index -d index
+          test -s index/info/proscenium || { echo "::error::index is empty - check the gems/ layout"; exit 1; }
+          python -m http.server 8808 --directory index >index.log 2>&1 &
+          for _ in $(seq 30); do
+            curl -sf http://localhost:8808/versions >/dev/null && break
+            sleep 1
+          done
+          curl -sf http://localhost:8808/versions >/dev/null || { echo "::error::local gem index never came up"; cat index.log; exit 1; }
+          sh bin/verify-installed-gem "${{ needs.platforms.outputs.version }}" x64-mingw-ucrt http://localhost:8808
+
   publish:
-    needs: [platforms, verify]
+    needs: [platforms, verify, verify-windows]
     if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
     runs-on: ubuntu-latest
     environment: release
