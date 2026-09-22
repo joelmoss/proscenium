@@ -148,10 +148,12 @@ PLATFORMS.each do |ruby_platform, go_platform|
     else
       # The container sees only what -env passes it, comma separated.
       #
-      # -out names the output after the library instead of the module path. Named after the module,
-      # it landed in ext/joelmoss/, a directory the container creates as root: on a Linux host
-      # nothing can then be moved out of it, and every Linux build failed with EACCES. -out puts
-      # the files straight into ext/, and xgo hands them to the directory's owner.
+      # Nothing the container creates can be renamed on a Linux host, because it creates it as
+      # root - and a bind mount of a missing directory is created by Docker, also as root. So
+      # ext/ is made here first, as whoever runs this, and -out names the output after the library
+      # rather than the module path, which put it in a root-owned ext/joelmoss/. xgo then hands
+      # the files to ext/'s owner. Without both, every Linux build failed with EACCES.
+      ext_path.mkpath
       sh %(xgo -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared -out=proscenium ) +
          %(-dest="#{ext_dir}" -targets="#{go_platform}" .)
 
