@@ -19,6 +19,11 @@ task release: %i[build push]
 # darwin/amd64   | x86_64-darwin      | native, CGO_ENABLED=1
 # linux/arm64    | aarch64-linux-gnu  | xgo
 # linux/amd64    | x86_64-linux-gnu   | xgo
+# windows/amd64  | x64-mingw-ucrt     | native, CGO_ENABLED=1, on a Windows host
+#
+# Windows builds natively because xgo cannot: its mingw-w64 linker rejects the export definition
+# Go generates for c-shared (`export_file.def:1: syntax error`). The library is a `.dll`, named
+# explicitly - see LIBRARY_NAME in lib/proscenium/builder.rb.
 #
 # The Linux gems name their libc. A BARE `x86_64-linux` matches glibc and musl alike, so an
 # Alpine host installed it and got a glibc shared library it could not load, with a dlopen
@@ -46,8 +51,16 @@ PLATFORMS = {
   'x86_64-darwin' => 'darwin/amd64',
   'arm64-darwin' => 'darwin/arm64',
   'aarch64-linux-gnu' => 'linux/arm64',
-  'x86_64-linux-gnu' => 'linux/amd64'
+  'x86_64-linux-gnu' => 'linux/amd64',
+  'x64-mingw-ucrt' => 'windows/amd64'
 }.freeze
+
+# Built by the Go toolchain on a host of the same OS. Everything else goes through xgo.
+NATIVE_GOOS = %w[darwin windows].freeze
+
+# The compiled library's file name for a Go OS. Must match LIBRARY_NAME in
+# lib/proscenium/builder.rb, which is what loads it.
+library_name = ->(goos) { goos == 'windows' ? 'proscenium.dll' : 'proscenium' }
 
 base = FileUtils.pwd
 pkg_dir = File.join(base, 'pkg')
@@ -82,7 +95,8 @@ end
 
 desc 'Compile for local os/arch'
 task 'compile:local' => 'clobber:ext' do
-  sh %(go build -buildmode=c-shared -o #{ext_dir}/proscenium main.go)
+  sh 'go', 'build', '-buildmode=c-shared', '-o',
+     "#{ext_dir}/#{library_name.call(Gem.win_platform? ? 'windows' : '')}", 'main.go'
 end
 
 desc 'Build Proscenium gems into the pkg directory.'
@@ -117,9 +131,11 @@ PLATFORMS.each do |ruby_platform, go_platform|
 
     goos, goarch = go_platform.split('/')
 
-    if goos == 'darwin'
-      # rubocop:disable-next Layout/LineLength
-      sh %(GOWORK=off GOOS=#{goos} GOARCH=#{goarch} CGO_ENABLED=1 go build -buildmode=c-shared -v -o #{ext_dir}/proscenium main.go)
+    if NATIVE_GOOS.include?(goos)
+      # Environment as a hash rather than a `VAR=value` prefix, which cmd.exe does not understand.
+      sh({ 'GOWORK' => 'off', 'GOOS' => goos, 'GOARCH' => goarch, 'CGO_ENABLED' => '1' },
+         'go', 'build', '-buildmode=c-shared', '-v', '-o',
+         "#{ext_dir}/#{library_name.call(goos)}", 'main.go')
     else
       sh %(xgo -env=GOWORK=off -buildmode=c-shared -dest="#{ext_dir}" -targets="#{go_platform}" .)
 
