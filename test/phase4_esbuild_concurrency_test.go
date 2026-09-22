@@ -10,8 +10,8 @@ import (
 	b "joelmoss/proscenium/internal/builder"
 	r "joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	"os"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -39,7 +39,7 @@ func TestPhase4EsbuildInternalConcurrency(t *testing.T) {
 	for i := range numRoots {
 		dir := t.TempDir()
 		entry := fmt.Sprintf("console.log(%q);\n", fmt.Sprintf("root-%d-marker", i))
-		if err := os.WriteFile(filepath.Join(dir, "entry.js"), []byte(entry), 0644); err != nil {
+		if err := os.WriteFile(utils.JoinFsPath(dir, "entry.js"), []byte(entry), 0644); err != nil {
 			t.Fatal(err)
 		}
 		roots[i] = dir

@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 
-	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -30,7 +31,7 @@ type BeParsedToMatcher struct {
 func matcherConfig() *types.ConfigT {
 	_, filename, _, _ := runtime.Caller(0)
 	return &types.ConfigT{
-		RootPath:        path.Join(path.Dir(filename), "..", "..", "fixtures", "dummy"),
+		RootPath:        utils.JoinFsPath(filepath.ToSlash(filepath.Dir(filename)), "..", "..", "fixtures", "dummy"),
 		OutputDir:       "public/assets",
 		Environment:     types.TestEnv,
 		InternalTesting: true,

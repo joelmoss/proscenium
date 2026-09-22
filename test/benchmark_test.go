@@ -5,17 +5,16 @@ import (
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"path/filepath"
 	"testing"
 )
 
 func BenchmarkCssBuild(bm *testing.B) {
 	cfg := newTestConfig()
 
-	fixturesPath := filepath.Join(cfg.RootPath, "..")
+	fixturesPath := utils.JoinFsPath(cfg.RootPath, "..")
 	cfg.RubyGems = map[string]string{
-		"gem1": filepath.Join(fixturesPath, "dummy", "vendor", "gem1"),
-		"gem2": filepath.Join(fixturesPath, "external", "gem2"),
+		"gem1": utils.JoinFsPath(fixturesPath, "dummy", "vendor", "gem1"),
+		"gem2": utils.JoinFsPath(fixturesPath, "external", "gem2"),
 	}
 
 	for bm.Loop() {

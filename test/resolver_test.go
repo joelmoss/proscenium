@@ -2,7 +2,8 @@ package proscenium_test
 
 import (
 	r "joelmoss/proscenium/internal/resolver"
-	"path/filepath"
+	"joelmoss/proscenium/internal/utils"
+	"runtime"
 	"testing"
 
 	. "github.com/onsi/ginkgo/v2"
@@ -22,7 +23,7 @@ var _ = Describe("Resolve", func() {
 		relPath, absPath, _ := r.Resolve("/lib/foo.js", "", testConfig)
 
 		Expect(relPath).To(Equal("/lib/foo.js"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/lib/foo.js")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/lib/foo.js")))
 	})
 
 	// A URL has no file on disk. The file half used to be `path.Join(cfg.RootPath, url)`: a path
@@ -48,17 +49,17 @@ var _ = Describe("Resolve", func() {
 		// app-root fallback was a TrimPrefix that did nothing, and the reparse at the end of
 		// Resolve joined the root back on.
 		It("resolves relative path", func() {
-			importer := filepath.Join(testConfig.RootPath, "lib/foo.js")
+			importer := utils.JoinFsPath(testConfig.RootPath, "lib/foo.js")
 			relPath, absPath, _ := r.Resolve("./foo2.js", importer, testConfig)
 
 			Expect(relPath).To(Equal("/lib/foo2.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/lib/foo2.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/lib/foo2.js")))
 		})
 
 		// Under neither the app root nor a gem, the joined path used to go out unchanged as the
 		// URL path: an absolute filesystem path in a URL.
 		It("refuses a path outside the app root and every gem", func() {
-			importer := filepath.Join(fixturesRoot, "external/one/index.css")
+			importer := utils.JoinFsPath(fixturesRoot, "external/one/index.css")
 			relPath, absPath, err := r.Resolve("./foo.css", importer, testConfig)
 
 			Expect(err).To(MatchError(`"./foo.css" from "index.css" is outside the app root and every bundled gem`))
@@ -73,39 +74,70 @@ var _ = Describe("Resolve", func() {
 		})
 	})
 
+	// Only Windows has a path that is fs-absolute without being URL-rooted, so these are the one
+	// place that path through the resolver is exercised.
+	When("given a Windows drive path", func() {
+		BeforeEach(func() {
+			if runtime.GOOS != "windows" {
+				Skip("only Windows has drive paths")
+			}
+		})
+
+		It("serves it from the URL it maps to", func() {
+			relPath, absPath, err := r.Resolve(utils.JoinFsPath(testConfig.RootPath, "lib/foo.js"), "", testConfig)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(relPath).To(Equal("/lib/foo.js"))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/lib/foo.js")))
+		})
+
+		It("refuses one outside the app root and every gem", func() {
+			_, _, err := r.Resolve(utils.JoinFsPath(fixturesRoot, "external/one/index.css"), "", testConfig)
+
+			Expect(err).To(MatchError(`"index.css" is outside the app root and every bundled gem`))
+		})
+
+		// Slash-form, a UNC path is "//"-rooted, which the URL-root check would claim.
+		It("refuses a UNC path outside the app root and every gem", func() {
+			_, _, err := r.Resolve("//server/share/x.css", "", testConfig)
+
+			Expect(err).To(MatchError(`"x.css" is outside the app root and every bundled gem`))
+		})
+	})
+
 	It("resolves bare specifier", func() {
 		relPath, absPath, _ := r.Resolve("pkg", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/pkg/index.js"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/node_modules/pkg/index.js")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/node_modules/pkg/index.js")))
 	})
 
 	It("resolves file:* pnpm install", func() {
 		relPath, absPath, _ := r.Resolve("pnpm-file/one.css", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/pnpm-file/one.css"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/node_modules/pnpm-file/one.css")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/node_modules/pnpm-file/one.css")))
 	})
 
 	It("resolves external file:* pnpm install", func() {
 		relPath, absPath, _ := r.Resolve("pnpm-file-ext/one.css", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/pnpm-file-ext/one.css"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/node_modules/pnpm-file-ext/one.css")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/node_modules/pnpm-file-ext/one.css")))
 	})
 
 	It("resolves link:* pnpm install", func() {
 		relPath, absPath, _ := r.Resolve("pnpm-link/one.css", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/pnpm-link/one.css"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/node_modules/pnpm-link/one.css")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/node_modules/pnpm-link/one.css")))
 	})
 
 	It("resolves external link:* pnpm install", func() {
 		relPath, absPath, _ := r.Resolve("pnpm-link-ext/one.css", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/pnpm-link-ext/one.css"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/node_modules/pnpm-link-ext/one.css")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/node_modules/pnpm-link-ext/one.css")))
 	})
 
 	It("resolves @rubygems/* file:* pnpm install", func() {
@@ -114,7 +146,7 @@ var _ = Describe("Resolve", func() {
 		relPath, absPath, _ := r.Resolve("@rubygems/gem_file/index.module.css", "", testConfig)
 
 		Expect(relPath).To(Equal("/node_modules/@rubygems/gem_file/index.module.css"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/vendor/gem_file/index.module.css")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/vendor/gem_file/index.module.css")))
 	})
 
 	Context("relative @rubygems/*", func() {
@@ -124,7 +156,7 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("@rubygems/gem1/index.js", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem1/index.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/vendor/gem1/index.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/vendor/gem1/index.js")))
 		})
 
 		It("resolves gem without file extension", func() {
@@ -133,17 +165,17 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("@rubygems/gem1", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem1/index.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/vendor/gem1/index.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/vendor/gem1/index.js")))
 		})
 
 		It("resolves relative path with importer", func() {
 			addGem("gem3", "dummy/vendor")
 
-			importer := filepath.Join(testConfig.RootPath, "/vendor/gem3/lib/gem3/styles.module.css")
+			importer := utils.JoinFsPath(testConfig.RootPath, "/vendor/gem3/lib/gem3/styles.module.css")
 			relPath, absPath, _ := r.Resolve("./red.css", importer, testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem3/lib/gem3/red.css"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/vendor/gem3/lib/gem3/red.css")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/vendor/gem3/lib/gem3/red.css")))
 		})
 	})
 
@@ -154,7 +186,7 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("@rubygems/gem2/lib/gem2/gem2.js", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem2/lib/gem2/gem2.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
 		})
 
 		It("resolves gem without file extension", func() {
@@ -163,17 +195,17 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("@rubygems/gem2/lib/gem2/gem2", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem2/lib/gem2/gem2.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
 		})
 
 		It("resolves relative path with importer", func() {
 			addGem("gem4", "external")
 
-			importer := filepath.Join(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
+			importer := utils.JoinFsPath(testConfig.RootPath, "../external/gem4/lib/gem4/styles.module.css")
 			relPath, absPath, _ := r.Resolve("./red.css", importer, testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem4/lib/gem4/red.css"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem4/lib/gem4/red.css")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem4/lib/gem4/red.css")))
 		})
 	})
 
@@ -190,7 +222,7 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("/node_modules/@rubygems/gem2/lib/gem2/gem2.js", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem2/lib/gem2/gem2.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
 		})
 
 		It("reports an unknown gem in the served URL path form", func() {
@@ -210,7 +242,7 @@ var _ = Describe("Resolve", func() {
 			relPath, absPath, _ := r.Resolve("node_modules/@rubygems/gem2/lib/gem2/gem2.js", "", testConfig)
 
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem2/lib/gem2/gem2.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem2/lib/gem2/gem2.js")))
 		})
 
 		// The gem has both `dir.js` and `dir/index.js`. esbuild reads the trailing slash as "the
@@ -220,11 +252,11 @@ var _ = Describe("Resolve", func() {
 
 			relPath, absPath, _ := r.Resolve("@rubygems/gem4/dir/", "", testConfig)
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem4/dir/index.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem4/dir/index.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem4/dir/index.js")))
 
 			relPath, absPath, _ = r.Resolve("@rubygems/gem4/dir", "", testConfig)
 			Expect(relPath).To(Equal("/node_modules/@rubygems/gem4/dir.js"))
-			Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/external/gem4/dir.js")))
+			Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/external/gem4/dir.js")))
 		})
 
 		// Used to answer with a URL naming gem4 and a file path under gem2's parent directory.
@@ -241,14 +273,14 @@ var _ = Describe("Resolve", func() {
 		relPath, absPath, _ := r.Resolve("/lib/indexes", "", testConfig)
 
 		Expect(relPath).To(Equal("/lib/indexes/index.js"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/lib/indexes/index.js")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/lib/indexes/index.js")))
 	})
 
 	It("resolves file without extension", func() {
 		relPath, absPath, _ := r.Resolve("/lib/foo2", "", testConfig)
 
 		Expect(relPath).To(Equal("/lib/foo2.js"))
-		Expect(absPath).To(Equal(filepath.Join(fixturesRoot, "/dummy/lib/foo2.js")))
+		Expect(absPath).To(Equal(utils.JoinFsPath(fixturesRoot, "/dummy/lib/foo2.js")))
 	})
 })
 

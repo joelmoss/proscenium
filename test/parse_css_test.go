@@ -2,8 +2,8 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/css"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -132,7 +132,7 @@ var _ = Describe("Build(parseCss)", func() {
 									@mixin red from url("./colors.css");
 								}
 							`))
-							stylesheet := filepath.Join(fixturesRoot, "external/one/outside.css")
+							stylesheet := utils.JoinFsPath(fixturesRoot, "external/one/outside.css")
 							_, warnings, err := css.ParseCss(input, stylesheet, testConfig)
 							Expect(err).NotTo(HaveOccurred())
 							Expect(warnings).To(HaveLen(1))
@@ -380,7 +380,7 @@ var _ = Describe("Build(parseCss)", func() {
 				It("refuses two mixin files that include each other through url()", func() {
 					code, warnings := parseWithDeadline(
 						`.x{@mixin a from url("/lib/mixins/cycle/a.css"); }`,
-						filepath.Join(testConfig.RootPath, "foo.css"))
+						utils.JoinFsPath(testConfig.RootPath, "foo.css"))
 
 					// Both definitions expand once; the second lap back into `a` is refused.
 					Expect(code).To(ContainSubstring("color:red;color:blue;"))

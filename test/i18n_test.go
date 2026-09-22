@@ -3,9 +3,10 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
+	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
 	"os"
-	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -23,11 +24,11 @@ func i18nRoot(who string) (string, string) {
 		Expect(os.RemoveAll(root)).To(Succeed())
 	})
 
-	locales := filepath.Join(root, "config", "locales")
+	locales := utils.JoinFsPath(root, "config", "locales")
 	Expect(os.MkdirAll(locales, 0o755)).To(Succeed())
-	Expect(os.WriteFile(filepath.Join(locales, "en.yml"),
+	Expect(os.WriteFile(utils.JoinFsPath(locales, "en.yml"),
 		[]byte("en:\n  who: "+who+"\n"), 0o644)).To(Succeed())
-	Expect(os.WriteFile(filepath.Join(root, "entry.js"),
+	Expect(os.WriteFile(utils.JoinFsPath(root, "entry.js"),
 		[]byte("import locales from \"proscenium/i18n\";\nconsole.log(locales);\n"), 0o644)).To(Succeed())
 
 	return root, locales
@@ -59,7 +60,7 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 	// afterwards does not change the directory mtime, which left nothing for the change detector
 	// to notice and the stale payload served for the life of the process.
 	It("recovers when an invalid locale file is fixed in place", func() {
-		localeFile := filepath.Join(testConfig.RootPath, "config", "locales", "zz_added.yml")
+		localeFile := utils.JoinFsPath(testConfig.RootPath, "config", "locales", "zz_added.yml")
 		// RemoveAll, not Remove: this is registered before the file exists, so an early failure
 		// below would otherwise fail the cleanup too and mask the real one.
 		DeferCleanup(func() {
@@ -90,6 +91,12 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 	// directory mtime, so the change detector found nothing to do and the empty payload was served
 	// for the life of the process - a build reporting success with every translation missing.
 	It("fails the build when the locales directory cannot be listed", func() {
+		// Geteuid answers -1 on Windows, so the root check below never fires there. Windows has
+		// no mode bits that deny the owner, and chmod maps only the read-only attribute, so the
+		// unreadable state this spec needs cannot be created at all.
+		if runtime.GOOS == "windows" {
+			Skip("Windows has no file mode that stops the owner reading a directory it owns")
+		}
 		if os.Geteuid() == 0 {
 			Skip("root reads a 0o111 directory regardless of its mode")
 		}
@@ -115,12 +122,18 @@ var _ = Describe("b.BuildToString(i18n)", func() {
 	// the listing and the stat both succeed, and only the read fails - a different error path, and
 	// one whose OS error names the file's absolute path.
 	It("fails the build when a locale file cannot be read", func() {
+		// Geteuid answers -1 on Windows, so the root check below never fires there. Windows has
+		// no mode bits that deny the owner, and chmod maps only the read-only attribute, so the
+		// unreadable state this spec needs cannot be created at all.
+		if runtime.GOOS == "windows" {
+			Skip("Windows has no file mode that stops the owner reading a file it owns")
+		}
 		if os.Geteuid() == 0 {
 			Skip("root reads a 0o000 file regardless of its mode")
 		}
 
 		root, locales := i18nRoot("someone")
-		Expect(os.Chmod(filepath.Join(locales, "en.yml"), 0o000)).To(Succeed())
+		Expect(os.Chmod(utils.JoinFsPath(locales, "en.yml"), 0o000)).To(Succeed())
 
 		success, result, _ := b.BuildToString("entry.js", i18nConfig(root))
 
