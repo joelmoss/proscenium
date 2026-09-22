@@ -3,7 +3,9 @@
 ## Status, 2026-09-22
 
 Written 2026-09-20 as the implementation plan for issue #73, and kept as the record of why things
-are the way they are. Line numbers below are as of then.
+are the way they are. Everything after this section is the plan as written, and is not updated:
+where it disagrees with this section - the `bun test` harness being Unix-only, "no unresolved
+decisions" - this section is current. Line numbers below are as of then.
 
 | Part | State |
 |---|---|

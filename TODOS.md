@@ -198,8 +198,9 @@ priorities earlier in that file, rejecting three findings, demoting five and rev
 dependency chain. Do not copy any of that here - two copies drift.
 
 **Next:** the rest of `F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3. The
-fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so all three
-`@rubygems` consumers are done (pass 4 ruling 1, consumers-by-deletion first). Nothing still
+fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so the three `@rubygems`
+consumer findings the audit named are done (pass 4 ruling 1, consumers-by-deletion first) - those
+findings, not step 2's own two absorbed items below, which are still open. Nothing still
 open misserves or crashes on a client-supplied URL - the two that did, and the two `internal/css`
 defects before them, are fixed. What remains is materiality rather than breakage. Several findings
 must write the first test for the code they touch; `AUDIT.md`'s pattern P7 lists which, and for
