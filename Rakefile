@@ -98,8 +98,26 @@ task 'compile:local' => 'clobber:ext' do
      "#{ext_dir}/#{library_name.call(Gem.win_platform? ? 'windows' : '')}", 'main.go'
 end
 
-desc 'Build Proscenium gems into the pkg directory.'
-task build: [:clobber] + PLATFORMS.keys.map { |platform| "build:#{platform}" }
+# The Go OS this machine builds natively. Everything built natively (see NATIVE_GOOS) needs a C
+# toolchain for its own OS, so a Mac cannot build the Windows gem, nor Windows the darwin ones.
+host_goos = if Gem.win_platform? then 'windows'
+            elsif RbConfig::CONFIG['host_os'].include?('darwin') then 'darwin'
+            else 'linux'
+            end
+
+# What `rake build` can build here: every xgo target, since xgo only needs Docker, and the native
+# targets for this machine's own OS. The release workflow builds each platform on a matching
+# runner instead, and is the only way to build all of them.
+buildable_here = PLATFORMS.select do |_, go_platform|
+  goos = go_platform.split('/').first
+  !NATIVE_GOOS.include?(goos) || goos == host_goos
+end.keys
+
+desc 'Build the Proscenium gems this machine can build into the pkg directory.'
+task build: [:clobber] + buildable_here.map { |platform| "build:#{platform}" } do
+  skipped = PLATFORMS.keys - buildable_here
+  puts "---> Skipped #{skipped.join(', ')}: they build natively on their own OS" if skipped.any?
+end
 
 desc 'Push Proscenium gems up to the gem server.'
 task push: PLATFORMS.keys.map { |platform| "push:#{platform}" } << 'push:gem'

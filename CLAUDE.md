@@ -200,10 +200,11 @@ To check the credential path without publishing, dispatch the workflow with `ver
 performs the OIDC exchange, confirms RubyGems issued a scoped key, and stops. Worth doing before a
 first release so that is not also the first test of trusted publishing.
 
-`bundle exec rake build` still builds everything locally, but note it needs Docker for the
-cross-compiled Linux gems, cannot build the Windows gem anywhere but Windows, and the plain gem it
-produces inherits whatever the last compile left behind unless `PROSCENIUM_PACKAGE_EXT` is unset
-for that build. Prefer the workflow.
+`bundle exec rake build` builds what the machine can: the Linux gems anywhere Docker runs (they go
+through xgo), and the natively built gems only for the machine's own OS, so a Mac skips Windows and
+says so. The plain gem it produces inherits whatever the last compile left behind unless
+`PROSCENIUM_PACKAGE_EXT` is unset for that build. Prefer the workflow, which is the only thing that
+builds every platform.
 
 ## Gotchas
 
