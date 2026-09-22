@@ -131,13 +131,21 @@ PLATFORMS.each do |ruby_platform, go_platform|
 
     goos, goarch = go_platform.split('/')
 
+    # -mod=readonly because the release workflow's bundler-cache installs gems into vendor/bundle,
+    # and Go reads any vendor/ directory as module vendoring: every build then failed with
+    # "inconsistent vendoring". The test workflow already passes it for the same reason.
+    goflags = '-mod=readonly'
+
     if NATIVE_GOOS.include?(goos)
       # Environment as a hash rather than a `VAR=value` prefix, which cmd.exe does not understand.
-      sh({ 'GOWORK' => 'off', 'GOOS' => goos, 'GOARCH' => goarch, 'CGO_ENABLED' => '1' },
+      sh({ 'GOWORK' => 'off', 'GOFLAGS' => goflags, 'GOOS' => goos, 'GOARCH' => goarch,
+           'CGO_ENABLED' => '1' },
          'go', 'build', '-buildmode=c-shared', '-v', '-o',
          "#{ext_dir}/#{library_name.call(goos)}", 'main.go')
     else
-      sh %(xgo -env=GOWORK=off -buildmode=c-shared -dest="#{ext_dir}" -targets="#{go_platform}" .)
+      # The container sees only what -env passes it, comma separated.
+      sh %(xgo -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared -dest="#{ext_dir}" ) +
+         %(-targets="#{go_platform}" .)
 
       built_path.each_child do |child|
         if child.extname == '.h'
