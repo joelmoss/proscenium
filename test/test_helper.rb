@@ -28,6 +28,18 @@ module ActiveSupport
     class << self
       alias with context
     end
+
+    # Runs the block as though on Windows, or not. For code whose Windows branch only converts a
+    # path's spelling, so it can be exercised on every platform from a literal Windows-form path.
+    # Plain singleton surgery rather than Minitest::Mock, which this suite does not load.
+    def as_platform(windows)
+      Gem.singleton_class.alias_method(:__orig_win_platform?, :win_platform?)
+      Gem.define_singleton_method(:win_platform?) { windows }
+      yield
+    ensure
+      Gem.singleton_class.alias_method(:win_platform?, :__orig_win_platform?)
+      Gem.singleton_class.remove_method(:__orig_win_platform?)
+    end
   end
 end
 

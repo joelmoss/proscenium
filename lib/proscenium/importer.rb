@@ -71,7 +71,7 @@ module Proscenium
             identity = abs_path.presence || filepath
             transformed_path = SUFFIXES.compute_if_absent(identity) do
               relative = if abs_path.present?
-                           Pathname.new(abs_path).relative_path_from(Rails.root)
+                           Utils.css_module_relative_path(abs_path)
                          else
                            identity
                          end

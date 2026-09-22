@@ -93,6 +93,28 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       assert_equal '', subject.imported['https://cdn.example/x.module.css'][:abs_path]
     end
 
+    # A gem on another drive than the app - RubyInstaller's gems on C:, the app on D: - has no
+    # path relative to Rails.root, and relative_path_from raised, so every view using one of its
+    # CSS modules failed. esbuild falls back to the absolute path for the stylesheet's class
+    # names, so the suffix has to be built from that too.
+    #
+    # A relative path stands in for the other drive, because it is the one input
+    # relative_path_from rejects on every platform: it needs both sides absolute, or both
+    # relative. A real drive letter would not do, since a checkout can be on the same drive.
+    it 'builds the suffix from the whole path when it has no form relative to the app' do
+      Proscenium::Importer::SUFFIXES.clear
+      elsewhere = 'gems/widgets/x.module.css'
+      original = Proscenium::Resolver.method(:resolve)
+      Proscenium::Resolver.define_singleton_method(:resolve) do |*, **|
+        [nil, '/node_modules/@rubygems/widgets/x.module.css', elsewhere]
+      end
+
+      assert_equal "#{Proscenium::Utils.css_module_digest(elsewhere)}_gems-widgets-x-module",
+                   subject.import('@rubygems/widgets/x.module.css')
+    ensure
+      Proscenium::Resolver.define_singleton_method(:resolve, original)
+    end
+
     it 'tells two remote css modules apart' do
       refute_equal subject.import('https://cdn.example/a.module.css'),
                    subject.import('https://cdn.example/b.module.css')

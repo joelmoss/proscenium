@@ -11,6 +11,12 @@ module Proscenium
     #   absolute file system path as an array. Only returns the resolved path if false (default).
     # @return [String, Array<String>]
     def self.resolve(path, as_array: false)
+      # Normalised before anything reads it, the guard and the cache key included. The bun test
+      # harness hands this Bun's own spelling of a module path, which on Windows is `D:\...`;
+      # matched against a slash-form Rails.root it fell through to the Go resolver and came back
+      # as the url path unchanged - a backslash path the harness then refused to build.
+      path = Utils.fs_path(path)
+
       if path.start_with?('./', '../')
         raise ArgumentError, '`path` must be an absolute file system or URL path'
       end

@@ -19,6 +19,13 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       end
     end
 
+    # The guard has to see the normalised path, or a Windows-spelled relative path walks past it.
+    it 'raises on a Windows-form relative path' do
+      assert_raises ArgumentError do
+        as_platform(true) { subject.resolve('..\\foo.js') }
+      end
+    end
+
     test 'bare specifier (NPM package)' do
       assert_equal '/node_modules/pkg/index.js', subject.resolve('pkg')
     end
@@ -29,6 +36,18 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
 
     it 'resolves a URL, which has no file' do
       assert_equal 'https://cdn.example/x.js', subject.resolve('https://cdn.example/x.js')
+    end
+
+    # The bun test harness passes Bun's own spelling of a module path, which on Windows uses
+    # backslashes. Left as it was, it missed the Rails.root match and came back unresolved.
+    it 'resolves a Windows-form file system path as its slash form' do
+      windows_path = "#{Rails.root.to_s.tr('/', '\\')}\\lib\\foo.js"
+      manifest_path, url_path, abs_path =
+        as_platform(true) { subject.resolve(windows_path, as_array: true) }
+
+      assert_nil manifest_path
+      assert_equal '/lib/foo.js', url_path
+      assert_equal Rails.root.join('lib/foo.js').to_s, abs_path
     end
 
     test 'absolute URL path' do
