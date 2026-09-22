@@ -110,6 +110,13 @@ module Proscenium
       # nobody else in the directory to race. `/tmp` explicitly, not Dir.tmpdir, because a unix
       # socket path is capped near 104 bytes and a CI or sandboxed TMPDIR can spend most of it.
       #
+      # Except on Windows, which has no `/tmp`. Dir.tmpdir there is normally the per-user
+      # `AppData\Local\Temp`, which is short enough and private to the user by its default ACL -
+      # which matters, because the 0700 mktmpdir asks for means nothing on Windows. That is a
+      # default, not a guarantee: TMP or TEMP can point somewhere shared. Only a caller that
+      # supplies no socket_dir lands here; the bun test harness always supplies one, under the
+      # app's own tmp/.
+      #
       # Resolved on first use rather than in the constructor, because `handle` can be driven
       # without ever binding anything - most of this class' own tests do - and a constructor that
       # creates a directory would leave one behind for every such instance.
@@ -119,7 +126,7 @@ module Proscenium
       # waited for a socket the server had not bound.
       def socket_path
         @socket_mutex.synchronize do
-          @socket_dir ||= Dir.mktmpdir('proscenium-', '/tmp')
+          @socket_dir ||= Dir.mktmpdir('proscenium-', Gem.win_platform? ? Dir.tmpdir : '/tmp')
           @socket_path ||= File.join(@socket_dir, SOCKET_NAME)
         end
       end
