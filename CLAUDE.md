@@ -119,7 +119,7 @@ golangci-lint run
   the comment in go-test for why each one matters
 - CI sets `GOWORK=off` and `RAILS_ENV=test`
 - CI compiles Go with: `go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go`
-  (`proscenium.dll` on Windows)
+  (`proscenium.dll` on Windows, which `rake compile:local` also produces there)
 - Rubocop runs with `-P --fail-level C`
 
 ## Go Package Structure
@@ -136,13 +136,16 @@ golangci-lint run
 
 The gem ships with precompiled Go binaries per platform. `PLATFORMS` in the Rakefile is the single
 source of truth; the release workflow derives its build matrix from it via `rake platforms:json`,
-so another target one of the existing builders already covers - a darwin arch, or a glibc Linux
-arch - is a one-line change there. A platform needing a builder that does not exist yet needs a
-build job as well; Windows is the live example, see below.
+so another target one of the existing builders already covers - a darwin arch, a glibc Linux
+arch, or a Windows arch - is a one-line change there. A platform needing a builder that does not
+exist yet needs a build job as well.
 
 - `x86_64-darwin`, `arm64-darwin` (macOS) - built natively, `CGO_ENABLED=1`
 - `x86_64-linux-gnu`, `aarch64-linux-gnu` (Linux) - cross-compiled with
   [xgo](https://github.com/techknowlogick/xgo), pinned to a version
+- `x64-mingw-ucrt` (Windows) - built natively on `windows-latest`, `CGO_ENABLED=1`. The library is
+  `proscenium.dll`, not `proscenium`. `xgo` cannot build it: its linker fails with
+  `x86_64-w64-mingw32-ld: export_file.def:1: syntax error`
 
 The Linux gems name their libc deliberately. A bare `x86_64-linux` matches glibc and musl alike, so
 Alpine used to install a glibc library it could not load. `-gnu` is never selected on musl, so a
@@ -157,13 +160,8 @@ library with `dlopen`. The build succeeds and is correctly musl-linked; it simpl
 That is [golang/go#54805](https://github.com/golang/go/issues/54805), and the linker flag that
 fixes it is in neither Go 1.25 nor 1.27. Revisit when it ships - nothing else needs to change.
 
-**Windows passes CI but is not released yet.** `go test`, `bin/test` and `bun test` all run green
-on `windows-latest`, and the path work is done - see the TWO PATH SPACES comment in
-`internal/utils/utils.go` for the convention, and `Utils.fs_path` for its Ruby side. What remains
-is packaging: there is no `x64-mingw-ucrt` entry in `PLATFORMS` and no Windows leg in the release
-workflow, so no Windows gem is built or published. Note `xgo` cannot build the Windows DLL - it
-fails with `x86_64-w64-mingw32-ld: export_file.def:1: syntax error` - so Windows must build
-natively on a `windows-latest` runner, the way darwin builds natively on macOS.
+**Windows** runs `go test`, `bin/test` and `bun test` in CI. The path convention it needed is the
+TWO PATH SPACES comment in `internal/utils/utils.go`, with `Utils.fs_path` as its Ruby side.
 
 ## Releasing
 
@@ -172,11 +170,20 @@ Releases run from `.github/workflows/release.yml`, not from a laptop. Push a `v*
 The workflow builds every platform gem plus the platform-less one, then refuses to publish until
 those exact archives have passed two different checks.
 
-`bin/verify-gem` serves the built gems from a generated index and installs from it, so RubyGems
-performs the same platform selection a user gets, and then loads the library. **It runs on Linux
-only** - `x86_64-linux-gnu`, and `aarch64-linux-gnu` under QEMU. The darwin gems are published
-without ever being installed anywhere, and no leg resolves to the platform-less gem, because on
-both legs a platform gem wins. Widening that is a TODO, not a claim this workflow already meets.
+The built gems are served from a generated index and installed from it, so RubyGems performs the
+same platform selection a user gets. `bin/verify-installed-gem` then checks the platform it
+resolved, loads the library from the installed copy, and calls into Go - five times, each required
+to exit cleanly, because the Windows exit crash was intermittent. It installs Proscenium with
+`--ignore-dependencies` and then only ffi: the index holds nothing but Proscenium, and resolving
+rails from it fails. `bin/verify-gem` runs it inside a container for `x86_64-linux-gnu`, and
+`aarch64-linux-gnu` under QEMU; `verify-windows` runs it directly on `windows-latest` for
+`x64-mingw-ucrt`. The darwin gems are published without ever being installed anywhere, and no leg
+resolves to the platform-less gem, because on every leg a platform gem wins. Widening that is a
+TODO, not a claim this workflow already meets.
+
+To run all of it without publishing, dispatch the workflow from any branch with `dry_run`
+(`gh workflow run release.yml --ref <branch> -f dry_run=true`). Publishing also needs the run to
+be on a `v*` tag, so a dispatch from a branch cannot publish whatever `dry_run` says.
 
 The platform-less gem is covered a different way: `build-plain` builds it in a job that never
 compiles anything, then lists the archive and fails on any `lib/proscenium/ext/` entry. That is
@@ -194,8 +201,9 @@ performs the OIDC exchange, confirms RubyGems issued a scoped key, and stops. Wo
 first release so that is not also the first test of trusted publishing.
 
 `bundle exec rake build` still builds everything locally, but note it needs Docker for the
-cross-compiled Linux gems, and the plain gem it produces inherits whatever the last compile left
-behind unless `PROSCENIUM_PACKAGE_EXT` is unset for that build. Prefer the workflow.
+cross-compiled Linux gems, cannot build the Windows gem anywhere but Windows, and the plain gem it
+produces inherits whatever the last compile left behind unless `PROSCENIUM_PACKAGE_EXT` is unset
+for that build. Prefer the workflow.
 
 ## Gotchas
 

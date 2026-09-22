@@ -128,35 +128,6 @@ named predicates, and three ingress doors, which are the seams types would go on
 
 **Effort:** L. **Priority:** P3.
 
-## Ship a Windows gem
-
-**What:** Build and publish an `x64-mingw-ucrt` platform gem. Add it to `PLATFORMS` in the
-Rakefile, and give the release workflow a job that builds the DLL natively on `windows-latest` -
-`xgo` cannot, it fails with `x86_64-w64-mingw32-ld: export_file.def:1: syntax error`. Then a
-Windows leg for `bin/verify-gem`, so the published archive is installed and loaded at least once
-before it ships.
-
-**Why:** Everything else for issue #73 is done. `go test`, `bin/test` and `bun test` all pass on
-`windows-latest` (draft PR #79). What it took, for whoever touches it next:
-
-- the TWO PATH SPACES convention in `internal/utils/utils.go`: two absoluteness predicates chosen
-  per call site, slash-form paths internally, normalised at the three doors esbuild comes through;
-  and `Utils.fs_path` on the Ruby side, for the metafile and for the paths Bun hands the harness.
-- two esbuild fork fixes: `CssLocalHash` hashing a separator-independent path, and the metafile
-  quoting paths it substituted into already-quoted JSON strings.
-- a module pin in `builder.rb`, because ffi calls `FreeLibrary` on the Go library at VM teardown
-  and Go cannot be unloaded - it crashed the interpreter on about three exits in five.
-- sqlite3 >= 2.8.1 (locked at 2.9.6): Ruby 3.4.5 moved `clock_gettime` out of the Ruby DLL, and
-  older precompiled sqlite3 gems still import it from there, failing with `127`. Plus
-  `tzinfo-data`, because Windows has no zoneinfo.
-- checkout with `core.symlinks`, `core.longpaths` and `core.autocrlf false`. The last matters
-  because esbuild's chunk hash is built from file bytes.
-
-Also README's supported-platforms table, which has no Windows row, and the plan's Phase 5 doc
-note. The plan itself, with what changed from it, is `docs/plans/73-expand-os-support.md`.
-
-**Effort:** M. **Priority:** P2.
-
 ## Windows path edge cases the #79 review could not settle
 
 **What:** Five things found in the pre-merge review of PR #79 that need a Windows host, or a
