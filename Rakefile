@@ -66,7 +66,6 @@ base = FileUtils.pwd
 pkg_dir = File.join(base, 'pkg')
 ext_dir = 'lib/proscenium/ext'
 ext_path = Pathname.new(base).join(ext_dir)
-built_path = ext_path.join('joelmoss')
 gemspec = Bundler.load_gemspec('proscenium.gemspec')
 
 # Pushing has to be resumable. A release publishes one gem per platform, and a run that dies
@@ -148,18 +147,19 @@ PLATFORMS.each do |ruby_platform, go_platform|
          "#{ext_dir}/#{library_name.call(goos)}", 'main.go')
     else
       # The container sees only what -env passes it, comma separated.
-      sh %(xgo -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared -dest="#{ext_dir}" ) +
-         %(-targets="#{go_platform}" .)
+      #
+      # -out names the output after the library instead of the module path. Named after the module,
+      # it landed in ext/joelmoss/, a directory the container creates as root: on a Linux host
+      # nothing can then be moved out of it, and every Linux build failed with EACCES. -out puts
+      # the files straight into ext/, and xgo hands them to the directory's owner.
+      sh %(xgo -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared -out=proscenium ) +
+         %(-dest="#{ext_dir}" -targets="#{go_platform}" .)
 
-      built_path.each_child do |child|
-        if child.extname == '.h'
-          child.rename "#{ext_dir}/proscenium.h"
-        else
-          child.rename "#{ext_dir}/proscenium"
-        end
+      ext_path.glob("proscenium-#{goos}-*").each do |built|
+        built.rename ext_path.join(built.extname == '.h' ? 'proscenium.h' : 'proscenium')
       end
 
-      built_path.rmtree
+      raise "xgo left no library in #{ext_dir}" unless ext_path.join('proscenium').exist?
     end
   end
 
