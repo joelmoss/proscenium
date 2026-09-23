@@ -11,7 +11,7 @@ go 1.25.7
 // workspace on, both commands resolve that directory instead of the tag and leave go.sum alone.
 
 require (
-	github.com/joelmoss/esbuild-internal v0.28.2-2c2bc77d
+	github.com/joelmoss/esbuild-internal v0.28.2-647fe5a4
 	github.com/k0kubun/pp v3.0.1+incompatible
 	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/peterbourgon/diskv v2.0.1+incompatible
