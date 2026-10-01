@@ -122,20 +122,20 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 // cheap (a handful of string entries) and avoids the unsynchronised global cache that used to
 // live here.
 func buildEnvVars(cfg *types.ConfigT) map[string]string {
-	envVarMap := make(map[string]string, 4)
-
-	for key, value := range cfg.EnvVars {
-		if key != "" || value != "" {
-			envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
-		}
+	// RAILS_ENV and NODE_ENV are always defined: seeded from the environment first, then
+	// overwritten by any given env vars. They used to be seeded only when no env vars were given at
+	// all, so any configured env var without RAILS_ENV beside it left an empty define, which
+	// esbuild rejects - failing the whole build.
+	env := fmt.Sprintf("'%s'", cfg.Environment)
+	envVarMap := map[string]string{
+		"proscenium.env.RAILS_ENV": env,
+		"proscenium.env.NODE_ENV":  env,
 	}
 
-	if len(cfg.EnvVars) == 0 {
-		// This ensures that we always have NODE_ENV and RAILS_ENV defined even the given env vars do
-		// not define them.
-		env := fmt.Sprintf("'%s'", cfg.Environment)
-		envVarMap["proscenium.env.RAILS_ENV"] = env
-		envVarMap["proscenium.env.NODE_ENV"] = env
+	for key, value := range cfg.EnvVars {
+		if key != "" {
+			envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
+		}
 	}
 
 	envVarMap["process.env.NODE_ENV"] = envVarMap["proscenium.env.RAILS_ENV"]
