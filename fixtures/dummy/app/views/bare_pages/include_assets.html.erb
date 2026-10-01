@@ -1,4 +1,4 @@
-<% sideload_assets params[:sideload_view_assets] %>
+<% sideload_assets params[:sideload_view_assets] if params.key?(:sideload_view_assets) %>
 <%= include_assets %>
 <h1>Hello</h1>
 

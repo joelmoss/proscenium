@@ -1,2 +1,2 @@
-<% sideload_assets params[:sideload_partial_assets] %>
+<% sideload_assets params[:sideload_partial_assets] if params.key?(:sideload_partial_assets) %>
 <h2>Side Partial</h2>
