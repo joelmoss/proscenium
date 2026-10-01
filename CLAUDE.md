@@ -100,10 +100,10 @@ golangci-lint run
 
 - Ruby tests use Minitest (with Maxitest) and are in `test/`
 - Ruby tests use RSpec-style DSL: `describe`, `context` (aliased as `with`), `it`
-- Test helper sets `ENV['PROSCENIUM_TESTS'] = '1'` and uses DatabaseCleaner with transactions
+- Test helper sets `ENV['PROSCENIUM_TESTS'] = '1'`
 - Go tests use Ginkgo/Gomega and are in `test/`
 - Go test suite file: `test/proscenium_suite_test.go`
-- Custom Go test matchers: `ContainCode`, `EqualCode`, `BeParsedTo` (in `test/support/`)
+- Custom Go test matchers: `ContainCode`, `BeParsedTo` (in `test/support/`)
 - Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Bundle`, `Unbundle`, `Production` for options
 - Go tests build a fresh per-spec `testConfig` in BeforeEach (with `InternalTesting: true`), not the old shared `types.Config` global
 - JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`

@@ -19,7 +19,6 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'database_cleaner-active_record', require: 'database_cleaner/active_record'
   gem 'fakefs', require: 'fakefs/safe'
   gem 'gem1', path: './fixtures/dummy/vendor/gem1'
   gem 'gem2', path: './fixtures/external/gem2'

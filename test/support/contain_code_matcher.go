@@ -3,11 +3,9 @@ package support
 import (
 	"fmt"
 	"joelmoss/proscenium/internal/utils"
-	"reflect"
 	"strings"
 
 	"4d63.com/collapsewhitespace"
-	"github.com/joelmoss/esbuild-internal/api"
 	"github.com/onsi/gomega/format"
 	"github.com/onsi/gomega/types"
 )
@@ -18,16 +16,6 @@ type ContainCodeMatcher struct {
 }
 
 func (matcher *ContainCodeMatcher) Match(actual any) (success bool, err error) {
-	if reflect.TypeOf(actual).String() == "api.BuildResult" {
-		buildResult := actual.(api.BuildResult)
-
-		if len(buildResult.Errors) > 0 {
-			return false, fmt.Errorf("esbuild.BuildResult contains an error: \n%s", format.Object(buildResult.Errors, 1))
-		}
-
-		actual = buildResult.OutputFiles[0].Contents
-	}
-
 	actualString, ok := utils.ToString(actual)
 	if !ok {
 		return false, fmt.Errorf("ContainCode matcher requires a string.  Got:\n%s", format.Object(actual, 1))
