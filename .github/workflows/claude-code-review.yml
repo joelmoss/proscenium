@@ -12,9 +12,11 @@ on:
 
 jobs:
   claude-review:
-    # Fork PRs get no repository secrets, so CLAUDE_CODE_OAUTH_TOKEN would be empty and the run
-    # would fail. Review only branches pushed to this repository.
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    # Optional: Filter by PR author
+    # if: |
+    #   github.event.pull_request.user.login == 'external-contributor' ||
+    #   github.event.pull_request.user.login == 'new-developer' ||
+    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
 
     runs-on: ubuntu-latest
     permissions:
@@ -25,12 +27,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
           fetch-depth: 1
-          # Claude reads repository content, so keep the checkout token out of .git/config. The
-          # action configures its own git credentials.
-          persist-credentials: false
 
       - name: Run Claude Code Review
         id: claude-review
