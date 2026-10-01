@@ -35,8 +35,8 @@ module Proscenium
         out = []
         Proscenium::Importer.each_stylesheet(delete: true) do |path, opts|
           opts = opts[:css].is_a?(Hash) ? opts[:css] : {}
-          opts[:preload_links_header] = false if fragments
-          opts[:data] ||= {}
+          opts = opts.merge(data: opts[:data] || {})
+          opts = opts.merge(preload_links_header: false) if fragments
 
           out << helpers.stylesheet_link_tag(path.delete_prefix('/'), extname: false, **opts)
         end
@@ -62,7 +62,7 @@ module Proscenium
           next if opts.delete(:lazy)
 
           opts = opts[:js].is_a?(Hash) ? opts[:js] : {}
-          opts[:preload_links_header] = false if fragments
+          opts = opts.merge(preload_links_header: false) if fragments
 
           out << helpers.javascript_include_tag(path.delete_prefix('/'), extname: false, **opts)
         end
@@ -98,21 +98,7 @@ module Proscenium
       def sideload_inheritance_chain(obj, options)
         return unless Proscenium.config.side_load
 
-        options = {} if options.nil?
-        options = { js: options, css: options } unless options.is_a?(Hash)
-
-        unless obj.sideload_assets_options.nil?
-          tpl_options = obj.sideload_assets_options
-          options = if tpl_options.is_a?(Hash)
-                      options.deep_merge tpl_options
-                    else
-                      { js: tpl_options, css: tpl_options }
-                    end
-        end
-
-        %i[css js].each do |k|
-          options[k] = obj.instance_eval(&options[k]) if options[k].is_a?(Proc)
-        end
+        options = merge_options(options, obj.sideload_assets_options, obj)
 
         css_imports = []
 
@@ -147,6 +133,67 @@ module Proscenium
         css_imports.reverse_each do |it| # rubocop:disable Style/ItAssignment
           Importer.sideload_css it, **options
         end
+      end
+
+      # Whether `template`, rendered by `view`, should have its assets side loaded.
+      def sideloadable?(view, template)
+        Proscenium.config.side_load && view.controller.respond_to?(:sideload_assets_options) &&
+          template.respond_to?(:identifier) && template.respond_to?(:type) && template.type == :html
+      end
+
+      # Renders the block, then side loads each of `templates`, and returns what the block
+      # returned. A template's `sideload_assets` value belongs to this one render: the view's
+      # stored value is set aside before the block and put back after it, so a repeated or nested
+      # render of the same template neither inherits this one's value nor overwrites it.
+      def sideload_templates(view, templates)
+        # A layout can be `false`, meaning none, and a template can be its own layout.
+        templates = templates.select(&:itself).uniq(&:identifier)
+        # A view rendered before Proscenium::Helper is included has nowhere to store a value.
+        store = view.try(:proscenium_sideload_assets_options) || {}
+        saved = templates.to_h { |tpl| [tpl.identifier, store.delete(tpl.identifier)] }
+
+        result = yield
+        templates.each { |tpl| sideload_template tpl, view.controller, store[tpl.identifier] }
+        result
+      ensure
+        saved&.each { |id, value| value.nil? ? store.delete(id) : store[id] = value }
+      end
+
+      # Returns a new options hash: `base`, with `override` deep merged over it, or replacing it
+      # when not a Hash, and any Proc `css`/`js` value evaluated against `receiver`. A nil `base`
+      # is empty, and a nil `override` changes nothing. Keys are symbolized at every depth, before
+      # merging, so options with indifferent access merge with symbol-keyed ones.
+      #
+      # Neither input is modified, and no Hash is shared with them - `base` is usually a class
+      # attribute, so writing to it would leak one request's options into every later one. Values
+      # other than hashes are passed through as they are, not copied: `dup` on an ActiveRecord
+      # model returns a new record with no id.
+      def merge_options(base, override, receiver)
+        options = base.nil? ? {} : base
+        options = { js: options, css: options } unless options.is_a?(Hash)
+        options = options.deep_symbolize_keys
+
+        unless override.nil?
+          options = if override.is_a?(Hash)
+                      options.deep_merge(override.deep_symbolize_keys)
+                    else
+                      { js: override, css: override }
+                    end
+        end
+
+        options.to_h do |key, value|
+          value = receiver.instance_eval(&value) if (key in :css | :js) && value.is_a?(Proc)
+          [key, value.is_a?(Hash) ? value.deep_symbolize_keys : value]
+        end
+      end
+
+      private
+
+      def sideload_template(tpl, controller, override)
+        return unless (tpl_path = Pathname.new(tpl.identifier)).file?
+
+        options = merge_options(controller.sideload_assets_options, override, controller)
+        Importer.sideload tpl_path, **options
       end
     end
   end

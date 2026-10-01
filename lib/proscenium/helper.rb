@@ -2,13 +2,21 @@
 
 module Proscenium
   module Helper
+    # Sets the side load options of the template being rendered, for this render only. They are
+    # kept on the view, which lives for one request, keyed by template, because the template
+    # object itself is cached and shared by every request. `SideLoad.sideload_templates` scopes
+    # each value to the render that set it.
     def sideload_assets(value)
       if value.nil?
-        @current_template.instance_variable_defined?(:@sideload_assets_options) &&
-          @current_template.remove_instance_variable(:@sideload_assets_options)
+        proscenium_sideload_assets_options.delete @current_template.identifier
       else
-        @current_template.instance_variable_set :@sideload_assets_options, value
+        proscenium_sideload_assets_options[@current_template.identifier] = value
       end
+    end
+
+    # @return [Hash] the `sideload_assets` value of each template in this render, by identifier.
+    def proscenium_sideload_assets_options
+      @proscenium_sideload_assets_options ||= {}
     end
 
     def compute_asset_path(path, options = {})

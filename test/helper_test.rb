@@ -98,10 +98,73 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       end
     end
 
-    # A proc was only ever evaluated for view templates. `PartialRenderer#sideload_template_assets`
-    # took `(tpl, options)` and called `controller.instance_eval`, with no `controller` in scope -
-    # so every proc reaching a partial raised NameError. The proc test above uses `/`, whose view
-    # renders no partials, which is why it never fired.
+    # Evaluating a proc used to write its result back into the hash it came from - here the
+    # controller's class attribute - so the proc ran once per process, and the first request's
+    # answer became every later request's.
+    context 'proc inside a hash in controller' do
+      it 'evaluates the proc on every request' do
+        BarePagesController.sideload_assets css: proc { params[:no_css].nil? }
+
+        get '/?no_css=1'
+        assert_not_includes @response.body, '<link rel="stylesheet"'
+        assert_kind_of Proc, BarePagesController.sideload_assets_options[:css]
+
+        get '/'
+        assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/home.css"]'
+      ensure
+        BarePagesController.sideload_assets nil
+      end
+    end
+
+    # A fragment request sets `preload_links_header: false` on each tag's options, which used to
+    # be the controller's own `css:`/`js:` hash.
+    context 'hash options in controller, and a fragment request' do
+      it 'leaves the controller options as they were' do
+        BarePagesController.sideload_assets css: { class: :foo }, js: { defer: true }
+
+        get '/include_assets', headers: { 'X-Fragment' => 'foo' }
+
+        assert_equal({ css: { class: :foo }, js: { defer: true } },
+                     BarePagesController.sideload_assets_options)
+      ensure
+        BarePagesController.sideload_assets nil
+      end
+    end
+
+    # The view template's own option used to live on the cached template object, so a render that
+    # did not call `sideload_assets` inherited whatever the last render that did had set.
+    context 'false in view template, then a render that does not set it' do
+      it 'includes the view template assets again' do
+        get '/include_assets?sideload_view_assets=false'
+        assert_not_includes @response.body, 'bare_pages/include_assets.css'
+
+        get '/include_assets'
+        assert_dom 'link[rel="stylesheet"][href="/app/views/bare_pages/include_assets.css"]'
+        assert_dom 'script[src="/app/views/bare_pages/include_assets.js"]'
+      end
+    end
+
+    {
+      'layout' => [:sideload_layout_assets, 'link[href="/app/views/layouts/bare.css"]'],
+      'partial' => [:sideload_partial_assets, 'script[src="/app/views/pages/_side.js"]'],
+      'partial layout' => [:sideload_partial_layout_assets,
+                           'link[href="/app/views/pages/_side_layout.css"]']
+    }.each do |kind, (param, selector)|
+      context "false in #{kind}, then a render that does not set it" do
+        it "includes the #{kind} assets again" do
+          get "/include_assets?#{param}=false"
+          assert_dom selector, count: 0
+
+          get '/include_assets'
+          assert_dom selector
+        end
+      end
+    end
+
+    # A proc was once only evaluated for view templates: the partial renderer's copy of the option
+    # handling called `controller.instance_eval` with no `controller` in scope, so every proc
+    # reaching a partial raised NameError. The proc test above uses `/`, whose view renders no
+    # partials, which is why it never fired.
     context 'proc in controller, rendering partials' do
       it 'evaluates the proc against the controller for partials too' do
         BarePagesController.sideload_assets proc { true }

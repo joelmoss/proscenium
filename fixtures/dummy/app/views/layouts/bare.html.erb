@@ -1,2 +1,2 @@
-<% sideload_assets params[:sideload_layout_assets] %>
+<% sideload_assets params[:sideload_layout_assets] if params.key?(:sideload_layout_assets) %>
 <%= yield %>
