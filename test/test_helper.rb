@@ -7,18 +7,12 @@ require_relative '../fixtures/dummy/config/environment'
 require 'rails/test_help'
 require 'maxitest/autorun'
 
-DatabaseCleaner.strategy = :transaction
-
 # The suffix a CSS module class name carries: the digest of its path, and - because identifiers are
 # only minified in production - a readable form of the path itself. See ConfigT#ShouldMinify.
 CSS_MODULE_DIGEST = '[a-z0-9]{8}_[a-z0-9_-]+'
 
 module ActiveSupport
   class TestCase
-    around do |tests|
-      DatabaseCleaner.cleaning(&tests)
-    end
-
     before do
       Proscenium.config.side_load = true
       Proscenium::Importer.reset
