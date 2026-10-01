@@ -6,6 +6,8 @@ module Proscenium
     # kept on the view, which lives for one request, keyed by template, because the template
     # object itself is cached and shared by every request. `SideLoad.sideload_templates` scopes
     # each value to the render that set it.
+    #
+    # Call it outside any `cache` block: a cache hit skips the block, and this call with it.
     def sideload_assets(value)
       if value.nil?
         proscenium_sideload_assets_options.delete @current_template.identifier
