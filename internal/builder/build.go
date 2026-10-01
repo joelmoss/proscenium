@@ -123,7 +123,7 @@ func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
 // cheap (a handful of string entries) and avoids the unsynchronised global cache that used to
 // live here.
 func buildEnvVars(cfg *types.ConfigT) map[string]string {
-	// RAILS_ENV and NODE_ENV are always defined: seeded from the environment first, then
+	// RAILS_ENV and NODE_ENV are always defined: seeded from cfg.Environment first, then
 	// overwritten by any given env vars. They used to be seeded only when no env vars were given at
 	// all, so any configured env var without RAILS_ENV beside it left an empty define, which
 	// esbuild rejects - failing the whole build.
@@ -134,9 +134,13 @@ func buildEnvVars(cfg *types.ConfigT) map[string]string {
 	}
 
 	for key, value := range cfg.EnvVars {
-		if key != "" {
-			envVarMap["proscenium.env."+key] = jsString(value)
+		// A blank RAILS_ENV or NODE_ENV keeps the default rather than defining "", which would set
+		// process.env.NODE_ENV to "" and send libraries checking it down their development branch.
+		if key == "" || (value == "" && (key == "RAILS_ENV" || key == "NODE_ENV")) {
+			continue
 		}
+
+		envVarMap["proscenium.env."+key] = jsString(value)
 	}
 
 	envVarMap["process.env.NODE_ENV"] = envVarMap["proscenium.env.RAILS_ENV"]

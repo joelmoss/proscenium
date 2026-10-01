@@ -3,6 +3,7 @@ package proscenium_test
 import (
 	"encoding/json"
 	"os"
+	"path/filepath"
 
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
@@ -87,6 +88,23 @@ var _ = Describe("Compile", func() {
 		Entry("an absolute path elsewhere", "/app", "/etc", "", false),
 		Entry("an absolute path that happens to be under the root", "/app", "/app/public/assets", "", false),
 	)
+
+	// Compile shares buildEnvVars with BuildToString, and had no spec with env vars set at all.
+	It("defines env vars in precompiled output", func() {
+		testConfig.Precompile = []string{"./lib/env_vars_all.js"}
+		testConfig.EnvVars = map[string]string{"API_KEY": "it's x"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		outputs, err := filepath.Glob(utils.JoinFsPath(testConfig.RootPath, "public/assets/lib/env_vars_all-*.js"))
+		Expect(err).NotTo(HaveOccurred())
+		Expect(outputs).To(HaveLen(1))
+
+		code, err := os.ReadFile(outputs[0])
+		Expect(err).NotTo(HaveOccurred())
+		Expect(string(code)).To(ContainSubstring(`"it's x"`))
+	})
 
 	It("reports a config that does not parse as a message", func() {
 		var result struct{ Errors []esbuild.Message }

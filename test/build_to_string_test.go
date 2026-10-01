@@ -641,11 +641,10 @@ var _ = Describe("BuildToString", func() {
 			AssertCode(`console.log((void 0).UNKNOWN);`)
 			AssertCode(`console.log((void 0).UNKNOWN);`, Unbundle)
 		})
-
 	})
 
-	// Reads every define buildEnvVars produces, so dropping any one of them - the NODE_ENV default,
-	// or a configured var - fails the spec rather than passing unseen.
+	// Reads every seeded and configured env define - RAILS_ENV, NODE_ENV, process.env.NODE_ENV and
+	// a configured var - so dropping any one of them fails the spec rather than passing unseen.
 	EntryPoint("lib/env_vars_all.js", func() {
 		// The defaults used to be seeded only when no env vars were given at all, so env vars
 		// without RAILS_ENV left an empty define, which esbuild rejects - failing every build.
@@ -666,6 +665,37 @@ var _ = Describe("BuildToString", func() {
 			})
 
 			AssertCode(`console.log("staging", "test", "staging", "x");`)
+			AssertCode(`console.log("staging", "test", "staging", "x");`, Unbundle)
+		})
+
+		// A configured NODE_ENV sets proscenium.env.NODE_ENV only: process.env.NODE_ENV always
+		// follows RAILS_ENV, which is what README.md documents.
+		Describe("with an explicit NODE_ENV", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"NODE_ENV": "production"}
+			})
+
+			AssertCode(`console.log("test", "production", "test", (void 0).API_KEY);`)
+		})
+
+		// A blank RAILS_ENV or NODE_ENV would replace the seeded default with "", so
+		// process.env.NODE_ENV would be "" and libraries checking it for "production" would take
+		// their development branch. The defaults stand instead.
+		Describe("with blank RAILS_ENV and NODE_ENV", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"RAILS_ENV": "", "NODE_ENV": "", "API_KEY": "x"}
+			})
+
+			AssertCode(`console.log("test", "test", "test", "x");`)
+		})
+
+		// Only an empty name is skipped; a set but blank var is still defined, as an empty string.
+		Describe("with an empty env var value", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"API_KEY": ""}
+			})
+
+			AssertCode(`console.log("test", "test", "test", "");`)
 		})
 
 		// An empty name used to become the define key `proscenium.env.`, which esbuild rejects.
@@ -686,6 +716,7 @@ var _ = Describe("BuildToString", func() {
 			})
 
 			AssertCode(`console.log("test", "test", "test", "it's C:\\new\nline");`)
+			AssertCode(`console.log("test", "test", "test", "it's C:\\new\nline");`, Unbundle)
 		})
 	})
 
