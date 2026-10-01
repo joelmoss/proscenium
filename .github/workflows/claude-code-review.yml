@@ -47,9 +47,12 @@ jobs:
       # TEMPORARY, remove once claude-review is diagnosed. It reports success without reviewing,
       # and the action hides its transcript because Actions logs are public. Ship the transcript
       # encrypted to a throwaway key instead (AES-256 under a random key, which is RSA-OAEP
-      # encrypted to the key below), kept for one day.
+      # encrypted to the key below), kept for one day. Runs only for the one PR opened from the
+      # debug/claude-review-transcript branch, never for any other PR.
       - name: Encrypt Claude transcript (temporary)
-        if: always() && steps.claude-review.outputs.execution_file != ''
+        if: >-
+          always() && github.head_ref == 'debug/claude-review-transcript' &&
+          steps.claude-review.outputs.execution_file != ''
         env:
           TRANSCRIPT: ${{ steps.claude-review.outputs.execution_file }}
           DEBUG_PUBLIC_KEY: |
@@ -79,7 +82,9 @@ jobs:
           rm "$RUNNER_TEMP/k.bin"
 
       - name: Upload encrypted transcript (temporary)
-        if: always() && steps.claude-review.outputs.execution_file != ''
+        if: >-
+          always() && github.head_ref == 'debug/claude-review-transcript' &&
+          steps.claude-review.outputs.execution_file != ''
         uses: actions/upload-artifact@v4
         with:
           name: claude-review-transcript
