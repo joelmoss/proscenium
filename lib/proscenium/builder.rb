@@ -197,7 +197,7 @@ module Proscenium
 
     # Resets nothing any more - Go keeps no config between calls. Kept because it is the one call
     # into Go that needs no Rails app, which is how bin/verify-installed-gem and the packaging test
-    # prove the library loads.
+    # prove the library loads, and benchmarks/bridge.rb times it as the bare cost of an FFI call.
     def self.reset_config!
       Request.reset_config
     end
