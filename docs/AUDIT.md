@@ -42,15 +42,17 @@ precompile in `OutputDirUnderRoot`. See the 2026-10-01 **Open questions for the 
 | F-CONTRACT-1 | **Done** — `c37363b0`. `assets:precompile` now just calls `Builder.compile`, which raises `CompileError` carrying esbuild's messages (builder.rb:163-175, :278-286). Found by the 2026-10-01 reconciliation; this table had not recorded it. That also **unblocks F-CONTRACT-2** — main.go:70 and :112 now return esbuild-shaped JSON on config errors. |
 | F-GOUTILS-2, F-TOOL-1, F-BUNJS-1 | Open, **scope changed** by the 2026-10-01 reconciliation: F-GOUTILS-2 narrowed (`FDebug` now has a caller, keep it); F-TOOL-1's GOWORK half withdrawn (CLAUDE.md documents it as intended); F-BUNJS-1 corrected (`config` is copied onto the plugin object, which nothing reads). |
 | F2-MW-1 | **Done** — `e104e277`. `Base#clean_path` deleted, so the readability probe joins the path exactly as it is built; `Chunks` refuses a path that still holds a `%` after the first decode, since FileHandler decodes again. **Both halves were measured end to end before the fix, which field 8 had only read:** the Base probe raised `BuildError` on `/lib/%252e%252e/<root file>.js` (the existence oracle), and both double-encoded chunk paths served 200 — the forged `ETag: FAKE` one and the one outside `_asset_chunks`. A literal-`%` filename, which never served, now does. Four tests, each red at HEAD. |
+| F2-BUN-1 | **Done** — `f4cabd97` (#86). `Daemon` holds the error that ended the connection in `#failure`, and `send()` rejects with it immediately; the first error wins. Both stale states were reproduced as a request left pending before the fix: after the daemon closes, and after an unparseable reply on a socket still open. Tests in `fixtures/dummy/test/js/daemon.test.js`. |
 | F2-*, H-*, BL-* (2026-10-01) | Open. Ranked in the 2026-10-01 **Final priorities and dependencies**. |
 | Everything else | Open. |
 
 The order now lives in the 2026-10-01 **Final priorities and dependencies**, which interleaves
 the open 2026-09-08 findings with the new ones. The short version: **F2-MW-1**, which went
 first because a double-encoded request path was decoded a second time in `Middleware::Base` and
-in `Chunks`, is done (`e104e277`), so again no known defect misserves a client-supplied URL. Next
-is **F2-BUN-1** (a dead Bun daemon hangs every later module load), then the H-1/H-2/H-7 dead-state
-sweep, which also clears `types.go` for F-CONTRACT-2. F-GOUTILS-1 step 2 and step 3 keep their
+in `Chunks`, is done (`e104e277`), so again no known defect misserves a client-supplied URL.
+**F2-BUN-1** (a dead Bun daemon hung every later module load) is done too (`f4cabd97`). Next is
+the H-1/H-2/H-7 dead-state sweep (#91), which also clears `types.go` for F-CONTRACT-2. Every
+verified open item now has a GitHub issue (#86 to #105) labelled P2, P3 or P4. F-GOUTILS-1 step 2 and step 3 keep their
 place relative to the other 2026-09-08 findings (pass 4, ruling 1 — consumers-by-deletion first).
 
 The high-severity pair from 2026-09-08 (**F-GOCSS-1 -> F-GOCSS-2**, a hang and a panic that
