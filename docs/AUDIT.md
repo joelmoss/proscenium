@@ -20,9 +20,11 @@ ownership. Nothing in either was implemented as part of the audit itself.
   narrowed or withdrawn halves), it wins.
 - **Progress**, directly below, is the record of what has landed, across both audits.
 
-Two decisions gate parts of the queue: **Q-1** (is the npm registry controller supported?) gates
-F2-REG-1 and BL-2; **Q-2** (should a `public` directory outside Rails.root be supported?) gates
-F2-BOOT-1. See the 2026-10-01 **Open questions for the user**.
+Both of the 2026-10-01 audit's questions are answered, so nothing in the queue waits on a
+decision. **Q-1:** the npm registry controller is a supported feature, not yet fully released, so
+F2-REG-1 and BL-2 are fixes rather than a deletion. **Q-2:** a `public` directory outside
+Rails.root is not supported, so F2-BOOT-1 ships as its minimal version and that layout fails the
+precompile in `OutputDirUnderRoot`. See the 2026-10-01 **Open questions for the user**.
 
 ## Progress
 
@@ -198,8 +200,9 @@ IDs use `F2-` so they cannot be confused with the 2026-09-08 audit's `F-` IDs.
    Windows: manifest.rb's `fs_path`/`delete_prefix` must see the same string form
    (test/manifest_test.rb:29 simulates it). The registry also reads `Rails.public_path` (registry_controller.rb:109, :117); the bun daemon does not.
    Containment: `OutputDirUnderRoot` (compile.go:174-188) rejects `..` and absolute output dirs, so a
-   relative `OutputDir` derived from a `paths['public']` OUTSIDE the root fails closed — decide whether
-   that is a supported layout before deriving (TODOS "Judge output directory containment").
+   relative `OutputDir` derived from a `paths['public']` OUTSIDE the root fails closed. Q-2 decided
+   that layout is not supported, so failing closed is correct. The symlinked-`public` gap is separate
+   (TODOS "Judge output directory containment").
 7. Validation: existing manifest/chunks/importer tests and Go compile specs. Add one test with a
    non-default `output_dir` (e.g. `/static`) asserting build output, manifest and chunk serving
    agree — break the derivation to see it go red.
@@ -207,7 +210,7 @@ IDs use `F2-` so they cannot be confused with the 2026-09-08 audit's `F-` IDs.
 
 ### F2-REG-1 — resolve the gem once, and keep the requested version apart from the installed one (RB-REGISTRY)
 1. Verdict: recommend, MEDIUM (materiality pass: UPHOLD; lead with the 500 — npm clients fetch the
-   unversioned packument, so the version echo is lower impact) — gated on Q-1 below. Coordinator-verified by reading;
+   unversioned packument, so the version echo is lower impact) — Q-1 answered below: supported, so this is a fix. Coordinator-verified by reading;
    the worker reproduced the HTTP behaviour.
 2. Evidence: registry_controller.rb:66 `@gem_name, @version = package_params` (client string or
    nil); :151 `def version = @version ||= spec.version.to_s` — the SAME ivar holds the client's
@@ -235,7 +238,9 @@ IDs use `F2-` so they cannot be confused with the 2026-09-08 audit's `F-` IDs.
 8. Confidence: high on both defects (reproduced by the worker, code read by the coordinator);
    medium that 404-on-mismatch is the intended contract.
 
-**Q-1 (prerequisite, user decision): is the registry a supported feature?** config/routes.rb:3
+**Q-1 (prerequisite, user decision): is the registry a supported feature?** **Answered 2026-10-01: supported, but not yet fully released or used.** So
+F2-REG-1 stands as a fix and the deletion is off the table. Documenting the mount belongs with
+the registry's release. The original question: config/routes.rb:3
 draws into `Proscenium::Railtie.routes` (isolated engine, railtie.rb:8-9). Nothing mounts the
 engine — not lib/, not fixtures/dummy/config/routes.rb — and README/docs never mention the
 registry (only the controller's header comment does). Yet .github/workflows/main.yml:190-191 says
@@ -497,7 +502,7 @@ From the independent duplication pass (Sonnet), each checked by the coordinator 
 | types.go | H-1 (:69-99), F-CONTRACT-2 (`NewConfig` :104-112) | H-1 first or same diff. |
 | builder.rb `initialize` | F2-BOOT-1 (:211), F-CONTRACT-2 (:95, :203-207) | Independent; same diff if both in flight. |
 | chunks.rb | F2-MW-1 (:25-27) | The adopted F2-BOOT-1 leaves chunks.rb:30 alone — no overlap. |
-| registry_controller.rb | F2-REG-1, BL-2 (:128) | Same diff, after Q-1. |
+| registry_controller.rb | F2-REG-1, BL-2 (:128) | Same diff. |
 | release.yml | F2-CI-1, TODOS plain-gem leg | Design together (coverage check must allow the plain leg). |
 | utils.go:221 / bundless.go:217-220 | H-5, F-GOUTILS-1 step 2 | Comment goes with step 2. |
 | bootstrap.js | F2-BUN-1 (:35-84), F-DAEMON-2 (:148-199), F-BUNJS-1 (:223) | No overlap. |
@@ -512,11 +517,11 @@ it, with the stale-scope corrections it found applied above.
 | 1 | **F2-MW-1** decode once (Base + Chunks) | Only new defect reachable from a client URL; reproduced; reopens the class the 2026-09-08 "next" assumed closed | S, ~2h | none |
 | 2 | **F2-BUN-1** daemon terminal state | Measured; silent hang outside the per-test timeout | S, ~2h | none |
 | 3 | **H-1 + H-2 + H-7** Go dead-state sweep | Caller-free, zero risk; clears types.go for F-CONTRACT-2 | S, ~30m | none |
-| 4 | **F2-BOOT-1** (minimal, 3 lines) | Latent writer/reader split; medium confidence | S, ~2h with test | **Q-2** |
+| 4 | **F2-BOOT-1** (minimal, 3 lines) | Latent writer/reader split; medium confidence | S, ~2h with test | none. Q-2 answered: not supported |
 | 5 | **H-4** test-harness dead state | Caller-free; drops a gem from 4 Gemfiles | S, ~45m | none |
 | 6 | **F2-CI-1** (minimal) | Bites only on the next platform add | S, ~1h + a `dry_run` dispatch | design with TODOS plain-gem leg |
 | 7 | **H-3** dead public constants | Pure deletion; changelog it | S, 15m | pair with #4 |
-| 8 | **F2-REG-1 + BL-2** | Real defects, but in-tree reach is zero | M, ~3-4h | **Q-1.** If "unsupported", delete the registry instead and promote to #3 |
+| 8 | **F2-REG-1 + BL-2** | Real defects, but in-tree reach is zero | M, ~3-4h | none. Q-1 answered: supported, not yet released, so a fix, not a deletion |
 
 **Best first slices (each an independently landable PR):**
 - **A — Decode exactly once:** middleware/base.rb (:51-59, delete :65-71), middleware/chunks.rb (:25-27),
@@ -526,8 +531,9 @@ it, with the stale-scope corrections it found applied above.
   through a second `register()` — that leaves a dead `Bun.plugin` registered for the rest of the run.
 - **C — Dead state sweep:** H-1, H-2, H-7, H-4, and H-5's packaging_test.rb:38 "six" -> five. Two commits
   (Go, Ruby), one PR.
-- **D — One output location + dead public surface:** F2-BOOT-1 minimal + H-3 + CHANGELOG, after Q-2.
-- Then on their own: F2-CI-1, and F2-REG-1/BL-2 or the registry deletion once Q-1 is answered.
+- **D — One output location + dead public surface:** F2-BOOT-1 minimal + H-3 + CHANGELOG. The CHANGELOG entry also says
+  a `public` directory outside Rails.root is unsupported and now fails the precompile.
+- Then on their own: F2-CI-1, and F2-REG-1 + BL-2 (Q-1: the registry is supported).
 
 **Interleaving with the open 2026-09-08 findings:**
 - F2-MW-1 goes to the head of the WHOLE queue, ahead of F-GOUTILS-1 step 2 (the stated "next"). That
@@ -546,10 +552,14 @@ versions were found by the ranking pass and corrected above.
 
 - **Q-1** Is the npm registry controller a supported feature? Nothing mounts it, README never mentions
   it, but fixtures/dummy/pnpm-lock.yaml shows it was used by hand. Supported -> document the mount +
-  F2-REG-1. Unsupported -> delete ~163 lines.
+  F2-REG-1. Unsupported -> delete ~163 lines. **Answered 2026-10-01: supported, but not yet fully released or used.** F2-REG-1 + BL-2
+  stay ranked #8: the defects are real, and in-tree reach stays zero until the registry ships.
 - **Q-2** F2-BOOT-1: should a `public` directory outside Rails.root be supported? Deriving the output
   dir makes it fail closed in `OutputDirUnderRoot` (compile.go:174-188), where today it silently splits
-  writer from readers.
+  writer from readers. **Answered 2026-10-01: not supported.** That layout fails the precompile with the
+  `output_dir` containment error, which is the intended result. Supporting it would have meant measuring
+  containment against the public directory rather than the root, which is the directory `compile`
+  runs `os.RemoveAll` on, so the check would permit deletes outside the app.
 
 
 ## Audit log
