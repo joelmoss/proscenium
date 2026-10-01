@@ -641,6 +641,41 @@ var _ = Describe("BuildToString", func() {
 			AssertCode(`console.log((void 0).UNKNOWN);`)
 			AssertCode(`console.log((void 0).UNKNOWN);`, Unbundle)
 		})
+
+	})
+
+	// Reads every define buildEnvVars produces, so dropping any one of them - the NODE_ENV default,
+	// or a configured var - fails the spec rather than passing unseen.
+	EntryPoint("lib/env_vars_all.js", func() {
+		// The defaults used to be seeded only when no env vars were given at all, so env vars
+		// without RAILS_ENV left an empty define, which esbuild rejects - failing every build.
+		// Through Rails this is latent: the railtie sets ENV['RAILS_ENV'], so Ruby always sends
+		// it. It bites any caller whose ENV has lost RAILS_ENV, or that builds the config itself.
+		Describe("with env vars that do not include RAILS_ENV", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"API_KEY": "x"}
+			})
+
+			AssertCode(`console.log("test", "test", "test", "x");`)
+			AssertCode(`console.log("test", "test", "test", "x");`, Unbundle)
+		})
+
+		Describe("with an explicit RAILS_ENV", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"RAILS_ENV": "staging", "API_KEY": "x"}
+			})
+
+			AssertCode(`console.log("staging", "test", "staging", "x");`)
+		})
+
+		// An empty name used to become the define key `proscenium.env.`, which esbuild rejects.
+		Describe("with an empty env var name", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"": "ignored", "API_KEY": "x"}
+			})
+
+			AssertCode(`console.log("test", "test", "test", "x");`)
+		})
 	})
 
 	Describe("__filename and __dirname", func() {
