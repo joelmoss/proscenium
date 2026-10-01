@@ -676,6 +676,17 @@ var _ = Describe("BuildToString", func() {
 
 			AssertCode(`console.log("test", "test", "test", "x");`)
 		})
+
+		// Values were wrapped in single quotes unescaped, so a quote or a newline failed every
+		// build with an invalid define, and a backslash sequence was decoded: `C:\new` gained a
+		// real newline.
+		Describe("with an env var value that needs escaping", func() {
+			BeforeEach(func() {
+				testConfig.EnvVars = map[string]string{"API_KEY": "it's C:\\new\nline"}
+			})
+
+			AssertCode(`console.log("test", "test", "test", "it's C:\\new\nline");`)
+		})
 	})
 
 	Describe("__filename and __dirname", func() {
