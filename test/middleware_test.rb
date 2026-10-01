@@ -138,6 +138,35 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
       beside.delete if beside.exist?
     end
 
+    # Decoded once by `normalise_path` for routing and building, then a second time by the
+    # readability probe, so `%252e%252e` was built as a literal `%2e%2e` segment but probed as
+    # `..`. The probe approved a file at the root, the build then failed on the literal name, and
+    # the difference between that error and a fall-through told a client the file existed.
+    it 'does not probe a double-encoded path as a different file' do
+      probe = Rails.root.join('double_decode_probe.js')
+      probe.write 'console.log("root");'
+
+      get '/lib/%252e%252e/double_decode_probe.js'
+
+      assert_equal 'Hello, World!', response.body
+    ensure
+      probe.delete if probe.exist?
+    end
+
+    # The other half of the same mismatch: a file whose name holds a literal `%` is what the
+    # builder is asked for, so it is what the probe has to find.
+    it 'serves a file whose name holds a literal percent sign' do
+      literal = Rails.root.join('lib', 'a%20b.js')
+      literal.write 'console.log("literal");'
+
+      get '/lib/a%2520b.js'
+
+      assert_equal 200, response.status
+      assert_includes response.body, 'console.log("literal");'
+    ensure
+      literal.delete if literal.exist?
+    end
+
     it 'passes a path Rack rejects straight through' do
       env = Rack::MockRequest.env_for('/lib/foo.js')
       env['PATH_INFO'] = "/lib/foo.js\0"

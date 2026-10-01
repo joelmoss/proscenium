@@ -48,9 +48,12 @@ module Proscenium
         file_readable?
       end
 
+      # Probes the path exactly as it will be built. `real_path` is already decoded and cleaned, so
+      # decoding it again here - as this once did - probed a different file than the one built
+      # whenever the request was double-encoded: `%252e%252e` was built as a literal `%2e%2e`
+      # segment but probed as `..`.
       def file_readable?
-        return false unless (path = clean_path(sourcemap? ? real_path[0...-4] : real_path))
-
+        path = sourcemap? ? real_path[0...-4] : real_path
         file_stat = File.stat(root_for_readable.join(path.delete_prefix('/').b).to_s)
       rescue SystemCallError
         false
@@ -60,14 +63,6 @@ module Proscenium
 
       def root_for_readable
         Rails.root
-      end
-
-      # Secondary to `Middleware.normalise_path`, which every path here has already been through
-      # - this is idempotent on that output, and earns its keep by stripping the leading slash
-      # that the `join` above needs, and by handling the `.map`-stripped variant.
-      def clean_path(file)
-        path = Rack::Utils.unescape_path file.chomp('/').delete_prefix('/')
-        Rack::Utils.clean_path_info path if Rack::Utils.valid_path? path
       end
 
       def content_type

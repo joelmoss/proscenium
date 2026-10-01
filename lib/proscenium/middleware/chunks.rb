@@ -22,7 +22,12 @@ module Proscenium
         # The path also has to yield a content hash, not just match the prefix - `CHUNKS_PATH`
         # checks only the latter, and `/_asset_chunks/nohash.js` used to index the nil match and
         # return a 500 from here.
+        #
+        # FileHandler decodes `PATH_INFO` again, and that cannot be switched off, so a path still
+        # holding a `%` after the first decode is refused: the handler would resolve it to a
+        # different file than the one checked here. esbuild never puts a `%` in a chunk name.
         return @app.call(env) unless (path = Middleware.normalise_path(request.path)) &&
+                                     !path.include?('%') &&
                                      path.match?(CHUNKS_PATH) &&
                                      (etag = path[/-\$([a-z0-9]+)\$/i, 1])
 

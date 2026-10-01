@@ -68,6 +68,32 @@ class Proscenium::Middleware::ChunksTest < ActiveSupport::TestCase
       outside.delete if outside.exist?
     end
 
+    # The guard decodes once and FileHandler decodes again, so a double-encoded `..` reached the
+    # handler as `%2e%2e`, passed the guard as an ordinary segment, and was resolved by the
+    # handler's own decode - the same two holes as above, one level of encoding down.
+    it 'does not serve a chunk under a hash taken from a double-encoded discarded segment' do
+      within_chunk 'real-$ABC123$.js', 'REAL' do
+        get '/_asset_chunks/fake-$FAKE$/%252e%252e/real-$ABC123$.js'
+
+        assert_equal 404, response.status
+        assert_not_equal 'FAKE', response.headers['ETag']
+        assert_not_includes response.body, 'REAL'
+      end
+    end
+
+    it 'does not serve a file outside the chunk directory through a double-encoded path' do
+      outside = Proscenium.config.output_path.join('lib', 'outside-$L32XTY22$.js')
+      outside.dirname.mkpath
+      outside.write 'OUTSIDE'
+
+      get '/_asset_chunks/fake-$FAKE$/%252e%252e/%252e%252e/lib/outside-$L32XTY22$.js'
+
+      assert_equal 404, response.status
+      assert_not_includes response.body, 'OUTSIDE'
+    ensure
+      outside.delete if outside.exist?
+    end
+
     # Built by hand because Rack::MockRequest cannot parse a URI containing a null byte, so the
     # only way to reach the guard with one is to set PATH_INFO directly.
     it 'rejects a path Rack will not accept' do
