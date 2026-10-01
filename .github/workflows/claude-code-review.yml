@@ -50,6 +50,7 @@ jobs:
       # encrypted to the key below), kept for one day. Runs only for the one PR opened from the
       # debug/claude-review-transcript branch, never for any other PR.
       - name: Encrypt Claude transcript (temporary)
+        id: encrypt
         if: >-
           always() && github.head_ref == 'debug/claude-review-transcript' &&
           steps.claude-review.outputs.execution_file != ''
@@ -74,20 +75,21 @@ jobs:
           out="$RUNNER_TEMP/transcript"
           mkdir -p "$out"
           printf '%s\n' "$DEBUG_PUBLIC_KEY" > "$RUNNER_TEMP/debug.pub"
-          openssl rand -out "$RUNNER_TEMP/k.bin" 32
+          # Hex, not raw bytes: `-pass file:` reads only up to the first newline, so a random
+          # binary key could be truncated, even to an empty passphrase.
+          openssl rand -hex 32 > "$RUNNER_TEMP/k.txt"
           openssl enc -aes-256-cbc -pbkdf2 -salt -in "$TRANSCRIPT" -out "$out/transcript.enc" \
-            -pass file:"$RUNNER_TEMP/k.bin"
+            -pass file:"$RUNNER_TEMP/k.txt"
           openssl pkeyutl -encrypt -pubin -inkey "$RUNNER_TEMP/debug.pub" \
-            -pkeyopt rsa_padding_mode:oaep -in "$RUNNER_TEMP/k.bin" -out "$out/key.enc"
-          rm "$RUNNER_TEMP/k.bin"
+            -pkeyopt rsa_padding_mode:oaep -in "$RUNNER_TEMP/k.txt" -out "$out/key.enc"
+          rm "$RUNNER_TEMP/k.txt"
 
       - name: Upload encrypted transcript (temporary)
-        if: >-
-          always() && github.head_ref == 'debug/claude-review-transcript' &&
-          steps.claude-review.outputs.execution_file != ''
+        # Only once both files are written: a transcript without its wrapped key is useless.
+        if: always() && steps.encrypt.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: claude-review-transcript
           path: ${{ runner.temp }}/transcript/
           retention-days: 1
-          if-no-files-found: ignore
+          if-no-files-found: error
