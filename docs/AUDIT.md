@@ -41,15 +41,15 @@ precompile in `OutputDirUnderRoot`. See the 2026-10-01 **Open questions for the 
 | F-GORESOLVE-1 | **Done** — `8452092a` (return shape, `GemFromSpecifier` at the top, `UrlPathFromFsPath`) and `4cf61406` (URL input → empty `absPath`). **Field 4's zero-behaviour-change migration was not available:** the reparse at `:144-153` was the only thing that turned the served form `/node_modules/@rubygems/<gem>/x.js` back into the gem's file, because `IsRubyGem` rejected the leading slash; a return-shape-only commit would have changed `abs_path` for that form, and with it the CSS-module class digest `importer.rb:44` derives from it. So the return shape and the `GemFromSpecifier` migration landed as one commit, with a spec pinning that form. **Field 6's URL branch:** `""`, its own commit, pinned in Go and Ruby. The path-leak lead below (`:50` and `css.go:167`) is closed by one `utils.UrlPathFromFsPath`, with the app root matched at a "/" boundary — the naive `CutPrefix` accepted `/app-other`. Found on the way: `GemFromSpecifier` kept `..` in the suffix while `UrlPath()` cleaned it, so `@rubygems/foo/../bar/x.js` named gem bar in the URL and a directory beside foo on disk; the suffix is now cleaned as a relative path and refused when it escapes (`resolve.go` acts on the error; the two plugin callers discard it until step 2). The `metadata.Inputs` map-range lead below is a `len != 1` guard now. |
 | F-CONTRACT-1 | **Done** — `c37363b0`. `assets:precompile` now just calls `Builder.compile`, which raises `CompileError` carrying esbuild's messages (builder.rb:163-175, :278-286). Found by the 2026-10-01 reconciliation; this table had not recorded it. That also **unblocks F-CONTRACT-2** — main.go:70 and :112 now return esbuild-shaped JSON on config errors. |
 | F-GOUTILS-2, F-TOOL-1, F-BUNJS-1 | Open, **scope changed** by the 2026-10-01 reconciliation: F-GOUTILS-2 narrowed (`FDebug` now has a caller, keep it); F-TOOL-1's GOWORK half withdrawn (CLAUDE.md documents it as intended); F-BUNJS-1 corrected (`config` is copied onto the plugin object, which nothing reads). |
+| F2-MW-1 | **Done** — `e104e277`. `Base#clean_path` deleted, so the readability probe joins the path exactly as it is built; `Chunks` refuses a path that still holds a `%` after the first decode, since FileHandler decodes again. **Both halves were measured end to end before the fix, which field 8 had only read:** the Base probe raised `BuildError` on `/lib/%252e%252e/<root file>.js` (the existence oracle), and both double-encoded chunk paths served 200 — the forged `ETag: FAKE` one and the one outside `_asset_chunks`. A literal-`%` filename, which never served, now does. Four tests, each red at HEAD. |
 | F2-*, H-*, BL-* (2026-10-01) | Open. Ranked in the 2026-10-01 **Final priorities and dependencies**. |
 | Everything else | Open. |
 
 The order now lives in the 2026-10-01 **Final priorities and dependencies**, which interleaves
-the open 2026-09-08 findings with the new ones. The short version: **F2-MW-1** goes first. A
-double-encoded request path is decoded a second time in `Middleware::Base` and in `Chunks`, which
-reopens the class of defect that misserves a client-supplied URL. The 2026-09-08 order put
-F-GOUTILS-1 step 2 next on the premise that no such defect was still open. After F2-MW-1:
-**F2-BUN-1** (a dead Bun daemon hangs every later module load), then the H-1/H-2/H-7 dead-state
+the open 2026-09-08 findings with the new ones. The short version: **F2-MW-1**, which went
+first because a double-encoded request path was decoded a second time in `Middleware::Base` and
+in `Chunks`, is done (`e104e277`), so again no known defect misserves a client-supplied URL. Next
+is **F2-BUN-1** (a dead Bun daemon hangs every later module load), then the H-1/H-2/H-7 dead-state
 sweep, which also clears `types.go` for F-CONTRACT-2. F-GOUTILS-1 step 2 and step 3 keep their
 place relative to the other 2026-09-08 findings (pass 4, ruling 1 — consumers-by-deletion first).
 
