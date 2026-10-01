@@ -36,6 +36,11 @@ jobs:
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
+        env:
+          # Run subagents in the foreground: the action ends the run at the first result, so a
+          # backgrounded one is killed before it finishes. See anthropics/claude-code-action#1499.
+          # Remove once the action waits for them.
+          CLAUDE_CODE_DISABLE_BACKGROUND_TASKS: '1'
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
 
