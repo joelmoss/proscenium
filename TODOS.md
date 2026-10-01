@@ -169,7 +169,7 @@ anything: the 2026-10-01 "Final priorities and dependencies" is the current queu
 2026-09-08 "AUDIT-THE-AUDIT — pass 4" still adjudicates that audit's findings, rejecting three,
 demoting five and reversing one dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** the issues labelled `P2` (#87 to #90), and #92. The dead-state sweep (#91) is done,
+**Next:** the issues labelled `P2` (#88 to #90), and #92. The dead-state sweep (#91) is done,
 which unblocks #104. Every verified open item has a GitHub issue (#86 to #105). Then the rest of `F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3, in the order the audit's
 final priorities give. The fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so the three `@rubygems`
 consumer findings the audit named are done (pass 4 ruling 1, consumers-by-deletion first) - those

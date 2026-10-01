@@ -53,8 +53,8 @@ first because a double-encoded request path was decoded a second time in `Middle
 in `Chunks`, is done (`e104e277`), so again no known defect misserves a client-supplied URL.
 **F2-BUN-1** (a dead Bun daemon hung every later module load) is done too (`f4cabd97`), and so is
 the dead-state sweep (#91), which cleared `types.go` for F-CONTRACT-2 (#104). Next in the ranking
-is F2-BOOT-1 with H-3 (#92); the live bugs among the older findings are the P2 issues (#87 to
-#90). Every verified open item has a GitHub issue (#86 to #105) labelled P2, P3 or P4. F-GOUTILS-1 step 2 and step 3 keep their
+is F2-BOOT-1 with H-3 (#92); the live bugs among the older findings are the P2 issues (#88 to
+#90). #87 is P4: neither production app runs Proscenium's browser-side React manager. Every verified open item has a GitHub issue (#86 to #105) labelled P2, P3 or P4. F-GOUTILS-1 step 2 and step 3 keep their
 place relative to the other 2026-09-08 findings (pass 4, ruling 1 — consumers-by-deletion first).
 
 The high-severity pair from 2026-09-08 (**F-GOCSS-1 -> F-GOCSS-2**, a hang and a panic that
