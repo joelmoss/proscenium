@@ -1,6 +1,7 @@
 package builder
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -126,7 +127,7 @@ func buildEnvVars(cfg *types.ConfigT) map[string]string {
 	// overwritten by any given env vars. They used to be seeded only when no env vars were given at
 	// all, so any configured env var without RAILS_ENV beside it left an empty define, which
 	// esbuild rejects - failing the whole build.
-	env := fmt.Sprintf("'%s'", cfg.Environment)
+	env := jsString(cfg.Environment.String())
 	envVarMap := map[string]string{
 		"proscenium.env.RAILS_ENV": env,
 		"proscenium.env.NODE_ENV":  env,
@@ -134,7 +135,7 @@ func buildEnvVars(cfg *types.ConfigT) map[string]string {
 
 	for key, value := range cfg.EnvVars {
 		if key != "" {
-			envVarMap["proscenium.env."+key] = fmt.Sprintf("'%s'", value)
+			envVarMap["proscenium.env."+key] = jsString(value)
 		}
 	}
 
@@ -142,4 +143,13 @@ func buildEnvVars(cfg *types.ConfigT) map[string]string {
 	envVarMap["proscenium.env"] = "undefined"
 
 	return envVarMap
+}
+
+// A JS string literal for any value, which is what a define must be. JSON's string syntax is a
+// subset of JS's. Wrapping the value in quotes unescaped, as this used to, failed every build on a
+// value holding a quote or a newline, and decoded a backslash sequence such as `C:\new`.
+func jsString(value string) string {
+	b, _ := json.Marshal(value) // a string always marshals
+
+	return string(b)
 }
