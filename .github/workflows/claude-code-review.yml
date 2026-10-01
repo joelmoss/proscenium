@@ -44,3 +44,45 @@ jobs:
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
+      # TEMPORARY, remove once claude-review is diagnosed. It reports success without reviewing,
+      # and the action hides its transcript because Actions logs are public. Ship the transcript
+      # encrypted to a throwaway key instead (AES-256 under a random key, which is RSA-OAEP
+      # encrypted to the key below), kept for one day.
+      - name: Encrypt Claude transcript (temporary)
+        if: always() && steps.claude-review.outputs.execution_file != ''
+        env:
+          TRANSCRIPT: ${{ steps.claude-review.outputs.execution_file }}
+          DEBUG_PUBLIC_KEY: |
+            -----BEGIN PUBLIC KEY-----
+            MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAzQYGvvMolTXYz9WCdTXN
+            mY9FxTITxdB4/r34FFDsRd4HnzlnamSQZpJOsfsW18kFoxI+QJ/03/MPedTxGMWG
+            xxnFfOjcA6fIxHWQh+Y4c+nefn5Bk9PqBZabe03G+LOJ2bwfVPryMTVqA0/CAikv
+            2ATHMy8Xx4q/FoFF/XbmnLI6UHrDpo3rGqr2ZJHvNotwTJcY6Rrn1VIVEWlQY4cZ
+            bXl01uow/UNhGfQOwEFCiIxA9m3qaxPpILglNazqVuwnuAwtbMeKwIwlB6OqoumW
+            MA/Y5CSqYIYOmid4XrSw737U2hTnS+2qJ00oXmQzqZm8ONyj9LIsuZRtgjxPPro/
+            gGqD/hL3pc/Pmcqrk9wLz4RIYfeFOC7ryYX/ZzVgv/n/P7k6XO8YsAkiT5fW86mj
+            uhi4eMTk2WXr7Nq2/adWJqTWc1YPcmJB5l8CVnSE3Qz6EGJM7f/KilLTNxw7p541
+            Z+o20e9NWIMSbk8QY9ulMIDa0LRNQSm9zd6mIF4KcgolEb0jCU/MXkDtXOaKZSzp
+            Mc3e2O1Ze4E5zW+HawTbjMcnqhvHRhM4/H1k2Pc9fVoANWzgz9mhlqj8Etv+hVC1
+            IyVvM44rOTm33MGQb0N62sy2InES+7pUzqOhAtYZ2bm+yKPTfH+n/RwYgv5pYS85
+            SqGv1LSYF31HnPjs+KDHqBECAwEAAQ==
+            -----END PUBLIC KEY-----
+        run: |
+          out="$RUNNER_TEMP/transcript"
+          mkdir -p "$out"
+          printf '%s\n' "$DEBUG_PUBLIC_KEY" > "$RUNNER_TEMP/debug.pub"
+          openssl rand -out "$RUNNER_TEMP/k.bin" 32
+          openssl enc -aes-256-cbc -pbkdf2 -salt -in "$TRANSCRIPT" -out "$out/transcript.enc" \
+            -pass file:"$RUNNER_TEMP/k.bin"
+          openssl pkeyutl -encrypt -pubin -inkey "$RUNNER_TEMP/debug.pub" \
+            -pkeyopt rsa_padding_mode:oaep -in "$RUNNER_TEMP/k.bin" -out "$out/key.enc"
+          rm "$RUNNER_TEMP/k.bin"
+
+      - name: Upload encrypted transcript (temporary)
+        if: always() && steps.claude-review.outputs.execution_file != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-review-transcript
+          path: ${{ runner.temp }}/transcript/
+          retention-days: 1
+          if-no-files-found: ignore
