@@ -240,7 +240,7 @@ Now, in your layout and view, replace the `javascript_include_tag` and `styleshe
 </html>
 ```
 
-On each page request, Proscenium will check if any of your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever your placed the `include_assets` helper.
+On each page request, Proscenium will check if any of your views, layouts and partials have a JS/TS/CSS file of the same name, and then include them wherever you placed the `include_assets` helper.
 
 Now you never have to remember to include your assets again. Just create them alongside your views, partials and layouts, and Proscenium will take care of the rest.
 
