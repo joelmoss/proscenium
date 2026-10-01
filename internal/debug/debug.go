@@ -10,16 +10,9 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-var Enabled = false
-
-func Enable() {
-	Enabled = true
-}
-
-// Debug prints args if cfgDebug is true (ie. the caller's config has Debug enabled) or Enable()
-// has been called.
+// Debug prints args if cfgDebug is true, ie. the caller's config has Debug enabled.
 func Debug(cfgDebug bool, args ...any) {
-	if cfgDebug || Enabled {
+	if cfgDebug {
 		cwd, _ := os.Getwd()
 		_, fn, line, _ := runtime.Caller(1)
 

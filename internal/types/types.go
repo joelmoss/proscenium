@@ -2,8 +2,6 @@ package types
 
 import "encoding/json"
 
-var Debug = false
-
 const RubyGemsScope = "@rubygems/"
 
 type Environment uint8
@@ -66,16 +64,6 @@ type ConfigT struct {
 	UseDevCSSModuleNames bool
 }
 
-var Config = ConfigT{CodeSplitting: true, Bundle: true}
-var zeroConfig = &ConfigT{
-	CodeSplitting: true,
-	Bundle:        true,
-}
-
-func (config *ConfigT) Reset() {
-	*config = *zeroConfig
-}
-
 type PluginData = struct {
 	IsResolvingPath bool
 	ImportedFromJs  bool
@@ -94,13 +82,8 @@ func PluginDataOf(v any) PluginData {
 	return pd
 }
 
-func UnmarshalConfig(data []byte) error {
-	return json.Unmarshal(data, &Config)
-}
-
-// Parses the given JSON into a fresh ConfigT, independent of the shared global Config. Callers
-// that don't need the global (eg. concurrent-safe call sites) should prefer this over
-// UnmarshalConfig - see the global config refactor plan.
+// Parses the given JSON into a fresh ConfigT. Every FFI call parses its own, so concurrent calls
+// share no config state.
 func NewConfig(data []byte) (*ConfigT, error) {
 	cfg := &ConfigT{CodeSplitting: true, Bundle: true}
 	if err := json.Unmarshal(data, cfg); err != nil {

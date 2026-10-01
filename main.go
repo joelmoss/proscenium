@@ -43,10 +43,13 @@ func parseConfig(configJson *C.char) (*types.ConfigT, error) {
 	return types.NewConfig([]byte(C.GoString(configJson)))
 }
 
+// Does nothing, and is kept for that. It is the one export that needs no Rails app and no
+// arguments, so bin/verify-installed-gem and test/packaging_test.rb call it to prove the library
+// loads and the Go runtime starts, and benchmarks/bridge.rb times it as the bare cost of an FFI
+// call. It once reset a global config, which no longer exists: every call parses its own.
+//
 //export reset_config
-func reset_config() {
-	types.Config.Reset()
-}
+func reset_config() {}
 
 // Free a C string previously returned to the Ruby FFI caller via build_to_string, resolve, or
 // compile. The Go runtime cannot see or collect memory allocated with C.CString - callers must
