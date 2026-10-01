@@ -39,20 +39,6 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 
-	t.Run("does not touch the shared global Config", func(t *testing.T) {
-		types.Config.Reset()
-		types.Config.RootPath = "/original"
-
-		_, err := types.NewConfig([]byte(`{"RootPath": "/different"}`))
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if types.Config.RootPath != "/original" {
-			t.Errorf("NewConfig mutated the global Config: RootPath is now %q", types.Config.RootPath)
-		}
-	})
-
 	t.Run("returns the json error on invalid input", func(t *testing.T) {
 		_, err := types.NewConfig([]byte(`not json`))
 		if err == nil {

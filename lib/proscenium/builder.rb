@@ -195,7 +195,9 @@ module Proscenium
       new(root:, **overrides).compile
     end
 
-    # Intended for tests only.
+    # Resets nothing any more - Go keeps no config between calls. Kept because it is the one call
+    # into Go that needs no Rails app, which is how bin/verify-installed-gem and the packaging test
+    # prove the library loads.
     def self.reset_config!
       Request.reset_config
     end
