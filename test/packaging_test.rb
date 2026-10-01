@@ -35,7 +35,7 @@ class Proscenium::PackagingTest < ActiveSupport::TestCase
 
     it 'includes the compiled library when the platform build tasks ask for it' do
       # Guards the other direction: a gate that excluded the library unconditionally would pass
-      # the test above and ship five platform gems with nothing in them.
+      # the test above and ship platform gems with nothing in them.
       #
       # Named through LIBRARY_NAME, which is `proscenium.dll` on Windows: a hard-coded name found
       # nothing there, so this skipped on the one platform whose gem was still to be built.
