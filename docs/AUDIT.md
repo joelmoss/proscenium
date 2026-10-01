@@ -1,14 +1,608 @@
+# Simplification Audits
+
+Two read-only structural audits of the whole repository, looking for materially useful
+simplifications in data structures, state representation, control flow, algorithms and
+ownership. Nothing in either was implemented as part of the audit itself.
+
+| Audit | At commit | IDs | Section |
+|---|---|---|---|
+| 2026-10-01 | `65a3857d` | `F2-<AREA>-<N>`, `H-<N>` (hygiene), `BL-<N>` (bug leads), `Q-<N>` | first, below Progress |
+| 2026-09-08 | `5edd7363` | `F-<AREA>-<N>`, Codex `#<N>` | second |
+
+**Precedence.** Each audit's own later passes override its earlier text, as before (the
+2026-09-08 audit's pass 4 overrides its per-lane sections). Across the two:
+
+- The 2026-10-01 **Final priorities and dependencies** is the current queue. Where it disagrees
+  with 2026-09-08 pass 4, it wins. It changes one prior ordering: F2-MW-1 goes ahead of
+  F-GOUTILS-1 step 2.
+- The 2026-10-01 **Prior-finding status reconciliation** is the current status of every
+  2026-09-08 finding. Where it disagrees with a 2026-09-08 per-lane section (stale line numbers,
+  narrowed or withdrawn halves), it wins.
+- **Progress**, directly below, is the record of what has landed, across both audits.
+
+Two decisions gate parts of the queue: **Q-1** (is the npm registry controller supported?) gates
+F2-REG-1 and BL-2; **Q-2** (should a `public` directory outside Rails.root be supported?) gates
+F2-BOOT-1. See the 2026-10-01 **Open questions for the user**.
+
+## Progress
+
+| Finding | Status |
+|---|---|
+| F-GOBUNDLE-1 | **Done** — `f685b282`. Site 1's body extracted to a `resolveRubygemPath` closure; site 2 calls it. **All three observable divergences are worse than field 3 states:** the CSS-module one yields NOTHING usable (not "raw CSS text"), and the extensionless-path and `unbundle`-attribute ones both FAIL THE BUILD outright rather than degrading — `Plugin "bundler" returned a non-absolute path` and `Importing with the "unbundle" attribute is not supported`. **Divergence D is real in the source but was not observable**, since reaching it needs the absolute path only the missing esbuild leg produces; it is fixed as a consequence of B. Predicted `__snapshots__/` churn did not occur — no spec aliases gem CSS from JS. Alias chaining at site 2 is a fifth, config-only behaviour change, stated in the commit. |
+| F-GOUTILS-1 (steps 1 and the fs-path behaviour change) | **Done** — `c7ae4da3` (additive: `GemRef`, `GemFromSpecifier`, `GemFromFsPath`, `UrlPath`, dead variadic dropped, first 25 specs for `internal/utils`) and `8284d26c` (the longest-match/boundary change, its own commit per the Convergent ruling — nothing flipped). **Field 3 understated `PathIsRubyGem`:** the non-determinism is intra-PROCESS, not between runs — measured 38/2 and 33/7 over 40 calls — and `/gems/foobar` credited to the gem at `/gems/foo` is a plain wrong answer 40/40 with no randomness at all. **Step 2 (call-site migration) and step 3 (deleting the old primitives) are still open**, and per ruling 1 step 2 waits for `F-GOBUNDLE-1` and `F-GORESOLVE-1`. **Update, PR #79:** step 2's fs-to-URL half is done - `dirname.go`, `bundler.go` and `bundless.go` moved onto `UrlPathFromFsPath` and `rootPathToUrlPath` is deleted, with `test/dirname_boundary_test.go` as the boundary regression test. The alias consolidation and gem-root containment step 2 absorbed (TODOS.md) are still open. |
+| F-MW-1 | **Done** — `d2730224`. Both guards now return the value they validated. `Chunks` extracts the content hash in the guard (regex byte-identical, so cached ETags do not move); `RubyGems#renderable?` uses the non-bang lookup, so an unknown gem is "not mine" like a missing app file. First tests for `Chunks`, including the positive ETag case. |
+| F-MW-2 | **Done** — `c02be7d3`. The `/vendor` strip is an argument to the file lookup, not a write to the shared `env`. **Field 3 understated it:** the leak is not a mislabelled 404 — `/vendor/lib/foo.js` was served 200 with the app root's `/lib/foo.js` contents under the client's URL, confirmed before the fix. First tests for `Vendor`, one running the real middleware stack below it. |
+| F-GOPLUGIN-1 | **Done** — `ec1707af`. The three i18n globals are one immutable snapshot, published once after `json.Marshal` succeeds and keyed on the locales directory. Three tests added, none of which existed. **The staleness bug is exactly as described and was reproduced before the fix. The missing root key is LATENT, not live**, as field 3 implies: the directory-mtime check rebuilds whenever the mtimes differ, which they almost always do, so observing a crossed payload takes two roots whose locale directories share an mtime — the new spec forces that with `os.Chtimes`. The `-race` half is confirmed: DATA RACE on all three variables pre-fix. |
+| F-GOCSS-1 | **Done** — `954209bb`. The `:global`/`:local` rule-level stacks, the `untilFn` carcass and `nextToken`'s recursion deleted, plus the orphaned `css_test.snap` whose `TestParseCss` no longer exists. |
+| F-GOCSS-2 | **Done** — `00d1455a`. Both iteration helpers now own termination, so the hang and the panic are gone, and `nextToken` with them. Ruling 12 applied as a split: the tokenizer's helper stops at end-of-input only, the parser's on any stop token, which is what each layer already did — so malformed-CSS output is unchanged. **Field 4 was wrong that the caller-side check at mixins.go:83 could be deleted**; it terminates on the error and "bad" tokens, so it stays. The adjacent stack fix landed too: popping now truncates, which retired `position`, and `currentFilePath()` replaced mixins.go's indexing into the stack. |
+| F-SIDELOAD-1 (NameError half only) | **Done** — `52ad154e`. `PartialRenderer#sideload_template_assets` now receives `controller`. The `merge_options` extraction and the write-through-to-shared-state half are still open. |
+| F-GORESOLVE-1 | **Done** — `8452092a` (return shape, `GemFromSpecifier` at the top, `UrlPathFromFsPath`) and `4cf61406` (URL input → empty `absPath`). **Field 4's zero-behaviour-change migration was not available:** the reparse at `:144-153` was the only thing that turned the served form `/node_modules/@rubygems/<gem>/x.js` back into the gem's file, because `IsRubyGem` rejected the leading slash; a return-shape-only commit would have changed `abs_path` for that form, and with it the CSS-module class digest `importer.rb:44` derives from it. So the return shape and the `GemFromSpecifier` migration landed as one commit, with a spec pinning that form. **Field 6's URL branch:** `""`, its own commit, pinned in Go and Ruby. The path-leak lead below (`:50` and `css.go:167`) is closed by one `utils.UrlPathFromFsPath`, with the app root matched at a "/" boundary — the naive `CutPrefix` accepted `/app-other`. Found on the way: `GemFromSpecifier` kept `..` in the suffix while `UrlPath()` cleaned it, so `@rubygems/foo/../bar/x.js` named gem bar in the URL and a directory beside foo on disk; the suffix is now cleaned as a relative path and refused when it escapes (`resolve.go` acts on the error; the two plugin callers discard it until step 2). The `metadata.Inputs` map-range lead below is a `len != 1` guard now. |
+| F-CONTRACT-1 | **Done** — `c37363b0`. `assets:precompile` now just calls `Builder.compile`, which raises `CompileError` carrying esbuild's messages (builder.rb:163-175, :278-286). Found by the 2026-10-01 reconciliation; this table had not recorded it. That also **unblocks F-CONTRACT-2** — main.go:70 and :112 now return esbuild-shaped JSON on config errors. |
+| F-GOUTILS-2, F-TOOL-1, F-BUNJS-1 | Open, **scope changed** by the 2026-10-01 reconciliation: F-GOUTILS-2 narrowed (`FDebug` now has a caller, keep it); F-TOOL-1's GOWORK half withdrawn (CLAUDE.md documents it as intended); F-BUNJS-1 corrected (`config` is copied onto the plugin object, which nothing reads). |
+| F2-*, H-*, BL-* (2026-10-01) | Open. Ranked in the 2026-10-01 **Final priorities and dependencies**. |
+| Everything else | Open. |
+
+The order now lives in the 2026-10-01 **Final priorities and dependencies**, which interleaves
+the open 2026-09-08 findings with the new ones. The short version: **F2-MW-1** goes first. A
+double-encoded request path is decoded a second time in `Middleware::Base` and in `Chunks`, which
+reopens the class of defect that misserves a client-supplied URL. The 2026-09-08 order put
+F-GOUTILS-1 step 2 next on the premise that no such defect was still open. After F2-MW-1:
+**F2-BUN-1** (a dead Bun daemon hangs every later module load), then the H-1/H-2/H-7 dead-state
+sweep, which also clears `types.go` for F-CONTRACT-2. F-GOUTILS-1 step 2 and step 3 keep their
+place relative to the other 2026-09-08 findings (pass 4, ruling 1 — consumers-by-deletion first).
+
+The high-severity pair from 2026-09-08 (**F-GOCSS-1 -> F-GOCSS-2**, a hang and a panic that
+aborted the host Ruby process) is done, as are **F-GOPLUGIN-1**, **F-MW-1**, **F-MW-2**,
+**F-GOUTILS-1 step 1**, **F-GOBUNDLE-1** and **F-GORESOLVE-1**.
+
+---
+
+# Simplification Audit — 2026-10-01
+
+Read-only audit of the whole repository at `65a3857d` (master, clean). Second audit: the first
+(the 2026-09-08 section below, at `5edd7363`) is 90 commits / 113 files (+6,978 / -1,401 lines) behind HEAD. Its
+findings (done or open) and every open `TODOS.md` item are on the do-not-re-report list; workers
+may only report them as a one-line status update, never as a new finding.
+
+Models: coordinator Opus 5.5; subsystem workers Sonnet 5.5 (`general-purpose` agents under a read-only brief — instruction-enforced, not tool-enforced; one breach, see the audit log);
+materiality / over-abstraction and priority-ranking passes Fable 5.1 (per user instruction).
+
+## Subsystem inventory (coverage contract)
+
+Boundaries are by file and do not overlap. Test-case files are read by each lane as validation
+evidence; TEST-INFRA owns only the shared harness (same scope rule as the 2026-09-08 audit).
+
+| ID | Name | Boundary (owned files) | Prior lane | Status |
+|----|------|------------------------|-----------|--------|
+| CONTRACT | FFI contract + panic recovery | main.go, internal/types/types.go, internal/utils/panic.go, internal/debug/debug.go, lib/proscenium/builder.rb, lib/proscenium/error.rb | CONTRACT-CONFIG (+new panic.go, error.rb) | skip |
+| GO-BUILDER | Build orchestration | internal/builder/build.go, build_to_string.go, compile.go | GO-BUILDER | skip |
+| GO-BUNDLE | Bundler plugin | internal/plugin/bundler.go | GO-BUNDLE | skip |
+| GO-BUNDLESS | Bundless plugin | internal/plugin/bundless.go | GO-BUNDLE (shared) | skip |
+| GO-RESOLVER | Go resolver | internal/resolver/resolve.go | GO-RESOLVER | skip |
+| GO-UTILS | Path/gem utilities | internal/utils/utils.go | GO-UTILS | skip |
+| GO-CSS | CSS parser/tokenizer/mixins | internal/css/*.go | GO-CSS | skip |
+| GO-PLUGIN-CSS | CSS esbuild plugin | internal/plugin/css.go | GO-PLUGIN-MISC (shared) | skip |
+| GO-PLUGIN-MISC | Small plugins + replacements | internal/plugin/{i18n,svg,dirname,http,rjs,replacements}.go, internal/replacements/build.go | GO-PLUGIN-MISC | skip |
+| RB-BOOT | Engine boot + config | lib/proscenium.rb, railtie.rb, ensure_loaded.rb, log_subscriber.rb, railties/assets.rake, version.rb | RB-BOOT, RB-RAKE | recommend |
+| RB-RESOLVE | Ruby resolution + manifest | lib/proscenium/resolver.rb, manifest.rb, bundled_gems.rb, utils.rb, source_path.rb | RB-BOOT (shared) | skip |
+| RB-MIDDLEWARE | Rack middleware | lib/proscenium/middleware.rb, middleware/*.rb, templates/rescues/build_error.html.erb | RB-MIDDLEWARE | recommend |
+| RB-IMPORTER | Import tracking | lib/proscenium/importer.rb | RB-IMPORTER | skip |
+| RB-SIDELOAD | Side-loading + ActionView patches | lib/proscenium/side_load.rb, monkey.rb | RB-SIDELOAD | skip |
+| RB-VIEW | View helpers + React componentable | lib/proscenium/helper.rb, react_componentable.rb | RB-VIEW | skip |
+| RB-CSSMOD | CSS modules (Ruby) | lib/proscenium/css_module.rb, css_module/*.rb | RB-CSSMOD | skip |
+| RB-REACTMGR | Browser React manager | lib/proscenium/react-manager/index.jsx, react.js | RB-REACTMGR | skip |
+| RB-REGISTRY | npm registry controller | app/controllers/proscenium/registry_controller.rb, config/routes.rb | none (cross-note only) | recommend |
+| RB-DAEMON | Bun test daemon (Ruby) | lib/proscenium/runtime/server.rb | RB-DAEMON | skip |
+| JS-BUN | Bun plugin + bootstrap | lib/proscenium/runtime/bun.js, bootstrap.js | RB-BUNJS | recommend |
+| RB-GENERATOR | Bun generator | lib/generators/** | RB-GENERATOR | skip |
+| TOOL-BUILD | Build/packaging tooling | Rakefile, proscenium.gemspec, Gemfile, Appraisals, bin/{console,rails,rubocop,test}, .golangci.yml, .rubocop.yml | TOOL-BUILD | skip |
+| TOOL-CI | CI + release pipeline | .github/workflows/main.yml, release.yml, bin/verify-gem, bin/verify-installed-gem | none (new) | recommend |
+| TEST-INFRA | Shared test harness | test/test_helper.rb, test/support/*, test/proscenium_suite_test.go | TEST-INFRA | skip |
+| GO-SNAPS | Plugin snapshot files | internal/plugin/__snapshots__/{css,svg,url}_test.snap | none — **added by coverage pass** | skip -> H-7 (inline) |
+| CONFIG | Lockfiles + repo config | Gemfile.lock, gemfiles/*, go.mod, go.sum, .gitignore, .gitattributes, .ruby-version, .claude/settings.json, LICENSE.txt | none — **added by coverage pass** | skip (inline) |
+| BENCH | Benchmarks | bench.rb, benchmarks/*, test/benchmark_test.go | BENCH | skip (inline) |
+| REPL-SRC | Replacement shim sources | internal/replacements/src/** (171 .mjs data files) | none | skip (inline) |
+| FIXTURES | Test fixture apps/gems | fixtures/** | none | skip (inline) |
+| DOCS | Docs | docs/**, README.md, CLAUDE.md, TODOS.md, AUDIT.md | none | skip (inline) |
+
+## Confirmed opportunities
+
+IDs use `F2-` so they cannot be confused with the 2026-09-08 audit's `F-` IDs.
+
+### F2-MW-1 — one request-path derivation: two consumers decode a second time (RB-MIDDLEWARE)
+1. Verdict: recommend, **LOW-MEDIUM** (materiality pass: UPHOLD both halves). Coordinator-verified.
+2. Evidence: `lib/proscenium/middleware.rb:25-30` `normalise_path` percent-decodes once and is
+   documented (:16-24) as the ONLY derivation everything takes. `base.rb:40` builds from it.
+   `base.rb:52` probes the disk through `clean_path` (:68-71), which calls
+   `Rack::Utils.unescape_path` AGAIN. The comment at `base.rb:65-67` says `clean_path` "is
+   idempotent on that output"; it is not for any path containing `%25`. Coordinator reproduced
+   with both functions copied verbatim (`bundle exec ruby -e`, read-only):
+   | request | built (Go, literal) | probed on disk |
+   |---|---|---|
+   | `/lib/a%2520b.js` | `lib/a%20b.js` | `lib/a b.js` |
+   | `/lib/%252e%252e/secret.js` | `lib/%2e%2e/secret.js` | `secret.js` |
+   | `/lib/a%2500b.js` | `lib/a%00b.js` | nil |
+   Go decodes nothing (no unescape/url.Parse in internal/ or main.go).
+   **Second consumer, found by the duplication pass and reproduced by the coordinator:**
+   middleware/chunks.rb:25-27 guards on the normalised path, then :37 hands that already-decoded
+   path as `PATH_INFO` to `ActionDispatch::FileHandler#attempt`, whose `clean_path`
+   (actionpack-8.1.3.1 static.rb:185-189) unescapes AGAIN. Function-level reproduction:
+   `/_asset_chunks/x-$FAKE$/%252e%252e/%252e%252e/lib/outside-$L32XTY22$.js` normalises to
+   `/_asset_chunks/x-$FAKE$/%2e%2e/%2e%2e/lib/...`, passes `CHUNKS_PATH` with etag `FAKE`, and
+   FileHandler resolves `/lib/outside-$L32XTY22$.js` — exactly the file
+   test/middleware/chunks_test.rb:57-66 asserts is NOT served for the single-encoded form.
+3. Current: two derived forms of one request — routing and building use the once-decoded form,
+   the probe a twice-decoded one. This is the Codex #4 shape (approve one file, build another)
+   surviving for double-encoded input; tests cover single-encoded `%2e%2e` only
+   (test/middleware/chunks_test.rb:50). Consequence for `/lib/%252e%252e/<f>.js`: the probe
+   approves `Rails.root/<f>.js`, the build looks for a literal `lib/%2e%2e/<f>.js`, fails, and
+   `Builder::BuildError` surfaces (railtie.rb:28-30 maps it to the build_error template; 500 in
+   production). So a client can distinguish "root-level file with an asset extension exists"
+   (500) from "does not" (falls through to the app). Existence oracle within Rails.root only —
+   `clean_path_info` cannot climb above it — and no file content is served.
+   **Chunks half:** it is Codex #8 (fixed in 804ccc50 for single encoding) surviving
+   for double encoding — any file under the output directory served from a chunk URL with a
+   client-chosen ETag under `public, max-age=100.years, immutable` (chunks.rb:34). Contained to
+   the output directory (FileHandler's root), so no new read capability, but a permanent-cache
+   header on a forged ETag is what Codex #8 was fixed for. Rails' public file server already serves
+   `output_path`, so the harm is the cache header, not exposure. Neither half run end to end.
+4. Proposed: the invariant is "decode exactly once, in `normalise_path`". Base: delete `clean_path`; `file_readable?` probes
+   `root_for_readable.join((sourcemap? ? real_path[0...-4] : real_path).delete_prefix('/'))`.
+   `real_path` is already normalised (base.rb:34-36; RubyGems' override is a suffix of it), so
+   probe and build agree by construction and the false comment goes with the method. Chunks:
+   FileHandler's decode cannot be switched off. **Minimal (adopted):** add `&& !path.include?('%')`
+   to the :25-27 guard — esbuild chunk names never contain `%`. (`Rack::Utils.escape_path(path)` as
+   `PATH_INFO` also round-trips correctly; the materiality pass verified it, but it is more than needed.)
+   Keep `.delete_prefix('/')` in Base: `Pathname#join` with a leading `/` replaces `Rails.root`.
+   Intent check: 7e602518's message says `clean_path` "stays as a secondary, idempotent on this
+   output" — a factual premise the probe falsifies, not a decision to decode twice.
+5. Scope: lib/proscenium/middleware/base.rb (:51-59, delete :65-71) and chunks.rb:25-37. Keep `.b`
+   unless its purpose is established (uncommented). Vendor passes the raw path and decodes once — fine.
+6. Risks: a decoded path containing a literal `%` is now probed under that literal name — which
+   is what gets built, so correct. `.map` branch unchanged. Windows `File.stat` on forward-slash
+   paths is fine but unverified on a Windows host.
+7. Validation: existing test/middleware_test.rb + test/middleware/*. Add: `/lib/%252e%252e/<existing
+   root-level fixture>.js` falls through (404, not 500, not served), `/lib/a%2520b.js`, and the
+   double-encoded twin of chunks_test.rb:57-66 (`%252e%252e`) returning 404 — all must go red at HEAD first.
+8. Confidence: high on both mismatches (reproduced at function level against the installed Rack/actionpack); medium on end-to-end status codes (read, not run).
+
+### F2-BOOT-1 — one output location, derived; not three independently mutable options (RB-BOOT)
+1. Verdict: recommend, **LOW, NARROWED** by the materiality pass (adopted). Latent, config-triggered. Coordinator-verified. **Cross-lane:** owned by RB-BOOT but edits CONTRACT (builder.rb), RB-MIDDLEWARE (chunks.rb) and RB-RESOLVE (manifest.rb) files.
+2. Evidence: railtie.rb:21 `output_dir = '/assets'`; railtie.rb:33-35 in `after_initialize`:
+   `output_path ||= Pathname(paths['public'].first + output_dir)` then `manifest_path =
+   output_path.join('.manifest.json')`. Writers vs readers split: Go writes to
+   `"public#{output_dir}"` under RootPath (builder.rb:211, a hard-coded `public`); Chunks serves
+   from `output_path` (middleware/chunks.rb:30); Manifest reads `manifest_path` (manifest.rb:19,22)
+   but strips `paths['public']` (:15,:25); assets.rake:16 re-spells `public#{output_dir}/.manifest.json`
+   a third time. test/manifest_test.rb:30,33 assign `manifest_path`; test/middleware/chunks_test.rb:59,99
+   and test/importer_test.rb:36 read `output_path`. None of the three is documented
+   in README.
+3. Current: one fact (where built assets live) held as three mutable options plus two notions of
+   "public" (Rails `paths['public']` in Ruby, literal `public` in Go). `output_path ||=` invites
+   an override that only Chunks and Manifest honour — the builder and precompile still write to
+   `<root>/public/<output_dir>`, so an override (or a relocated `paths['public']`) splits "where
+   Proscenium writes" from "where it serves chunks and reads the manifest", silently. Before
+   `after_initialize` both derived values are nil.
+4. **Adopted minimal version (3 lines, no test changes):** railtie.rb:33 `||=` -> `=` (kills the
+   half-honoured override); builder.rb:211 `OutputDir: Proscenium.config.output_path.relative_path_from(Rails.root).to_s`;
+   assets.rake:16 -> `Proscenium.config.manifest_path`. Writer and readers then share one derivation.
+   New risk of the narrow form: builder.rb:211 reads a value set in `after_initialize` (nil before it) —
+   acceptable because Go must not be called at boot anyway (CLAUDE.md fork hazard).
+   Original fuller proposal, NOT adopted (over-built for a value nobody overrides): `output_dir` stays the only configured value; `output_path` / `manifest_path` (today
+   keys on `Proscenium.config`) become read-only derivations from `Rails.public_path` + `output_dir`;
+   Builder sends `OutputDir` as that path relative to the root, so Go and Ruby share one "public".
+5. Scope (adopted): railtie.rb:33, builder.rb:211, assets.rake:16 — plus one non-default `output_dir` test.
+   Scope of the NOT-adopted fuller version, for reference: railtie.rb (drop :33-35), proscenium.rb (two methods), builder.rb:211, chunks.rb:30,
+   manifest.rb:15-22, assets.rake:16; manifest_test.rb (assigns) and the chunks/importer tests (read). No Go change.
+6. Risks: removes the undocumented `output_path` override (half-broken today) — changelog it.
+   Windows: manifest.rb's `fs_path`/`delete_prefix` must see the same string form
+   (test/manifest_test.rb:29 simulates it). The registry also reads `Rails.public_path` (registry_controller.rb:109, :117); the bun daemon does not.
+   Containment: `OutputDirUnderRoot` (compile.go:174-188) rejects `..` and absolute output dirs, so a
+   relative `OutputDir` derived from a `paths['public']` OUTSIDE the root fails closed — decide whether
+   that is a supported layout before deriving (TODOS "Judge output directory containment").
+7. Validation: existing manifest/chunks/importer tests and Go compile specs. Add one test with a
+   non-default `output_dir` (e.g. `/static`) asserting build output, manifest and chunk serving
+   agree — break the derivation to see it go red.
+8. Confidence: medium. Mechanism clear from source; impact needs a non-default config.
+
+### F2-REG-1 — resolve the gem once, and keep the requested version apart from the installed one (RB-REGISTRY)
+1. Verdict: recommend, MEDIUM (materiality pass: UPHOLD; lead with the 500 — npm clients fetch the
+   unversioned packument, so the version echo is lower impact) — gated on Q-1 below. Coordinator-verified by reading;
+   the worker reproduced the HTTP behaviour.
+2. Evidence: registry_controller.rb:66 `@gem_name, @version = package_params` (client string or
+   nil); :151 `def version = @version ||= spec.version.to_s` — the SAME ivar holds the client's
+   string or the installed version; :152 `spec = Bundler.load.specs[@gem_name].first` (nil for an
+   unknown gem); :136-148 `package_json` does a SECOND lookup via `BundledGems.pathname_for` and is
+   the only place raising `GemNotInstalledError`; `show` evaluates `version` (:71) before
+   `package_json` (:77).
+3. Current: two independent "is this gem installed" answers, joined only by evaluation order.
+   (a) Version-less URL of an uninstalled gem -> `NoMethodError` (500), not 404 — the 2026-09-08
+   cross-note, still present, reproduced on three URL spellings (in-tree reach is ZERO: the worker mounted the engine ad hoc to
+   send them — see Q-1). (b) A client-supplied version for
+   an INSTALLED gem is echoed back: `GET .../@rubygems/rake/99.9.9` returned 200 with
+   `latest: "99.9.9"` and wrote `public/proscenium_registry_tarballs/@rubygems/rake/rake-99.9.9.tgz`
+   — every distinct version string writes a new, never-evicted file (:106).
+4. Proposed: `def spec = @spec ||= Bundler.load.specs[@gem_name].first || raise(GemNotInstalledError, @gem_name)`;
+   `version` is `spec.version.to_s` only; the URL version is `requested_version`, and a present,
+   mismatched one is a 404. `package_json` keeps `BundledGems.pathname_for` (it special-cases
+   `proscenium` and excludes `bundler`, bundled_gems.rb:12-15) but no longer owns the existence check.
+5. Scope: registry_controller.rb, ~10 lines.
+6. Risks: a client asking for a specific, non-installed version now gets 404 (inferred contract —
+   undocumented). Keep `BundledGems` for the path so proscenium/bundler behave as today.
+7. Validation: NO test exercises this controller at all. Add a request test mounting the engine:
+   404 unknown gem with and without a version (red at HEAD), 200 + `latest == spec.version`,
+   404 mismatched version.
+8. Confidence: high on both defects (reproduced by the worker, code read by the coordinator);
+   medium that 404-on-mismatch is the intended contract.
+
+**Q-1 (prerequisite, user decision): is the registry a supported feature?** config/routes.rb:3
+draws into `Proscenium::Railtie.routes` (isolated engine, railtie.rb:8-9). Nothing mounts the
+engine — not lib/, not fixtures/dummy/config/routes.rb — and README/docs never mention the
+registry (only the controller's header comment does). Yet .github/workflows/main.yml:190-191 says
+fixtures/dummy's `@rubygems/*` deps "are served by the app's own registry". If the registry is not
+supported, the finding becomes "delete 163 lines"; if it is, it needs a documented mount plus F2-REG-1.
+Evidence it WAS used: fixtures/dummy/pnpm-lock.yaml:40,:47 carry tarball URLs at
+`http://registry.proscenium.test:3001/proscenium_registry_tarballs/...` — the committed node_modules
+was produced by hand-running the registry.
+
+### F2-BUN-1 — give the Bun daemon client a terminal state (JS-BUN)
+1. Verdict: recommend, MEDIUM (materiality pass: UPHOLD, re-measured on Bun 1.3.13). Coordinator-verified, premise measured.
+2. Evidence: lib/proscenium/runtime/bootstrap.js:35-36 `close`/`error` call `#rejectAll`;
+   :43-49 `send()` registers a pending entry then `#socket.write(...)` with no liveness check;
+   :81-84 `#rejectAll` rejects and clears only entries pending at that instant; :65-70 a JSON parse
+   failure also `#rejectAll`s but leaves the socket open. Every `onLoad` calls `client.send`
+   (bun.js:76, :82, :101). **Coordinator probe (Bun, TCP loopback, $TMPDIR script):** after the
+   peer closes and the `close` callback has fired, `socket.write("hello\n")` returns `-1` and does
+   NOT throw — so the Promise executor never rejects.
+3. Current: `Daemon`'s state is `#pending` + `#buffer` + the socket; "connection dead" exists only
+   as "`#rejectAll` happened to run once". A `send` after that registers a promise nothing will
+   ever settle. If the daemon dies mid-run (crash, OOM, killed), every later module load hangs
+   silently. (The bootstrap's comments guard the startup case — Rails failing to boot, :98-102 —
+   not death mid-run; the mid-run case simply has no guard.)
+4. Proposed: one `#failure` field (null while open, an Error once dead). `#fail(e)` sets it if
+   unset and rejects pending; `send` starts `if (this.#failure) return Promise.reject(this.#failure)`.
+   Two states, open and dead; the stale third (dead but accepting) is unrepresentable. A
+   `socket.readyState` guard would be one line but misses the parse-failure state. A module-load
+   hang sits outside `bun test`'s per-test timeout, so nothing else surfaces it.
+5. Scope: bootstrap.js `Daemon` only, ~5 lines. bun.js and server.rb untouched.
+6. Risks: very low. First-error-wins keeps the parse-failure message over the later "closed" one.
+   Whether a parse failure should also close the socket is a separate decision.
+7. Validation: nothing exercises daemon death today (fixtures/dummy/test/js/*, test/runtime/server_test.rb).
+   Add a Bun test that ends the daemon connection and asserts the next `send` rejects within a
+   timeout — red at HEAD (hang/timeout), green after.
+8. Confidence: high on the hang mechanism (write returns -1, measured); medium on how often a
+   daemon dies mid-run in practice.
+
+### F2-CI-1 — make "every platform gem is verified before publish" checked, not hand-kept (TOOL-CI)
+1. Verdict: recommend, **LOW, NARROWED** by the materiality pass (adopted). Coordinator-verified.
+2. Evidence: Rakefile:50-56 `PLATFORMS` (5 keys) is the documented single source of truth.
+   release.yml:102-107 derives the BUILD matrices from `rake platforms:json`; the VERIFY legs are
+   literal lists — `verify` (release.yml:279-292, legs at :288, :291) and
+   `verify-native` (:335-347, legs at :342, :344, :347). `publish` (:379-407)
+   needs only those jobs and runs `rake push`, which pushes every `PLATFORMS` key. The comment at
+   release.yml:33-34 states "The platform list lives in the Rakefile and nowhere else ... adding a
+   platform there is the only edit a new platform needs" — false for verify. CLAUDE.md "Releasing"
+   ends "So every platform gem is installed and loaded before anything publishes."
+3. Current: a platform added to `PLATFORMS` (CLAUDE.md calls that "a one-line change" for an
+   existing builder) is built, uploaded and pushed with no leg ever installing it, and the run is
+   green. The pipeline's central guarantee becomes a convention two hand lists happen to satisfy.
+4. **Adopted minimal version:** `publish.needs: [verify, verify-native]` already proves every DECLARED
+   leg passed; the only gap is declaration coverage. One step in the `platforms` job (Ruby already set
+   up) loads release.yml with `YAML.safe_load_file`, collects both matrices' `expect:` values, and fails
+   on any difference from `PLATFORMS.keys` (allowing the plain-gem leg if TODOS adds one). ~6 lines, no
+   artifacts, fails before anything builds, runs on dry runs.
+   Original proposal, NOT adopted (proves execution, which `needs` already does): each verify leg uploads a marker artifact `verified-<expect>` after the script passes;
+   a small `verify-coverage` job (needs platforms, verify, verify-native; runs on dry runs too)
+   compares the marker set with `rake platforms:json` and fails naming the difference; `publish`
+   needs it. The invariant becomes executable.
+5. Scope (adopted): one ~6-line step in release.yml's `platforms` job, and move the :33-34 comment to
+   that job (:82). No artifacts, no new job, `publish.needs` unchanged.
+6. Risks: low; the check runs on dry runs. Design with TODOS "Verify the platform-less gem": its leg's
+   marker is not in `platforms:json`, so the coverage check must allow it. Move the :33-34 comment to the
+   `platforms` job (:82) it describes.
+7. Validation: `gh workflow run release.yml --ref <branch> -f dry_run=true`; then delete one verify
+   leg on the branch and confirm the `platforms` job goes red.
+8. Confidence: medium. Drift is real and unenforced; it only bites when a platform is added or a
+   runner retired.
+
+## Hygiene (verified deletions, below the finding bar — fold into an adjacent diff)
+
+| ID | What | Evidence | Note |
+|----|------|----------|------|
+| H-1 | Vestigial global config | types.go:69-99 `var Config`, `zeroConfig`, `Reset`, `UnmarshalConfig`; types.go:5 `var Debug`; main.go:46-49 `reset_config` resets it | Production reads nothing. Deliberate leftover per the 2026-08-26 refactor memory, but it already misled the 2026-09-08 audit (F-TEST-1 called it "a SIXTH global"). `reset_config` is now the no-Rails smoke entry point (bin/verify-installed-gem:35-46, test/packaging_test.rb:57), so keep the export, delete what it resets. test/types_test.go:43-52 pins `NewConfig` against the global — delete that spec with it. Comment-only mentions remain at test/config_race_test.go:18, :34 and test/proscenium_suite_test.go:48. Land before or with F-CONTRACT-2 (types.go:100-112 doc mentions `UnmarshalConfig`). |
+| H-2 | Dead debug gate | debug.go:13-17 `Enabled`/`Enable()`, and the `|| Enabled` at :22 | Prior F-GOUTILS-2, NARROWED: `FDebug` now has a caller (build_to_string.go:150), keep it. |
+| H-3 | Dead public constants | lib/proscenium.rb:11 `DEFAULT_RAILS_ASSET_PATHS` (its comment claims `compute_asset_path` uses it; helper.rb does not), :42 `Deprecator`, :50 `MissingAssetError`, :61 `PathResolutionFailed` | One hit each (the definition). Public names. Materiality pass found zero references in local checkouts of proscenium-phlex, -ui and -view_component. |
+| H-4 | Dead test harness state (fixtures/dummy/config/application.rb:6 loads active_record/railtie, so `rails/test_help` already wraps tests transactionally) | test/test_helper.rb:10,19 DatabaseCleaner (no test touches AR); test/support/equal_code_matcher.go (0 callers); `api.BuildResult` branch in contain_code_matcher.go:21-28; test/support/console_logger.rb (prior) | Plus the gem in Gemfile:22 and 3 appraisal gemfiles; CLAUDE.md:103 (DatabaseCleaner) and :106 (`EqualCode`). Cross-lane hygiene. Land first, or in the same diff as F-TEST-1 (adjacent, not overlapping, hunks). |
+| H-5 | Stale comments | utils.go:221 cites bundless.go:190, copy is at :217-220; test/packaging_test.rb:38 "six platform gems" vs 5 `PLATFORMS`; release.yml:33-34 (folded into F2-CI-1) | Do NOT fix utils.go:221 separately — the comment goes when F-GOUTILS-1 step 2 deletes bundless.go:217-220. |
+| H-6 | STATUS ROW ONLY (all already in the 2026-09-08 audit) — prior P3 dead state still present | css_module.rb:8 `autoload :Rewriter` (file deleted in a78dee1a); ~~side_load.rb:62 `opts.delete(:lazy)`~~ **REJECTED by the materiality pass, coordinator-confirmed:** live producer at ~/dev/proscenium-ui/lib/proscenium/ui/form/fields/select.rb:28 (`Importer.sideload source_path, lazy: true`) — deleting it would emit a tag the caller asked to defer; bun_generator.rb:114-121 duplicated comment (F-GEN-1 kept part); server.rb:417 `materialised: true` (test-only reader, keep) | |
+| H-7 | Orphaned snapshot files | internal/plugin/__snapshots__/css_test.snap, svg_test.snap, url_test.snap — last touched 5432010a (2023, "Refactoring and ginkgo"); no `_test.go` in internal/plugin, no snapshot library imported anywhere | Same class as the internal/css snapshot deleted in 954209bb. Straight deletion. |
+
+## Bug leads (correctness, not simplification — recorded, not ranked)
+
+- **BL-1** internal/plugin/css.go:102 embeds compiled CSS as ``String.raw`%s` ``: a backtick or `${`
+  in the CSS output (e.g. `content: "`"`) ends or interpolates the template; css.go:91 puts
+  `urlPath` in a single-quoted JS literal, so a path containing `'` breaks it. Reasoned, not run.
+  Fix shape: `json.Marshal`/`strconv.Quote`. Digest unaffected. (GO-PLUGIN-CSS)
+- **BL-2** registry_controller.rb:128 passes `contents.length` (characters) as the tar entry size;
+  needs `bytesize`. A non-ASCII package.json yields a corrupt tarball. (RB-REGISTRY)
+- **BL-3** server.rb:258 `@resolve_mutex` serialises only the daemon's own `Resolver.resolve`
+  calls; `Importer` (importer.rb:45, :87) and `ReactComponentable` (:61) call it inside
+  `Rails.application.call` for route-rendered `.rjs`, bypassing the lock, so `resolved[path] ||=`
+  (resolver.rb:24) stays racy there. Reach unverified. If real, the guard belongs in `Resolver`
+  — and F-BOOT-2 (cache the key, not the value) is the natural place. (RB-DAEMON)
+- **BL-4** bundless.go:404-411 (the `resolveWithEsbuild` call; `EvalSymlinks` is inside the closure at :81, :93) can return stale `result.Errors` from a step-1 miss when a later
+  `EvalSymlinks` fails; needs a gem path or app root inside node_modules. Unverified, very unlikely.
+- **BL-5** ensure_loaded.rb:18-24: any `ensure_loaded` value other than `:log`/`:raise` (a typo)
+  silently disables the check.
+- **BL-6** proscenium_suite_test.go `AssertCode`/`AssertCodeFromFunc` discard `BuildToString`'s
+  `success`; a failed build surfaces only as a ContainCode mismatch against error text.
+- **BL-7 (disputed — needs a test, not a reading)** bundler.go:176 FIXME "still needed?" on the image/font handler: it IS needed — the default
+  `external` set (railtie.rb:19) lacks `*.jpeg`, which the handler's regex covers, and `cfg.External`
+  is applied only when bundling (build.go:102). Record the answer beside the FIXME.
+  *Materiality pass disagrees:* the Bundler plugin is itself registered only when bundling
+  (build.go:101-103), so the handler is a second source of truth that OVERRIDES the user's
+  `config.proscenium.external` for five extensions — delete it and add `*.jpeg` to railtie.rb:19.
+  *Unresolved:* the GO-BUNDLE worker noted the handler returns before the `.*` catch-all, and whether
+  esbuild's `External` option pre-empts onResolve plugins was not established. Coordinator ruling:
+  stays a lead. Settle it with one spec (an image import with the handler deleted) before deleting.
+
+## Explicit skips
+
+Every skip below came back from a worker who read the boundary in full; the coordinator spot-checked
+the load-bearing claim in each (marked ✓).
+
+| Lane | Verdict | Why (one line) |
+|------|---------|----------------|
+| CONTRACT | skip | Result structs match field-for-field; config memo documented; remaining items are prior findings or H-1/H-2. ✓ F-CONTRACT-1 now fixed (assets.rake:8-9). |
+| GO-BUILDER | skip | Output-file tier selection declined before (needs one-build-per-module); error shapes intentionally distinct. |
+| GO-BUNDLE | skip | Flags each have one narrow reader; resolveRubygemPath is already the extraction; rest is step 2. |
+| GO-BUNDLESS | skip | Candidates are step-2 items or would only move branching (`classify()` rejected 2026-09-08). |
+| GO-RESOLVER | skip | F-GORESOLVE-1 already delivered the typed exit table; ✓ `len(metadata.Inputs) != 1` guard at resolve.go:170. |
+| GO-UTILS | skip | New primitives consistently used and pinned; ✓ stale comment (H-5). |
+| GO-CSS | skip | One tokenizer stack, documented cycle check; two `forEachToken`s differ on purpose (F-GOCSS-2 ruling). |
+| GO-PLUGIN-CSS | skip | Outer and nested builds share root and digest inputs; `Css`/`cssOnly` overlap is ~8 lines differing in ResolveDir/PluginData. BL-1 recorded. |
+| GO-PLUGIN-MISC | skip | i18n snapshot/CAS already right; svg cache and replacements `sync.Once` correct. |
+| RB-RESOLVE | skip | Only prior F-BOOT-1/2 remain; `merge_bang_attributes!` live downstream per the 2026-09-08 RB-CSSMOD section's `lib/proscenium/utils.rb` skip note. |
+| RB-IMPORTER | skip | Residual duplication stylistic; `css_imported?` scans a handful of entries. |
+| RB-SIDELOAD | skip | Everything structural is F-SIDELOAD-1 / F-VIEW-1 (one monkey.rb diff). |
+| RB-VIEW | skip | Two real booleans; only F-VIEW-2 remains. |
+| RB-CSSMOD | skip | `[name, path_or_nil]` pair documented for proscenium-phlex; only F-CSSMOD-1 remains. |
+| RB-REACTMGR | skip | Missing mount/unmount record is F-REACT-1's `seen` registry (make it `Map<element, Root>`). |
+| RB-DAEMON | skip | Op dispatch already a flat `case`; shutdown idempotent and documented; BL-3 recorded. |
+| RB-GENERATOR | skip | Small local state; tests pin refusal shapes; template byte-identical to the dummy preload. |
+| TOOL-BUILD | skip | `PLATFORMS` model clean; env-var gate documented and pinned by packaging_test. |
+| TEST-INFRA | skip (as finding) | Its recommendation is pure deletion — moved to H-4. Prior F-TEST-1/2 remain. |
+
+### BENCH — skip (coordinator, inline)
+Evidence: bench.rb:1-18 (name -> `require_relative`, camelize, constantize, `.new`); benchmarks/bridge.rb:7-31,
+benchmarks/build.rb:7-21; test/benchmark_test.go. Only change since the prior audit is
+test/benchmark_test.go (`filepath.Join` -> `utils.JoinFsPath`, and a new `GemFromFsPath` sub-benchmark
+over 300 synthetic gems). Reason: hand-run measurement scripts, never in CI. The prior skip's reasoning
+still holds: constructor-as-run is harmless here and `instance_variable_get(:@request_config)` at
+bridge.rb:11 is a benchmark deliberately measuring below the public API. Implementer note carried
+forward: anything renaming `@request_config` in builder.rb breaks bridge.rb:11 silently.
+
+### REPL-SRC — skip (coordinator, inline)
+Evidence: internal/replacements/src/README.md (native Web API replacements per es-tooling/module-replacements);
+171 `.mjs` files, typically one `export default` line (e.g. src/has.mjs); embedded with `//go:embed src`
+at internal/replacements/build.go:16-17, with the specifier derived from the file name at build.go:77.
+Reason: data, not logic. No state, no branching, no shared shape beyond "the file name is the
+specifier", which build.go owns (lane GO-PLUGIN-MISC). Nothing to simplify structurally.
+
+### FIXTURES — skip (coordinator, inline)
+Evidence: fixtures/** — dummy Rails app, fake gems (fixtures/external/*), vendored node_modules, 253
+non-vendored Ruby/JS files. These are test inputs pinned by Ruby/Go/Bun specs and snapshots.
+fixtures/dummy/test/proscenium.preload.js is the generated output of the Bun generator template
+(lib/generators/proscenium/bun/templates/proscenium.preload.js, lane RB-GENERATOR). Reason: changing
+fixture shapes changes what the suites assert, not product complexity; out of scope for a
+product-code simplification audit.
+
+### DOCS — skip (coordinator, inline)
+docs/**, README.md, CLAUDE.md, TODOS.md, AUDIT.md: prose, no executable structure. Consumed as
+stated-intent evidence by every lane.
+
+### GO-SNAPS — skip (coordinator, inline; row added by the coverage pass)
+Three `.snap` files with no reader: the Go specs moved to `test/` (Ginkgo) in 5432010a and nothing
+imports a snapshot library (`rg 'cupaloy|MatchSnapshot|__snapshots__' --type go` -> nothing). Dead
+data, recorded as H-7.
+
+### CONFIG — skip (coordinator, inline; row added by the coverage pass)
+Lockfiles and appraisal gemfiles are generated; go.mod/go.sum, .gitignore, .gitattributes,
+.ruby-version, .claude/settings.json and LICENSE.txt carry no logic. The appraisal gemfiles do carry
+`database_cleaner-active_record`, which H-4 would drop.
+
+## Prior-finding status reconciliation (2026-09-08 audit, at HEAD 65a3857d)
+
+Reported by each lane's worker with file:line; load-bearing ones re-read by the coordinator (✓).
+
+| Prior ID | Status now | Evidence |
+|---|---|---|
+| F-CONTRACT-1 | **FIXED** ✓ | assets.rake:8-9 just calls `Builder.compile`, which raises `CompileError` with esbuild's messages (builder.rb:163-175, :278-286). The Progress table did not record it; it does now. |
+| F-CONTRACT-2 | open, **now unblocked** | types.go:104-114 still plain `json.Unmarshal`; its prerequisite is met — main.go:70 and :112 return esbuild-shaped JSON on config errors. Every key Ruby sends is a `ConfigT` field. Its cited builder.rb lines are stale: the dead enum is now :95, the caveat comment :203-207. |
+| F-GOUTILS-2 | open, **narrowed** | `Enabled`/`Enable()` (debug.go:13-17) and `types.Debug` still dead; `FDebug` is now called (build_to_string.go:150) — drop it from the finding. |
+| F-GOBUILD-1 | open | Plugin list identical at build.go:95-109 / compile.go:115-129; options duplicated :58-93 / :78-113; log-level seeds differ (Warning vs Info). |
+| F-GOBUILD-2 | open | build.go:133 seeds RAILS_ENV/NODE_ENV only when `len(cfg.EnvVars) == 0`; :141 reads it unconditionally. |
+| P2 nil index | open, mitigated | build_to_string.go:116 `[0]` unguarded; `utils.Recover` (:35) now turns the panic into a failed build, but it still skips the metafile tier. |
+| F-GOUTILS-1 step 2/3 | open | Old primitives with production callers: `ResolveRubyGem` (bundler.go:101, bundless.go:166, :302), `IsRubyGem` (bundless.go:298), `PathIsRubyGem` (bundler.go:320, Deprecated), `RubyGemPathToUrlPath` (bundler.go:142), `RemoveRubygemPrefix` (bundler.go:128, :148; bundless.go:189, :206), `HasAlias` (6 sites). None is caller-free yet. |
+| F-GOPLUGIN-2 | open | `DownloadURL` single caller svg.go:29 always `shouldCache=true`, media type discarded (:27); the `false` path and `contentType|` cache entries are unconsumed. |
+| F-BOOT-1 | open ✓ | resolver.rb:24-25 unescaped regex from the gem path; manifest.rb:28-29 `delete_prefix`. |
+| F-BOOT-2 | open | `loaded` written manifest.rb:6, :17, :20, :52, read only via `loaded?`; resolver.rb:24-34 caches the value. test/manifest_test.rb is now live (:20-36), so the old "un-comment it" validation step is moot. |
+| F-IMPORTER-1 / -2 | open | importer.rb:41, :85 test membership by input path, store by resolved path; `_sideload` first-match on `import`'s return value (:153-157). |
+| F-SIDELOAD-1 (open half) + F-VIEW-1 | open | Three normalisation copies: side_load.rb:101-115, monkey.rb:29-43, :75-89; helper.rb:7-10 writes `@sideload_assets_options` onto the cached template, monkey.rb:32-33/:78-79 read it. The two monkey.rb `sideload_template_assets` copies are now behaviourally identical — fold into one in the same diff. |
+| F-SIDELOAD-2 | open (LOW) | side_load.rb:122/:126/:138/:147. |
+| F-VIEW-2 | open | react_componentable.rb:74 always emits `lazy`, :76 emits forward-children only when true; `loader` dead at :40, :53, :55, :90-92. |
+| F-CSSMOD-1 | open ✓ | css_module.rb:24, :47 and helper.rb:30 skip `flatten`/`compact`; a nil element reaches `name.include?` (transformer.rb:81) -> NoMethodError. |
+| F-REACT-1 / -2 | open | index.jsx:4-5 vs :7-18 two discovery rules; no mount record before :96; per-element IntersectionObserver :37. Suggest `seen` as `Map<element, Root>` so unmount has an owner. |
+| F-DAEMON-1 | open | server.rb:98-99 separate hashes; mutex created :502 before the build; dropped only in `prune` when `@cache.delete(k)` is truthy (:521) — a failed build's Mutex leaks. |
+| F-DAEMON-2 | open (LOW, defended by comment) | bootstrap.js:148-199. |
+| F-BUNJS-1 | open (LOW), **corrected** | `config` is not unread: bun.js:115 copies it onto the plugin object (nothing reads that property); bootstrap.js:223 passes it. |
+| F-TEST-1 / F-TEST-2 / matcher recover bug | open | test_helper.rb:23-25; be_parsed_to_matcher.go:31 (`matcherConfig`, no GemPath), :47 `ParseCss` before the :50 `defer`. |
+| F-TOOL-1 | open (LOW); GOWORK half **withdrawn** | Rakefile:137-142 glob + mtime + mv (`gem build -o` would remove it, unverified). `compile:local` omitting GOWORK=off matches CLAUDE.md Gotchas (local builds honour go.work) — documented intent, drop that half. |
+| F-GEN-1 (kept part) | open | bun_generator.rb:114-117 and :118-121 are the same comment. |
+| Codex #2 | open | vendor.rb:25 `immutable, max-age=100.years`, no ETag, unversioned URL. |
+| Registry cross-note | open ✓, reproduced | See F2-REG-1 (supersedes it). |
+
+## Cross-cutting patterns
+
+**P1 — One fact, several derivations with independent read/write points.** The prior audit's P4
+and its "normalise once, then route" lesson, still recurring after the fixes: F2-MW-1 (one request
+path, decoded once for build and twice for the probe), F2-BOOT-1 (one output location held as three
+mutable options and two notions of `public`), F2-REG-1 (one "is this gem installed" asked twice,
+joined only by evaluation order). Same fix each time: one value, derived once, everything reads it.
+
+**P2 — Liveness states that are not represented.** F2-BUN-1 (a dead daemon connection still accepts
+requests that never settle) and prior F-DAEMON-1 (a failed build's mutex is never pruned) both
+encode "this thing has ended" as an event that happened once rather than as state.
+
+**P3 — Invariants stated in prose, enforced nowhere, and drifting.** release.yml:33-34 and
+CLAUDE.md's "every platform gem is installed ... before anything publishes" (F2-CI-1);
+base.rb:65-67 "idempotent on that output" (false, F2-MW-1); utils.go:221's line reference (H-5);
+proscenium.rb's comment that `compute_asset_path` uses `DEFAULT_RAILS_ASSET_PATHS` (H-3);
+main.yml:190-191 saying the dummy app serves its own registry, which nothing mounts (Q-1). Where a
+comment states an invariant someone will rely on, a check is cheaper than the next audit.
+
+**P4 — Surfaces with zero tests, where both defects found live.** The registry controller (no test,
+no mount), daemon death mid-run, double-encoded request paths. Each accepted finding's field 7 has
+to write the first test, which is most of the work.
+
+**P5 — Dead state, smaller than last time.** H-1..H-7: the global-config vestige, debug gate,
+four unused public constants, the DatabaseCleaner harness, an uncalled matcher, three orphaned
+snapshots. Cheap and independent.
+
+
+## Duplicates and superseded findings
+
+From the independent duplication pass (Sonnet), each checked by the coordinator where it changed a verdict.
+
+- **F2-MW-1 extends Codex #4 and Codex #8** (rows 4 and 8 of the 2026-09-08 CODEX ADVERSARIAL PASS table) rather than superseding them:
+  their single-encoded fixes hold; the double-encoded residue is new. Widened to Chunks (reproduced).
+- **F2-REG-1 supersedes** the registry cross-note in the 2026-09-08 RB-MIDDLEWARE section ("Ticket it"); the echoed-version half is new.
+- **H-1** — `types.Debug` was 2026-09-08 pattern P3; deleting `Config`/`zeroConfig`/`UnmarshalConfig` is new
+  (the 2026-09-08 F-CONTRACT-2 scope field called them "already-tracked", but nothing tracks the deletion).
+- **H-2 = F-GOUTILS-2, narrowed.** **H-6 is a status row** — every sub-item is in the 2026-09-08 audit.
+  `console_logger.rb` in H-4 = the 2026-09-08 TEST-INFRA "incidental, verified, straight deletion".
+- **BL-3 partly prior** — F-BOOT-2's risk note (server.rb:240-245 guard) knew the hash was
+  unsynchronised; the Importer/ReactComponentable bypass is new.
+- F2-BOOT-1, F2-BUN-1, F2-CI-1, H-3, H-7, BL-1, BL-2, BL-4..BL-7: no prior match.
+- Rejected as duplicates during review (never accepted): GO-BUNDLE's flag union (= rejected F-GOBUNDLE-2),
+  GO-BUNDLESS's `classify()` (rejected 2026-09-08), RB-REACTMGR's mount record (= F-REACT-1).
+
+## Same-file overlaps (land as one diff, or in the stated order)
+
+| Files | Items | Ruling |
+|---|---|---|
+| manifest.rb `load!`, resolver.rb:24-34 | F-BOOT-1, F-BOOT-2, (BL-3 guard) | F-BOOT-1 -> F-BOOT-2. A BL-3 lock lands with F-BOOT-2. The ADOPTED F2-BOOT-1 does not touch these files. |
+| test_helper.rb | H-4 (:10, :18-20), F-TEST-1 (:22-26) | H-4 first, or same diff (adjacent hunks). |
+| config snapshot | F-TEST-1, F2-BOOT-1 | Moot for the adopted F2-BOOT-1 (`output_path`/`manifest_path` stay config keys). |
+| types.go | H-1 (:69-99), F-CONTRACT-2 (`NewConfig` :104-112) | H-1 first or same diff. |
+| builder.rb `initialize` | F2-BOOT-1 (:211), F-CONTRACT-2 (:95, :203-207) | Independent; same diff if both in flight. |
+| chunks.rb | F2-MW-1 (:25-27) | The adopted F2-BOOT-1 leaves chunks.rb:30 alone — no overlap. |
+| registry_controller.rb | F2-REG-1, BL-2 (:128) | Same diff, after Q-1. |
+| release.yml | F2-CI-1, TODOS plain-gem leg | Design together (coverage check must allow the plain leg). |
+| utils.go:221 / bundless.go:217-220 | H-5, F-GOUTILS-1 step 2 | Comment goes with step 2. |
+| bootstrap.js | F2-BUN-1 (:35-84), F-DAEMON-2 (:148-199), F-BUNJS-1 (:223) | No overlap. |
+
+## Final priorities and dependencies
+
+Independent ranking pass: Fable 5.1, every load-bearing claim re-read in source; coordinator accepted
+it, with the stale-scope corrections it found applied above.
+
+| Rank | Item | Why | Effort | Prerequisite |
+|---|---|---|---|---|
+| 1 | **F2-MW-1** decode once (Base + Chunks) | Only new defect reachable from a client URL; reproduced; reopens the class the 2026-09-08 "next" assumed closed | S, ~2h | none |
+| 2 | **F2-BUN-1** daemon terminal state | Measured; silent hang outside the per-test timeout | S, ~2h | none |
+| 3 | **H-1 + H-2 + H-7** Go dead-state sweep | Caller-free, zero risk; clears types.go for F-CONTRACT-2 | S, ~30m | none |
+| 4 | **F2-BOOT-1** (minimal, 3 lines) | Latent writer/reader split; medium confidence | S, ~2h with test | **Q-2** |
+| 5 | **H-4** test-harness dead state | Caller-free; drops a gem from 4 Gemfiles | S, ~45m | none |
+| 6 | **F2-CI-1** (minimal) | Bites only on the next platform add | S, ~1h + a `dry_run` dispatch | design with TODOS plain-gem leg |
+| 7 | **H-3** dead public constants | Pure deletion; changelog it | S, 15m | pair with #4 |
+| 8 | **F2-REG-1 + BL-2** | Real defects, but in-tree reach is zero | M, ~3-4h | **Q-1.** If "unsupported", delete the registry instead and promote to #3 |
+
+**Best first slices (each an independently landable PR):**
+- **A — Decode exactly once:** middleware/base.rb (:51-59, delete :65-71), middleware/chunks.rb (:25-27),
+  test/middleware_test.rb, test/middleware/chunks_test.rb. Tests red at HEAD first.
+- **B — Dead daemon rejects:** bootstrap.js `Daemon` + `export { Daemon }`; new
+  fixtures/dummy/test/js/daemon.test.js driving a fake `Bun.listen` server it closes. Do NOT test
+  through a second `register()` — that leaves a dead `Bun.plugin` registered for the rest of the run.
+- **C — Dead state sweep:** H-1, H-2, H-7, H-4, and H-5's packaging_test.rb:38 "six" -> five. Two commits
+  (Go, Ruby), one PR.
+- **D — One output location + dead public surface:** F2-BOOT-1 minimal + H-3 + CHANGELOG, after Q-2.
+- Then on their own: F2-CI-1, and F2-REG-1/BL-2 or the registry deletion once Q-1 is answered.
+
+**Interleaving with the open 2026-09-08 findings:**
+- F2-MW-1 goes to the head of the WHOLE queue, ahead of F-GOUTILS-1 step 2 (the stated "next"). That
+  ordering rested on "nothing still open misserves ... a client-supplied URL" (TODOS.md), which F2-MW-1
+  falsifies. This is the one prior ordering this audit changes.
+- F2-BUN-1 before F-DAEMON-1/-2 (same subsystem, worse symptom, no shared lines).
+- H-1/H-2 immediately before F-CONTRACT-2 (now unblocked). H-4 before F-TEST-1 (which stays after
+  F-BOOT-2, pass-4 ruling 10). F2-BOOT-1 is independent of the F-BOOT-1 -> F-BOOT-2 -> F-TEST-1 chain.
+- H-5's utils.go:221 goes with F-GOUTILS-1 step 2; H-6's `autoload :Rewriter` folds into F-CSSMOD-1.
+
+**Graph check:** no cycles. Every same-diff pair placed together (F-SIDELOAD-1+F-VIEW-1, F-IMPORTER-1+2,
+F2-REG-1+BL-2, H-1+F-CONTRACT-2). Four overlap rows and two scope fields that described NOT-adopted
+versions were found by the ranking pass and corrected above.
+
+## Open questions for the user
+
+- **Q-1** Is the npm registry controller a supported feature? Nothing mounts it, README never mentions
+  it, but fixtures/dummy/pnpm-lock.yaml shows it was used by hand. Supported -> document the mount +
+  F2-REG-1. Unsupported -> delete ~163 lines.
+- **Q-2** F2-BOOT-1: should a `public` directory outside Rails.root be supported? Deriving the output
+  dir makes it fail closed in `OutputDirUnderRoot` (compile.go:174-188), where today it silently splits
+  writer from readers.
+
+
+## Audit log
+
+- 2026-10-01: inventory created at 65a3857d. Prior AUDIT.md (now this file's 2026-09-08 section) + TODOS.md loaded as do-not-re-report list.
+- Inline skips written for BENCH, REPL-SRC, FIXTURES, DOCS before any worker launched.
+- Batch 1 (CONTRACT, GO-BUILDER, GO-BUNDLE, GO-BUNDLESS, GO-RESOLVER, GO-UTILS): 6 skips. Coordinator
+  spot-checked resolve.go:170 guard, utils.go:221 stale ref, types.go/main.go vestige (-> H-1),
+  assets.rake (F-CONTRACT-1 fixed). `git status --porcelain` empty.
+- Batch 2 (GO-CSS, GO-PLUGIN-CSS, GO-PLUGIN-MISC, RB-BOOT, RB-RESOLVE, RB-MIDDLEWARE): 2 findings.
+  F2-MW-1 reproduced by the coordinator with `bundle exec ruby -e`; F2-BOOT-1 verified by reading
+  railtie/builder/chunks/manifest/assets.rake. BL-1 read in css.go. Tree clean.
+- Batch 3 (RB-IMPORTER, RB-SIDELOAD, RB-VIEW, RB-CSSMOD, RB-REACTMGR, RB-REGISTRY): 1 finding
+  (F2-REG-1). **Read-only breach, recorded:** the RB-REGISTRY worker made live HTTP requests against
+  the dummy app, which wrote tarballs to fixtures/dummy/public/proscenium_registry_tarballs/
+  (untracked, gitignored); it deleted them. Coordinator confirmed the directory is gone and
+  `git status --porcelain --ignored fixtures/dummy/public` showed only ignored entries — but one of them,
+  `fixtures/dummy/public/assets/assets/`, had no baseline and no longer exists at the final check:
+  a transient, gitignored directory created and removed during the run (most likely by a worker's
+  ad hoc app boot). Never tracked; disclosed rather than assumed pre-existing.
+- Batch 4 (RB-DAEMON, JS-BUN, RB-GENERATOR, TOOL-BUILD, TOOL-CI, TEST-INFRA): 2 findings (F2-BUN-1,
+  F2-CI-1) + H-4. F2-BUN-1's premise MEASURED by the coordinator with a Bun loopback probe in
+  $TMPDIR (write after close returns -1, no throw). F2-CI-1 line numbers corrected against source.
+- Coverage pass (coordinator, mechanical): every tracked file mapped through the inventory globs.
+  17 unmatched -> two rows ADDED (GO-SNAPS, CONFIG) rather than widening a completed boundary;
+  GO-SNAPS produced H-7.
+- Schema pass (coordinator): each F2 finding carries all eight fields.
+- Materiality/over-abstraction pass (Fable 5.1, independent, re-probed in $TMPDIR): UPHOLD F2-MW-1,
+  F2-REG-1, F2-BUN-1; NARROW+DEMOTE F2-BOOT-1 and F2-CI-1 (minimal versions adopted); REJECT H-6's
+  `:lazy` item (coordinator confirmed the proscenium-ui producer); proposed promoting BL-7 —
+  coordinator kept it a lead because the GO-BUNDLE worker's contrary reading is unrefuted.
+- Ranking pass (Fable 5.1, independent): accepted; it found four overlap rows and two scope fields still
+  describing the non-adopted versions of F2-BOOT-1/F2-CI-1, and the registry reachability overstatement.
+  All corrected.
+- Duplication/ownership pass (Sonnet, independent): widened F2-MW-1 to Chunks — coordinator
+  reproduced against installed actionpack-8.1.3.1; flagged F2-BOOT-1 as cross-lane; corrected test
+  citations, an overstated comment claim in F2-BUN-1, stale F-CONTRACT-2 line refs, the types_test
+  dependency of H-1, and the "~7K lines" figure. All applied.
+- Final: `git -c core.fsmonitor=false status --porcelain` empty at 65a3857d. Repository unchanged.
+
+---
+
 # Simplification Audit — 2026-09-08
 
 A read-only structural audit of the whole repository at commit `5edd7363`, looking for
 materially useful simplifications in data structures, state representation, control flow,
 algorithms and ownership. Nothing here was implemented as part of the audit itself; see
-**Progress** below for what has landed since.
+**Progress** at the top of this file for what has landed since.
 
-Rendered version (same content, easier to skim):
+Rendered version of this 2026-09-08 audit only (same content, easier to skim):
 <https://claude.ai/code/artifact/ace7963b-4ea4-4d0f-8b28-f31f3507403d>
 
-## How to read this file
+## How to read this audit
 
 Findings are labelled `F-<AREA>-<N>`. Each carries eight fields, and a finding is only
 actionable if all eight hold up:
@@ -17,7 +611,7 @@ actionable if all eight hold up:
 4. proposed representation · 5. smallest credible scope · 6. regression risks ·
 7. validation required · 8. confidence
 
-Two sections were written by later passes and **override anything earlier in the file that
+Two sections were written by later passes and **override anything earlier in this audit that
 disagrees with them**:
 
 - **`AUDIT-THE-AUDIT — pass 4`** is the final adjudication. It rejects three findings,
@@ -43,33 +637,6 @@ adversarial pass followed; both found real problems, recorded in place.
 Reviewers were given the do-not-report list below so that already-tracked work in
 `TODOS.md` would not come back as fresh findings.
 
-## Progress
-
-| Finding | Status |
-|---|---|
-| F-GOBUNDLE-1 | **Done** — `f685b282`. Site 1's body extracted to a `resolveRubygemPath` closure; site 2 calls it. **All three observable divergences are worse than field 3 states:** the CSS-module one yields NOTHING usable (not "raw CSS text"), and the extensionless-path and `unbundle`-attribute ones both FAIL THE BUILD outright rather than degrading — `Plugin "bundler" returned a non-absolute path` and `Importing with the "unbundle" attribute is not supported`. **Divergence D is real in the source but was not observable**, since reaching it needs the absolute path only the missing esbuild leg produces; it is fixed as a consequence of B. Predicted `__snapshots__/` churn did not occur — no spec aliases gem CSS from JS. Alias chaining at site 2 is a fifth, config-only behaviour change, stated in the commit. |
-| F-GOUTILS-1 (steps 1 and the fs-path behaviour change) | **Done** — `c7ae4da3` (additive: `GemRef`, `GemFromSpecifier`, `GemFromFsPath`, `UrlPath`, dead variadic dropped, first 25 specs for `internal/utils`) and `8284d26c` (the longest-match/boundary change, its own commit per the Convergent ruling — nothing flipped). **Field 3 understated `PathIsRubyGem`:** the non-determinism is intra-PROCESS, not between runs — measured 38/2 and 33/7 over 40 calls — and `/gems/foobar` credited to the gem at `/gems/foo` is a plain wrong answer 40/40 with no randomness at all. **Step 2 (call-site migration) and step 3 (deleting the old primitives) are still open**, and per ruling 1 step 2 waits for `F-GOBUNDLE-1` and `F-GORESOLVE-1`. **Update, PR #79:** step 2's fs-to-URL half is done - `dirname.go`, `bundler.go` and `bundless.go` moved onto `UrlPathFromFsPath` and `rootPathToUrlPath` is deleted, with `test/dirname_boundary_test.go` as the boundary regression test. The alias consolidation and gem-root containment step 2 absorbed (TODOS.md) are still open. |
-| F-MW-1 | **Done** — `d2730224`. Both guards now return the value they validated. `Chunks` extracts the content hash in the guard (regex byte-identical, so cached ETags do not move); `RubyGems#renderable?` uses the non-bang lookup, so an unknown gem is "not mine" like a missing app file. First tests for `Chunks`, including the positive ETag case. |
-| F-MW-2 | **Done** — `c02be7d3`. The `/vendor` strip is an argument to the file lookup, not a write to the shared `env`. **Field 3 understated it:** the leak is not a mislabelled 404 — `/vendor/lib/foo.js` was served 200 with the app root's `/lib/foo.js` contents under the client's URL, confirmed before the fix. First tests for `Vendor`, one running the real middleware stack below it. |
-| F-GOPLUGIN-1 | **Done** — `ec1707af`. The three i18n globals are one immutable snapshot, published once after `json.Marshal` succeeds and keyed on the locales directory. Three tests added, none of which existed. **The staleness bug is exactly as described and was reproduced before the fix. The missing root key is LATENT, not live**, as field 3 implies: the directory-mtime check rebuilds whenever the mtimes differ, which they almost always do, so observing a crossed payload takes two roots whose locale directories share an mtime — the new spec forces that with `os.Chtimes`. The `-race` half is confirmed: DATA RACE on all three variables pre-fix. |
-| F-GOCSS-1 | **Done** — `954209bb`. The `:global`/`:local` rule-level stacks, the `untilFn` carcass and `nextToken`'s recursion deleted, plus the orphaned `css_test.snap` whose `TestParseCss` no longer exists. |
-| F-GOCSS-2 | **Done** — `00d1455a`. Both iteration helpers now own termination, so the hang and the panic are gone, and `nextToken` with them. Ruling 12 applied as a split: the tokenizer's helper stops at end-of-input only, the parser's on any stop token, which is what each layer already did — so malformed-CSS output is unchanged. **Field 4 was wrong that the caller-side check at mixins.go:83 could be deleted**; it terminates on the error and "bad" tokens, so it stays. The adjacent stack fix landed too: popping now truncates, which retired `position`, and `currentFilePath()` replaced mixins.go's indexing into the stack. |
-| F-SIDELOAD-1 (NameError half only) | **Done** — `52ad154e`. `PartialRenderer#sideload_template_assets` now receives `controller`. The `merge_options` extraction and the write-through-to-shared-state half are still open. |
-| F-GORESOLVE-1 | **Done** — `8452092a` (return shape, `GemFromSpecifier` at the top, `UrlPathFromFsPath`) and `4cf61406` (URL input → empty `absPath`). **Field 4's zero-behaviour-change migration was not available:** the reparse at `:144-153` was the only thing that turned the served form `/node_modules/@rubygems/<gem>/x.js` back into the gem's file, because `IsRubyGem` rejected the leading slash; a return-shape-only commit would have changed `abs_path` for that form, and with it the CSS-module class digest `importer.rb:44` derives from it. So the return shape and the `GemFromSpecifier` migration landed as one commit, with a spec pinning that form. **Field 6's URL branch:** `""`, its own commit, pinned in Go and Ruby. The path-leak lead below (`:50` and `css.go:167`) is closed by one `utils.UrlPathFromFsPath`, with the app root matched at a "/" boundary — the naive `CutPrefix` accepted `/app-other`. Found on the way: `GemFromSpecifier` kept `..` in the suffix while `UrlPath()` cleaned it, so `@rubygems/foo/../bar/x.js` named gem bar in the URL and a directory beside foo on disk; the suffix is now cleaned as a relative path and refused when it escapes (`resolve.go` acts on the error; the two plugin callers discard it until step 2). The `metadata.Inputs` map-range lead below is a `len != 1` guard now. |
-| Everything else | Open. |
-
-Suggested order and the ordering hazards are in pass 4. The short version: **F-GOCSS-1 →
-F-GOCSS-2** was the high-severity pair — a hang and a panic that aborted the host Ruby
-process, with no `recover` behind any of the five cgo exports — and both are now done. What
-remains of the dead-state sweep (pattern **P3**) is the low-risk breadth, and
-**F-GOPLUGIN-1** is done too (`ec1707af`). **F-MW-1** and **F-MW-2** are done too
-(`d2730224`, `c02be7d3`), which leaves no known defect that misserves or crashes on a
-client-supplied URL. What remains is materiality rather than breakage. **F-GOUTILS-1 step 1** (`c7ae4da3`,
-`8284d26c`), **F-GOBUNDLE-1** (`f685b282`) and **F-GORESOLVE-1** (`8452092a`, `4cf61406`) are all
-done, which closes the three `@rubygems` consumers. Next is F-GOUTILS-1's own step 2 and step 3
-(ruling 1 — consumers-by-deletion first).
-
----
 
 ## Known / already-tracked — DO NOT re-report as findings
 

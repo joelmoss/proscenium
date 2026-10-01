@@ -155,26 +155,30 @@ decision, rather than a fix from a Mac.
 
 ## Simplification audit
 
-### Structural simplifications from the 2026-09-08 audit
+### Structural simplifications from the 2026-09-08 and 2026-10-01 audits
 
-**What:** Work through the ranked findings in `AUDIT.md` - a whole-repository read-only audit at
-commit `5edd7363` covering the Ruby engine, the Go/esbuild core, the FFI contract between them,
+**What:** Work through the ranked findings in `docs/AUDIT.md`. The first audit, a whole-repository
+read-only audit at commit `5edd7363`, covered the Ruby engine, the Go/esbuild core, the FFI contract between them,
 the Bun harness and the browser React manager. 34 accepted findings, each with `file:line`
-evidence, a smallest-credible scope, regression risks and the validation it needs.
+evidence, a smallest-credible scope, regression risks and the validation it needs. The second, at `65a3857d`, added five more (`F2-`),
+seven hygiene deletions and seven bug leads, and re-checked the status of every earlier finding.
 
-**`AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it, and
-every correction implementation produced along the way. Read its "AUDIT-THE-AUDIT — pass 4"
-section before starting anything: it is the final adjudication and overrides the per-lane
-priorities earlier in that file, rejecting three findings, demoting five and reversing one
-dependency chain. Do not copy any of that here - two copies drift.
+**`docs/AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it,
+and every correction implementation produced along the way. Read its preamble before starting
+anything: the 2026-10-01 "Final priorities and dependencies" is the current queue, and the
+2026-09-08 "AUDIT-THE-AUDIT — pass 4" still adjudicates that audit's findings, rejecting three,
+demoting five and reversing one dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** the rest of `F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3. The
-fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so the three `@rubygems`
+**Next:** `F2-MW-1`. A double-encoded request path is decoded a second time in
+`Middleware::Base` and `Chunks`, so the claim below that nothing open misserves a client-supplied
+URL no longer holds; the 2026-10-01 audit moved it ahead of everything else. Then the rest of
+`F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3, in the order the audit's
+final priorities give. The fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so the three `@rubygems`
 consumer findings the audit named are done (pass 4 ruling 1, consumers-by-deletion first) - those
 findings, not step 2's own two absorbed items below, which are still open. Nothing still
 open misserves or crashes on a client-supplied URL - the two that did, and the two `internal/css`
 defects before them, are fixed. What remains is materiality rather than breakage. Several findings
-must write the first test for the code they touch; `AUDIT.md`'s pattern P7 lists which, and for
+must write the first test for the code they touch; `docs/AUDIT.md`'s pattern P7 lists which, and for
 those the diff is small and the test is the work.
 
 **Step 2 absorbs two items that used to stand alone here.** The alias-then-strip-prefixes-then-join
@@ -206,12 +210,12 @@ spelling: `resolve.go` and `plugin/css.go` since `8452092a`, and `dirname.go`, `
 with it the missing boundary - root `/app` no longer claims `/app-other/x.css`.
 `test/dirname_boundary_test.go` pins that, and fails against both naive migrations.
 
-**Still open from the Codex adversarial pass** (`AUDIT.md`, "CODEX ADVERSARIAL PASS"). One item
+**Still open from the Codex adversarial pass** (`docs/AUDIT.md`, "CODEX ADVERSARIAL PASS"). One item
 left: finding 2, vendor's `immutable, max-age=100.years` on an unversioned URL. It is a one-header
 decision - drop `immutable` and shorten `max-age` so `Last-Modified` revalidates, or record it as
 accepted. Do not leave it open. Findings 9 and 10 are fixed in `407921ba` and finding 3 is recorded
 won't-fix there; the reasoning, including the measurements that rejected a per-root load lock, is
-in `AUDIT.md`'s table rather than repeated here.
+in `docs/AUDIT.md`'s table rather than repeated here.
 
 **Worth keeping from the middleware fixes:** normalise a request path once, then route, check and
 build from that single value. Three separate defects were the same shape - `Chunks` reading a raw
@@ -220,10 +224,10 @@ disagreeing three ways.
 
 **Effort:** XL in total; individual findings range from one line to a day.
 **Priority:** P3 for what remains. One bug lead came out of `F-GOBUNDLE-1` and is recorded in
-`AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve
+`docs/AUDIT.md` rather than fixed: an extensionless `@rubygems/` specifier that esbuild cannot resolve
 leaks an absolute filesystem path into the built output, because the top-level handler returns
 without passing through the catch-all's URL-conversion tail.
-**Depends on:** Nothing external. Internal ordering is in `AUDIT.md` pass 4.
+**Depends on:** Nothing external. Internal ordering is in `docs/AUDIT.md`, 2026-10-01 "Final priorities and dependencies".
 
 ## Frontend
 

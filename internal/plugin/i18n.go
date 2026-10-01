@@ -111,8 +111,8 @@ func i18nCacheFor(root string) *i18nCache {
 // whose files do not move during a build, does not do.
 //
 // gstack-shortcut(dec-760a3bbc): no direct test - this is unexported and test/ is a separate
-// package. Upgrade when internal/ gets a test package (AUDIT.md pattern P7 needs one anyway), or
-// when this is reported wrong.
+// package. Upgrade when internal/ gets a test package (docs/AUDIT.md pattern P7 needs one
+// anyway), or when this is reported wrong.
 func storeI18nCache(root string, prev, fresh *i18nCache) {
 	i18nCachesMutex.Lock()
 	defer i18nCachesMutex.Unlock()
