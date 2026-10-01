@@ -7,7 +7,7 @@ import (
 )
 
 func TestNewConfig(t *testing.T) {
-	t.Run("defaults match the global Config's defaults", func(t *testing.T) {
+	t.Run("defaults CodeSplitting and Bundle to true", func(t *testing.T) {
 		cfg, err := types.NewConfig([]byte(`{}`))
 		if err != nil {
 			t.Fatal(err)
