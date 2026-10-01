@@ -248,6 +248,27 @@ Side loading is enabled by default, but you can disable it by setting `config.pr
 
 There are also `include_stylesheets` and `include_javascripts` helpers to allow you to control where the CSS and JS assets are included in the HTML. These helpers should be used instead of `include_assets` if you want to control exactly where the assets are included.
 
+### Controlling side loading
+
+`sideload_assets` turns side loading off, or sets attributes on the tags it adds. In a controller, it applies to every view, layout and partial that controller renders. Each of these is an alternative:
+
+```ruby
+class UsersController < ApplicationController
+  sideload_assets false                  # side load nothing
+  sideload_assets css: false             # side load JS only
+  sideload_assets js: { defer: true }    # add attributes to each script tag
+  sideload_assets proc { !request.xhr? } # evaluated against the controller, on every request
+end
+```
+
+In a view, layout or partial, it applies to that template, for that render only:
+
+```erb
+<% sideload_assets false %>
+```
+
+Call it outside any `cache` block. A cache hit skips the block, and the call with it, so that render side loads the template's assets as though it had not been called.
+
 ## Bundling
 
 To bundle a file means to inline any imported dependencies into the file itself. This process is recursive so dependencies of dependencies (and so on) will also be inlined.

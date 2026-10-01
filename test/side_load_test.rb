@@ -68,6 +68,25 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     assert Proscenium::Importer.imported?('/app/views/bare_pages/home.js')
   end
 
+  # Pins documented behaviour: a fragment cache hit skips the block, so a `sideload_assets` call
+  # inside it does not run, and the template's assets are side loaded.
+  it 'ignores a sideload_assets call inside a cache block on a cache hit' do
+    was_caching = BarePagesController.perform_caching
+    was_store = BarePagesController.cache_store
+    BarePagesController.perform_caching = true
+    BarePagesController.cache_store = ActiveSupport::Cache::MemoryStore.new
+
+    BarePagesController.render :cached
+    assert_not Proscenium::Importer.imported?('/app/views/bare_pages/cached.js')
+
+    Proscenium::Importer.reset
+    BarePagesController.render :cached
+    assert Proscenium::Importer.imported?('/app/views/bare_pages/cached.js')
+  ensure
+    BarePagesController.perform_caching = was_caching
+    BarePagesController.cache_store = was_store
+  end
+
   # `false` is a valid layout, and means none. A false layout used to be skipped by a truthiness
   # check; it must not reach the side loader as a template.
   it 'renders a template and a partial given a false layout' do
