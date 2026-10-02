@@ -213,19 +213,69 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       end
     end
 
+    # The first build waits on a gate until every request is parked, so the four overlap whatever
+    # the scheduler does. Closing the gate releases every waiter, so a broken lock fails rather
+    # than hangs.
     it 'builds a module once for concurrent requests' do
+      builds = 0
+      gate = Queue.new
+      original = server.method(:serve_or_build)
+      server.define_singleton_method(:serve_or_build) do |*args, **kwargs|
+        builds += 1
+        gate.pop
+        original.call(*args, **kwargs)
+      end
+
+      threads = Array.new(4) { Thread.new { request('build', path: '/lib/foo.js') } }
+      Timeout.timeout(5) { Thread.pass until threads.all? { |t| t.status == 'sleep' } }
+      gate.close
+
+      assert(threads.map(&:value).all? { |r| r[:ok] })
+      assert_equal 1, builds
+    end
+
+    it 'caches the source map variants of one module separately' do
+      with_map = request('build', path: '/test/js/resolution.test.js', sourcemap: true)
+      without_map = request('build', path: '/test/js/resolution.test.js', sourcemap: false)
+
+      assert_includes with_map[:code], 'sourceMappingURL=data:'
+      refute_includes without_map[:code], 'sourceMappingURL=data:'
+      assert_same with_map[:code],
+                  request('build', path: '/test/js/resolution.test.js', sourcemap: true)[:code]
+      assert_same without_map[:code],
+                  request('build', path: '/test/js/resolution.test.js', sourcemap: false)[:code]
+    end
+
+    # A failure is not a value, so the same mtime builds again - otherwise a file fixed within the
+    # filesystem's mtime resolution would keep failing until it was touched again.
+    it 'retries a failed build at an unchanged mtime, and recovers once the file is fixed' do
+      path = Rails.root.join('tmp/cache_retry.js')
+      FileUtils.mkdir_p path.dirname
       builds = 0
       original = server.method(:serve_or_build)
       server.define_singleton_method(:serve_or_build) do |*args, **kwargs|
         builds += 1
-        sleep 0.05
         original.call(*args, **kwargs)
       end
 
-      replies = Array.new(4) { Thread.new { request('build', path: '/lib/foo.js') } }.map(&:value)
+      begin
+        mtime = Time.now + 5
+        path.write("console.log(\n")
+        File.utime(mtime, mtime, path)
 
-      assert_equal 1, builds
-      assert(replies.all? { |r| r[:ok] })
+        refute request('build', path: '/tmp/cache_retry.js')[:ok]
+        refute request('build', path: '/tmp/cache_retry.js')[:ok]
+        assert_equal 2, builds
+
+        path.write("console.log(1)\n")
+        File.utime(mtime, mtime, path)
+
+        reply = request('build', path: '/tmp/cache_retry.js')
+        assert reply[:ok]
+        assert_includes reply[:code], 'console.log(1)'
+      ensure
+        FileUtils.rm_f path
+      end
     end
 
     # A build that raises never stores a value, and the lock it built under used to sit apart from
@@ -242,11 +292,8 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
           refute request('build', path: '/tmp/cache_broken.js')[:ok]
         end
 
-        entries = server.instance_variables.sum do |ivar|
-          value = server.instance_variable_get(ivar)
-          value.is_a?(Hash) ? value.keys.count { |k| k.include?('/tmp/cache_broken.js') } : 0
-        end
-        assert_equal 1, entries
+        cache = server.instance_variable_get(:@cache)
+        assert_equal(1, cache.keys.count { |k| k.first == '/tmp/cache_broken.js' })
       ensure
         FileUtils.rm_f path
       end
