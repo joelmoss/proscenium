@@ -8,6 +8,10 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
   let(:tarballs) { Rails.public_path.join('proscenium_registry_tarballs') }
   let(:gem1_version) { Bundler.load.specs['gem1'].first.version.to_s }
 
+  # Tarballs are a cache the controller rebuilds whenever one is missing, so clearing the dummy
+  # app's is safe. Before as well as after, as one left by `rails server` would fail the
+  # assertions that nothing was written.
+  before { FileUtils.rm_rf tarballs }
   after { FileUtils.rm_rf tarballs }
 
   # The engine is a Rack app in its own right, so it is called directly rather than mounted into

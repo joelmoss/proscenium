@@ -106,7 +106,8 @@ class Proscenium::RegistryController < ActionController::Base
   end
 
   def package_params
-    @package_params ||= params.expect(:package).then do |it| # rubocop:disable Style/ItAssignment
+    # Not `params.expect`, which Rails 7.2 does not have.
+    @package_params ||= params.require(:package).then do |it| # rubocop:disable Style/ItAssignment
       unless (res = it.gsub('%2F', '/').match(%r{\A@rubygems/([\w\-_]+)/?([\w\-._]+)?\z}))
         raise PackageNotFoundError, it
       end
