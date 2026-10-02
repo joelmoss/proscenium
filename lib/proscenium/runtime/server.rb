@@ -480,17 +480,19 @@ module Proscenium
         content
       end
 
-      # Keyed on the source file's mtime so an edit is picked up between runs of a watching runner.
+      # Each module variant - its path and whether it carries a source map - holds the mtime of its
+      # source file, so an edit is picked up between runs of a watching runner.
       #
-      # ponytail: the key covers the keyed file only, and a bundled build inlines its whole graph -
-      # which is the default, so in `--watch` editing any module a test imports can serve the
-      # previous bundle until the test file itself is touched. Unbundled it is narrower but still
-      # real: a CSS module, an SVG and i18n data are inlined either way. `Metafile: true` is
+      # ponytail: the mtime covers the keyed file only, and a bundled build inlines its whole
+      # graph - which is the default, so in `--watch` editing any module a test imports can serve
+      # the previous bundle until the test file itself is touched. Unbundled it is narrower but
+      # still real: a CSS module, an SVG and i18n data are inlined either way. `Metafile: true` is
       # already set in internal/builder/build.go, so keying on the newest mtime across the
       # metafile's inputs is the fix when this bites.
+      #
       # Held across the build, not just around the hash read, so N concurrent requests for the same
       # module build it once and the rest wait for that result. A single mutex around the whole
-      # thing would serialise every build and defeat the worker pool, so the lock is per key.
+      # thing would serialise every build and defeat the worker pool, so the lock is per variant.
       #
       # A path with nothing on disk to key on is not cached at all. `.rjs` is rendered by a route,
       # so its bytes depend on app code that can change; keying it on a nil mtime made the key a

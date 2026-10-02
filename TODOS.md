@@ -44,7 +44,7 @@ it through `resolveWithEsbuild` when the importer is in the rubygems namespace, 
 
 ### Key the Bun daemon's build cache on the whole module graph
 
-**What:** `lib/proscenium/runtime/server.rb`'s `cached(:build, path, sourcemap)` keys an entry on
+**What:** `lib/proscenium/runtime/server.rb`'s `cached(path, sourcemap)` keys an entry on
 the mtime of the keyed file alone. A bundled build inlines that file's whole import graph - and
 bundling is the default - so under `bun test --watch` editing any module a test imports serves the
 previous bundle until the test file itself is touched. Unbundled it is narrower but still real: a
@@ -52,7 +52,8 @@ CSS module, an SVG and i18n data are inlined either way.
 
 **Why:** A watching suite can pass against bytes the app no longer produces, which is the one
 failure mode a test harness must not have. It only bites in `--watch`; a one-shot run builds once,
-which is why it was left as a marked shortcut (`server.rb:470`) rather than fixed with the daemon.
+which is why it was left as a marked shortcut (the `ponytail:` comment on `cached`) rather than
+fixed with the daemon.
 
 **Context:** `Metafile: true` is already set in `internal/builder/build.go` and
 `build_to_string.go` already unmarshals the metafile to pick an output, so the input list exists
