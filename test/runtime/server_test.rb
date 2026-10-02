@@ -336,6 +336,20 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       assert_equal 7, answered['id']
       assert_match(/not valid UTF-8/, answered['error'])
     end
+
+    # esbuild passes a mis-encoded source's bytes through, and the builder tags its output UTF-8,
+    # so scanning it for imports raised a bare "invalid byte sequence in UTF-8".
+    it 'names a module whose output is not valid utf-8' do
+      file = Rails.root.join('lib/not_utf8.js')
+      file.binwrite("export const r = /a\xFFb/\n")
+
+      reply = request('build', path: '/lib/not_utf8.js')
+
+      refute reply[:ok]
+      assert_match(%r{/lib/not_utf8\.js .*not valid UTF-8}, reply[:error])
+    ensure
+      file&.delete
+    end
   end
 
   describe 'a malformed request line' do

@@ -287,6 +287,12 @@ module Proscenium
         cached(:build, path, sourcemap) do
           code = serve_or_build(path, sourcemap: sourcemap)
 
+          # esbuild passes a mis-encoded source's bytes through, and scanning them below would
+          # raise a bare "invalid byte sequence in UTF-8" that names no module.
+          unless code.valid_encoding?
+            raise EncodingError, "#{path} built to output that is not valid UTF-8"
+          end
+
           # A source map has no imports to resolve, and the client discards the field, so scanning
           # it is work nobody reads.
           path.end_with?('.map') ? { code: code } : { code: code, imports: resolve_imports(code) }
@@ -548,9 +554,9 @@ module Proscenium
       end
 
       # `JSON.generate` raises `JSON::GeneratorError` - a StandardError, not an IOError - when the
-      # reply carries bytes that are not valid UTF-8, which is what a mis-encoded source file in
-      # the app produces. That needs reporting as a failed build rather than taking the daemon
-      # with it, so the developer learns which module is mis-encoded.
+      # reply carries bytes that are not valid UTF-8. `op_build` checks its own output first and
+      # names the module; this is the backstop for any other reply, reported as a failure rather
+      # than taking the daemon with it.
       def answer(socket, write_mutex, reply)
         line = begin
           JSON.generate(reply)

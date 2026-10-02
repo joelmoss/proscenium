@@ -90,6 +90,16 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
       end
     end
 
+    # The FFI hands back ASCII-8BIT, but esbuild writes UTF-8. Left binary, JSON.generate in the
+    # test daemon warns for every module with a non-ASCII character, and a later json will raise.
+    it 'returns the response tagged as UTF-8' do
+      response = subject.build_to_string('lib/non_ascii.js')[:response]
+
+      assert_equal Encoding::UTF_8, response.encoding
+      assert_predicate response, :valid_encoding?
+      assert_includes response, '/—/'
+    end
+
     it 'raises on unknown path' do
       error = assert_raises(Proscenium::Builder::BuildError) do
         subject.build_to_string('unknown.js')
