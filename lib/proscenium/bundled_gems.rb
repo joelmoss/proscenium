@@ -22,6 +22,13 @@ module Proscenium
       end
     end
 
+    # The `@rubygems/` form of an absolute path inside a bundled gem, or nil when it is in none.
+    # A plain prefix match: a gem path is text, not a pattern, and may hold `+` or `(`.
+    def virtual_path(abs_path)
+      name, root = paths.find { |_, v| abs_path.start_with? "#{v}/" }
+      name && "@rubygems/#{name}#{abs_path.delete_prefix(root)}"
+    end
+
     def pathname_for(name)
       (path = paths[name]) ? Pathname(path) : nil
     end

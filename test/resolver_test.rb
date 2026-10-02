@@ -54,6 +54,12 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
     end
 
+    it 'resolves an absolute file system path inside a gem' do
+      path = Proscenium.root.join('lib/proscenium/react-manager/index.jsx').to_s
+      assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
+                   subject.resolve(path)
+    end
+
     test 'proscenium runtime' do
       assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
                    subject.resolve('@rubygems/proscenium/react-manager/index.jsx')
