@@ -16,6 +16,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
     end
 
     context 'config.env_vars' do
+      after { ENV.delete('USER_NAME') }
+
       it 'replaces' do
         Proscenium.config.env_vars << 'USER_NAME'
         ENV['USER_NAME'] = 'joelmoss'
