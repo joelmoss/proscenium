@@ -1,6 +1,7 @@
 package plugin
 
 import (
+	"encoding/xml"
 	"errors"
 	"fmt"
 	"io"
@@ -10,6 +11,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"sync"
 
 	httpcache "github.com/gregjones/httpcache/diskcache"
@@ -41,6 +44,11 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 						return api.OnLoadResult{}, err
 					}
 
+					contents, err = svgToJsx(contents)
+					if err != nil {
+						return api.OnLoadResult{}, fmt.Errorf("cannot read %v as SVG: %w", args.Path, err)
+					}
+
 					contents = fmt.Sprintf(`
 					import { cloneElement, Children } from 'react';
 					const svg = %s;
@@ -64,6 +72,134 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 				})
 		},
 	}
+}
+
+// Names an SVG may use, which are interpolated into JSX unquoted, so they are all that stands
+// between the markup and code. An element name must also be one JSX reads as a string, as it does a
+// lowercase name or one holding a `-` or `:`. Any other is a reference to a variable in scope.
+var svgName = regexp.MustCompile(`^[A-Za-z_][\w-]*(:[A-Za-z_][\w-]*)?$`)
+
+func isSvgTagName(name string) bool {
+	return svgName.MatchString(name) && (name[0] >= 'a' && name[0] <= 'z' || strings.ContainsAny(name, "-:"))
+}
+
+// Converts SVG markup to JSX in which every attribute value and every piece of text is a JSON
+// string literal, so nothing in the SVG is evaluated. It used to be spliced into the module as JSX
+// source, which made a remote SVG code: `{proscenium.env.API_KEY}` in one was replaced with the
+// key's value, and anything after the closing tag ran in the bundle. Only the root element is
+// read; anything after it is ignored.
+func svgToJsx(svg string) (string, error) {
+	decoder := xml.NewDecoder(strings.NewReader(svg))
+	// Lenient, so real-world SVGs that are not strict XML still load: HTML entities such as &nbsp;,
+	// and a bare &.
+	decoder.Strict = false
+	decoder.Entity = xml.HTMLEntity
+
+	var out, text strings.Builder
+	var open []string
+
+	// Text arrives in pieces (a CDATA section is its own token), and is written as one child, as
+	// JSX would have.
+	flushText := func() {
+		if t := jsxText(text.String()); t != "" {
+			fmt.Fprintf(&out, "{%s}", utils.JsString(t))
+		}
+		text.Reset()
+	}
+
+	for {
+		// RawToken rather than Token: Token replaces a prefix such as `xlink:` with its namespace
+		// URL. RawToken does not check that end tags match, so the open stack does.
+		token, err := decoder.RawToken()
+		if err == io.EOF && len(open) > 0 {
+			return "", fmt.Errorf("unclosed element %q", open[len(open)-1])
+		}
+		if err == io.EOF {
+			return "", errors.New("no root element")
+		}
+		if err != nil {
+			return "", err
+		}
+
+		switch t := token.(type) {
+		case xml.StartElement:
+			name := xmlName(t.Name)
+			if !isSvgTagName(name) {
+				return "", fmt.Errorf("invalid element name %q", name)
+			}
+
+			flushText()
+			fmt.Fprintf(&out, "<%s", name)
+			for _, attr := range t.Attr {
+				attrName := xmlName(attr.Name)
+				if !svgName.MatchString(attrName) {
+					return "", fmt.Errorf("invalid attribute name %q", attrName)
+				}
+
+				fmt.Fprintf(&out, " %s={%s}", attrName, utils.JsString(attr.Value))
+			}
+			out.WriteString(">")
+
+			open = append(open, name)
+
+		case xml.EndElement:
+			name := xmlName(t.Name)
+			if len(open) == 0 || open[len(open)-1] != name {
+				return "", fmt.Errorf("unexpected closing tag %q", name)
+			}
+
+			flushText()
+			fmt.Fprintf(&out, "</%s>", name)
+
+			open = open[:len(open)-1]
+			if len(open) == 0 {
+				return out.String(), nil
+			}
+
+		case xml.CharData:
+			// Text before the root is not part of the SVG.
+			if len(open) > 0 {
+				text.Write(t)
+			}
+		}
+	}
+}
+
+var jsxLineBreak = regexp.MustCompile("\r\n|[\r\n\u2028\u2029]")
+
+// JSX's rule for text between tags, which SVG text followed while it was spliced in as JSX: a line
+// break and the spaces and tabs around it become one space, and text that is only that is dropped.
+// So the indentation of a pretty-printed SVG adds no children, which would make Children.only
+// throw, while a space between two elements on one line is kept.
+//
+// ponytail: encoding/xml decodes entities before this sees the text, so an entity that is
+// whitespace (`&#10;`) is treated as formatting, where JSX kept it. Only spaces and tabs are
+// trimmed, so `&nbsp;` survives at the edge of a line. Decode entities here if that ever matters.
+func jsxText(text string) string {
+	lines := jsxLineBreak.Split(text, -1)
+	kept := lines[:0]
+
+	for i, line := range lines {
+		if i > 0 {
+			line = strings.TrimLeft(line, " \t")
+		}
+		if i < len(lines)-1 {
+			line = strings.TrimRight(line, " \t")
+		}
+		if line != "" {
+			kept = append(kept, line)
+		}
+	}
+
+	return strings.Join(kept, " ")
+}
+
+func xmlName(name xml.Name) string {
+	if name.Space == "" {
+		return name.Local
+	}
+
+	return name.Space + ":" + name.Local
 }
 
 // Where a downloaded svg is cached, relative to the app root. Under the app's own tmp/, beside

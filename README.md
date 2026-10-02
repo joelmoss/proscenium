@@ -375,6 +375,8 @@ Your browsers dev tools should pick this up and automatically load the source ma
 
 You can import SVG from JS(X), which will bundle the SVG source code. Additionally, if importing from JSX or TSX, the SVG source code will be rendered as a JSX/TSX component.
 
+When bundling, the SVG is read as markup, never as code, whether it is local or imported by URL. Its text and attribute values are kept as plain strings, so an expression such as `{proscenium.env.API_KEY}` inside an SVG stays literal text, and anything after the root element is ignored. The SVG is still rendered into the page as-is, so only import SVGs from sources you trust.
+
 ## Environment Variables
 
 You can define and access any environment variable from your JavaScript and Typescript under the `proscenium.env` namespace.
