@@ -55,15 +55,28 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
+  class VersionNotFoundError < Proscenium::Error
+    def initialize(name, requested, installed)
+      super("Package `#{name}` has no version `#{requested}`; your bundle has `#{installed}`.")
+    end
+  end
+
   rescue_from PackageNotFoundError, with: :render_not_found
   rescue_from GemNotInstalledError, with: :render_not_found
+  rescue_from VersionNotFoundError, with: :render_not_found
 
   def index
     render json: {}
   end
 
   def show
-    @gem_name, @version = package_params
+    @gem_name, requested_version = package_params
+
+    # Only the installed version exists. Echoing the client's would also write a tarball per
+    # distinct version string, none of them ever evicted.
+    if requested_version && requested_version != version
+      raise VersionNotFoundError.new(full_name, requested_version, version)
+    end
 
     render json: {
       name: full_name,
@@ -125,7 +138,7 @@ class Proscenium::RegistryController < ActionController::Base
       Zlib::GzipWriter.wrap(file) do |gz|
         Gem::Package::TarWriter.new(gz) do |tar|
           contents = package_json.to_json
-          tar.add_file_simple('package/package.json', 0o444, contents.length) do |io|
+          tar.add_file_simple('package/package.json', 0o444, contents.bytesize) do |io|
             io.write contents
           end
         end
@@ -148,8 +161,8 @@ class Proscenium::RegistryController < ActionController::Base
   end
 
   def full_name = @full_name ||= "@rubygems/#{@gem_name}"
-  def version = @version ||= spec.version.to_s
-  def spec = @spec ||= Bundler.load.specs[@gem_name].first
+  def version = spec.version.to_s
+  def spec = @spec ||= Bundler.load.specs[@gem_name].first || raise(GemNotInstalledError, @gem_name)
   def shasum = Digest::SHA1.file(tarball_path).hexdigest
   def integrity = "sha512-#{Digest::SHA512.file(tarball_path).base64digest}"
 end
