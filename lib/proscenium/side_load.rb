@@ -182,12 +182,22 @@ module Proscenium
         end
 
         options.to_h do |key, value|
-          value = receiver.instance_exec(&value) if (key in :css | :js) && value.is_a?(Proc)
+          value = evaluate(value, receiver) if (key in :css | :js) && value.is_a?(Proc)
           [key, value.is_a?(Hash) ? value.deep_symbolize_keys : value]
         end
       end
 
       private
+
+      # `instance_eval` passes the receiver as the block's argument, which a lambda taking none
+      # rejects. Every other proc keeps receiving it, as it always has.
+      def evaluate(value, receiver)
+        if value.lambda? && value.arity.zero?
+          receiver.instance_exec(&value)
+        else
+          receiver.instance_eval(&value)
+        end
+      end
 
       def sideload_template(tpl, controller, override)
         return unless (tpl_path = Pathname.new(tpl.identifier)).file?

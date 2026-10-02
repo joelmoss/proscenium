@@ -1,0 +1,4 @@
+<% sideload_assets false if depth == 1 %>
+<% if depth.zero? %>
+  <%= render 'pages/node_box' do %>inner<% end %>
+<% end %>

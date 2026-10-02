@@ -2,6 +2,32 @@
 
 module Proscenium
   module Monkey
+    # A template ActionView pushes onto `@current_template` is not the body of a partial rendered
+    # with a block, so `Helper#sideload_assets` must not see that partial while one renders. Rails
+    # caches template objects, so the pushed template can be the very one that rendered the partial.
+    #
+    # Overrides ActionView's private `ActionView::Base#_run(method, template, locals, buffer,
+    # add_to_stack: true, ...)`, unchanged from Rails 7.2 to 8.1. `@proscenium_block_partial` is
+    # set by `Helper#proscenium_render_block_partial`. Every template render runs through here, so
+    # arguments are forwarded with `...`: no allocation on Ruby 3.4+, 4 per render on 3.3, which
+    # goes when 3.3 support does. Reading `add_to_stack` allocates on both, so it is only read
+    # while a block partial is rendering.
+    module Base
+      def _run(...)
+        return super unless @proscenium_block_partial && proscenium_pushes_template?(...)
+
+        owner = @proscenium_block_partial
+        @proscenium_block_partial = nil
+        super
+      ensure
+        @proscenium_block_partial = owner if owner
+      end
+
+      private
+
+      def proscenium_pushes_template?(*, add_to_stack: true, **) = add_to_stack
+    end
+
     module TemplateRenderer
       private
 
