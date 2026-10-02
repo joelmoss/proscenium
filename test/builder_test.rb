@@ -54,8 +54,9 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
       # Each becomes the esbuild define `proscenium.env.<NAME>`, so a name that is not a JS
       # identifier failed every build with an esbuild error naming neither the setting nor the
       # variable, or (with a dot) silently defined a nested path. Raised whether or not the
-      # variable is set, so it fails in every environment, not only where it is exported.
-      ['FOO-BAR', '1ABC', 'FOO.BAR', 'a b'].each do |name|
+      # variable is set, so it fails in every environment, not only where it is exported. The binary
+      # one is how ENV returns a non-ASCII name under LANG=C.
+      ['FOO-BAR', '1ABC', 'FOO.BAR', 'a b', 'FOO-É'.b].each do |name|
         it "raises naming #{name.inspect}, which is not a JS identifier" do
           Proscenium.config.env_vars = [name]
 
@@ -66,9 +67,9 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
       end
 
       # esbuild takes any JS identifier, Unicode and reserved words included, so each is set here to
-      # put its define into the build.
+      # put its define into the build. U+30FB is newer than Ruby 3.4's Unicode tables.
       it 'accepts any JS identifier' do
-        names = ['CAFÉ', 'π', '$X', '_', 'class']
+        names = ['CAFÉ', 'π', "a\u30FB", '$X', '_', 'class']
         saved = names.to_h { |n| [n, ENV.fetch(n, nil)] }
         Proscenium.config.env_vars = names
         names.each { |n| ENV[n] = 'x' }
