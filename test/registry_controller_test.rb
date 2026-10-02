@@ -194,6 +194,33 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
     end
   end
 
+  # The gzip is framed by hand too, so the bytes are the same on every machine: zlib writes the
+  # OS into its header, and zlib builds compress the same input differently.
+  it 'frames the gzip the same on every machine' do
+    get '@rubygems/gem1'
+    tarball = fetch_tarball
+
+    assert_equal [0x1f, 0x8b, 8, 0, tarball_mtime, 0, 255].pack('C4VC2'), tarball[0, 10]
+    # Zlib.gunzip checks the trailer's CRC and length, which GzipReader alone does not.
+    assert_equal 0, Zlib.gunzip(tarball).bytesize % 512
+    # Stored, not compressed, so the package.json appears as it is.
+    assert_includes tarball, Proscenium::BundledGems.pathname_for('gem1').join('package.json').binread
+  end
+
+  # A stored deflate block holds at most 65535 bytes.
+  it 'frames a package.json larger than one stored block' do
+    package = { 'dependencies' => {}, 'pad' => 'x' * 70_000 }
+
+    with_package_json(package.to_json) do
+      get '@rubygems/gem1'
+      integrity = dist['integrity']
+      tarball = fetch_tarball
+
+      assert_equal "sha512-#{Digest::SHA512.base64digest(tarball)}", integrity
+      assert_equal package, packed_package_json(tarball)
+    end
+  end
+
   # The tar entry is framed by hand: padded to a whole 512 byte block, then two empty blocks.
   [300, 512, 1500].each do |size|
     it "frames a #{size} byte package.json as a whole tar archive" do
