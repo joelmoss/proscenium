@@ -19,6 +19,15 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       )
       assert page.has_css?("div[class^='partial_#{hsh}'].world")
     end
+
+    it 'accepts nested names, ignoring nil, false and blank names' do
+      page = Capybara::Node::Simple.new(CssmHelperController.render(:index))
+
+      hsh = Proscenium::Utils.css_module_digest(
+        Rails.root.join('app/views/cssm_helper/index.module.css')
+      )
+      assert_match(/\Aview_#{hsh}_\S+ lead_#{hsh}_\S+\z/, page.find('p')[:class])
+    end
   end
 
   describe '#include_stylesheets' do

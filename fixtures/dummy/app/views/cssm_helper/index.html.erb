@@ -1,2 +1,3 @@
   <h2 class="<%= css_module :view %>">Subtitle</h2>
+  <p class="<%= css_module [:view, nil, [false, '']], :lead %>">Lead</p>
   <%= render 'partial', class_name: "world" %>
