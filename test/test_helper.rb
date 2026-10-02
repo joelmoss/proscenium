@@ -17,6 +17,9 @@ module ActiveSupport
       Proscenium.config.side_load = true
       Proscenium::Importer.reset
       Proscenium::Resolver.reset
+      # Boot loads whatever manifest a previous compile left in the dummy app's public/assets,
+      # Ruby and Go specs alike, so a test that wants one loads it itself.
+      Proscenium::Manifest.reset!
     end
 
     class << self
