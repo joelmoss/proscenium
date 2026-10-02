@@ -24,8 +24,12 @@ module Proscenium
 
     # The `@rubygems/` form of an absolute path inside a bundled gem, or nil when it is in none.
     # A plain prefix match: a gem path is text, not a pattern, and may hold `+` or `(`.
+    #
+    # The longest root wins, which is Go's rule in `GemFromFsPath`, so a file under a gem nested in
+    # another gem's tree gets one URL from both sides. `max_by` keeps the first of equal roots, and
+    # `paths` is sorted by name, so a tie goes to the first name, as it does in Go.
     def virtual_path(abs_path)
-      name, root = paths.find { |_, v| abs_path.start_with? "#{v}/" }
+      name, root = paths.select { |_, v| abs_path.start_with? "#{v}/" }.max_by { |_, v| v.length }
       name && "@rubygems/#{name}#{abs_path.delete_prefix(root)}"
     end
 

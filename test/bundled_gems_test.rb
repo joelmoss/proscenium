@@ -25,6 +25,23 @@ class Proscenium::BundledGemsTest < ActiveSupport::TestCase
       end
     end
 
+    # The longest root wins, as in Go's GemFromFsPath, so both sides credit a file under a nested
+    # gem to the same gem. First-alphabetical gave `@rubygems/a-engine/vendor/z/x.js` here, a
+    # second URL for a module Go loads as `@rubygems/z/x.js`.
+    it 'credits a path under nested gem roots to the innermost gem' do
+      with_paths('a-engine' => '/r', 'z' => '/r/vendor/z') do
+        assert_equal '@rubygems/z/x.js', Proscenium::BundledGems.virtual_path('/r/vendor/z/x.js')
+        assert_equal '@rubygems/a-engine/x.js', Proscenium::BundledGems.virtual_path('/r/x.js')
+      end
+    end
+
+    # Two gems sharing one source tree: the first by name, which is Go's tie-break too.
+    it 'breaks a tie between equal roots on gem name' do
+      with_paths('a' => '/r', 'b' => '/r') do
+        assert_equal '@rubygems/a/x.js', Proscenium::BundledGems.virtual_path('/r/x.js')
+      end
+    end
+
     # The gem path is text, not a pattern. Interpolated into a regex, `+` matched one or more of
     # the character before it, so this path was left unmapped, and an unbalanced `(` raised.
     it 'matches a gem path holding regex metacharacters literally' do
