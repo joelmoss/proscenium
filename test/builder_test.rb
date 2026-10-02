@@ -16,7 +16,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
     end
 
     context 'config.env_vars' do
-      after { ENV.delete('USER_NAME') }
+      before { @user_name = ENV.fetch('USER_NAME', nil) }
+      after { ENV['USER_NAME'] = @user_name }
 
       it 'replaces' do
         Proscenium.config.env_vars << 'USER_NAME'
@@ -36,6 +37,14 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
       it 'accepts Symbols' do
         Proscenium.config.env_vars = Set[:USER_NAME]
+        ENV['USER_NAME'] = 'joelmoss'
+
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
+      end
+
+      it 'accepts a single name' do
+        Proscenium.config.env_vars = :USER_NAME
         ENV['USER_NAME'] = 'joelmoss'
 
         result = subject.build_to_string('lib/env/extra.js')
