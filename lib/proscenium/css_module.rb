@@ -25,7 +25,7 @@ module Proscenium::CssModule
 
     def class_names(*names, path: nil)
       path ||= respond_to?(:css_module_path) ? css_module_path : path
-      names = names.flatten.compact_blank
+      names = Transformer.filter_names(names)
 
       cssm = Transformer.new(path)
       cssm.class_names(*names).join(' ') unless names.empty?
@@ -50,7 +50,7 @@ module Proscenium::CssModule
   # @param path [Pathname] the path to the CSS file to use for the transformation.
   # @return [String, nil] the transformed CSS module names concatenated as a string, or nil if none.
   def class_names(*names, path: nil)
-    names = names.flatten.compact_blank
+    names = Transformer.filter_names(names)
     transformer = path.nil? ? cssm : Transformer.new(path)
     transformer.class_names(*names).join(' ') unless names.empty?
   end

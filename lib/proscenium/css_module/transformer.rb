@@ -8,6 +8,14 @@ module Proscenium
       new(path).class_names(*names)
     end
 
+    # Flattens `names`, and drops nil, false and blank String or Symbol names. Anything else is
+    # kept, so that `#class_names` can reject it.
+    def self.filter_names(names)
+      names.flatten.reject do |name|
+        !name || ((name.is_a?(String) || name.is_a?(Symbol)) && name.to_s.blank?)
+      end
+    end
+
     def initialize(source_path)
       return unless (@source_path = source_path)
 
@@ -33,8 +41,8 @@ module Proscenium
     #   class_names "mypackage/button@large"
     #   class_names "@scoped/package/button@small"
     #
-    # Nested arrays of names are flattened, and nil, false and blank names are dropped. Any other
-    # name that is not a String or Symbol raises TransformError.
+    # Nested arrays of names are flattened, and nil, false and blank names are dropped (see
+    # `.filter_names`). Any other name that is not a String or Symbol raises TransformError.
     #
     # When a block is given, it is yielded once per name with
     # `(transformed_name, side_load_path)`. `side_load_path` is the exact string passed to
@@ -48,7 +56,7 @@ module Proscenium
     # @yieldparam side_load_path [String, nil]
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
-      names.flatten.compact_blank.map do |name|
+      self.class.filter_names(names).map do |name|
         transformed, path = transform_class_name(name, require_prefix: require_prefix)
         yield(transformed, path) if block_given?
         transformed
