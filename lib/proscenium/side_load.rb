@@ -182,7 +182,7 @@ module Proscenium
         end
 
         options.to_h do |key, value|
-          value = receiver.instance_eval(&value) if (key in :css | :js) && value.is_a?(Proc)
+          value = receiver.instance_exec(&value) if (key in :css | :js) && value.is_a?(Proc)
           [key, value.is_a?(Hash) ? value.deep_symbolize_keys : value]
         end
       end
