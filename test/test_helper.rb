@@ -15,6 +15,8 @@ module ActiveSupport
   class TestCase
     before do
       Proscenium.config.side_load = true
+      # A name the builder rejects would fail every later test that builds or resolves.
+      Proscenium.config.env_vars = Set.new
       Proscenium::Importer.reset
       Proscenium::Resolver.reset
       # Boot loads whatever manifest a previous compile left in the dummy app's public/assets,

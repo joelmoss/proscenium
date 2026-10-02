@@ -64,6 +64,29 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
           assert_includes error.message, name.inspect
         end
       end
+
+      # esbuild takes any JS identifier, Unicode and reserved words included, so each is set here to
+      # put its define into the build.
+      it 'accepts any JS identifier' do
+        names = ['CAFÉ', 'π', '$X', '_', 'class']
+        saved = names.to_h { |n| [n, ENV.fetch(n, nil)] }
+        Proscenium.config.env_vars = names
+        names.each { |n| ENV[n] = 'x' }
+
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log'
+      ensure
+        saved&.each { |n, v| ENV[n] = v }
+      end
+
+      # Go skips an empty name, and an entry such as `env_vars << ENV['UNSET']` adds nil.
+      it 'ignores blank and nil names' do
+        Proscenium.config.env_vars = ['', nil, 'USER_NAME']
+        ENV['USER_NAME'] = 'joelmoss'
+
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
+      end
     end
 
     it 'raises on unknown path' do
