@@ -143,26 +143,32 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
-  # The same bytes every time for the same package.json, in any process, so the integrity a
-  # lockfile records holds across restarts and workers. The tar entry is framed here as the
-  # RubyGems Ruby 3.4.0 ships cannot give TarWriter its time.
-  # ponytail: same bytes on one machine only. The gzip header names the OS, and zlib builds
-  # deflate differently, so a lockfile shared across them can mismatch; pin both if that bites.
+  # The same bytes every time for the same package.json, in any process and on any machine, so
+  # the integrity a lockfile records holds across restarts, workers, operating systems and zlib
+  # builds. The tar entry is framed here as the RubyGems Ruby 3.4.0 ships cannot give TarWriter
+  # its time.
   def tarball_data
     @tarball_data ||= begin
       contents = package_json_contents
       header = Gem::Package::TarHeader.new(name: 'package/package.json', prefix: '', mode: 0o444,
                                            size: contents.bytesize, mtime: TARBALL_MTIME)
       # The entry padded to a whole 512 byte block, then the two empty blocks that end an archive.
-      tar = header.to_s + contents + ("\0" * (-contents.bytesize % 512)) + ("\0" * 1024)
-
-      StringIO.new.binmode.tap do |io|
-        Zlib::GzipWriter.wrap(io) do |gz|
-          gz.mtime = TARBALL_MTIME
-          gz.write tar
-        end
-      end.string
+      gzip header.to_s + contents + ("\0" * (-contents.bytesize % 512)) + ("\0" * 1024)
     end
+  end
+
+  # Framed by hand rather than with Zlib::GzipWriter, which writes the OS into the header, and
+  # whose deflate output differs between zlib builds. Stored blocks hold the data as it is, so no
+  # compressor is involved; a package.json is a few KB.
+  def gzip(data)
+    blocks = (0...data.bytesize).step(65_535).map { data.byteslice(it, 65_535) }
+    deflate = blocks.each_with_index.map do |block, i|
+      [i == blocks.size - 1 ? 1 : 0, block.bytesize, block.bytesize ^ 0xffff].pack('Cvv') + block
+    end
+
+    # Magic, deflate, no flags, the fixed time, no extra flags, and an unknown OS.
+    [0x1f, 0x8b, 8, 0, TARBALL_MTIME, 0, 255].pack('C4VC2') + deflate.join +
+      [Zlib.crc32(data), data.bytesize].pack('VV')
   end
 
   # The bytes packed: the gem's own package.json as written, less any byte order mark (npm strips
