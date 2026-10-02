@@ -90,6 +90,58 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
       assert Proscenium::Importer.imported?('/app/views/pages/_inner.js')
       assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
     end
+
+    it 'applies sideload_assets in the partial body after the block to the partial' do
+      BarePagesController.render :boxed_caller, locals: { after_yield: true }
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    # `_boxed` renders `_suppressible` first, which sets the partial aside while it renders.
+    it 'applies sideload_assets in the partial body after a partial it renders to the partial' do
+      BarePagesController.render :boxed_caller, locals: { nested: true, after_yield: true }
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    it 'applies sideload_assets in the caller after the partial to the caller' do
+      BarePagesController.render :boxed_caller, locals: { suppress_caller_after: true }
+
+      assert Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert_not Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    # Rails caches template objects, so `_node_box` rendering `_node` pushes the very object that
+    # rendered it. The inner `_node`'s call must not be taken for one from `_node_box`'s body.
+    it 'applies sideload_assets in a template the partial renders again to that template' do
+      BarePagesController.render inline: "<%= render 'pages/node', depth: 0 %>"
+
+      assert Proscenium::Importer.imported?('/app/views/pages/_node_box.js')
+    end
+
+    # `_forward_box` hands its block to `_consumer`, which runs it while `_consumer` renders.
+    it 'applies sideload_assets in a block run by another partial to the calling template' do
+      BarePagesController.render :forward_caller
+
+      assert_not Proscenium::Importer.imported?('/app/views/bare_pages/forward_caller.js')
+      assert Proscenium::Importer.imported?('/app/views/pages/_consumer.js')
+    end
+
+    it 'applies sideload_assets in the caller to the caller after the block raised' do
+      BarePagesController.render :raise_caller
+
+      assert_not Proscenium::Importer.imported?('/app/views/bare_pages/raise_caller.js')
+    end
+
+    # `render layout:` with a block renders the layout as a partial given that block.
+    it 'applies sideload_assets in a layout rendered with a block to the layout' do
+      BarePagesController.render :layout_caller
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/layout_caller.js')
+    end
   end
 
   # A collection renders each item through `Template#render`, never reaching
@@ -331,6 +383,32 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
       result = Proscenium::SideLoad.merge_options({ css: -> { flag } }, nil, receiver)
 
       assert_equal :from_receiver, result[:css]
+    end
+
+    # Procs and lambdas taking an argument have always been given the receiver.
+    it 'passes the receiver to procs and lambdas that take an argument' do
+      expected = receiver
+      options = { css: proc { |r| r.equal?(expected) }, js: ->(r) { r.equal?(expected) } }
+
+      assert_equal({ css: true, js: true },
+                   Proscenium::SideLoad.merge_options(options, nil, receiver))
+    end
+
+    # Both have a negative arity, so they are not the zero-argument lambdas `instance_eval` rejects.
+    it 'passes the receiver to lambdas with optional or splat arguments' do
+      expected = receiver
+      options = { css: ->(r = nil) { r.equal?(expected) }, js: ->(*a) { a.first.equal?(expected) } }
+
+      assert_equal({ css: true, js: true },
+                   Proscenium::SideLoad.merge_options(options, nil, receiver))
+    end
+
+    # `false` is what turns side loading off, so it must not become `nil` on the way.
+    it 'keeps false returned through the receiver argument' do
+      off = Struct.new(:flag).new(false)
+
+      assert_equal({ css: false },
+                   Proscenium::SideLoad.merge_options({ css: proc { |r| r&.flag } }, nil, off))
     end
 
     it 'modifies neither input, and shares no hash with them' do

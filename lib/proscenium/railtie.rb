@@ -78,6 +78,7 @@ module Proscenium
 
     initializer 'proscenium.monkey_patches' do
       ActiveSupport.on_load(:action_view) do
+        ActionView::Base.prepend Monkey::Base
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
         ActionView::CollectionRenderer.prepend Monkey::CollectionRenderer

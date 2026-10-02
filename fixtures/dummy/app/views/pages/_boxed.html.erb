@@ -6,3 +6,4 @@
   <% end %>
 <% end %>
 <div><%= yield %></div>
+<% sideload_assets false if local_assigns[:after_yield] %>
