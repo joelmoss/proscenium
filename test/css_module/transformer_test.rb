@@ -30,6 +30,13 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, names.last)
     end
 
+    it 'flattens nested names and drops nils' do
+      transformer = Proscenium::CssModule::Transformer.new('/lib/css_modules/basic')
+
+      assert_equal transformer.class_names(:@title, :plain, require_prefix: false),
+                   transformer.class_names([:@title, nil, [:plain]], require_prefix: false)
+    end
+
     it 'imports stylesheet' do
       Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)
 
@@ -188,6 +195,14 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       assert_equal ['plain', nil], yielded[1]
       assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, yielded[2].first)
       assert_equal '/lib/css_modules/basic2.module.css', yielded[2].last
+    end
+
+    it 'yields once per flattened name' do
+      yielded = []
+      transformer.class_names([:@title, nil, [:plain]]) { |name, _path| yielded << name }
+
+      assert_equal 2, yielded.length
+      assert_equal 'plain', yielded.last
     end
   end
 end

@@ -45,7 +45,7 @@ module Proscenium
     # @yieldparam side_load_path [String, nil]
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
-      names.map do |name|
+      names.flatten.compact.map do |name|
         transformed, path = transform_class_name(name, require_prefix: require_prefix)
         yield(transformed, path) if block_given?
         transformed

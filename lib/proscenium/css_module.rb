@@ -5,7 +5,6 @@ module Proscenium::CssModule
 
   autoload :Path
   autoload :Transformer
-  autoload :Rewriter
 
   class TransformError < Proscenium::Error
     def initialize(name, additional_msg = nil)
