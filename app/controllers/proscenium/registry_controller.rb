@@ -16,8 +16,8 @@ require 'rubygems/package'
 #
 # Note that this should only be used for local development and testing purposes. It will also only
 # serve gems that you have installed in your bundle; it does not proxy requests to a real NPM
-# registry. It will raise a `GemNotInstalledError` error if you try to request a package for a gem
-# that is not installed.
+# registry. Each gem is served at the version in your bundle only. A gem that is not installed, or
+# any other version of one that is, is answered with a 404.
 #
 # Assuming you have a Rails app that includes Proscenium, and it is running (`rails server`), you
 # can configure your NPM/Yarn client to use this registry by adding the following to your `.npmrc`
@@ -72,9 +72,10 @@ class Proscenium::RegistryController < ActionController::Base
   def show
     @gem_name, requested_version = package_params
 
-    # Only the installed version exists. Echoing the client's would also write a tarball per
-    # distinct version string, none of them ever evicted.
-    if requested_version && requested_version != version
+    # Only the installed version exists, and `latest` - the one dist-tag advertised - names it.
+    # Echoing the client's would also write a tarball per distinct version string, none of them
+    # ever evicted.
+    if requested_version && !['latest', version].include?(requested_version)
       raise VersionNotFoundError.new(full_name, requested_version, version)
     end
 
@@ -106,7 +107,7 @@ class Proscenium::RegistryController < ActionController::Base
 
   def package_params
     @package_params ||= params.expect(:package).then do |it| # rubocop:disable Style/ItAssignment
-      unless (res = it.gsub('%2F', '/').match(%r{^@rubygems/([\w\-_]+)/?([\w\-._]+)?$}))
+      unless (res = it.gsub('%2F', '/').match(%r{\A@rubygems/([\w\-_]+)/?([\w\-._]+)?\z}))
         raise PackageNotFoundError, it
       end
 

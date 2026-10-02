@@ -30,6 +30,16 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
     Proscenium::BundledGems.define_singleton_method(:pathname_for, original)
   end
 
+  def packed_package_json
+    tarball = tarballs.join("@rubygems/gem1/gem1-#{gem1_version}.tgz")
+    packed = Zlib::GzipReader.open(tarball) do |gz|
+      Gem::Package::TarReader.new(gz).each do |entry|
+        break entry.read if entry.full_name == 'package/package.json'
+      end
+    end
+    JSON.parse(packed.force_encoding(Encoding::UTF_8))
+  end
+
   it 'serves an installed gem at its installed version' do
     get '@rubygems/gem1'
 
@@ -48,12 +58,20 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
     assert_equal gem1_version, json.dig('dist-tags', 'latest')
   end
 
+  # `latest` is the one dist-tag the packument advertises, and npm resolves it at this URL.
+  it 'serves an installed gem when its latest version is requested' do
+    get '@rubygems/gem1/latest'
+
+    assert_equal 200, response.status
+    assert_equal gem1_version, json.dig('dist-tags', 'latest')
+  end
+
   it 'answers 404 for a version that is not the installed one, and writes nothing' do
     get '@rubygems/gem1/99.9.9'
 
     assert_equal 404, response.status
     assert_match(/99\.9\.9/, json['error'])
-    refute_path_exists tarballs.join('@rubygems/gem1/gem1-99.9.9.tgz')
+    refute_path_exists tarballs
   end
 
   it 'answers 404 for a gem that is not in the bundle' do
@@ -78,6 +96,36 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
     assert_match(/not_a_gem/, json['error'])
   end
 
+  # Bundler is in every lockfile, but BundledGems leaves it out, so it is not served.
+  it 'answers 404 for bundler' do
+    get '@rubygems/bundler'
+
+    assert_equal 404, response.status
+    assert_match(/bundler/, json['error'])
+  end
+
+  # A newline (%0A) must not let a malformed name through: the pattern matches the whole string,
+  # not one line of it.
+  ['@other/gem1', '@rubygems/ge!m1', 'junk%0A@rubygems/gem1', '@rubygems/gem1%0Ajunk'].each do |pkg|
+    it "answers 404 for an invalid package name: #{pkg}" do
+      get pkg
+
+      assert_equal 404, response.status
+      assert_match(/not valid/, json['error'])
+    end
+  end
+
+  it 'generates a package.json for a gem without one' do
+    Dir.mktmpdir do |dir|
+      with_gem_path('gem1', dir) { get '@rubygems/gem1' }
+
+      assert_equal 200, response.status
+      assert_empty json.dig('versions', gem1_version, 'dependencies')
+      assert_equal gem1_version, packed_package_json['version']
+      assert_empty packed_package_json['dependencies']
+    end
+  end
+
   # A tar entry's size is in bytes. Sized in characters, a package.json with any non-ASCII text
   # overflows its entry.
   it 'packs a package.json with non-ASCII text' do
@@ -88,13 +136,7 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
       with_gem_path('gem1', dir) { get '@rubygems/gem1' }
 
       assert_equal 200, response.status
-      tarball = tarballs.join("@rubygems/gem1/gem1-#{gem1_version}.tgz")
-      packed = Zlib::GzipReader.open(tarball) do |gz|
-        Gem::Package::TarReader.new(gz).each do |entry|
-          break entry.read if entry.full_name == 'package/package.json'
-        end
-      end
-      assert_equal package, JSON.parse(packed.force_encoding(Encoding::UTF_8))
+      assert_equal package, packed_package_json
     end
   end
 end
