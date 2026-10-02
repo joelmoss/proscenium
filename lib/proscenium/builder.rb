@@ -267,9 +267,8 @@ module Proscenium
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         raw = Request.resolve(path, @request_config)
         success = raw[:success]
-        # The FFI hands back ASCII-8BIT. These are paths, and Go writes them as UTF-8.
-        url_path = read_and_free(raw[:url_path])&.force_encoding(Encoding::UTF_8)
-        abs_path = read_and_free(raw[:abs_path])&.force_encoding(Encoding::UTF_8)
+        url_path = read_and_free(raw[:url_path])
+        abs_path = read_and_free(raw[:abs_path])
 
         raise ResolveError.new(path, url_path) unless success
 
@@ -291,10 +290,14 @@ module Proscenium
 
     # The Go side allocates each of these strings with C.CString, which the Go runtime cannot
     # see or collect - it must be freed from this side once we're done reading it.
+    #
+    # `read_string` always returns ASCII-8BIT, but everything Go sends is UTF-8: paths, esbuild's
+    # output and its messages. Left binary, a non-ASCII character is several "characters" to
+    # anything working on the string, and JSON.generate warns (a later json will raise).
     def read_and_free(ptr)
       return nil if ptr.null?
 
-      ptr.read_string
+      ptr.read_string.force_encoding(Encoding::UTF_8)
     ensure
       Request.free_cstr(ptr)
     end
