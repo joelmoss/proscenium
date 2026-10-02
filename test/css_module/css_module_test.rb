@@ -22,6 +22,10 @@ class Proscenium::CssModuleTest < ActiveSupport::TestCase
     it 'returns nil when given no names' do
       assert_nil klass.class_names(nil, false, '', path:)
     end
+
+    it 'raises on a name that is not a String or Symbol, even a blank one' do
+      assert_raises(Proscenium::CssModule::TransformError) { klass.class_names({}, path:) }
+    end
   end
 
   describe '#class_names' do
@@ -32,6 +36,10 @@ class Proscenium::CssModuleTest < ActiveSupport::TestCase
 
     it 'returns nil when given no names' do
       assert_nil klass.new.class_names(nil, false, '', path:)
+    end
+
+    it 'raises on a name that is not a String or Symbol, even a blank one' do
+      assert_raises(Proscenium::CssModule::TransformError) { klass.new.class_names({}, path:) }
     end
   end
 end

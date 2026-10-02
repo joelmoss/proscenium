@@ -41,7 +41,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
     it 'raises on a name that is not a String or Symbol' do
       transformer = Proscenium::CssModule::Transformer.new('/lib/css_modules/basic')
 
-      [true, 1, { title: true }].each do |name|
+      [true, 1, { title: true }, {}].each do |name|
         error = assert_raises(Proscenium::CssModule::TransformError) do
           transformer.class_names(:plain, name)
         end
