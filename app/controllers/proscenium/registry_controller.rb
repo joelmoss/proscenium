@@ -61,9 +61,24 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
+  class InvalidPackageJsonError < Proscenium::Error
+    def initialize(name, reason)
+      # A parser's reason quotes the bytes it choked on, which need not be UTF-8.
+      super("Package `#{name}` has an invalid package.json: #{reason.scrub}")
+    end
+  end
+
+  # Stamped with this, not Gem.source_date_epoch: in the RubyGems Ruby 3.4.0 ships, that is the
+  # time each process started, and SOURCE_DATE_EPOCH overrides it on any version.
+  TARBALL_MTIME = 315_619_200 # RubyGems' own default since 3.6.7
+
   rescue_from PackageNotFoundError, with: :render_not_found
   rescue_from GemNotInstalledError, with: :render_not_found
   rescue_from VersionNotFoundError, with: :render_not_found
+  # A 4xx, as npm and pnpm retry a 5xx, and this will not fix itself.
+  rescue_from InvalidPackageJsonError do |error|
+    render json: { error: error.message }, status: 422
+  end
 
   def index
     render json: {}
@@ -73,8 +88,6 @@ class Proscenium::RegistryController < ActionController::Base
     @gem_name, requested_version = package_params
 
     # Only the installed version exists, and `latest` - the one dist-tag advertised - names it.
-    # Echoing the client's would also write a tarball per distinct version string, none of them
-    # ever evicted.
     if requested_version && !['latest', version].include?(requested_version)
       raise VersionNotFoundError.new(full_name, requested_version, version)
     end
@@ -90,13 +103,27 @@ class Proscenium::RegistryController < ActionController::Base
           version:,
           dependencies: package_json['dependencies'] || {},
           dist: {
-            tarball:,
-            integrity:,
-            shasum:
+            tarball: tarball_url(gem: @gem_name, file: "#{@gem_name}-#{version}.tgz"),
+            integrity: "sha512-#{Digest::SHA512.base64digest(tarball_data)}",
+            shasum: Digest::SHA1.hexdigest(tarball_data)
           }
         }
       }
     }
+  end
+
+  # Built on every request rather than cached: the bytes are the same each time, so there is
+  # nothing to go stale, and the URL a lockfile records works on a machine that never asked for
+  # the packument, as `npm ci` and a frozen pnpm install do not.
+  def tarball
+    @gem_name = params[:gem]
+    # Only npm's own name for the installed version's tarball, the one URL ever advertised.
+    unless params[:file] == "#{@gem_name}-#{version}.tgz"
+      requested = params[:file].delete_prefix("#{@gem_name}-").delete_suffix('.tgz')
+      raise VersionNotFoundError.new(full_name, requested, version)
+    end
+
+    send_data tarball_data, type: 'application/octet-stream'
   end
 
   private
@@ -116,55 +143,77 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
-  # TODO: include shasum and integrity in the tarball URL to allow caching, and ensure uniqueness.
-  def tarball
-    create_tarball unless tarball_path.exist?
+  # The same bytes every time for the same package.json, in any process, so the integrity a
+  # lockfile records holds across restarts and workers. The tar entry is framed here as the
+  # RubyGems Ruby 3.4.0 ships cannot give TarWriter its time.
+  # ponytail: same bytes on one machine only. The gzip header names the OS, and zlib builds
+  # deflate differently, so a lockfile shared across them can mismatch; pin both if that bites.
+  def tarball_data
+    @tarball_data ||= begin
+      contents = package_json_contents
+      header = Gem::Package::TarHeader.new(name: 'package/package.json', prefix: '', mode: 0o444,
+                                           size: contents.bytesize, mtime: TARBALL_MTIME)
+      # The entry padded to a whole 512 byte block, then the two empty blocks that end an archive.
+      tar = header.to_s + contents + ("\0" * (-contents.bytesize % 512)) + ("\0" * 1024)
 
-    host = "#{request.protocol}#{request.host_with_port}"
-    "#{host}/#{tarball_path.relative_path_from(Rails.public_path)}"
-  end
-
-  def tarball_name
-    @tarball_name ||= "#{@gem_name}-#{version}"
-  end
-
-  def tarball_path
-    @tarball_path ||= Rails.public_path.join('proscenium_registry_tarballs')
-                           .join("@rubygems/#{@gem_name}/#{tarball_name}.tgz")
-  end
-
-  def create_tarball
-    FileUtils.mkdir_p(File.dirname(tarball_path))
-
-    File.open(tarball_path, 'wb') do |file|
-      Zlib::GzipWriter.wrap(file) do |gz|
-        Gem::Package::TarWriter.new(gz) do |tar|
-          contents = package_json.to_json
-          tar.add_file_simple('package/package.json', 0o444, contents.bytesize) do |io|
-            io.write contents
-          end
+      StringIO.new.binmode.tap do |io|
+        Zlib::GzipWriter.wrap(io) do |gz|
+          gz.mtime = TARBALL_MTIME
+          gz.write tar
         end
-      end
+      end.string
     end
   end
 
-  def package_json
-    @package_json ||= begin
-      unless (gem_path = Proscenium::BundledGems.pathname_for(@gem_name))
-        raise GemNotInstalledError, @gem_name
-      end
+  # The bytes packed: the gem's own package.json as written, less any byte order mark (npm strips
+  # one too), so its integrity depends on the file alone, not on any JSON encoder. A gem without
+  # one gets a minimal one. Checked here, so neither the packument nor the tarball is served for
+  # one npm could not read.
+  def package_json_contents
+    @package_json_contents ||= begin
+      contents = begin
+        package_json_path.binread.delete_prefix("\uFEFF".b)
+      rescue Errno::ENOENT
+        # Only for a gem that has none. `exist?` is false for any file it cannot stat, which
+        # would hide a broken symlink or a gem directory that has gone.
+        raise unless package_json_path.dirname.directory? && !package_json_path.symlink?
 
-      if (package_path = gem_path.join('package.json')).exist?
-        JSON.parse(package_path.read)
-      else
-        { name: @gem_name, version:, dependencies: {} }
+        JSON.generate(name: @gem_name, version:, dependencies: {}).b
       end
+      validate_package_json!(contents)
+      contents
+    rescue SystemCallError => e
+      logger.error "#{package_json_path}: #{e.message}"
+      # Not the message, which names the path.
+      raise InvalidPackageJsonError.new(full_name, 'it cannot be read')
+    end
+  end
+
+  def package_json = @package_json ||= JSON.parse(package_json_contents)
+
+  # Plain JSON, as npm reads it: no comments, which Ruby's parser takes by default, and nothing
+  # Rails' to_json would quietly change, such as a number too big for a float or a string that is
+  # not UTF-8.
+  def validate_package_json!(contents)
+    json = JSON.parse(contents, allow_comments: false)
+    raise JSON::ParserError, 'not an object' unless json.is_a?(Hash)
+
+    JSON.generate(json)
+  rescue JSON::JSONError => e
+    logger.error "#{package_json_path}: #{e.message.scrub}"
+    raise InvalidPackageJsonError.new(full_name, e.message)
+  end
+
+  def package_json_path
+    @package_json_path ||= begin
+      gem_path = Proscenium::BundledGems.pathname_for(@gem_name)
+      raise GemNotInstalledError, @gem_name unless gem_path
+
+      gem_path.join('package.json')
     end
   end
 
   def full_name = @full_name ||= "@rubygems/#{@gem_name}"
   def version = spec.version.to_s
   def spec = @spec ||= Bundler.load.specs[@gem_name].first || raise(GemNotInstalledError, @gem_name)
-  def shasum = Digest::SHA1.file(tarball_path).hexdigest
-  def integrity = "sha512-#{Digest::SHA512.file(tarball_path).base64digest}"
 end
