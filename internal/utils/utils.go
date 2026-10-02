@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"joelmoss/proscenium/internal/types"
 	"path"
@@ -410,4 +411,13 @@ func UrlPathFromFsPath(fsPath string, cfg *types.ConfigT) (urlPath string, ok bo
 // filepath.Clean is path.Clean, so Unix paths keep their meaning.
 func cleanFsPath(p string) string {
 	return filepath.ToSlash(filepath.Clean(p))
+}
+
+// A JS string literal for any value, as an env var define or SVG text must be. JSON's string syntax
+// is a subset of JS's. Wrapping a value in quotes unescaped fails on a quote or a newline, and
+// decodes a backslash sequence such as `C:\new`.
+func JsString(value string) string {
+	b, _ := json.Marshal(value) // a string always marshals
+
+	return string(b)
 }
