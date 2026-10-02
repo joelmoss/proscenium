@@ -80,6 +80,7 @@ module Proscenium
       ActiveSupport.on_load(:action_view) do
         ActionView::TemplateRenderer.prepend Monkey::TemplateRenderer
         ActionView::PartialRenderer.prepend Monkey::PartialRenderer
+        ActionView::CollectionRenderer.prepend Monkey::CollectionRenderer
       end
     end
 

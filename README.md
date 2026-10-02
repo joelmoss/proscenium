@@ -269,6 +269,8 @@ In a view, layout or partial, it applies to that template, for that render only:
 
 Call it outside any `cache` block. A cache hit skips the block, and the call with it, so that render side loads the template's assets as though it had not been called.
 
+A partial rendered as a collection is side loaded once for the whole collection, so a `sideload_assets` call in any item applies to every item. With `cached: true`, a cache hit renders no items, so the call never runs. To control a cached collection partial, call `sideload_assets` in the controller instead.
+
 ## Bundling
 
 To bundle a file means to inline any imported dependencies into the file itself. This process is recursive so dependencies of dependencies (and so on) will also be inlined.
