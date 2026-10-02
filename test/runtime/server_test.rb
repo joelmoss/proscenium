@@ -212,6 +212,45 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
         FileUtils.rm_f path
       end
     end
+
+    it 'builds a module once for concurrent requests' do
+      builds = 0
+      original = server.method(:serve_or_build)
+      server.define_singleton_method(:serve_or_build) do |*args, **kwargs|
+        builds += 1
+        sleep 0.05
+        original.call(*args, **kwargs)
+      end
+
+      replies = Array.new(4) { Thread.new { request('build', path: '/lib/foo.js') } }.map(&:value)
+
+      assert_equal 1, builds
+      assert(replies.all? { |r| r[:ok] })
+    end
+
+    # A build that raises never stores a value, and the lock it built under used to sit apart from
+    # the cache, so nothing pruned it: every re-save of a broken file under `--watch` leaked one.
+    it 'keeps one cache entry for a file that keeps failing to build' do
+      path = Rails.root.join('tmp/cache_broken.js')
+      FileUtils.mkdir_p path.dirname
+
+      begin
+        3.times do |i|
+          path.write("console.log(\n")
+          File.utime(Time.now + i, Time.now + i, path)
+
+          refute request('build', path: '/tmp/cache_broken.js')[:ok]
+        end
+
+        entries = server.instance_variables.sum do |ivar|
+          value = server.instance_variable_get(ivar)
+          value.is_a?(Hash) ? value.keys.count { |k| k.include?('/tmp/cache_broken.js') } : 0
+        end
+        assert_equal 1, entries
+      ensure
+        FileUtils.rm_f path
+      end
+    end
   end
 
   describe 'rjs' do
