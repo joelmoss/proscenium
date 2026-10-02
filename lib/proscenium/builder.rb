@@ -305,10 +305,13 @@ module Proscenium
     # Each name becomes the esbuild define `proscenium.env.<NAME>`, so one that is not a JS
     # identifier would fail every build, or with a dot define a nested path. Checked whether or not
     # the variable is set, so a bad name fails the first build everywhere, not only where it is set.
-    # The pattern is JS's IdentifierName, so Unicode names pass. Blank names are skipped, like Go.
+    #
+    # Only the ASCII rules are checked, on the raw bytes: Ruby's Unicode tables differ from
+    # esbuild's by Ruby version, so non-ASCII characters are left for esbuild to judge, and the
+    # bytes cannot raise an encoding error. Blank names are skipped, as Go does.
     def env_vars
       names = Array(Proscenium.config.env_vars).map(&:to_s).reject(&:empty?)
-      if (invalid = names.grep_v(/\A[\p{ID_Start}_$][\p{ID_Continue}$\u200C\u200D]*\z/)).any?
+      if (invalid = names.select { |name| name.b.match?(/\A\d|[^\w$\x80-\xff]/n) }).any?
         raise ArgumentError, 'config.proscenium.env_vars must be JavaScript identifiers, but got ' \
                              "#{invalid.map(&:inspect).join(', ')}"
       end
