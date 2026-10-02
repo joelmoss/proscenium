@@ -1,0 +1,8 @@
+<% sideload_assets false if local_assigns[:suppress] %>
+<%= render 'pages/suppressible', suppress: true if local_assigns[:nested] %>
+<% if local_assigns[:nested_block] %>
+  <%= render 'pages/inner' do %>
+    <% sideload_assets false %>
+  <% end %>
+<% end %>
+<div><%= yield %></div>

@@ -57,6 +57,41 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     assert Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
   end
 
+  # ActionView renders a partial given a block without pushing it onto `@current_template`, so
+  # both the partial body and the block see the calling template there.
+  describe 'partial rendered with a block' do
+    it 'applies sideload_assets in the partial body to the partial' do
+      BarePagesController.render :boxed_caller, locals: { suppress: true }
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    it 'applies sideload_assets in the block to the calling template' do
+      BarePagesController.render :boxed_caller, locals: { suppress_caller: true }
+
+      assert Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert_not Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    it 'applies sideload_assets in a partial it renders to that partial' do
+      BarePagesController.render :boxed_caller, locals: { nested: true }
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+      assert Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+
+    # `_boxed` passes a block to `_inner`, so the block's call belongs to `_boxed`.
+    it 'applies sideload_assets in a nested block to the partial that passed it' do
+      BarePagesController.render :boxed_caller, locals: { nested_block: true }
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_boxed.js')
+      assert Proscenium::Importer.imported?('/app/views/pages/_inner.js')
+      assert Proscenium::Importer.imported?('/app/views/bare_pages/boxed_caller.js')
+    end
+  end
+
   # A collection renders each item through `Template#render`, never reaching
   # `PartialRenderer#render_partial_template`.
   describe 'collection partial' do
