@@ -290,9 +290,9 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 // of a bare HasPrefix from a Go map range, and gem roots are stored without a trailing separator -
 // so a path under a root that merely shares a string prefix with another (`/gems/foo-ext` against
 // `/gems/foo`) or sits under a nested root could be credited to the wrong gem, and picked
-// differently from one call to the next in a single process. Proscenium::Resolver.resolve already
-// requires the boundary, comparing against `"#{root}/"`; this is the Go side agreeing, except that
-// it also accepts a path equal to the root itself.
+// differently from one call to the next in a single process. Ruby's BundledGems.virtual_path, which
+// Proscenium::Resolver and Proscenium::Manifest share, applies the same rule: the "/" boundary, the
+// longest root, and a tie broken on gem name. Go alone accepts a path equal to the root itself.
 func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 	var ref GemRef
 	found := false
