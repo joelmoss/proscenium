@@ -96,7 +96,6 @@ module Proscenium
         @parent_pid = parent_pid
         @requests = Queue.new
         @cache = {}
-        @key_mutexes = {}
         @cache_mutex = Mutex.new
         @resolve_mutex = Mutex.new
         @socket_mutex = Mutex.new
@@ -284,7 +283,7 @@ module Proscenium
         # and then stripped by the plugin.
         sourcemap = request.fetch('sourcemap', true) ? true : false
 
-        cached(:build, path, sourcemap) do
+        cached(path, sourcemap) do
           code = serve_or_build(path, sourcemap: sourcemap)
 
           # esbuild passes a mis-encoded source's bytes through, and scanning them below would
@@ -498,36 +497,23 @@ module Proscenium
       # constant and pinned the first render for the life of the daemon. That is invisible in a
       # one-shot run and wrong in a watching one - a suite passing against bytes the app no longer
       # produces. A route render is cheap next to a build, so it happens each time instead.
-      def cached(kind, path, *extra)
+      def cached(path, *extra)
         mtime = mtime_of(path)
         return yield if mtime.nil?
 
-        key = [kind, path, mtime, *extra]
-        prune(kind, path, mtime)
+        # One bucket per module variant. A new mtime replaces the bucket, lock and all, which is
+        # what keeps a long `--watch` session at one entry per module - and holds for a build that
+        # raised, which leaves its bucket without a value rather than a lock outside the cache.
+        key = [path, *extra]
+        bucket = @cache_mutex.synchronize do
+          current = @cache[key]
+          next current if current && current[:mtime] == mtime
 
-        hit = @cache_mutex.synchronize { @cache[key] }
-        return hit if hit
-
-        key_mutex = @cache_mutex.synchronize { @key_mutexes[key] ||= Mutex.new }
-
-        key_mutex.synchronize do
-          hit = @cache_mutex.synchronize { @cache[key] }
-          next hit if hit
-
-          value = yield
-          @cache_mutex.synchronize { @cache[key] = value }
-          value
+          @cache[key] = { mtime: mtime, mutex: Mutex.new }
         end
-      end
 
-      # An edited file gets a new key, and the old one would otherwise sit in both hashes for the
-      # life of the daemon - so a long `--watch` session holds every historical build of every
-      # module it ever saw. Dropping the superseded generations keeps one entry per module. Every
-      # variant of a superseded mtime goes, whatever else is in its key.
-      def prune(kind, path, mtime)
-        @cache_mutex.synchronize do
-          stale = @cache.keys.select { |k| k[0] == kind && k[1] == path && k[2] != mtime }
-          stale.each { |k| @cache.delete(k) && @key_mutexes.delete(k) }
+        bucket[:mutex].synchronize do
+          bucket.key?(:value) ? bucket[:value] : (bucket[:value] = yield)
         end
       end
 
