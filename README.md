@@ -90,7 +90,7 @@ Bundler picks the right one for you.
 
 The Linux gems need **RubyGems 3.3.22 or newer**, which is the first version able to tell
 `-gnu` from `-musl`. Older versions cannot, so they refuse the gem rather than installing one your
-machine cannot load. Ruby 3.3 already ships a newer RubyGems than this, so you are almost certainly
+machine cannot load. Ruby 3.4 already ships a newer RubyGems than this, so you are almost certainly
 fine; if not, `gem update --system`. Bundler 2.5.6 or newer resolves the platform names without
 needing anything else from you.
 
@@ -118,7 +118,7 @@ bundle lock --add-platform x64-mingw-ucrt
 
 ### Alpine and other musl Linux distributions are not supported
 
-Use a glibc base image, such as `ruby:3.3-slim` rather than `ruby:3.3-alpine`.
+Use a glibc base image, such as `ruby:3.4-slim` rather than `ruby:3.4-alpine`.
 
 This is not an oversight. Proscenium's Go library is built with `-buildmode=c-shared` and loaded
 at runtime through Ruby's FFI, which uses `dlopen`. Go emits initial-exec TLS relocations into

@@ -57,7 +57,7 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.4'
       - uses: rubygems/configure-rubygems-credentials@v2.1.0
       - name: A scoped credential was issued
         run: |
@@ -283,10 +283,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: ruby:3.3
+          - image: ruby:3.4
             platform: linux/amd64
             expect: x86_64-linux-gnu
-          - image: ruby:3.3
+          - image: ruby:3.4
             platform: linux/arm64
             expect: aarch64-linux-gnu
     steps:
@@ -307,7 +307,7 @@ jobs:
           merge-multiple: true
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.4'
       # A real index, so `gem install` performs real platform selection. Installing the .gem file
       # directly would bypass the one thing this job exists to test.
       - name: Serve the built gems from a local index
@@ -357,7 +357,7 @@ jobs:
           merge-multiple: true
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.3'
+          ruby-version: '3.4'
       # One step, because the index server is a background process of this shell. Windows names
       # its Python `python`; macOS only has `python3`.
       - name: Serve the built gems from a local index, and install from it

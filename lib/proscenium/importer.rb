@@ -138,9 +138,8 @@ module Proscenium
 
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
       # @param extensions [Array<String>] Supported file extensions to sideload.
-      # @param options [Hash] Options to pass to `import`.
       # @raise [ArgumentError] if `filepath` is not an absolute file system path.
-      private def _sideload(filepath, extensions, **options) # rubocop:disable Style/AccessModifierDeclarations
+      private def _sideload(filepath, extensions, **) # rubocop:disable Style/AccessModifierDeclarations
         return unless Proscenium.config.side_load
 
         if !filepath.is_a?(Pathname) || !filepath.absolute?
@@ -153,7 +152,7 @@ module Proscenium
         extensions.find do |x|
           next unless (fp = filepath.sub_ext(x)).exist?
 
-          import(fp.to_s, sideloaded: filepath, **options)
+          import(fp.to_s, sideloaded: filepath, **)
         end
       end
 

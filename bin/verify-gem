@@ -8,7 +8,7 @@
 # the thing under test, and that only happens against an index.
 #
 # Usage: bin/verify-gem <image> <version> <expected-platform>
-#   e.g. bin/verify-gem ruby:3.3 0.25.2 x86_64-linux-gnu
+#   e.g. bin/verify-gem ruby:3.4 0.25.2 x86_64-linux-gnu
 set -euo pipefail
 
 image=${1:?usage: verify-gem <image> <version> <expected-platform>}
