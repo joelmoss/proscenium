@@ -9,9 +9,9 @@ decisions" - this section is current. Line numbers below are as of then.
 
 | Part | State |
 |---|---|
-| PR 1, release workflow and artifact verification | **Done.** `.github/workflows/release.yml`; see CLAUDE.md's Releasing section. |
+| PR 1, release workflow and artifact verification | **Done.** `.github/workflows/release.yml`; see AGENTS.md's Releasing section. |
 | PR 2, `-gnu` rename and plain gem | **Done.** |
-| PR 2, musl gems | **Dropped.** Go's c-shared libraries cannot be `dlopen`ed on musl ([golang/go#54805](https://github.com/golang/go/issues/54805)). See CLAUDE.md. |
+| PR 2, musl gems | **Dropped.** Go's c-shared libraries cannot be `dlopen`ed on musl ([golang/go#54805](https://github.com/golang/go/issues/54805)). See AGENTS.md. |
 | PR 3 Phase 1, Windows probe | **Done, GO.** Draft PR #79. |
 | PR 3 Phase 2a, fs-to-URL copies onto `UrlPathFromFsPath` | **Done**, with the boundary regression test (`test/dirname_boundary_test.go`). |
 | PR 3 Phase 2b, one path convention | **Done**, except items 1 and 6 as written: each of the three `build.Resolve` sites normalises its own result rather than going through one wrapper, and there is no `forbidigo` rule. |
@@ -452,7 +452,7 @@ GOWORK=off go test ./test
 # Ruby, all platforms
 bundle exec rake compile:local && bin/test
 
-# Lint both languages, per CLAUDE.md
+# Lint both languages, per AGENTS.md
 bundle exec rubocop -P --fail-level C && golangci-lint run
 ```
 

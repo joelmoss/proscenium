@@ -250,7 +250,7 @@ about half, and what remains is development-only with devtools open. Re-measure 
 and `build_to_string.go` already contains the logic to pick one of two output files by suffix - so
 the build is being thrown away rather than being unavailable. The fix needs a way to ask for both
 at once, which means the cgo surface in `main.go` and its mirror in `lib/proscenium/builder.rb`
-(CLAUDE.md flags that pairing). The daemon would then cache the pair under one key.
+(AGENTS.md flags that pairing). The daemon would then cache the pair under one key.
 `register({ sourcemaps: false })` in `lib/proscenium/runtime/bun.js` skips what remains, at the
 cost of readable failures in a minified build. Bun does not apply the harness's maps at all; the
 README's `bun test` section records that.
