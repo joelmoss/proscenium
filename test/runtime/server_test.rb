@@ -227,8 +227,12 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
       end
 
       threads = Array.new(4) { Thread.new { request('build', path: '/lib/foo.js') } }
-      Timeout.timeout(5) { Thread.pass until threads.all? { |t| t.status == 'sleep' } }
-      gate.close
+      begin
+        Timeout.timeout(5) { Thread.pass until threads.all? { |t| t.status == 'sleep' } }
+      ensure
+        gate.close
+        threads.each { |t| t.join(5) }
+      end
 
       assert(threads.map(&:value).all? { |r| r[:ok] })
       assert_equal 1, builds
