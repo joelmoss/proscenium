@@ -50,6 +50,20 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         result = subject.build_to_string('lib/env/extra.js')
         assert_includes result[:response], 'console.log("joelmoss")'
       end
+
+      # Each becomes the esbuild define `proscenium.env.<NAME>`, so a name that is not a JS
+      # identifier failed every build with an esbuild error naming neither the setting nor the
+      # variable, or (with a dot) silently defined a nested path. Raised whether or not the
+      # variable is set, so it fails in every environment, not only where it is exported.
+      ['FOO-BAR', '1ABC', 'FOO.BAR', 'a b'].each do |name|
+        it "raises naming #{name.inspect}, which is not a JS identifier" do
+          Proscenium.config.env_vars = [name]
+
+          error = assert_raises(ArgumentError) { subject.build_to_string('lib/env/extra.js') }
+          assert_includes error.message, 'config.proscenium.env_vars'
+          assert_includes error.message, name.inspect
+        end
+      end
     end
 
     it 'raises on unknown path' do
