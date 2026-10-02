@@ -83,6 +83,25 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
                  packed_package_json(tarball)['dependencies'].keys.sort
   end
 
+  # Yarn 3 asks with the scope's slash encoded first, and only retries with `/` after a 404.
+  %w[%2f %2F].each do |slash|
+    it "serves a tarball asked for with the scope's slash encoded as #{slash}" do
+      tarball = fetch_tarball("/registry/@rubygems/gem1/-/gem1-#{gem1_version}.tgz")
+      get "@rubygems#{slash}gem1/-/gem1-#{gem1_version}.tgz"
+
+      assert_equal 200, response.status
+      assert_equal 'application/octet-stream', response.content_type
+      assert_equal tarball, response.body.b
+    end
+  end
+
+  it "answers 404 for a tarball misnamed, with the scope's slash encoded" do
+    get '@rubygems%2fgem1/-/gem1-0.1.0'
+
+    assert_equal 404, response.status
+    assert_match(/has no tarball `gem1-0.1.0`/, json['error'])
+  end
+
   it 'answers 404 for the tarball of a version that is not the installed one' do
     get '@rubygems/gem1/-/gem1-99.9.9.tgz'
 
@@ -95,9 +114,12 @@ class Proscenium::RegistryControllerTest < ActiveSupport::TestCase
     it "answers 404 for a tarball named #{file}" do
       get "@rubygems/gem1/-/#{file}"
 
-      # The controller's own answer, not a route that did not match.
+      # The controller's own answer, not a route that did not match, and naming the file asked
+      # for: a version cut from a name like `gem1-0.1.0` is the installed one, and a message
+      # saying it is missing contradicts itself.
       assert_equal 404, response.status
-      assert_match(/has no version/, json['error'])
+      assert_equal "Package `@rubygems/gem1` has no tarball `#{file}`; " \
+                   "its tarball is `gem1-#{gem1_version}.tgz`.", json['error']
     end
   end
 
