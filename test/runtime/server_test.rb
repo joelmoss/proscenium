@@ -350,6 +350,33 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     ensure
       file&.delete
     end
+
+    # Vendor serves the file as it is, through ActionDispatch::FileHandler, whose chunks are
+    # binary. Joined as they came, the code was binary too: JSON.generate warned on a valid
+    # character, and the check above passed invalid bytes.
+    it 'tags a file served as it is UTF-8' do
+      file = Rails.root.join('vendor/non_ascii.js')
+      file.write("export const r = /—/\n")
+
+      reply = request('build', path: '/vendor/non_ascii.js')
+
+      assert_nil reply[:error]
+      assert_equal Encoding::UTF_8, reply[:code].encoding
+    ensure
+      file&.delete
+    end
+
+    it 'names a file served as it is that is not valid utf-8' do
+      file = Rails.root.join('vendor/not_utf8.js')
+      file.binwrite("export const r = /a\xFFb/\n")
+
+      reply = request('build', path: '/vendor/not_utf8.js')
+
+      refute reply[:ok]
+      assert_match(%r{/vendor/not_utf8\.js .*not valid UTF-8}, reply[:error])
+    ensure
+      file&.delete
+    end
   end
 
   describe 'a malformed request line' do

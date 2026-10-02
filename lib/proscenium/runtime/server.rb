@@ -371,6 +371,9 @@ module Proscenium
 
         content = +''
         body.each { |chunk| content << chunk }
+        # A file served as it is, through ActionDispatch::FileHandler, comes in binary chunks.
+        # Everything served here is text, which the content type guard below ensures.
+        content.force_encoding(Encoding::UTF_8)
 
         return nil if status == 404
 
