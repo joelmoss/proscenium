@@ -21,8 +21,7 @@ module Proscenium
         raise ArgumentError, '`path` must be an absolute file system or URL path'
       end
 
-      resolved[path] ||= if (gem = BundledGems.paths.find { |_, v| path.start_with? "#{v}/" })
-                           vpath = path.sub(/^#{gem.last}/, "@rubygems/#{gem.first}")
+      resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
                            [Proscenium::Manifest[vpath], "/node_modules/#{vpath}", path]
                          elsif path.start_with?("#{Rails.root}/")
                            vpath = path.delete_prefix(Rails.root.to_s)

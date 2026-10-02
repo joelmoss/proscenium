@@ -25,11 +25,7 @@ module Proscenium
           outpath = fs_path(outpath).delete_prefix "#{public_path}/"
 
           ep = fs_path(details['entryPoint'])
-          ep = if (gem = BundledGems.paths.find { |_, v| ep.start_with? "#{v}/" })
-                 "@rubygems/#{gem[0]}#{ep.delete_prefix(gem[1])}"
-               else
-                 ep.delete_prefix(Rails.root.to_s)
-               end
+          ep = BundledGems.virtual_path(ep) || ep.delete_prefix(Rails.root.to_s)
 
           manifest[ep] = [
             "/#{outpath}",

@@ -51,4 +51,28 @@ class Proscenium::ManifestTest < ActiveSupport::TestCase
       assert_nil Proscenium::Manifest['/app/components/x.js']
     end
   end
+
+  describe '.load! with a gem entry point' do
+    around do |test|
+      @dir = Pathname.new(Dir.mktmpdir('manifest'))
+      path = @dir.join('.manifest.json')
+      entry_point = Proscenium.root.join('lib/proscenium/react-manager/index.jsx').to_s
+      out_path = "#{Rails.root}/public/assets/react-manager/index-$ABC123$.js"
+      path.write({ outputs: { out_path => { entryPoint: entry_point } } }.to_json)
+      orig = Proscenium.config.manifest_path
+      Proscenium.config.manifest_path = path
+      test.call
+    ensure
+      Proscenium.config.manifest_path = orig
+      Proscenium::Manifest.reset!
+      FileUtils.rm_rf(@dir) if @dir
+    end
+
+    it 'keys the entry point by its @rubygems path' do
+      Proscenium::Manifest.load!
+
+      assert_equal ['/assets/react-manager/index-$ABC123$.js'],
+                   Proscenium::Manifest['@rubygems/proscenium/react-manager/index.jsx']
+    end
+  end
 end
