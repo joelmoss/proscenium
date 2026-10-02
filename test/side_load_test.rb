@@ -57,6 +57,127 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
     assert Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
   end
 
+  # A collection renders each item through `Template#render`, never reaching
+  # `PartialRenderer#render_partial_template`.
+  describe 'collection partial' do
+    it 'side loads the partial and its layout' do
+      BarePagesController.render inline: <<~ERB
+        <%= render partial: 'pages/side', collection: [1, 2], layout: 'pages/side_layout' %>
+      ERB
+
+      assert_equal({
+                     '/app/views/pages/_side.js' => {},
+                     '/app/views/pages/_side_layout.css' => {}
+                   }, Proscenium::Importer.imported)
+    end
+
+    it 'honours sideload_assets in the partial' do
+      BarePagesController.render inline: <<~ERB
+        <%= render partial: 'pages/suppressible', collection: [1] %>
+      ERB
+      assert Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+
+      Proscenium::Importer.reset
+      BarePagesController.render inline: <<~ERB
+        <%= render partial: 'pages/suppressible', collection: [1], locals: { suppress: true } %>
+      ERB
+
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+    end
+
+    # Pins documented behaviour: the collection is side loaded once, so one item's value
+    # applies to them all.
+    it "applies any item's sideload_assets value to the whole collection" do
+      [[true, false], [false, true]].each do |items|
+        BarePagesController.render inline: <<~ERB, locals: { items: }
+          <%= render partial: 'pages/suppressible', collection: items, as: :suppress %>
+        ERB
+
+        assert_not Proscenium::Importer.imported?('/app/views/pages/_suppressible.js'), items
+        Proscenium::Importer.reset
+      end
+    end
+
+    it 'scopes a sideload_assets value to its own collection render' do
+      BarePagesController.render inline: <<~ERB
+        <%= render partial: 'pages/suppressible', collection: [1], locals: { suppress: true } %>
+        <%= render partial: 'pages/suppressible', collection: [1] %>
+      ERB
+
+      assert Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+    end
+
+    it 'side loads a collection whose partial is derived from its objects' do
+      klass = Class.new { def to_partial_path = 'pages/side' }
+      BarePagesController.render inline: '<%= render records %>',
+                                 locals: { records: [klass.new, klass.new] }
+
+      assert Proscenium::Importer.imported?('/app/views/pages/_side.js')
+    end
+
+    # Objects with different partials have no single template to side load.
+    it 'renders a mixed collection without side loading it' do
+      side = Class.new { def to_partial_path = 'pages/side' }
+      suppressible = Class.new { def to_partial_path = 'pages/suppressible' }
+      html = BarePagesController.render inline: '<%= render records %>',
+                                        locals: { records: [side.new, suppressible.new] }
+
+      assert_includes html, 'Suppressible'
+      assert_nil Proscenium::Importer.imported
+    end
+
+    it 'side loads nothing for an empty collection' do
+      BarePagesController.render inline: "<%= render partial: 'pages/side', collection: [] %>"
+
+      assert_nil Proscenium::Importer.imported
+    end
+
+    # A full cache hit never renders an item, so nothing below the cache is reached. The collection
+    # cache is ActionView's own store, not the controller's.
+    it 'side loads the partial on a cache hit' do
+      was_caching = BarePagesController.perform_caching
+      was_store = ActionView::PartialRenderer.collection_cache
+      BarePagesController.perform_caching = true
+      ActionView::PartialRenderer.collection_cache = ActiveSupport::Cache::MemoryStore.new
+      inline = "<%= render partial: 'pages/side', collection: [1, 2], cached: true %>"
+
+      BarePagesController.render inline: inline
+      Proscenium::Importer.reset
+      hits = nil
+      ActiveSupport::Notifications.subscribed(->(*, payload) { hits = payload[:cache_hits] },
+                                              'render_collection.action_view') do
+        BarePagesController.render inline: inline
+      end
+
+      assert_equal 2, hits
+      assert Proscenium::Importer.imported?('/app/views/pages/_side.js')
+    ensure
+      BarePagesController.perform_caching = was_caching
+      ActionView::PartialRenderer.collection_cache = was_store
+    end
+
+    # Pins documented behaviour: a full cache hit renders no item, so a `sideload_assets` call in
+    # the partial does not run, and the partial's assets are side loaded.
+    it 'ignores a sideload_assets call in the partial on a cache hit' do
+      was_caching = BarePagesController.perform_caching
+      was_store = ActionView::PartialRenderer.collection_cache
+      BarePagesController.perform_caching = true
+      ActionView::PartialRenderer.collection_cache = ActiveSupport::Cache::MemoryStore.new
+      inline = "<%= render partial: 'pages/suppressible', collection: [1], cached: true,
+                                                         locals: { suppress: true } %>"
+
+      BarePagesController.render inline: inline
+      assert_not Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+
+      Proscenium::Importer.reset
+      BarePagesController.render inline: inline
+      assert Proscenium::Importer.imported?('/app/views/pages/_suppressible.js')
+    ensure
+      BarePagesController.perform_caching = was_caching
+      ActionView::PartialRenderer.collection_cache = was_store
+    end
+  end
+
   # Rendering happens before Proscenium::Helper is included into views (it is included in
   # `after_initialize`), e.g. from an initializer. The view then has no override store at all.
   it 'side loads a template rendered by a view without Proscenium::Helper' do
