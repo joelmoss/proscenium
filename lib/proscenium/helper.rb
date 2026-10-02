@@ -32,7 +32,7 @@ module Proscenium
     # Accepts one or more CSS class names, and transforms them into CSS module names.
     #
     # @see CssModule::Transformer#class_names
-    # @param name [String,Symbol,Array<String,Symbol>]
+    # @param names [String,Symbol,nil,false,Array<String,Symbol,nil,false>]
     # @param path [Pathname] the path to the CSS module file to use for the transformation.
     # @return [String] the transformed CSS module names concatenated as a string.
     def css_module(*names, path: nil)

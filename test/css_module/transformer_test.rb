@@ -30,11 +30,23 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
       assert_match(/^subtitle_#{CSS_MODULE_DIGEST}$/o, names.last)
     end
 
-    it 'flattens nested names and drops nils' do
+    it 'flattens nested names and drops nil, false and blank names' do
       transformer = Proscenium::CssModule::Transformer.new('/lib/css_modules/basic')
 
       assert_equal transformer.class_names(:@title, :plain, require_prefix: false),
-                   transformer.class_names([:@title, nil, [:plain]], require_prefix: false)
+                   transformer.class_names([:@title, nil, '', [false, ' ', :plain]],
+                                           require_prefix: false)
+    end
+
+    it 'raises on a name that is not a String or Symbol' do
+      transformer = Proscenium::CssModule::Transformer.new('/lib/css_modules/basic')
+
+      [true, 1, { title: true }].each do |name|
+        error = assert_raises(Proscenium::CssModule::TransformError) do
+          transformer.class_names(:plain, name)
+        end
+        assert_includes error.message, 'must be a String or Symbol'
+      end
     end
 
     it 'imports stylesheet' do
@@ -199,7 +211,7 @@ class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
 
     it 'yields once per flattened name' do
       yielded = []
-      transformer.class_names([:@title, nil, [:plain]]) { |name, _path| yielded << name }
+      transformer.class_names([:@title, nil, [false, :plain]]) { |name, _path| yielded << name }
 
       assert_equal 2, yielded.length
       assert_equal 'plain', yielded.last

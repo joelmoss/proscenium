@@ -605,13 +605,13 @@ With [side-loading](#side-loading) setup, you can use the `css_module` helper as
 ```erb
 <div>
   <h1 class="<%= css_module :hello_title %>">Hello World</h1>
-  <p class="<%= css_module :body, paragraph: %>">
+  <p class="<%= css_module :body, :paragraph %>">
     Lorem ipsum dolor sit amet, consectetur adipiscing elit.
   </p>
 </div>
 ```
 
-`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names.
+`css_module` accepts multiple class names, and will return a space-separated string of transformed CSS module names. Arrays of names are flattened, and `nil`, `false` and blank names are ignored, so `css_module :card, (active? && :active)` works.
 
 ```ruby
 css_module :my_module_name

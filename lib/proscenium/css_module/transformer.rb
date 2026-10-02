@@ -33,19 +33,22 @@ module Proscenium
     #   class_names "mypackage/button@large"
     #   class_names "@scoped/package/button@small"
     #
-    # When a block is given, it is yielded once per input name with
+    # Nested arrays of names are flattened, and nil, false and blank names are dropped. Any other
+    # name that is not a String or Symbol raises TransformError.
+    #
+    # When a block is given, it is yielded once per name with
     # `(transformed_name, side_load_path)`. `side_load_path` is the exact string passed to
     # `Importer.import` for that name, or `nil` for names that did not trigger a side-load (plain
     # class names with `require_prefix: true`). The return value is unchanged — callers that don't
     # need the path can keep ignoring the block.
     #
-    # @param names [String,Symbol,Array<String,Symbol>]
+    # @param names [String,Symbol,nil,false,Array<String,Symbol,nil,false>]
     # @param require_prefix: [Boolean] whether or not to require the `@` prefix.
     # @yieldparam transformed_name [String]
     # @yieldparam side_load_path [String, nil]
     # @return [Array<String>] the transformed CSS module names.
     def class_names(*names, require_prefix: true)
-      names.flatten.compact.map do |name|
+      names.flatten.compact_blank.map do |name|
         transformed, path = transform_class_name(name, require_prefix: require_prefix)
         yield(transformed, path) if block_given?
         transformed
@@ -77,6 +80,10 @@ module Proscenium
     def transform_class_name(name, require_prefix:)
       original_name = name.dup
       name = name.to_s if name.is_a?(Symbol)
+      unless name.is_a?(String)
+        raise Proscenium::CssModule::TransformError.new(original_name.inspect,
+                                                        'class name must be a String or Symbol')
+      end
 
       if name.include?('/')
         if name.start_with?('@')
