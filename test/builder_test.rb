@@ -23,6 +23,22 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         result = subject.build_to_string('lib/env/extra.js')
         assert_includes result[:response], 'console.log("joelmoss")'
       end
+
+      it 'accepts an Array' do
+        Proscenium.config.env_vars = ['USER_NAME']
+        ENV['USER_NAME'] = 'joelmoss'
+
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
+      end
+
+      it 'accepts Symbols' do
+        Proscenium.config.env_vars = Set[:USER_NAME]
+        ENV['USER_NAME'] = 'joelmoss'
+
+        result = subject.build_to_string('lib/env/extra.js')
+        assert_includes result[:response], 'console.log("joelmoss")'
+      end
     end
 
     it 'raises on unknown path' do

@@ -303,7 +303,7 @@ module Proscenium
     # `Proscenium::DEFAULT_ENV_VARS` to pass to esbuild.
     def env_vars
       ENV['NODE_ENV'] = ENV.fetch('RAILS_ENV', nil)
-      ENV.slice(*Proscenium.config.env_vars + Proscenium::DEFAULT_ENV_VARS)
+      ENV.slice(*Proscenium::DEFAULT_ENV_VARS, *Array(Proscenium.config.env_vars).map(&:to_s))
     end
 
     def gem_root
