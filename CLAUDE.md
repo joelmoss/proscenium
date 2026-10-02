@@ -8,7 +8,7 @@ Proscenium is a Rails engine that provides real-time frontend asset bundling and
 
 ## Prerequisites
 
-- Ruby >= 3.3.0 (project uses 3.3.8)
+- Ruby >= 3.4.0 (project uses 3.4.8)
 - Go 1.25+
 - Rails 7.2 to 8.x
 

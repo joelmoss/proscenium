@@ -11,10 +11,10 @@ Gem::Specification.new do |spec|
   spec.summary       = 'The engine powering your Rails frontend'
   spec.homepage      = 'https://github.com/joelmoss/proscenium'
   spec.license       = 'MIT'
-  spec.required_ruby_version = '>= 3.3.0'
+  spec.required_ruby_version = '>= 3.4.0'
   # Older RubyGems cannot tell `x86_64-linux-gnu` from `x86_64-linux-musl` and will happily
   # install the wrong one. Refusing outright beats installing a library the host cannot load.
-  # Free in practice: Ruby 3.3 already ships a newer RubyGems than this.
+  # Free in practice: Ruby 3.4 already ships a newer RubyGems than this.
   spec.required_rubygems_version = '>= 3.3.22'
 
   spec.metadata['homepage_uri'] = spec.homepage
