@@ -56,5 +56,8 @@ Gem::Specification.new do |spec|
   spec.require_paths = ['lib']
 
   spec.add_dependency 'ffi', '~> 1.17.0'
+  # 2.20 added allow_comments; the registry must refuse comments, as npm does. Below 3, which
+  # raises on keywords it does not know, and Rails passes it `quirks_mode:`.
+  spec.add_dependency 'json', '>= 2.20', '< 3'
   spec.add_dependency 'rails', ['>= 7.2.0', '< 9.0']
 end
