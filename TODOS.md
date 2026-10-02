@@ -131,7 +131,7 @@ named predicates, and three ingress doors, which are the seams types would go on
 
 ## Windows path edge cases the #79 review could not settle
 
-**What:** Five things found in the pre-merge review of PR #79 that need a Windows host, or a
+**What:** Four things found in the pre-merge review of PR #79 that need a Windows host, or a
 decision, rather than a fix from a Mac.
 
 - **Case.** Roots are compared as exact text everywhere: `bundler.go`'s alias lookup,
@@ -145,8 +145,6 @@ decision, rather than a fix from a Mac.
 - **`bundler.go`'s alias lookup** trims the root with a bare `strings.TrimPrefix` - the missing
   boundary `rootPathToUrlPath` had. Predates #79, and only misses or mismatches an alias, but it
   belongs with the rest of `F-GOUTILS-1` step 2.
-- **`resolver.rb`'s gem branch** builds a regex from a gem path without escaping it, so a gem path
-  containing `+` or `(` silently fails to match. `delete_prefix` is the fix. Predates #79.
 - **`bundless.go`** sends a URL-rooted import with an extension to FINISH, where
   `UrlPathFromFsPath` reads it as a filesystem path: with an app root of `/app`, which is
   Docker's usual WORKDIR, `import "/app/components/x.js"` becomes `/components/x.js`. Predates
@@ -352,6 +350,14 @@ Under about 10%, delete this item.
 **Depends on:** That measurement.
 
 ## Done
+
+### Map gem paths to `@rubygems/` without a regex (#95)
+
+`resolver.rb` built a regex from a gem path without escaping it, so a gem path holding `+` was
+left unmapped and an unbalanced `(` raised `RegexpError`. `BundledGems.virtual_path` is now the one
+rule, a plain prefix match that `Resolver` and `Manifest` share, and it takes the longest root as
+Go's `GemFromFsPath` does, so a file under a nested gem gets one URL from both sides. Moved here
+from the #79 Windows list; `docs/AUDIT.md`'s F-BOOT-1 row has the detail.
 
 ### Cache directory listings for plugin `Resolve` calls (esbuild fork)
 
