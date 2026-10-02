@@ -1,0 +1,3 @@
+<%= render 'pages/boxed', local_assigns.slice(:suppress, :nested, :nested_block) do %>
+  <% sideload_assets false if local_assigns[:suppress_caller] %>
+<% end %>

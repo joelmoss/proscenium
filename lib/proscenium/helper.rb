@@ -9,11 +9,38 @@ module Proscenium
     #
     # Call it outside any `cache` block: a cache hit skips the block, and this call with it.
     def sideload_assets(value)
+      identifier = proscenium_sideload_template.identifier
+
       if value.nil?
-        proscenium_sideload_assets_options.delete @current_template.identifier
+        proscenium_sideload_assets_options.delete identifier
       else
-        proscenium_sideload_assets_options[@current_template.identifier] = value
+        proscenium_sideload_assets_options[identifier] = value
       end
+    end
+
+    # The template a `sideload_assets` call belongs to. ActionView does not push a partial rendered
+    # with a block onto `@current_template`, so while it renders, `@current_template` is still the
+    # calling template. A template rendered from inside it does push, so only an unchanged
+    # `@current_template` means the call came from the partial body.
+    def proscenium_sideload_template
+      owner = @proscenium_block_partial
+      owner && owner[:caller].equal?(@current_template) ? owner[:partial] : @current_template
+    end
+
+    # Renders a partial given `block`, so that `sideload_assets` in its body applies to the partial,
+    # and in the block to the template that passed it. Yields the block to render with.
+    def proscenium_render_block_partial(partial, block)
+      previous = @proscenium_block_partial
+      owner = @proscenium_block_partial = { caller: @current_template, partial: }
+
+      yield(proc do |*args|
+        @proscenium_block_partial = previous
+        block.call(*args)
+      ensure
+        @proscenium_block_partial = owner
+      end)
+    ensure
+      @proscenium_block_partial = previous
     end
 
     # @return [Hash] the `sideload_assets` value of each template in this render, by identifier.
