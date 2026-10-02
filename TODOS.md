@@ -358,7 +358,8 @@ Released as `esbuild-internal` `v0.28.2-d551d879` (fork commit `d551d879`, tagge
 `release/0.28.2` of `github.com/joelmoss/esbuild`) and pinned in `go.mod` by `91b50057`. A one-shot
 `esbuild.Build()` now reads directories through a caching file system when a plugin calls
 `Resolve`; `Context()` is unchanged, because a long-lived context would serve stale listings
-between rebuilds. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` pin both halves.
+between rebuilds. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` (`../esbuild`;
+`api/` in the generated `esbuild-internal`) pin both halves.
 
 `91b50057`'s message holds the measurements and the one behaviour change: the two largest London
 builds went from 149.7ms to 63.2ms (-58%) and from 138.3ms to 67.0ms (-52%) with byte-identical
@@ -370,11 +371,11 @@ profile that motivated it: about 46% of a real build in `readdir` and 10% in `ls
 ### Recover from panics in esbuild plugin callbacks (esbuild fork)
 
 Released as `esbuild-internal` `v0.28.2-7db68371` (fork commit `7db68371` on `release/0.28.2`)
-and pinned in `go.mod`. Each plugin callback wrapper in the fork's `pkg/api/api_impl.go` recovers
-into a build error, `panic: <value> (in OnLoad callback)` with the stack in a note, the shape
-`parseFile`'s own recover uses; five fork tests pin every callback type, the nested
-`build.Resolve` path, and a following build succeeding. The OnLoad one aborted the test binary
-before the change. Not covered, on either side: esbuild's own internal goroutines (the linker's
+and pinned in `go.mod`. Each plugin callback wrapper in the fork's `pkg/api/api_impl.go`
+(`../esbuild`; `api/api_impl.go` in the generated `esbuild-internal`) recovers into a build
+error, `panic: <value> (in OnLoad callback)` with the stack in a note, the shape `parseFile`'s own
+recover uses; five fork tests pin every callback type, the nested `build.Resolve` path, and a
+following build succeeding. The OnLoad one aborted the test binary before the change. Not covered, on either side: esbuild's own internal goroutines (the linker's
 chunk, source-map and renaming workers), so a panic inside esbuild itself still takes the process
 down.
 

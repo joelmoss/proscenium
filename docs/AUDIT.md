@@ -430,7 +430,7 @@ Reported by each lane's worker with file:line; load-bearing ones re-read by the 
 |---|---|---|
 | F-CONTRACT-1 | **FIXED** ✓ | assets.rake:8-9 just calls `Builder.compile`, which raises `CompileError` with esbuild's messages (builder.rb:163-175, :278-286). The Progress table did not record it; it does now. |
 | F-CONTRACT-2 | open, **now unblocked** | types.go:104-114 still plain `json.Unmarshal`; its prerequisite is met — main.go:70 and :112 return esbuild-shaped JSON on config errors. Every key Ruby sends is a `ConfigT` field. Its cited builder.rb lines are stale: the dead enum is now :95, the caveat comment :203-207. |
-| F-GOUTILS-2 | open, **narrowed** | `Enabled`/`Enable()` (debug.go:13-17) and `types.Debug` still dead; `FDebug` is now called (build_to_string.go:150) — drop it from the finding. |
+| F-GOUTILS-2 | **done** as narrowed (#91, PR #108) | `Enabled`/`Enable()` and `types.Debug` deleted in `26bcf237` (see the H-1, H-2, H-4, H-5, H-7 Progress row); `FDebug` kept, because it is called (build_to_string.go:150). |
 | F-GOBUILD-1 | open | Plugin list identical at build.go:95-109 / compile.go:115-129; options duplicated :58-93 / :78-113; log-level seeds differ (Warning vs Info). |
 | F-GOBUILD-2 | **done** (#88, PR #114) | build.go:133 seeds RAILS_ENV/NODE_ENV only when `len(cfg.EnvVars) == 0`; :141 reads it unconditionally. |
 | P2 nil index | open, mitigated | build_to_string.go:116 `[0]` unguarded; `utils.Recover` (:35) now turns the panic into a failed build, but it still skips the metafile tier. |
