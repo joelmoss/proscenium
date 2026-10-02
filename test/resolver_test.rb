@@ -65,6 +65,20 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
                    subject.resolve('@rubygems/proscenium/react-manager/index.jsx')
     end
 
+    # #95: the gem path was interpolated into a regex, so `+` left this path unmapped and an
+    # unbalanced `(` raised RegexpError.
+    it 'resolves a path inside a gem whose path holds regex metacharacters' do
+      original = Proscenium::BundledGems.method(:paths)
+      Proscenium::BundledGems.define_singleton_method(:paths) do
+        { 'gem1' => '/gems/gem1-1.0+build', 'gem2' => '/gems/(gem2' }
+      end
+
+      assert_equal '/node_modules/@rubygems/gem1/x.js', subject.resolve('/gems/gem1-1.0+build/x.js')
+      assert_equal '/node_modules/@rubygems/gem2/x.js', subject.resolve('/gems/(gem2/x.js')
+    ensure
+      Proscenium::BundledGems.define_singleton_method(:paths, original)
+    end
+
     it 'resolves css module from file:* npm install' do
       assert_equal '/node_modules/pkg/one.module.css', subject.resolve('pkg/one.module.css')
     end
