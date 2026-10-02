@@ -61,6 +61,12 @@ class Proscenium::RegistryController < ActionController::Base
     end
   end
 
+  class TarballNotFoundError < Proscenium::Error
+    def initialize(name, requested, tarball)
+      super("Package `#{name}` has no tarball `#{requested}`; its tarball is `#{tarball}`.")
+    end
+  end
+
   class InvalidPackageJsonError < Proscenium::Error
     def initialize(name, reason)
       # A parser's reason quotes the bytes it choked on, which need not be UTF-8.
@@ -75,6 +81,7 @@ class Proscenium::RegistryController < ActionController::Base
   rescue_from PackageNotFoundError, with: :render_not_found
   rescue_from GemNotInstalledError, with: :render_not_found
   rescue_from VersionNotFoundError, with: :render_not_found
+  rescue_from TarballNotFoundError, with: :render_not_found
   # A 4xx, as npm and pnpm retry a 5xx, and this will not fix itself.
   rescue_from InvalidPackageJsonError do |error|
     render json: { error: error.message }, status: 422
@@ -85,6 +92,13 @@ class Proscenium::RegistryController < ActionController::Base
   end
 
   def show
+    # Yarn 3 asks for a tarball with the scope's slash encoded first. That misses the tarball
+    # route, which needs a literal one, and arrives here decoded.
+    if (match = params[:package].match(%r{\A@rubygems/([\w-]+)/-/([^/]+)\z}))
+      params[:gem], params[:file] = match.captures
+      return tarball
+    end
+
     @gem_name, requested_version = package_params
 
     # Only the installed version exists, and `latest` - the one dist-tag advertised - names it.
@@ -117,11 +131,10 @@ class Proscenium::RegistryController < ActionController::Base
   # the packument, as `npm ci` and a frozen pnpm install do not.
   def tarball
     @gem_name = params[:gem]
-    # Only npm's own name for the installed version's tarball, the one URL ever advertised.
-    unless params[:file] == "#{@gem_name}-#{version}.tgz"
-      requested = params[:file].delete_prefix("#{@gem_name}-").delete_suffix('.tgz')
-      raise VersionNotFoundError.new(full_name, requested, version)
-    end
+    # Only npm's own name for the installed version's tarball, the one URL ever advertised. Named
+    # in full, as a version cut from a name like `gem1-0.1.0` would be the installed one.
+    expected = "#{@gem_name}-#{version}.tgz"
+    raise TarballNotFoundError.new(full_name, params[:file], expected) if params[:file] != expected
 
     send_data tarball_data, type: 'application/octet-stream'
   end
