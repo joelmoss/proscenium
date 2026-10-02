@@ -291,6 +291,13 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
       assert_equal :from_receiver, result[:css]
     end
 
+    # `instance_eval` passes the receiver as an argument, which a zero-argument lambda rejects.
+    it 'evaluates lambdas against the receiver' do
+      result = Proscenium::SideLoad.merge_options({ css: -> { flag } }, nil, receiver)
+
+      assert_equal :from_receiver, result[:css]
+    end
+
     it 'modifies neither input, and shares no hash with them' do
       base = { css: { data: { a: 1 } }, js: proc { { defer: true } } }.freeze
       override = { css: { class: :foo } }.freeze
