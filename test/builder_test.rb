@@ -80,8 +80,8 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
         saved&.each { |n, v| ENV[n] = v }
       end
 
-      # Go skips an empty name, and an entry such as `env_vars << ENV['UNSET']` adds nil.
-      it 'ignores blank and nil names' do
+      # An entry such as `env_vars << ENV['UNSET']` adds nil, which built fine before the check.
+      it 'ignores empty and nil names' do
         Proscenium.config.env_vars = ['', nil, 'USER_NAME']
         ENV['USER_NAME'] = 'joelmoss'
 

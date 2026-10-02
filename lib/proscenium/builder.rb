@@ -308,9 +308,9 @@ module Proscenium
     #
     # Only the ASCII rules are checked, on the raw bytes: Ruby's Unicode tables differ from
     # esbuild's by Ruby version, so non-ASCII characters are left for esbuild to judge, and the
-    # bytes cannot raise an encoding error. Blank names are skipped, as Go does.
+    # bytes cannot raise an encoding error. An empty name passes, and `ENV.slice` drops it.
     def env_vars
-      names = Array(Proscenium.config.env_vars).map(&:to_s).reject(&:empty?)
+      names = Array(Proscenium.config.env_vars).map(&:to_s)
       if (invalid = names.select { |name| name.b.match?(/\A\d|[^\w$\x80-\xff]/n) }).any?
         raise ArgumentError, 'config.proscenium.env_vars must be JavaScript identifiers, but got ' \
                              "#{invalid.map(&:inspect).join(', ')}"
