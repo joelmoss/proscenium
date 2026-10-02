@@ -272,4 +272,6 @@ Default five-label vocabulary: needs-triage, needs-info, ready-for-agent, ready-
 
 ### Domain docs
 
-Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Single-context: one `CONTEXT.md` and `docs/adr/` at the repo root. Both are created lazily, by
+`/domain-modeling` when a term or decision is first settled, so either may be missing: proceed
+without it. See `docs/agents/domain.md`.
