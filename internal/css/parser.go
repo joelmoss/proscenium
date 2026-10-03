@@ -19,11 +19,11 @@ type cssParser struct {
 	// Map of mixin names and their contents.
 	mixins cssMixins
 
+	// Mixins from other files whose definition held a bad token, refused when used.
+	malformedMixins map[string]bool
+
 	// Warnings accumulated during parsing.
 	warnings []CssWarning
-
-	// The input held a bad token, so it is returned unchanged: see handleNextToken.
-	malformed bool
 
 	// A failure that has to fail the build rather than become a warning: a panic the resolver
 	// recovered while looking up a mixin file. Warnings are for the stylesheet's own mistakes.
@@ -40,7 +40,12 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 		p.append(result)
 	}
 
-	if p.malformed {
+	// Malformed CSS: a bad token in the input itself, definitions included. Stopping at one used to
+	// drop the rest of the stylesheet silently, and the tokenizer cannot write one back as written -
+	// it decodes escapes and drops the quotes and the whitespace inside - so the input goes on
+	// unchanged, mixins unexpanded, for esbuild to report at the right line, as it would with
+	// Proscenium out of the way.
+	if p.tokens.malformed {
 		return p.input, p.warnings, p.err
 	}
 
@@ -116,8 +121,7 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 		if endsStream(token.Type) {
 			break
 		}
-		if isBad(token.Type) {
-			p.malformed = true
+		if p.tokens.malformed {
 			break
 		}
 
@@ -134,12 +138,8 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		return "", false
 	}
 
-	// Malformed CSS. Stopping here used to drop the rest of the stylesheet silently, and the
-	// tokenizer cannot write a bad token back as it was: it decodes escapes and drops the quotes
-	// and the whitespace inside one. So the input goes on unchanged, mixins unexpanded, for esbuild
-	// to report at the right line - as it would with Proscenium out of the way.
-	if isBad(token.Type) {
-		p.malformed = true
+	// Malformed, so the input will be returned as it is (see parse): nothing more to do.
+	if p.tokens.malformed {
 		return "", false
 	}
 
@@ -163,6 +163,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 			original.WriteString(token.Render())
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
+			depth := len(p.tokens.tokenizers)
 			p.forEachToken(func(token *tokenizer.Token) bool {
 				original.WriteString(token.Render())
 
@@ -187,8 +188,16 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				return true
 			})
 
-			if p.malformed {
+			if p.tokens.malformed {
 				return "", false
+			}
+
+			// Started inside an inserted mixin and ran past its end with no semicolon: resolving it
+			// would insert the mixin again with the stream it came from already closed, so cycle
+			// detection could not see it, and `@define-mixin m{@mixin m}` looped forever. Passed
+			// through as written instead.
+			if len(p.tokens.tokenizers) < depth {
+				return original.String(), true
 			}
 
 			if p.resolveMixin(mixinIdent, uri) {

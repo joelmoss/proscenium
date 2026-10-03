@@ -55,7 +55,28 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("url holding an escaped paren", "a{background:url(a\\29  b)}\nb{color:blue}"),
 			Entry("bad token inside a mixin declaration", "a{@mixin red from url(a\nb);}\nb{color:blue}"),
 			Entry("bad token after a mixin that resolves", "a{@mixin red from url(\"/lib/mixins/colors.css\");}\nb{content:\"x\ny\";}"),
+			Entry("bad token in a local mixin that is never used", "@define-mixin m { content: \"x\n; }\na{color:red}"),
+			Entry("bad token in a local mixin that is used", "@define-mixin m{background:url(a\"b\");color:red;}a{@mixin m;}"),
 		)
+
+		// A bad token in a mixin from another file leaves the stylesheet that uses it valid, so only
+		// that mixin is refused, with a warning; returning the whole caller unchanged lost every other
+		// expansion, and esbuild never sees the mixin file to report it.
+		It("refuses a malformed mixin from another file, and still expands the rest", func() {
+			file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/malformed.css")
+
+			Expect("a{@mixin good from url(\"/lib/mixins/malformed.css\");}\nb{@mixin bad from url(\"/lib/mixins/malformed.css\");}").To(
+				BeParsedTo("a{ color: green; } b{@mixin bad from url(\"/lib/mixins/malformed.css\");}", "/foo.css", testConfig,
+					`Mixin "bad" in "`+file+`" is malformed CSS`))
+		})
+
+		// A @mixin declaration that starts inside an inserted mixin and runs past its end used to
+		// resolve the mixin again after its stream had closed, out of cycle detection's sight.
+		It("passes through an unterminated @mixin inside a mixin instead of looping", func() {
+			code, _ := parseWithDeadline("@define-mixin m{@mixin m}a{@mixin m;}", "/foo.css")
+
+			Expect(code).To(Equal("a{@mixin m}"))
+		})
 
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
 		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space.

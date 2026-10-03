@@ -19,12 +19,19 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 	search := "@mixin " + mixinIdent
 
-	// Set when a mixin was found but refused as a cycle, so the "not defined" warnings below -
-	// which mean "no such mixin" - are not also emitted for it.
-	cycled := false
+	// Set when a mixin was found but refused - as a cycle, or as malformed - so the "not defined"
+	// warnings below, which mean "no such mixin", are not also emitted for it.
+	refused := false
 
 	findAndInsertMixin := func(filePath string, mixinName string) bool {
 		key := filePath + "#" + mixinName
+
+		if p.malformedMixins[key] {
+			p.addWarning(search, "Mixin %q in %q is malformed CSS", mixinName, filePath)
+			refused = true
+
+			return false
+		}
 
 		def, ok := p.mixins[key]
 		if !ok {
@@ -38,7 +45,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		// has no natural limit and a cycle is never legitimate.
 		if p.tokens.isExpanding(key) {
 			p.addWarning(search, "Mixin %q includes itself", mixinName)
-			cycled = true
+			refused = true
 
 			return false
 		}
@@ -72,7 +79,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 
 		// Already refused as a cycle, so re-parsing the file and asking again would only refuse
 		// it a second time, and warn twice for one declaration.
-		if cycled {
+		if refused {
 			return false
 		}
 
@@ -81,7 +88,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 			if findAndInsertMixin(absPath, mixinIdent) {
 				return true
 			}
-			if !cycled {
+			if !refused {
 				p.addWarning(search, "Mixin %q not found in %q", mixinIdent, absPath)
 			}
 
@@ -95,7 +102,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 		if findAndInsertMixin(filePath, mixinIdent) {
 			return true
 		}
-		if !cycled {
+		if !refused {
 			p.addWarning(search, "Mixin %q not defined in %q", mixinIdent, filePath)
 		}
 
@@ -123,8 +130,17 @@ func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 	// nesting. Definition blocks are not parsed here.
 	tokens.forEachToken(func(token *tokenizer.Token) bool {
 		if token.Type == tokenizer.TokenAtKeyword && token.Value == "define-mixin" {
+			tokens.malformed = false
 			key, def := tokens.parseMixinDefinition()
 			if key == "" {
+				return true
+			}
+
+			// A bad token in the definition: the tokenizer cannot write it back as written, so the
+			// mixin is refused with a warning rather than expanded lossily, or made to return the
+			// whole valid stylesheet that uses it unchanged.
+			if tokens.malformed {
+				p.malformedMixins[filePath+"#"+key] = true
 				return true
 			}
 
