@@ -165,6 +165,17 @@ func (p *cssParser) handleNextToken() (string, bool) {
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
 			p.forEachToken(func(token *tokenizer.Token) bool {
+				// The declaration was the block's last statement, with no semicolon. Reading on to
+				// the next `;` swallowed the block's end and every rule up to it. The brace goes back
+				// as a stream of its own, under any mixin inserted below, so it comes out after the
+				// expansion, and is counted again when read.
+				if token.Type == tokenizer.TokenCloseBrace {
+					p.tokens.nesting++
+					p.tokens.insertTokens(render(token), p.tokens.currentFilePath(), "")
+
+					return false
+				}
+
 				original.WriteString(render(token))
 
 				if token.Type == tokenizer.TokenSemicolon {
