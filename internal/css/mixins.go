@@ -122,12 +122,6 @@ func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 	// Iterate through all the tokens in the file, and find any @define-mixin declarations at the root
 	// nesting. Definition blocks are not parsed here.
 	tokens.forEachToken(func(token *tokenizer.Token) bool {
-		// `forEachToken` stops at the end of the input on its own; this stops on the error and "bad"
-		// tokens too, which it deliberately passes through as content.
-		if token.Type.StopToken() {
-			return false
-		}
-
 		if token.Type == tokenizer.TokenAtKeyword && token.Value == "define-mixin" {
 			key, def := tokens.parseMixinDefinition()
 			if key == "" {

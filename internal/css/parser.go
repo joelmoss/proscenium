@@ -106,7 +106,7 @@ func (p *cssParser) append(input string) {
 func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	for {
 		token := p.tokens.next()
-		if token.Type.StopToken() {
+		if endsStream(token.Type) {
 			break
 		}
 
@@ -119,7 +119,7 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 // Handle the next token and return the output, and whether we should continue.
 func (p *cssParser) handleNextToken() (string, bool) {
 	token := p.tokens.next()
-	if token.Type.StopToken() {
+	if endsStream(token.Type) {
 		return "", false
 	}
 

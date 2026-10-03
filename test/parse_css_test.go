@@ -30,6 +30,21 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(".a\\2E\fb{color:red;}").To(BeParsedTo(`.a\2E b{color:red;}`, "/foo.css", testConfig))
 		})
 
+		// CRLF is folded first, so a CR then a form feed stays two newlines: the CR ends the escape
+		// and the form feed separates the descendant.
+		It("keeps a CR then a form feed as two newlines", func() {
+			Expect(".a\\2E\r\fb{color:red;}").To(BeParsedTo(`.a\2E  b{color:red;}`, "/foo.css", testConfig))
+		})
+
+		// A newline inside a string is a bad string to the tokenizer, which the parser used to stop at,
+		// silently dropping the rest of the stylesheet. It is passed through for esbuild to report.
+		It("carries on past a string broken by a newline", func() {
+			output, _, err := css.ParseCss("b{content:\"x\ny\";}\nc{color:blue}", "/foo.css", testConfig)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(output).To(HaveSuffix("c{color:blue}"))
+		})
+
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
 		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space.
 		It("parses the input as written, without dedenting or trimming it", func() {
