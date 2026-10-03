@@ -104,8 +104,9 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	// with no semicolon - ends there too and resolves while the mixin is still open to cycle
 	// detection. Popping first walked the declaration on into the stream that included the mixin,
 	// swallowing what followed, and let `@define-mixin m{@mixin m}` re-insert itself forever.
-	// `terminateBody` now gives such a declaration its semicolon when the mixin is defined, so this
-	// is the backstop for a body that reaches its end any other way.
+	// `terminateBody` now gives such a declaration its semicolon when the mixin is defined, so no
+	// input reaches this today and no test can. It stays so that a body left unterminated by some
+	// future path still ends with its mixin instead of swallowing what follows.
 	if endsStream(token.Type) && len(x.tokenizers) > 1 {
 		x.exhausted = x.tokenizers[len(x.tokenizers)-1]
 		return &token
@@ -199,19 +200,29 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 // A block's last declaration may go without a semicolon, but an inserted mixin body is followed by
 // whatever came after its `@mixin`, so `@define-mixin m{color:red}a{@mixin m;color:blue}` became
-// `a{color:redcolor:blue}`. The body gets the semicolon it left out.
-func terminateBody(body string) string {
-	end := len(strings.TrimRight(body, " \t\r\n\f"))
-	if end == 0 || body[end-1] == ';' || body[end-1] == '}' {
+// `a{color:redcolor:blue}`. The body gets the semicolon it left out. Decided by the body's last
+// token other than whitespace and comments: a body ending in a rule and then a comment, `<!--` or
+// `-->` is not missing one, and given one it stuck to the next selector at the root.
+func terminateBody(body string, last tokenizer.TokenType) string {
+	switch last {
+	case noToken, tokenizer.TokenSemicolon, tokenizer.TokenCloseBrace, tokenizer.TokenCDO, tokenizer.TokenCDC:
 		return body
 	}
+
+	end := len(strings.TrimRight(body, " \t\r\n\f"))
 
 	return body[:end] + ";" + body[end:]
 }
 
-// Capture all output between the nest opening brace, until the closing brace at the given level.
-func (x *cssTokenizer) captureBlock(level int) string {
+// The type `captureBlock` reports for a block holding nothing but whitespace and comments. No
+// captured token has this type: `forEachToken` stops at TokenError, which `endsStream` counts.
+const noToken = tokenizer.TokenError
+
+// Capture all output between the nest opening brace, until the closing brace at the given level,
+// and the type of its last token other than whitespace and comments.
+func (x *cssTokenizer) captureBlock(level int) (string, tokenizer.TokenType) {
 	var content strings.Builder
+	last := noToken
 
 	x.forEachToken(func(token *tokenizer.Token) bool {
 		if token.Type == tokenizer.TokenOpenBrace && x.nesting == level {
@@ -223,11 +234,15 @@ func (x *cssTokenizer) captureBlock(level int) string {
 			return false
 		}
 
+		if token.Type != tokenizer.TokenS && token.Type != tokenizer.TokenComment {
+			last = token.Type
+		}
+
 		content.WriteString(render(token))
 		return true
 	})
 
-	return content.String()
+	return content.String(), last
 }
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
