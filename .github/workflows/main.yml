@@ -181,7 +181,7 @@ jobs:
       # plugin behaviour, so the version matters more than usual.
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.13
+          bun-version: 1.4.2
 
       - if: runner.os != 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
