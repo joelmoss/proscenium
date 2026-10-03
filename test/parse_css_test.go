@@ -141,9 +141,9 @@ var _ = Describe("Build(parseCss)", func() {
 					BeParsedTo("x{a{color:red;}b{c:d;}}y{e:f;}", "/foo.css", testConfig))
 			})
 
-			// The brace is read twice, so it is counted back first. Without that, nesting stayed one
-			// too low, a later root `@define-mixin` was not seen as one, and the rest was dropped.
-			It("keeps the nesting count, so a later @define-mixin is still at the root", func() {
+			// A later root `@define-mixin` still defines, and what follows survives. The nesting count
+			// itself is pinned by the next spec: at the root its floor at zero hides a missing count.
+			It("keeps a later @define-mixin at the root, and the rules after it", func() {
 				Expect("@define-mixin m{color:red;}.a{@mixin m}@define-mixin n{color:blue;}.b{@mixin n;}").To(
 					BeParsedTo(".a{color:red;}.b{color:blue;}", "/foo.css", testConfig))
 				Expect("@define-mixin m{color:red;}@media print{.a{@mixin m}}@define-mixin n{color:blue;}.b{@mixin n;}").To(
@@ -152,10 +152,10 @@ var _ = Describe("Build(parseCss)", func() {
 
 			// Counting the pushed-back brace again matters inside a block too. At the root, the nesting
 			// count's floor at zero hides a missing count, so only an enclosing block shows it.
-			It("keeps the nesting count inside an enclosing block, so a @define-mixin there passes through", func() {
+			It("keeps the nesting count inside an enclosing block, so a @define-mixin there is refused", func() {
 				Expect("@define-mixin m{color:red;}@media print{.a{@mixin m}@define-mixin n{x:y}}.b{@mixin n;}").To(
 					BeParsedTo("@media print{.a{color:red;}@define-mixin n{x:y}}.b{@mixin n;}", "/foo.css", testConfig,
-						`Mixin "n" not defined in "/foo.css"`))
+						`A mixin can only be defined at the root of a file`, `Mixin "n" not defined in "/foo.css"`))
 			})
 
 			It("keeps them for a mixin file that cannot be resolved", func() {
@@ -185,10 +185,25 @@ var _ = Describe("Build(parseCss)", func() {
 
 		// A mixin body cannot define a mixin. Expanded inside a rule it already passed through; at the
 		// root, where the nesting is zero, it was defined. Either way it is refused with a warning.
-		It("passes through a @define-mixin in a mixin expanded at the root", func() {
+		It("refuses a @define-mixin in a mixin expanded at the root, with a warning", func() {
 			Expect("@define-mixin w{@define-mixin z{q:r}}@mixin w;a{@mixin z;}").To(
 				BeParsedTo("@define-mixin z{q:r}a{@mixin z;}", "/foo.css", testConfig,
-					`Mixin "w" cannot define a mixin`, `Mixin "z" not defined in "/foo.css"`))
+					`Mixin "w" in "/foo.css" cannot define a mixin`, `Mixin "z" not defined in "/foo.css"`))
+		})
+
+		It("names a mixin with an escaped # in its warning", func() {
+			_, warnings := parseWithDeadline(`@define-mixin a\#b{@define-mixin z{q:r}}x{@mixin a\#b;}`, "/foo.css")
+
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0].Text).To(Equal(`Mixin "a#b" in "/foo.css" cannot define a mixin`))
+		})
+
+		// A definition in a rule was passed through without a word, leaving only a later "not
+		// defined", or nothing if it was never used.
+		It("refuses a @define-mixin inside a rule, with a warning", func() {
+			Expect("a{@define-mixin n{c:d}}b{@mixin n;}").To(
+				BeParsedTo("a{@define-mixin n{c:d}}b{@mixin n;}", "/foo.css", testConfig,
+					`A mixin can only be defined at the root of a file`, `Mixin "n" not defined in "/foo.css"`))
 		})
 
 		// A `}` with no block to close counted the nesting below zero, where nothing is ever at the
@@ -317,7 +332,7 @@ var _ = Describe("Build(parseCss)", func() {
 					Expect(warnings[0].LineText).To(Equal("\t@mixin foo;"))
 				})
 
-				It("mixin not defined at root level is passed through", func() {
+				It("mixin not defined at root level is passed through, with a warning", func() {
 					Expect(`
 						header {
 							@define-mixin large-button {
@@ -336,7 +351,8 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin foo;
 							}
 						}
-					`, "/foo.css", testConfig, `Mixin "foo" not defined in "/foo.css"`))
+					`, "/foo.css", testConfig,
+						`A mixin can only be defined at the root of a file`, `Mixin "foo" not defined in "/foo.css"`))
 				})
 
 				It("mixin is replaced with defined mixin", func() {
@@ -593,7 +609,7 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 
 				When("mixin declaration is nested", func() {
-					It("should pass through nested mixin", func() {
+					It("should pass through a nested mixin definition, with a warning", func() {
 						Expect(`
 							header {
 								@mixin blue from url("/lib/mixins/colors.css");
@@ -605,7 +621,8 @@ var _ = Describe("Build(parseCss)", func() {
 									color: pink;
 								}
 							}
-						`, "/foo.css", testConfig, `Mixin "blue" cannot define a mixin`))
+						`, "/foo.css", testConfig,
+							`Mixin "blue" in "`+utils.JoinFsPath(testConfig.RootPath, "lib/mixins/colors.css")+`" cannot define a mixin`))
 					})
 				})
 
