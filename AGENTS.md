@@ -150,7 +150,8 @@ golangci-lint run
 The gem ships with precompiled Go binaries per platform. `PLATFORMS` in the Rakefile is the single
 source of truth; the release workflow derives its build matrix from it via `rake platforms:json`,
 so another target one of the existing builders already covers - a darwin arch, a glibc Linux
-arch, or a Windows arch - is a one-line change there. A platform needing a builder that does not
+arch, or a Windows arch - is a one-line change there, plus a leg in `release.yml`'s `verify` or
+`verify-native` matrix, which are written by hand. A platform needing a builder that does not
 exist yet needs a build job as well.
 
 - `x86_64-darwin`, `arm64-darwin` (macOS) - built natively, `CGO_ENABLED=1`

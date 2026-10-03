@@ -30,8 +30,9 @@ env:
   GOWORK: off
 
 jobs:
-  # The platform list lives in the Rakefile and nowhere else. Both build jobs filter this, so
-  # adding a platform there is the only edit a new platform needs.
+  # The platform list lives in the Rakefile. Both build jobs filter this, but the verify legs
+  # below (`verify`, `verify-native`) are written by hand, so a new platform needs its own leg too;
+  # without one it is built and pushed without ever being installed.
   # Proves trusted publishing is configured, without publishing anything.
   #
   # Worth having as its own thing: every other path to finding out involves pushing a real gem,

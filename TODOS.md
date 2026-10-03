@@ -139,44 +139,20 @@ seven hygiene deletions and seven bug leads, and re-checked the status of every 
 
 **`docs/AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it,
 and every correction implementation produced along the way. Read its preamble before starting
-anything: the 2026-10-01 "Final priorities and dependencies" is the current queue, and the
+anything: the 2026-10-01 "Final priorities and dependencies" was the queue (of its GitHub issues
+only #99 is still open), and the
 2026-09-08 "AUDIT-THE-AUDIT — pass 4" still adjudicates that audit's findings, rejecting three,
 demoting five and reversing one dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** the issue labelled `P2` (#90), and #92; #89 is done (PR #119). The dead-state sweep (#91) is done,
-which unblocks #104. Every verified open item has a GitHub issue (#86 to #105). Then the rest of `F-GOUTILS-1`'s step 2 - the two absorbed items below - then step 3, in the order the audit's
-final priorities give. The fs-to-URL half of step 2 is done. `F-GORESOLVE-1` landed in `8452092a`, so the three `@rubygems`
-consumer findings the audit named are done (pass 4 ruling 1, consumers-by-deletion first) - those
-findings, not step 2's own two absorbed items below, which are still open. Nothing still
-open misserves or crashes on a client-supplied URL - the two that did, the double-decode
-`F2-MW-1` (`e104e277`), and the two `internal/css` defects before them, are fixed. What remains is materiality rather than breakage. Several findings
-must write the first test for the code they touch; `docs/AUDIT.md`'s pattern P7 lists which, and for
-those the diff is small and the test is the work.
+**Next:** #99 (`F-IMPORTER-1`/`-2`) is the one audit finding still open as a GitHub issue. On
+2026-10-03 the others still open were reviewed for real-world impact and closed as not planned:
+#92, #93, #97, #101, #102 (`F-GOUTILS-1` steps 2 and 3, including the alias consolidation and
+gem-root containment that used to be written up here), #104 and #105. `docs/AUDIT.md`'s Progress
+table lists which findings those were; do not restart them from the audit's write-ups. Nothing
+still open misserves or crashes on a client-supplied URL - the two that did, the double-decode
+`F2-MW-1` (`e104e277`), and the two `internal/css` defects before them, are fixed.
 
-**Step 2 absorbs two items that used to stand alone here.** The alias-then-strip-prefixes-then-join
-sequence still exists in the two plugins (`bundler.go:136`, `bundless.go:160`; `resolve.go`'s
-copies went with `F-GORESOLVE-1`), and step 2 is the consolidation, so both land there as one
-function with one check. (1) Align how the two plugins treat an alias onto a non-gem path:
-`bundless.go` fails the build with `alias "@rubygems/gem2" maps to "/lib/foo.js", which is not an
-@rubygems path`, while `bundler.go`'s `resolveRubygemPath` calls `ResolveRubyGem` unconditionally
-and reports `could not resolve Ruby gem "lib"`, which blames the Gemfile; gate it on
-`GemFromSpecifier` the same way. (2) Contain the path to the gem root. `GemFromSpecifier` does
-this now (`8452092a`: the suffix is cleaned as a relative path, and one that escapes is an error
-naming the specifier and the gem), and `resolve.go` acts on it - but neither plugin does, for any
-`@rubygems/` import, aliased or not. `bundler.go`'s `resolveRubygemPath` (`:90`, `:136`) and
-`bundless.go`'s entry-point join (`:160`) never call `GemFromSpecifier`; they join the raw suffix
-onto the gem root, so `import "@rubygems/gem2/../../x.json"` in a bundled graph reads outside the
-gem. The alias branches (`bundler.go:221`, `bundless.go:131`) call it and discard the error. Not a
-new read capability - esbuild resolves a plain `../../x.json` from any dependency with no root
-check either - but the rule should hold everywhere it is spelled. Two `resolve.go` exits are in
-the same state: the absolute-path exit and the non-gem esbuild exit join the specifier onto the
-root with no under-a-root check (`/../../etc/x.css` joins outside it; the URL goes back as
-written), while the relative branch now refuses. One `UrlPathFromFsPath` check on each closes
-them; fold that in here. No fixture alias uses `..`. Also from that review: alias chains follow
-both hops at import time when bundling, but only the first when unbundled - the second happens
-on the browser's request, and needs the intermediate file to exist in the first gem.
-
-**The other direction, file path to URL path, is done.** `utils.UrlPathFromFsPath` is the only
+**File path to URL path is done.** `utils.UrlPathFromFsPath` is the only
 spelling: `resolve.go` and `plugin/css.go` since `8452092a`, and `dirname.go`, `bundler.go` and
 `bundless.go` since the Windows work on PR #79, which deleted `rootPathToUrlPath` and
 with it the missing boundary - root `/app` no longer claims `/app-other/x.css`.
