@@ -2,7 +2,6 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/css"
-	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
 	"strings"
@@ -17,19 +16,6 @@ var _ = Describe("Build(parseCss)", func() {
 	Describe("ParseCss", func() {
 		It("should pass through regular css", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
-		})
-
-		// The resolver recovers its own panic and css.ParseCss returns it as the error, leaving the
-		// failing mixin unexpanded, so a matcher that dropped the error would pass a pass-through
-		// expectation. The trigger: an empty config's zero Environment underflows
-		// Environment.String() when the resolver resolves a bare package mixin.
-		It("fails when the parse fails, even if the output matches", func() {
-			input := `a{@mixin m from url("pkg/mixin.css");}`
-			success, err := BeParsedTo(input, "/foo.css", &types.ConfigT{}).Match(input)
-
-			Expect(success).To(BeFalse())
-			Expect(err).To(MatchError(ContainSubstring("css.ParseCss failed")))
-			Expect(err).To(MatchError(ContainSubstring("panic:")))
 		})
 
 		It("refuses a nil config", func() {

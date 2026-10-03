@@ -39,6 +39,24 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 
+	t.Run("defaults a missing Environment to test", func(t *testing.T) {
+		cfg, err := types.NewConfig([]byte(`{}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.Environment != types.TestEnv {
+			t.Errorf("expected Environment %v, got %v", types.TestEnv, cfg.Environment)
+		}
+	})
+
+	t.Run("refuses an Environment outside 1-3", func(t *testing.T) {
+		for _, data := range []string{`{"Environment":0}`, `{"Environment":4}`} {
+			if _, err := types.NewConfig([]byte(data)); err == nil {
+				t.Errorf("expected an error for %s, got nil", data)
+			}
+		}
+	})
+
 	t.Run("returns the json error on invalid input", func(t *testing.T) {
 		_, err := types.NewConfig([]byte(`not json`))
 		if err == nil {
@@ -115,4 +133,16 @@ func TestShouldWrite(t *testing.T) {
 			t.Errorf("expected Write to parse as false, got %v", cfg.Write)
 		}
 	})
+}
+
+func TestEnvironmentString(t *testing.T) {
+	cases := map[types.Environment]string{
+		types.DevEnv: "development", types.TestEnv: "test", types.ProdEnv: "production",
+		0: "Environment(0)", 4: "Environment(4)",
+	}
+	for env, want := range cases {
+		if got := env.String(); got != want {
+			t.Errorf("Environment(%d).String() = %q, want %q", uint8(env), got, want)
+		}
+	}
 }

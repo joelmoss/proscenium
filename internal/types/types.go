@@ -1,6 +1,9 @@
 package types
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 const RubyGemsScope = "@rubygems/"
 
@@ -13,8 +16,19 @@ const (
 	ProdEnv
 )
 
+// An out-of-range value prints as Environment(N) rather than panicking: indexing a name table by
+// e-1 underflowed on the zero value, which a ConfigT built without an Environment carries.
 func (e Environment) String() string {
-	return [...]string{"development", "test", "production"}[e-1]
+	switch e {
+	case DevEnv:
+		return "development"
+	case TestEnv:
+		return "test"
+	case ProdEnv:
+		return "production"
+	}
+
+	return fmt.Sprintf("Environment(%d)", uint8(e))
 }
 
 // - RootPath - The working directory, usually Rails root.
@@ -84,10 +98,15 @@ func PluginDataOf(v any) PluginData {
 
 // Parses the given JSON into a fresh ConfigT. Every FFI call parses its own, so concurrent calls
 // share no config state.
+// A missing Environment means test, the same fallback Ruby uses for an environment it does not
+// recognise (builder.rb). One outside 1-3 is refused rather than built with an unknown name.
 func NewConfig(data []byte) (*ConfigT, error) {
-	cfg := &ConfigT{CodeSplitting: true, Bundle: true}
+	cfg := &ConfigT{CodeSplitting: true, Bundle: true, Environment: TestEnv}
 	if err := json.Unmarshal(data, cfg); err != nil {
 		return nil, err
+	}
+	if cfg.Environment < DevEnv || cfg.Environment > ProdEnv {
+		return nil, fmt.Errorf("config Environment must be 1, 2 or 3, got %d", uint8(cfg.Environment))
 	}
 
 	return cfg, nil
