@@ -3,11 +3,12 @@ package support
 import "strings"
 
 // Collapses each run of whitespace in `css` to one space, so expected and actual output compare
-// regardless of layout, but copies quoted strings and comments byte for byte: whitespace inside
-// `"x  y"` is part of the value, and collapsing it let a parser that corrupted a string's contents
-// pass. Comments are copied whole so an apostrophe in one does not open a string. CSS only: in
-// JavaScript a regex or template literal would throw the string tracking off, which is why
-// ContainCode keeps its plain collapse.
+// regardless of layout, but copies quoted strings, comments and escapes byte for byte: whitespace
+// inside `"x  y"` is part of the value, and collapsing it let a parser that corrupted a string's
+// contents pass. An escape keeps the one whitespace that ends a hex escape, so `.a\2E  b` (class
+// `a.`, then a descendant `b`) is not read as `.a\2E b` (class `a.b`). Only double quotes open a
+// string: the parser writes every string with them. CSS only: in JavaScript a regex or template
+// literal would throw the string tracking off, which is why ContainCode keeps its plain collapse.
 func normalizeCss(css string) string {
 	var b strings.Builder
 	space := false
@@ -26,7 +27,9 @@ func normalizeCss(css string) string {
 
 		end := i + 1
 		switch {
-		case c == '"' || c == '\'':
+		case c == '\\':
+			end = escapeEnd(css, i)
+		case c == '"':
 			for end < len(css) && css[end] != c {
 				if css[end] == '\\' {
 					end++
@@ -47,4 +50,25 @@ func normalizeCss(css string) string {
 	}
 
 	return b.String()
+}
+
+// The end of the escape starting with the backslash at `i`: up to six hex digits and the one
+// whitespace that terminates them, or else the single escaped character.
+func escapeEnd(css string, i int) int {
+	end := i + 1
+	for end < len(css) && end-i <= 6 && isHex(css[end]) {
+		end++
+	}
+	if end == i+1 {
+		return min(end+1, len(css))
+	}
+	if end < len(css) && (css[end] == ' ' || css[end] == '\t' || css[end] == '\n') {
+		end++
+	}
+
+	return end
+}
+
+func isHex(c byte) bool {
+	return c >= '0' && c <= '9' || c >= 'a' && c <= 'f' || c >= 'A' && c <= 'F'
 }

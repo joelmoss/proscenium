@@ -54,6 +54,12 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 // this a pass-through expectation also passed when a broken config resolved nothing. Returned as
 // an error, so it fails a negated assertion too.
 func (matcher *BeParsedToMatcher) checkWarnings(warnings []css.CssWarning) error {
+	for _, w := range matcher.Warnings {
+		if strings.TrimSpace(w) == "" {
+			return errors.New("BeParsedTo got an empty expected warning, which would match any warning")
+		}
+	}
+
 	texts := make([]string, len(warnings))
 	for i, w := range warnings {
 		texts[i] = w.Text

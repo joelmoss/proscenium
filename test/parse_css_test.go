@@ -43,6 +43,31 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).To(MatchError(ContainSubstring(`but the spec expected ["anything"]`)))
 		})
 
+		// Each actual is already in the parser's output form, so only normalizeCss decides whether
+		// it equals the expected. (The parser writes strings in double quotes and escapes in hex.)
+		DescribeTable("compares strings, comments and escapes byte for byte, and layout loosely",
+			func(actual string, expected string, equal bool) {
+				success, err := BeParsedTo(expected, "/foo.css", testConfig).Match(actual)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(success).To(Equal(equal))
+			},
+			Entry("escaped quote keeps the string open", `a{content:"x \"  y";}`, `a{content:"x \" y";}`, false),
+			Entry("comment", `/* a  b */ a{}`, `/* a b */ a{}`, false),
+			Entry("hex escape keeps its terminating space", `.a\2E  b{color:red;}`, `.a\2E b{color:red;}`, false),
+			Entry("hex escape and layout around it", `.a\2E  b  {color:red;}`, `.a\2E  b {color:red;}`, true),
+		)
+
+		It("fails on a warning whose text differs, and refuses an empty expected warning", func() {
+			input := "a{@mixin nope;display:block;}"
+
+			_, err := BeParsedTo(input, "/foo.css", testConfig, "something else").Match(input)
+			Expect(err).To(MatchError(ContainSubstring(`but the spec expected ["something else"]`)))
+
+			_, err = BeParsedTo(input, "/foo.css", testConfig, "").Match(input)
+			Expect(err).To(MatchError(ContainSubstring("empty expected warning")))
+		})
+
 		It("does not match different output", func() {
 			success, err := BeParsedTo("a{color:blue;}", "/foo.css", testConfig).Match("a{color:red;}")
 
