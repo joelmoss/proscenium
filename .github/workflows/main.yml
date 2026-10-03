@@ -50,7 +50,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
-      - run: go test ./test
+      - run: go test ./test ./internal/...
 
   ruby-test:
     strategy:

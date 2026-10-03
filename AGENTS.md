@@ -67,7 +67,7 @@ bin/test test/builder_test.rb:12 # line number of the test method definition
 
 ### Run Go tests
 ```bash
-go test ./test
+go test ./test ./internal/...
 ```
 
 ### Run the JavaScript tests (`bun test`, via the Proscenium harness)
@@ -114,6 +114,8 @@ golangci-lint run
 - Test helper sets `ENV['PROSCENIUM_TESTS'] = '1'`
 - Go tests use Ginkgo/Gomega and are in `test/`
 - Go test suite file: `test/proscenium_suite_test.go`
+- A white-box test that needs a package's unexported state lives beside it as a plain `testing`
+  test (`internal/css/parser_internal_test.go`, for a parser path no CSS input can reach)
 - Custom Go test matchers: `ContainCode`, `BeParsedTo(expected, path, cfg, warnings...)` (in `test/support/`); pass `BeParsedTo` the spec's `testConfig`, and every warning the parse must produce
 - Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Bundle`, `Unbundle`, `Production` for options
 - Go tests build a fresh per-spec `testConfig` in BeforeEach (with `InternalTesting: true`), not the old shared `types.Config` global
