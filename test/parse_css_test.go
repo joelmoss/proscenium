@@ -39,6 +39,14 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).To(MatchError(ContainSubstring("needs the spec's config")))
 		})
 
+		It("ignores layout but not whitespace inside a quoted string", func() {
+			Expect("a { content: \"x  y\"; }").To(BeParsedTo("a {\n\tcontent: \"x  y\";\n}", "/foo.css", testConfig))
+
+			success, err := BeParsedTo(`a{content:"x y";}`, "/foo.css", testConfig).Match(`a{content:"x  y";}`)
+			Expect(success).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("does not match different output", func() {
 			success, err := BeParsedTo("a{color:blue;}", "/foo.css", testConfig).Match("a{color:red;}")
 

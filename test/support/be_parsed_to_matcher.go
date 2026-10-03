@@ -8,7 +8,6 @@ import (
 
 	"strings"
 
-	"4d63.com/collapsewhitespace"
 	"github.com/MakeNowJust/heredoc"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/format"
@@ -42,16 +41,7 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 	}
 	matcher.Output = strings.TrimSpace(parsed)
 
-	// Strip all newlines and tabs from the output and expected strings. This ensures that we are
-	// comparing apples to apples.
-	output := strings.ReplaceAll(matcher.Output, "\n", " ")
-	output = strings.ReplaceAll(output, "\t", " ")
-	output = collapsewhitespace.String(output)
-	expected := strings.ReplaceAll(matcher.Expected.(string), "\n", " ")
-	expected = strings.ReplaceAll(expected, "\t", " ")
-	expected = collapsewhitespace.String(expected)
-
-	return output == expected, nil
+	return normalizeCss(matcher.Output) == normalizeCss(matcher.Expected.(string)), nil
 }
 
 func (matcher *BeParsedToMatcher) FailureMessage(actual interface{}) string {
