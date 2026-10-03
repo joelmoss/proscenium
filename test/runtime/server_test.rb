@@ -49,11 +49,11 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
 
     it 'resolves a file inside a bundled gem to its virtual path' do
-      gem_file = Proscenium.root.join('lib/proscenium/react-manager/react.js').to_s
+      gem_file = Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s
       reply = request('resolve', path: gem_file)
 
       assert reply[:ok]
-      assert_equal '/node_modules/@rubygems/proscenium/react-manager/react.js', reply[:urlPath]
+      assert_equal '/node_modules/@rubygems/proscenium/runtime/bun.js', reply[:urlPath]
     end
 
     it 'reports an unresolvable specifier as a protocol error' do
@@ -551,10 +551,10 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     # including ones outside the root, because that is where a gem or a link:ed package lives.
     it 'still resolves an absolute path outside the root' do
       reply = request('resolve',
-                      path: Proscenium.root.join('lib/proscenium/react-manager/react.js').to_s)
+                      path: Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s)
 
       assert reply[:ok]
-      assert_equal '/node_modules/@rubygems/proscenium/react-manager/react.js', reply[:urlPath]
+      assert_equal '/node_modules/@rubygems/proscenium/runtime/bun.js', reply[:urlPath]
     end
   end
 

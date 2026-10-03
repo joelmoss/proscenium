@@ -56,8 +56,8 @@ class Proscenium::ManifestTest < ActiveSupport::TestCase
     around do |test|
       @dir = Pathname.new(Dir.mktmpdir('manifest'))
       path = @dir.join('.manifest.json')
-      entry_point = Proscenium.root.join('lib/proscenium/react-manager/index.jsx').to_s
-      out_path = "#{Rails.root}/public/assets/react-manager/index-$ABC123$.js"
+      entry_point = Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s
+      out_path = "#{Rails.root}/public/assets/runtime/bun-$ABC123$.js"
       path.write({ outputs: { out_path => { entryPoint: entry_point } } }.to_json)
       orig = Proscenium.config.manifest_path
       Proscenium.config.manifest_path = path
@@ -71,8 +71,8 @@ class Proscenium::ManifestTest < ActiveSupport::TestCase
     it 'keys the entry point by its @rubygems path' do
       Proscenium::Manifest.load!
 
-      assert_equal ['/assets/react-manager/index-$ABC123$.js'],
-                   Proscenium::Manifest['@rubygems/proscenium/react-manager/index.jsx']
+      assert_equal ['/assets/runtime/bun-$ABC123$.js'],
+                   Proscenium::Manifest['@rubygems/proscenium/runtime/bun.js']
     end
   end
 end
