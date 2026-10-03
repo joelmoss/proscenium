@@ -60,32 +60,17 @@ func newTokenizer(input string) *tokenizer.Tokenizer {
 }
 
 // Whether `t` ends the stream. The tokenizer's own StopToken also counts a bad string, url or
-// escape - a newline inside a string or url() - and stopping on those silently dropped the rest
-// of the stylesheet. They are rendered like any other token instead, for esbuild, which already
-// recovers from them, to deal with.
+// escape, which the parser handles itself (see isBad) rather than letting it end a mixin stream
+// or a scan early.
 func endsStream(t tokenizer.TokenType) bool {
 	return t == tokenizer.TokenEOF || t == tokenizer.TokenError
 }
 
-// The token as CSS text. The tokenizer's own rendering of a bad token adds a newline - the real one
-// follows as a whitespace token, so every later line shifted by one - and a bad url whose value
-// ended in a quote came out as `url("ab\<LF>)`, the escaped newline continuing a string that
-// swallowed the rules after it. A bad url is written back unquoted with its closing paren, which
-// the tokenizer consumed, so the parens stay balanced; esbuild reads it as the same bad url.
-func render(t *tokenizer.Token) string {
-	switch t.Type {
-	case tokenizer.TokenBadString:
-		return `"` + badStringEscaper.Replace(t.Value)
-	case tokenizer.TokenBadURI:
-		return "url(" + t.Value + ")"
-	case tokenizer.TokenBadEscape:
-		return `\`
-	}
-
-	return t.Render()
+// A bad string, url or escape: a newline inside a string or url(), or after a backslash. Only
+// malformed CSS has one.
+func isBad(t tokenizer.TokenType) bool {
+	return t == tokenizer.TokenBadString || t == tokenizer.TokenBadURI || t == tokenizer.TokenBadEscape
 }
-
-var badStringEscaper = strings.NewReplacer(`\`, `\\`, `"`, `\"`)
 
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
@@ -159,7 +144,7 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
 	x.forEachToken(func(token *tokenizer.Token) bool {
-		original.WriteString(render(token))
+		original.WriteString(token.Render())
 
 		switch token.Type {
 		case tokenizer.TokenOpenBrace:
@@ -196,7 +181,7 @@ func (x *cssTokenizer) captureBlock(level int) string {
 			return false
 		}
 
-		content.WriteString(render(token))
+		content.WriteString(token.Render())
 		return true
 	})
 
