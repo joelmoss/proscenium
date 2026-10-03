@@ -214,7 +214,7 @@ IDs use `F2-` so they cannot be confused with the 2026-09-08 audit's `F-` IDs.
    Containment: `OutputDirUnderRoot` (compile.go:174-188) rejects `..` and absolute output dirs, so a
    relative `OutputDir` derived from a `paths['public']` OUTSIDE the root fails closed. Q-2 decided
    that layout is not supported, so failing closed is correct. The symlinked-`public` gap is separate
-   (#162, moved from TODOS "Judge output directory containment").
+   (#162, closed 2026-10-03 as not planned: only a `public` symlinked somewhere unrelated is harmed).
 7. Validation: existing manifest/chunks/importer tests and Go compile specs. Add one test with a
    non-default `output_dir` (e.g. `/static`) asserting build output, manifest and chunk serving
    agree — break the derivation to see it go red.

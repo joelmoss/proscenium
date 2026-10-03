@@ -602,7 +602,7 @@ Final acceptance: the Go CLI is packaged in each qualified Proscenium platform g
 ### Related
 
 - #82: existing registry refinement request; this plan replaces that feature.
-- #137: registry findings; preserve useful validation/identity/integrity coverage when removing the controller. Decide closure when the replacement lands.
+- #137: registry findings, closed 2026-10-03 as superseded by this plan; preserve useful validation/identity/integrity coverage when removing the controller.
 
 ## Research limits and remaining decisions
 
