@@ -139,12 +139,13 @@ seven hygiene deletions and seven bug leads, and re-checked the status of every 
 
 **`docs/AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it,
 and every correction implementation produced along the way. Read its preamble before starting
-anything: the 2026-10-01 "Final priorities and dependencies" was the queue (of its GitHub issues
-only #99 is still open), and the
+anything: the 2026-10-01 "Final priorities and dependencies" was the queue (its last GitHub
+issue, #99, is fixed on `fix/99-importer-resolved-key`), and the
 2026-09-08 "AUDIT-THE-AUDIT — pass 4" still adjudicates that audit's findings, rejecting three,
 demoting five and reversing one dependency chain. Do not copy any of that here - two copies drift.
 
-**Next:** #99 (`F-IMPORTER-1`/`-2`) is the one audit finding still open as a GitHub issue. On
+**Next:** none from the audit. #99 (`F-IMPORTER-1`/`-2`), the last audit finding open as a
+GitHub issue, is fixed on `fix/99-importer-resolved-key` and closes when it merges. On
 2026-10-03 the others still open were reviewed for real-world impact and closed as not planned:
 #92, #93, #97, #101, #102 (`F-GOUTILS-1` steps 2 and 3, including the alias consolidation and
 gem-root containment that used to be written up here), #104 and #105. `docs/AUDIT.md`'s Progress
