@@ -3,6 +3,7 @@ package proscenium_test
 import (
 	"encoding/json"
 	"joelmoss/proscenium/internal/types"
+	"strings"
 	"testing"
 )
 
@@ -50,10 +51,15 @@ func TestNewConfig(t *testing.T) {
 	})
 
 	t.Run("refuses an Environment outside 1-3", func(t *testing.T) {
-		for _, data := range []string{`{"Environment":0}`, `{"Environment":4}`} {
-			if _, err := types.NewConfig([]byte(data)); err == nil {
-				t.Errorf("expected an error for %s, got nil", data)
+		for data, want := range map[string]string{`{"Environment":0}`: "got 0", `{"Environment":4}`: "got 4"} {
+			_, err := types.NewConfig([]byte(data))
+			if err == nil || !strings.Contains(err.Error(), want) {
+				t.Errorf("expected an error containing %q for %s, got %v", want, data, err)
 			}
+		}
+
+		if cfg, err := types.NewConfig([]byte(`{"Environment":1}`)); err != nil || cfg.Environment != types.DevEnv {
+			t.Errorf("expected Environment 1 to be accepted as development, got %v, %v", cfg, err)
 		}
 	})
 
