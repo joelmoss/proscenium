@@ -43,8 +43,8 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).To(MatchError(ContainSubstring(`but the spec expected ["anything"]`)))
 		})
 
-		// Each actual is already in the parser's output form, so only normalizeCss decides whether
-		// it equals the expected. (The parser writes strings in double quotes and escapes in hex.)
+		// Each actual is already in the parser's output form (strings in double quotes, escapes in
+		// hex, one space of layout), so only normalizeCss decides whether it equals the expected.
 		DescribeTable("compares strings, comments and escapes byte for byte, and layout loosely",
 			func(actual string, expected string, equal bool) {
 				success, err := BeParsedTo(expected, "/foo.css", testConfig).Match(actual)
@@ -55,9 +55,10 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("escaped quote keeps the string open", `a{content:"x \"  y";}`, `a{content:"x \" y";}`, false),
 			Entry("comment", `/* a  b */ a{}`, `/* a b */ a{}`, false),
 			Entry("hex escape keeps its terminating space", `.a\2E  b{color:red;}`, `.a\2E b{color:red;}`, false),
-			Entry("hex escape ended by CRLF", `.a\2E b{color:red;}`, ".a\\2E\r\n b{color:red;}", false),
+			Entry("hex escape ended by CRLF", `.a\2E b{color:red;}`, ".a\\2E\r\nb{color:red;}", true),
+			Entry("hex escape ended by a tab", `.a\2E b{color:red;}`, ".a\\2E\tb{color:red;}", true),
 			Entry("hex escape ended by a form feed", `.a\2E b{color:red;}`, ".a\\2E\f b{color:red;}", false),
-			Entry("hex escape and layout around it", `.a\2E  b  {color:red;}`, `.a\2E  b {color:red;}`, true),
+			Entry("layout collapses after a hex escape's terminator", `.a\2E  b{color:red;}`, ".a\\2E \n\t b{color:red;}", true),
 		)
 
 		It("fails on a warning whose text differs, and refuses an empty expected warning", func() {
