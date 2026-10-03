@@ -55,14 +55,14 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
     end
 
     it 'resolves an absolute file system path inside a gem' do
-      path = Proscenium.root.join('lib/proscenium/react-manager/index.jsx').to_s
-      assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
+      path = Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s
+      assert_equal '/node_modules/@rubygems/proscenium/runtime/bun.js',
                    subject.resolve(path)
     end
 
     test 'proscenium runtime' do
-      assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx',
-                   subject.resolve('@rubygems/proscenium/react-manager/index.jsx')
+      assert_equal '/node_modules/@rubygems/proscenium/runtime/bun.js',
+                   subject.resolve('@rubygems/proscenium/runtime/bun.js')
     end
 
     # #95: the gem path was interpolated into a regex, so `+` left this path unmapped and an
@@ -141,11 +141,11 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
 
       test 'proscenium runtime' do
         manifest_path, non_manifest_path, abs_path =
-          subject.resolve('@rubygems/proscenium/react-manager/index.jsx', as_array: true)
+          subject.resolve('@rubygems/proscenium/runtime/bun.js', as_array: true)
 
         assert_nil manifest_path
-        assert_equal '/node_modules/@rubygems/proscenium/react-manager/index.jsx', non_manifest_path
-        assert_equal Proscenium.root.join('lib/proscenium/react-manager/index.jsx').to_s, abs_path
+        assert_equal '/node_modules/@rubygems/proscenium/runtime/bun.js', non_manifest_path
+        assert_equal Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s, abs_path
       end
 
       it 'resolves css module from file:* npm install' do
