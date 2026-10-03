@@ -865,8 +865,8 @@ treated as test, and so is served and precompiled unminified.
 - **Stack traces name your functions, not your source lines.** Output is only minified in
   production, so a failure points at a real function name and a real line of the built module.
   It is not mapped back to the original file: a source map is embedded in everything the harness
-  builds, but Bun does not apply one to a module a plugin loaded (measured on Bun 1.3.13). The map
-  costs nothing to carry, so it stays for when Bun does.
+  builds, but Bun does not apply one to a module a plugin loaded (measured on Bun 1.3.13 and
+  1.4.2). The map costs nothing to carry, so it stays for when Bun does.
 
 - **Node, Deno and Vitest are not supported yet.** They can reuse the same daemon; see `TODOS.md`.
 
