@@ -48,18 +48,30 @@ func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) 
 	}, nil
 }
 
-// CSS input preprocessing turns CR, CRLF and form feed into LF. The tokenizer does the first two
+// CSS input preprocessing turns CRLF, CR and form feed into LF. The tokenizer does the first two
 // and not the form feed, so a form feed ending a hex escape (`.a\2E\fb`, class `a.b`) was kept
-// after it and written back as `.a\2E \fb`: class `a.` and a descendant `b`.
+// after it and written back as `.a\2E \fb`: class `a.` and a descendant `b`. All three are done
+// here, CRLF first, so a CR then a form feed stays two newlines rather than becoming a CRLF the
+// tokenizer would fold into one.
+var newlines = strings.NewReplacer("\r\n", "\n", "\r", "\n", "\f", "\n")
+
 func newTokenizer(input string) *tokenizer.Tokenizer {
-	return tokenizer.NewTokenizer(strings.NewReader(strings.ReplaceAll(input, "\f", "\n")))
+	return tokenizer.NewTokenizer(strings.NewReader(newlines.Replace(input)))
+}
+
+// Whether `t` ends the stream. The tokenizer's own StopToken also counts a bad string, url or
+// escape - a newline inside a string or url() - and stopping on those silently dropped the rest
+// of the stylesheet. They are rendered like any other token instead, for esbuild, which already
+// recovers from them, to deal with.
+func endsStream(t tokenizer.TokenType) bool {
+	return t == tokenizer.TokenEOF || t == tokenizer.TokenError
 }
 
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
 
 	// An inserted mixin definition has run out, so pop back to the stream that included it.
-	if token.Type.StopToken() && len(x.tokenizers) > 1 {
+	if endsStream(token.Type) && len(x.tokenizers) > 1 {
 		x.tokenizers = x.tokenizers[:len(x.tokenizers)-1]
 		return x.next()
 	}
@@ -176,12 +188,13 @@ func (x *cssTokenizer) captureBlock(level int) string {
 //
 // Iteration always stops at the end of the input, so a caller that is waiting for a token which
 // never arrives - an unterminated mixin definition, say - terminates instead of spinning on the
-// end-of-input token, which the tokenizer returns forever once reached. Only the end of input stops
-// it: the error and "bad" tokens are passed to `iterFn` as content, as they always have been.
+// end-of-input token, which the tokenizer returns forever once reached. An error token is the
+// same - the tokenizer consumes nothing more once in error - so it stops too. The "bad" tokens are
+// passed to `iterFn` as content.
 func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 	for {
 		token := x.currentToken()
-		if token.Type == tokenizer.TokenEOF {
+		if endsStream(token.Type) {
 			break
 		}
 
