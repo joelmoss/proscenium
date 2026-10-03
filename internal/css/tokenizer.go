@@ -104,6 +104,8 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	// with no semicolon - ends there too and resolves while the mixin is still open to cycle
 	// detection. Popping first walked the declaration on into the stream that included the mixin,
 	// swallowing what followed, and let `@define-mixin m{@mixin m}` re-insert itself forever.
+	// `terminateBody` now gives such a declaration its semicolon when the mixin is defined, so this
+	// is the backstop for a body that reaches its end any other way.
 	if endsStream(token.Type) && len(x.tokenizers) > 1 {
 		x.exhausted = x.tokenizers[len(x.tokenizers)-1]
 		return &token
@@ -192,7 +194,19 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 		return "", ""
 	}
 
-	return mixinIdent, x.captureBlock(0)
+	return mixinIdent, terminateBody(x.captureBlock(0))
+}
+
+// A block's last declaration may go without a semicolon, but an inserted mixin body is followed by
+// whatever came after its `@mixin`, so `@define-mixin m{color:red}a{@mixin m;color:blue}` became
+// `a{color:redcolor:blue}`. The body gets the semicolon it left out.
+func terminateBody(body string) string {
+	end := len(strings.TrimRight(body, " \t\r\n\f"))
+	if end == 0 || body[end-1] == ';' || body[end-1] == '}' {
+		return body
+	}
+
+	return body[:end] + ";" + body[end:]
 }
 
 // Capture all output between the nest opening brace, until the closing brace at the given level.
