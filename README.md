@@ -707,6 +707,8 @@ p {
 }
 ```
 
+A mixin must be defined at the root of a file. A `@define-mixin` inside a rule or an at-rule block such as `@media`, or inside another mixin, does not define anything: it is passed through as written, with a warning.
+
 CSS modules and Mixins works perfectly together. You can include a mixin in a CSS module.
 
 ### CSS Caveats
@@ -953,7 +955,7 @@ bin/test
 To run the Go tests:
 
 ```bash
-go test ./test
+go test ./test ./internal/...
 ```
 
 ### Running Go benchmarks
