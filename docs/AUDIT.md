@@ -507,7 +507,7 @@ From the independent duplication pass (Sonnet), each checked by the coordinator 
 
 | Files | Items | Ruling |
 |---|---|---|
-| manifest.rb `load!`, resolver.rb:24-34 | F-BOOT-1, F-BOOT-2, (BL-3 guard) | F-BOOT-1 -> F-BOOT-2. A BL-3 lock lands with F-BOOT-2. The ADOPTED F2-BOOT-1 does not touch these files. |
+| manifest.rb `load!`, resolver.rb:24-34 | F-BOOT-1, F-BOOT-2, (BL-3 guard) | F-BOOT-1 -> F-BOOT-2, both done (#95, #96). F-BOOT-2 landed without a BL-3 lock; BL-3 stays open and unreproduced, and its guard still belongs in `Resolver`. The ADOPTED F2-BOOT-1 does not touch these files. |
 | test_helper.rb | H-4 (:10, :18-20), F-TEST-1 (:22-26) | H-4 first, or same diff (adjacent hunks). |
 | config snapshot | F-TEST-1, F2-BOOT-1 | Moot for the adopted F2-BOOT-1 (`output_path`/`manifest_path` stay config keys). |
 | types.go | H-1 (:69-99), F-CONTRACT-2 (`NewConfig` :104-112) | H-1 first or same diff. |
