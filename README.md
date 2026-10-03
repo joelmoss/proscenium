@@ -720,18 +720,25 @@ There are a few important caveats as far as Typescript is concerned. These are [
 
 ## JSX
 
-Using JSX syntax usually requires you to manually import the JSX library you are using. For example, if you are using React, by default you will need to import React into each JSX file like this:
+JSX needs no imports. Proscenium uses esbuild's automatic JSX runtime, which imports what each JSX file needs for you, from React's runtime (`react/jsx-runtime`) by default.
 
-```javascript
-import * as React from "react";
-render(<div />);
+To use another JSX library, such as Preact, set `jsxImportSource` in a `tsconfig.json` or `jsconfig.json`. It applies to every file in that directory and below:
+
+```json
+{
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
+  }
+}
 ```
 
-This is because the JSX transform turns JSX syntax into a call to `React.createElement` but it does not itself import anything, so the React variable is not automatically present.
+Or set it for one file with a comment at the top:
 
-Proscenium generates these import statements for you. Keep in mind that this also completely changes how the JSX transform works, so it may break your code if you are using a JSX library that is not React.
-
-In the [not too distant] future, you will be able to configure Proscenium to use a different JSX library, or to disable this auto-import completely.
+```jsx
+/** @jsxImportSource preact */
+export default () => <div>Hello</div>;
+```
 
 ## JSON
 
