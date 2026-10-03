@@ -21,6 +21,7 @@ type BeParsedToMatcher struct {
 	Output   string
 	Config   *types.ConfigT
 	Expected interface{}
+	Warnings []string
 }
 
 // No recover here: Ginkgo already reports a panic in a matcher as that one spec [PANICKED], with
@@ -35,13 +36,38 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	parsed, _, err := css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
+	parsed, warnings, err := css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
 	if err != nil {
 		return false, fmt.Errorf("css.ParseCss failed for %s: %w", matcher.Path, err)
+	}
+	if err := matcher.checkWarnings(warnings); err != nil {
+		return false, err
 	}
 	matcher.Output = strings.TrimSpace(parsed)
 
 	return normalizeCss(matcher.Output) == normalizeCss(matcher.Expected.(string)), nil
+}
+
+// Each expected warning must be contained in the warning at the same position, and there must be
+// no others. An unresolved mixin is left in the output and reported only as a warning, so without
+// this a pass-through expectation also passed when a broken config resolved nothing. Returned as
+// an error, so it fails a negated assertion too.
+func (matcher *BeParsedToMatcher) checkWarnings(warnings []css.CssWarning) error {
+	texts := make([]string, len(warnings))
+	for i, w := range warnings {
+		texts[i] = w.Text
+	}
+
+	ok := len(texts) == len(matcher.Warnings)
+	for i := 0; ok && i < len(texts); i++ {
+		ok = strings.Contains(texts[i], matcher.Warnings[i])
+	}
+	if ok {
+		return nil
+	}
+
+	return fmt.Errorf("css.ParseCss warned %q for %s, but the spec expected %q",
+		texts, matcher.Path, matcher.Warnings)
 }
 
 func (matcher *BeParsedToMatcher) FailureMessage(actual interface{}) string {
@@ -68,11 +94,13 @@ func (matcher *BeParsedToMatcher) message(isNegated bool) string {
 		format.IndentString(matcher.Output, 2))
 }
 
-// Parses with the spec's own config, so per-spec changes such as an added gem apply.
-func BeParsedTo(expected interface{}, path string, cfg *types.ConfigT) gomegaTypes.GomegaMatcher {
+// Parses with the spec's own config, so per-spec changes such as an added gem apply. `warnings` are
+// the warnings the parse must produce, in order, each matched as a substring; none means none.
+func BeParsedTo(expected interface{}, path string, cfg *types.ConfigT, warnings ...string) gomegaTypes.GomegaMatcher {
 	return &BeParsedToMatcher{
 		Path:     path,
 		Config:   cfg,
 		Expected: expected,
+		Warnings: warnings,
 	}
 }
