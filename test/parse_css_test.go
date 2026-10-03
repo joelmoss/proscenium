@@ -15,7 +15,16 @@ import (
 var _ = Describe("Build(parseCss)", func() {
 	Describe("ParseCss", func() {
 		It("should pass through regular css", func() {
-			Expect("body{}").To(BeParsedTo("body{}", "/foo.css"))
+			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
+		})
+
+		// The matcher's recover guards everything Match does, the parse included, so a panic fails
+		// this one assertion instead of aborting the suite. A non-string actual panics inside Match.
+		It("fails the assertion, not the run, when the matcher panics", func() {
+			success, err := BeParsedTo("body{}", "/foo.css", testConfig).Match(42)
+
+			Expect(success).To(BeFalse())
+			Expect(err).To(MatchError(ContainSubstring("panicked")))
 		})
 
 		Describe("mixins", func() {
@@ -29,7 +38,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin foo;
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 
 				It("undefined local mixin generates a warning", func() {
@@ -68,7 +77,7 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin foo;
 							}
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 
 				It("mixin is replaced with defined mixin", func() {
@@ -87,7 +96,7 @@ var _ = Describe("Build(parseCss)", func() {
 							div { color: pink; }
 							color: blue;
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 
 				It("dependencies are fully parsed", func() {
@@ -107,7 +116,7 @@ var _ = Describe("Build(parseCss)", func() {
 							appearance: none;
 							font-size: 20px;
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 			})
 
@@ -237,7 +246,7 @@ var _ = Describe("Build(parseCss)", func() {
 							color: red;
 							font-size: 50px;
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 
 				When("mixin file is not found", func() {
@@ -250,7 +259,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin red from url("/unknown.css");
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 					})
 
 					It("should generate a warning", func() {
@@ -281,7 +290,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin unknown from url("/lib/mixins/colors.css");
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 					})
 
 					It("should generate a warning", func() {
@@ -312,7 +321,7 @@ var _ = Describe("Build(parseCss)", func() {
 							header {
 								@mixin purple from url("/lib/mixins/colors.css");
 							}
-						`, "/foo.css"))
+						`, "/foo.css", testConfig))
 					})
 				})
 
@@ -329,7 +338,7 @@ var _ = Describe("Build(parseCss)", func() {
 									color: pink;
 								}
 							}
-						`, "/foo.css"))
+						`, "/foo.css", testConfig))
 					})
 				})
 
@@ -343,7 +352,7 @@ var _ = Describe("Build(parseCss)", func() {
 							color: red;
 							font-size: 50px;
 						}
-					`, "/foo.css"))
+					`, "/foo.css", testConfig))
 				})
 			})
 
@@ -407,17 +416,17 @@ var _ = Describe("Build(parseCss)", func() {
 			Describe("the token after a mixin declaration", func() {
 				It("keeps a declaration that follows on the same line", func() {
 					Expect("@define-mixin m{color:red;}a{@mixin m;display:block;}").To(
-						BeParsedTo("a{color:red;display:block;}", "/foo.css"))
+						BeParsedTo("a{color:red;display:block;}", "/foo.css", testConfig))
 				})
 
 				It("keeps the closing brace when the mixin is the last thing in the rule", func() {
 					Expect("@define-mixin m{color:red;}a{@mixin m;}").To(
-						BeParsedTo("a{color:red;}", "/foo.css"))
+						BeParsedTo("a{color:red;}", "/foo.css", testConfig))
 				})
 
 				It("keeps the token after an unresolved mixin, and emits it once", func() {
 					Expect("a{@mixin nope;display:block;}").To(
-						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css"))
+						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css", testConfig))
 				})
 			})
 

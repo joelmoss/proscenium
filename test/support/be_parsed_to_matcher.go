@@ -4,10 +4,7 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
-	"joelmoss/proscenium/internal/utils"
 
-	"path/filepath"
-	"runtime"
 	"strings"
 
 	"4d63.com/collapsewhitespace"
@@ -22,39 +19,24 @@ type BeParsedToMatcher struct {
 	Path     string
 	Input    string
 	Output   string
-	Warnings []css.CssWarning
+	Config   *types.ConfigT
 	Expected interface{}
 }
 
-// test/support is its own package, so it can't reach proscenium_test's package-scoped
-// testConfig - build a self-contained config matching the same fixture root instead.
-func matcherConfig() *types.ConfigT {
-	_, filename, _, _ := runtime.Caller(0)
-	return &types.ConfigT{
-		RootPath:        utils.JoinFsPath(filepath.ToSlash(filepath.Dir(filename)), "..", "..", "fixtures", "dummy"),
-		OutputDir:       "public/assets",
-		Environment:     types.TestEnv,
-		InternalTesting: true,
-		CodeSplitting:   true,
-		Bundle:          true,
-	}
-}
-
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
+	// Set up before the parse, so a panic inside it fails this assertion rather than the run.
+	defer func() {
+		if r := recover(); r != nil {
+			success = false
+			matchErr = fmt.Errorf("css.ParseCss panicked: %v", r)
+		}
+	}()
+
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, matcher.Warnings, _ = css.ParseCss(matcher.Input, matcher.Path, matcherConfig())
+	matcher.Output, _, _ = css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
 	matcher.Output = strings.TrimSpace(matcher.Output)
-
-	defer func() {
-		if r := recover(); r != nil {
-			if _, ok := r.(runtime.Error); ok {
-				success = false
-				matchErr = nil
-			}
-		}
-	}()
 
 	// Strip all newlines and tabs from the output and expected strings. This ensures that we are
 	// comparing apples to apples.
@@ -92,9 +74,11 @@ func (matcher *BeParsedToMatcher) message(isNegated bool) string {
 		format.IndentString(matcher.Output, 2))
 }
 
-func BeParsedTo(expected interface{}, path string) gomegaTypes.GomegaMatcher {
+// Parses with the spec's own config, so per-spec changes such as an added gem apply.
+func BeParsedTo(expected interface{}, path string, cfg *types.ConfigT) gomegaTypes.GomegaMatcher {
 	return &BeParsedToMatcher{
 		Path:     path,
+		Config:   cfg,
 		Expected: expected,
 	}
 }
