@@ -4,11 +4,50 @@ Research date: 3 October 2026. Repository baseline: `joelmoss/proscenium` at `b3
 
 Status: researched design specification with a confirmed asset-serving boundary and an unproven dependency-bridge representation. Proscenium MUST serve frontend files from the installed Ruby gem using its existing functionality. This document specifies proposed package-manager behavior; neither the dependency-only bridge nor the full conformance suite has been implemented. MUST, SHOULD, and MAY describe requirements. Repository observations, documentation findings, local experiments, and proposed decisions are identified separately.
 
+Tracking issue: [#154](https://github.com/joelmoss/proscenium/issues/154). This document is the only copy of the plan. The issue tracks stage status and records maintainer sign-off; it does not restate the plan.
+
+Revised 3 October 2026 after a scope review: v1 supports npm, pnpm and Bun only (Yarn is out); the premise that the registry is unused is corrected; real consumers and their gems are named as acceptance cases. See [Known consumers and real-gem findings](#known-consumers-and-real-gem-findings).
+
+## Motivation
+
+**Gem-first installation.** Adding a gem with frontend code and a package.json should make its JS dependencies installable through one coordinated command. Authors keep declarations with their code; apps need not duplicate each gem's dependency list or publish its assets to npm. Gems without a manifest retain existing serving and app-provided dependencies.
+
+**One version pin, not two.** Today an app that uses a gem's JS pins the gem twice: once in Gemfile.lock and again in package.json (a `github:` URL or a registry version). The two pins have drifted in practice (hue, below). The bridge makes Gemfile.lock the only pin for the gem; package.json pins only ordinary JS packages.
+
+**Native compatibility.** The original workspace proposal aimed to avoid emulating Bundler and the JS resolvers. Preserve native manifests, locks, monorepos and dependency/peer/optional/platform/script behavior. Separate gem contexts prevent dependency flattening; native root-lock integration avoids a second shadow graph.
+
+**Existing asset serving.** Proscenium already serves installed-gem files. Only dependency installation and lookup need extending. Copying would add another source location and synchronization state. Preserve @rubygems imports, relative paths and stable URLs; generated contexts contain metadata only.
+
+**Registry-free installs.** Installs must work with Rails stopped, without scoped-registry setup or a hosted registry service. This removes the current fixture's running-app installation dependency while retaining the distinct RubyGems serving middleware.
+
+**Speed and polished DX.** Go is the settled CLI language for low overhead; performance still requires measurement. Prebuilt binaries in the existing gem support users who add the gem first, without another CLI install or Go compiler. Automatic detection, idempotent setup and bin/proscenium install keep daily use familiar.
+
+**Evidence before commitment.** Stage A must prove original-source lookup, portable locks, native peer policy and shared React identity for each v1 manager before a representation is adopted. Failed adapters remain unqualified; copied assets, registry shims and silent graph changes are excluded fallbacks.
+
+## Known consumers and real-gem findings
+
+Checked 3 October 2026 against the maintainer's own apps. No consumer outside these apps is known; outside gem authors are the intended audience, which makes the gem author contract and guide v1 deliverables rather than follow-ups.
+
+| App | Manager | Gem JS dependency today | Problem |
+|---|---|---|---|
+| codaset | Bun (`bun.lock`) | `@rubygems/proscenium-ui ^0.2.1` from the hosted registry `registry.proscenium.rocks`, set as the `@rubygems` scope registry in `.npmrc` | Depends on a network service. That service is not this repository's engine registry controller (its tarball URLs are `/tarballs/<gem>/<version>.tgz`, not `/registry/@rubygems/:gem/-/:file`). The maintainer runs it and retires it once this feature lands; there is no external deadline. |
+| platform | pnpm | `@rubygems/hue` as `github:harleytherapy/hue#<sha>` | Second pin of the same gem; has drifted from Gemfile.lock in practice. |
+| london | pnpm | `@rubygems/hue` as `github:harleytherapy/hue#<sha>` | Same double pin. Its `.npmrc` keeps the in-app registry (`registry.proscenium.test:3001`) commented out: that route was tried and abandoned. |
+
+So the premise "the registry is unused" holds for the engine's `RegistryController` only. The hosted registry is in use by codaset, and replacing it is part of this feature's acceptance, not a fixture cleanup.
+
+Findings from the real gems, which Stage A uses as fixtures alongside the synthetic ones:
+
+- **Both gems are Git sources** (`remote: https://github.com/...` in each app's Gemfile.lock). Bundler installs a Git gem as a full checkout, so package.json is on disk even though hue's `spec.files` (`{app,config,db,exe,lib,bin}/**/*` plus three files) does not include it. The same hue release built as a `.gem` would ship without its manifest and could not participate. Discovery must work for Git checkouts, and `proscenium gem check` must catch the missing-from-`spec.files` case before a gem is released to rubygems.org.
+- **Manifest versions are unreliable.** hue's current package.json has no `version` at all; older installed checkouts say `0.2.3` while the gem is `0.5.3`. proscenium-ui's package.json says `0.2.0` while `Proscenium::UI::VERSION` is `0.2.1`, and codaset's lock resolves `0.2.1`, so the hosted registry already ignores the manifest version. The rule below that a missing or invalid manifest version is a participation error would reject hue outright. This is open decision D1 in [Research limits and remaining decisions](#research-limits-and-remaining-decisions).
+- **hue declares `react` and `react-dom` as `dependencies`, not `peerDependencies`.** In a separate dependency context that can give hue its own React copy, a second React instance next to the app's. This is the C12/C13 risk in a real gem rather than a synthetic one. Stage A must show what each manager does with it; the likely outcome is an author-contract diagnostic ("declare React as a peer"), not bridge magic.
+- **Both gems use `github:` dependencies** (`sourdough-toast`). Git URL dependencies inside a gem manifest are a v1 case (C10), not an edge case.
+
 ## Decision and product contract
 
-Implement the Proscenium package-manager CLI in Go for fast startup, bounded parallel metadata work, and low orchestration overhead. Package it with the existing Proscenium gem. Native Bundler continues to own Ruby resolution/installation, including gem frontend files. npm, pnpm, Yarn, or Bun owns JS dependency resolution, installation, lifecycle policy, and native locks. The Go CLI discovers dependency declarations using authoritative Bundler metadata and associates each participating gem with a native JS dependency context; it does not reimplement either ecosystem's solver.
+Implement the Proscenium package-manager CLI in Go for fast startup, bounded parallel metadata work, and low orchestration overhead. Package it with the existing Proscenium gem. Native Bundler continues to own Ruby resolution/installation, including gem frontend files. npm, pnpm, or Bun owns JS dependency resolution, installation, lifecycle policy, and native locks. Yarn is not supported in v1. The Go CLI discovers dependency declarations using authoritative Bundler metadata and associates each participating gem with a native JS dependency context; it does not reimplement either ecosystem's solver.
 
-Frontend assets MUST remain in the directory where Bundler installed the gem. Proscenium MUST rely on its current gem asset-serving functionality; it MUST NOT copy, relocate, extract, or mirror frontend asset trees to make this package-manager feature work. The candidate bridge uses project-local, dependency-only workspace manifests. These are generated installation metadata, not copies of the gem's frontend package. This representation requires feasibility testing across all four managers. The feature replaces the unused registry directly and requires no Rails registry server, special scoped registry setup, or npm publication of gem assets.
+Frontend assets MUST remain in the directory where Bundler installed the gem. Proscenium MUST rely on its current gem asset-serving functionality; it MUST NOT copy, relocate, extract, or mirror frontend asset trees to make this package-manager feature work. The candidate bridge uses project-local, dependency-only workspace manifests. These are generated installation metadata, not copies of the gem's frontend package. This representation requires feasibility testing across all three v1 managers. The feature replaces both the unused engine registry controller and the hosted registry codaset uses today, and requires no Rails registry server, hosted registry, special scoped registry setup, or npm publication of gem assets.
 
 Preserving `Gemfile`, gemspec, and `package.json` means preserving native formats, authority, and editing workflow. Routine installs MUST leave user manifests unchanged. First non-frozen installation may perform one-time, idempotent bridge registration and add an owned project launcher, with exact edits reported; later installs do not repeat those manifest edits. Preserve all unrelated declarations, scripts, overrides, workspace patterns, and lock semantics. Existing Proscenium gem imports remain the asset API; dependency contexts do not expose ordinary native gem packages.
 
@@ -16,7 +55,7 @@ This qualification is essential: a fully transparent workspace that makes no roo
 
 The user-facing workflow is Gemfile-first: add Proscenium normally, run bundle install, then bundle exec proscenium install once. First installation handles bridge registration and creates the project launcher. Thereafter use bin/proscenium install to coordinate Ruby and JS dependencies, including after Gemfile changes. Defaults use existing native manager signals and require no separate CLI installation or hand-written settings. Normal native commands remain supported. Rails boot and asset requests never install dependencies or contact registries.
 
-Primary users are Rails developers consuming gems with frontend dependencies, gem authors shipping frontend components, and deployment systems installing the same application on different hosts. Success means a fresh checkout installs JavaScript dependencies and serves the gem's JS/CSS directly from its installed location without a running Rails server or registry shim, using committed native lockfiles.
+Primary users are Rails developers consuming gems with frontend dependencies, gem authors shipping frontend components, and deployment systems installing the same application on different hosts. Success means a fresh checkout installs JavaScript dependencies and serves the gem's JS/CSS directly from its installed location without a running Rails server or registry shim, using committed native lockfiles. Concretely: codaset, platform and london each install from a fresh checkout with no hosted registry and no `github:` pin for a gem, and each gem's version is pinned only in Gemfile.lock.
 
 ## Verified repository architecture
 
@@ -56,10 +95,10 @@ The evidence above was read from a fresh clone, not inferred from the README alo
 | Root hoisting supplies every gem's dependencies. | Local pnpm and Bun probes falsify universal root-import availability. | Associate each gem with its own native installation context; preserve distinct dependency graphs. |
 | Direct workspace registration at the installed gem root is universally portable. | External roots, absolute lock paths, read-only gems, and native writes remain unproven. | Prototype only if installed gems remain unchanged and committed inputs remain portable. |
 | Native delegation gives identical behavior across managers. | Linkers, peer policy, scripts, and lock formats differ. | Match each manager against its own baseline, never require equal trees. |
-| Yarn workspaces guarantee current Go resolver compatibility. | PnP and other linkers require separate loader integration. | Qualify node-modules first; fail clearly on unqualified linkers. |
+| Yarn workspaces guarantee current Go resolver compatibility. | PnP and other linkers require separate loader integration. | Superseded: Yarn is out of v1 entirely (no known user); a Yarn project gets an unsupported error before any write. |
 | Keeping source in the gem guarantees one React instance. | Source location alone does not establish peer placement or shared module identity. | Test app/gem React identity and native peer diagnostics explicitly. |
 
-Maintainer requirements: the registry feature is unused and is replaced directly. Frontend files are served from the installed Ruby gem through existing Proscenium functionality. A gem with a valid package manifest participates in automatic JavaScript dependency installation; a gem without a manifest retains current asset serving and app-level dependency lookup.
+Maintainer requirements: the engine registry controller is unused and is replaced directly; the hosted registry codaset uses is retired once this feature lands (see [Known consumers](#known-consumers-and-real-gem-findings)). v1 supports npm, pnpm and Bun. Frontend files are served from the installed Ruby gem through existing Proscenium functionality. A gem with a valid package manifest participates in automatic JavaScript dependency installation; a gem without a manifest retains current asset serving and app-level dependency lookup.
 
 The available referenced chat included the workspace proposal, its five prototype questions, and the final brief. The thread tool exposed five turns and no older cursor, so no unseen earlier decisions are treated as established requirements.
 
@@ -80,19 +119,18 @@ These earlier probes establish a narrow full-package workspace mechanism and fal
 
 ## Scope and compatibility policy
 
-V1 includes orchestration, gem discovery, one dependency manifest per participating gem, dependency-only metadata projection, candidate workspace registration, native locking, descriptor provenance, dependency lookup integration, inspection, adoption, and reproducible CI installation. Existing gem asset serving is reused for gems with and without manifests. The four managers are independent adapters with independent qualification status.
+V1 includes orchestration, gem discovery, one dependency manifest per participating gem, dependency-only metadata projection, candidate workspace registration, native locking, descriptor provenance, dependency lookup integration, inspection, adoption, reproducible CI installation, `proscenium gem check`, and a gem author guide. Existing gem asset serving is reused for gems with and without manifests. The three managers (npm, pnpm, Bun) are independent adapters with independent qualification status.
 
-V1 excludes copying or mirroring gem frontend files, turning gems into complete native JavaScript packages, a new Ruby resolver, a new JS resolver, registry proxying, cross-manager lockfile conversion, package publishing, downloading runtimes without explicit project policy, implicit gem frontend builds, automatic PnP support, and multiple dependency manifests inside one gem. It does not expand the current asset engine's platform support.
+V1 excludes copying or mirroring gem frontend files, turning gems into complete native JavaScript packages, a new Ruby resolver, a new JS resolver, registry proxying, cross-manager lockfile conversion, package publishing, downloading runtimes without explicit project policy, implicit gem frontend builds, Yarn in every version and linker mode (including Plug'n'Play), and multiple dependency manifests inside one gem. It does not expand the current asset engine's platform support.
 
 | Family | Proposed qualification target | Shipping rule |
 |---|---|---|
 | Bundler | Repo's supported Ruby 3.4 baseline and Ruby 4.0; Bundler version selected by project tooling/lock contract | Test frozen config and group/platform discovery on each qualified version. Do not silently upgrade it. |
 | npm | Exact 11.12.1 baseline, then a pinned 12.x candidate | Publish exact tested ranges; do not infer 12.x support from 11.x. |
 | pnpm | Repo pin 10.4.0, local probe 10.34.4, pinned 12.7.0 candidate | Maintain YAML support for 10.x and test changed 12.x script/config behavior separately. |
-| Yarn | Modern 3.6.0 baseline, then pinned 4.x candidate, node-modules linker | Yarn Classic and PnP are evaluated separately; reject unqualified modes before writes. |
 | Bun | Repo's test runtime 1.3.13 and installer probe 1.4.2 | Qualify hoisted and isolated installs independently. Preserve existing lock configuration. |
 
-These are targets, not promises of already verified compatibility. Exact supported versions belong in a machine-readable adapter capability table committed with release tests. Unsupported versions produce an actionable error, with an explicitly labeled experimental override for development only. Experimental overrides MUST be rejected by `--frozen` CI until qualified.
+These are targets, not promises of already verified compatibility. Exact supported versions belong in a machine-readable adapter capability table committed with release tests. Unsupported versions produce an actionable error, with an explicitly labeled experimental override for development only. Experimental overrides MUST be rejected by `--frozen` CI until qualified. Yarn has no adapter and no experimental override: a project selecting Yarn (packageManager field, yarn.lock or .yarnrc.yml) gets an unsupported-manager error (exit 3) before any write. Adding Yarn later is a new adapter with its own Stage A evidence, not a flag.
 
 Manager selection: use an explicit override when supplied; otherwise the root packageManager field; otherwise exactly one recognized native lockfile. Infer this without a setup prompt when unambiguous. Conflicting signals or multiple lockfiles produce an actionable error. A project with no manager signal must make one explicit choice; interactive setup may offer it, while CI requires an explicit selection. Persist ordinary manager/version selection in native configuration where applicable instead of duplicating it in Proscenium settings. Account for npm shrinkwrap precedence and preserve Corepack/mise/Volta policy; never choose a different manager merely because it is installed.
 
@@ -115,7 +153,7 @@ stay in gem root             |
           |         root native workspace registration
           |         + app package.json
           |                  |
-          |          npm / pnpm / Yarn / Bun
+          |            npm / pnpm / Bun
           |                  |
           |          native JS lock + dependency layout
           |                  |
@@ -132,7 +170,7 @@ No package.json: existing asset serving + app dependency context.
 | Installed gem frontend files and package.json | Bundler/gem author | Read in place; no Proscenium copies or writes |
 | Root package.json and existing workspace manifests | User and native manager | Commit; bridge edits limited to owned initialization entries and explicit add/remove commands |
 | pnpm-workspace.yaml / native manager config | User and native manager | Commit candidate bridge registration; preserve unrelated policy |
-| Native npm/pnpm/Yarn/Bun lockfile | Selected native manager | Commit; no implicit format conversion |
+| Native npm/pnpm/Bun lockfile | Selected native manager | Commit; no implicit format conversion |
 | proscenium.json | Optional advanced bridge settings | Absent with defaults; commit explicit overrides only; no dependency declarations |
 | proscenium.bridge.json | Candidate generated descriptor receipt | Retain only if feasibility proves a need; if required, commit it without hand editing; no frontend inventory or JS transitive graph |
 | .proscenium/packages/<gem>/package.json | Candidate dependency-only workspace metadata | Ignore; regenerate before native frozen installation; no frontend asset files |
@@ -188,9 +226,9 @@ Discovery reads a root `package.json` from each gem in the configured locked uni
 
 A valid manifest contributes declared runtime, optional, and peer dependencies to the native JS installation step. A gem without a manifest generates no dependency workspace, contributes no automatic JS dependency declarations, and retains existing Proscenium asset serving and app dependency lookup. Self-contained frontend files work without a manifest. External imports must be supplied by the app's own package.json. Do not synthesize an empty package for such gems. A present but invalid or unreadable manifest is an actionable installation error.
 
-Authors include frontend files and any dependency manifest in the built gem's `spec.files`. Bundler installs them together; Proscenium serves the files in place. A manifest present only in the source checkout but missing from the built gem cannot drive automatic consumer installation. `proscenium gem check` checks built archives and source layout without unpacking frontend assets into a bridge or executing author builds.
+Authors include frontend files and any dependency manifest in the built gem's `spec.files`. Bundler installs them together; Proscenium serves the files in place. A manifest present only in the source checkout but missing from the built gem cannot drive automatic consumer installation. Git-source gems are the exception: Bundler installs them as full checkouts, so their manifest is on disk whatever `spec.files` says. Discovery reads the installed root in both cases, and `gem check` warns when a manifest would be lost from the built gem. `proscenium gem check` checks built archives and source layout without unpacking frontend assets into a bridge or executing author builds.
 
-The candidate native dependency-context name is `@rubygems/<gem-name>` and must be valid under the selected manager. This is an internal graph identity, not a promise of an importable gem package for native JS tools. Explicit name overrides are recorded and validated against collisions. The candidate context uses valid JS semver from the source manifest, independently of Ruby version syntax; do not translate arbitrary Ruby prerelease versions automatically. Missing or invalid identity/version receives a concrete participation error until an alternative private-context identity rule is qualified.
+The candidate native dependency-context name is `@rubygems/<gem-name>` and must be valid under the selected manager. This is an internal graph identity, not a promise of an importable gem package for native JS tools. Explicit name overrides are recorded and validated against collisions. The candidate context uses valid JS semver from the source manifest, independently of Ruby version syntax; do not translate arbitrary Ruby prerelease versions automatically. Missing or invalid identity/version receives a concrete participation error until an alternative private-context identity rule is qualified. This version rule is under review as decision D1, because both real gems break it (see [Known consumers](#known-consumers-and-real-gem-findings)).
 
 The proposed `dependency-context-v1` projection generates installation metadata only: context identity/version, `private: true`, runtime `dependencies`, `peerDependencies`, `peerDependenciesMeta`, `optionalDependencies`, and qualified engine/OS/CPU/libc constraints. Exclude gem-author devDependencies, lifecycle/task scripts, nested workspaces, and nested packageManager selection. Do not expose main/module/browser, exports/imports, types, bin, sideEffects, or files as pointers to nonexistent workspace assets. The original package.json stays in the gem for the existing asset engine's applicable lookup behavior. Inspect reports every projection rule; Stage A compares this explicit consumer graph with a native baseline.
 
@@ -217,7 +255,7 @@ Candidate context generation writes a small JSON manifest into a staged project-
 | Shadow project or merged dependency manifest | Installs against a different graph; may flatten distinct contexts | Native root-lock, peer, script, and tooling behavior can diverge | Reject as silent fallback. |
 | New registry shim or custom package resolver | Defeats native-manager/no-registry requirements | Adds a service or dependency resolver | Out of scope. |
 
-Initialization adds `.proscenium/packages/*` to root `workspaces` for npm, Yarn, and Bun, preserving existing patterns and array/object form where supported. pnpm explicitly adds the same path to YAML `packages`; it preserves exclusions, catalogs, overrides, and build policy. If both JS and YAML workspace declarations exist, register dependency-only contexts consistently without pretending pnpm uses both. Existing exclusions or broad globs that include generated contexts twice must be diagnosed using the manager's own enumerated workspace set. Never remove exclusions silently.
+Initialization adds `.proscenium/packages/*` to root `workspaces` for npm and Bun, preserving existing patterns and array/object form where supported. pnpm explicitly adds the same path to YAML `packages`; it preserves exclusions, catalogs, overrides, and build policy. If both JS and YAML workspace declarations exist, register dependency-only contexts consistently without pretending pnpm uses both. Existing exclusions or broad globs that include generated contexts twice must be diagnosed using the manager's own enumerated workspace set. Never remove exclusions silently.
 
 App source addresses gem assets through existing Proscenium `@rubygems/<gem>/...` imports, regardless of whether the gem contributes a package manifest. The generated dependency context is not a complete importable JS package. Do not advertise direct Node/native-runner imports of gem assets or create app dependency edges solely to make those assets visible. Proscenium's Bun harness remains an engine-specific integration. Apps declare peer providers such as React in their own package.json when sharing is required; Stage A must prove that dependency-context attachment gives the required native peer placement.
 
@@ -225,9 +263,9 @@ Native workspace selection, transitive dependency resolution, peer diagnostics, 
 
 Each adapter must prove dependency-context attachment to the root graph, package-local lookup without accidental hoisting, and any declared cross-gem local context edges. Plain semver linking depends on manager settings, including pnpm linkWorkspacePackages. Do not change global linking policy or silently fetch a gem-backed identity from npm. If peers or cross-gem graph semantics require explicit native edges, specify and test their purpose without claiming those edges expose frontend assets to ordinary JS tools.
 
-Yarn PnP can resolve native workspace graphs, but is unqualified for the current asset integration. A future implementation needs the Yarn dependency-tree API, issuer-aware lookup, zip/unplugged file access, source-map support, and stable virtual asset URLs. Forcing `nodeLinker: node-modules` silently is prohibited. Yarn's pnpm linker also requires separate qualification.
+Yarn is out of v1. If it is added later, note that its Plug'n'Play mode needs more than an adapter: the Yarn dependency-tree API, issuer-aware lookup, zip/unplugged file access, source-map support and stable virtual asset URLs in the asset engine. Silently forcing `nodeLinker: node-modules` would be prohibited.
 
-[Yarn workspace model](https://yarnpkg.com/features/workspaces). [Yarn PnP integration requirements](https://yarnpkg.com/features/pnp). [Bun workspace guide](https://bun.sh/guides/install/workspaces). [pnpm 12.7 release](https://pnpm.io/blog/releases/12.7).
+[Bun workspace guide](https://bun.sh/guides/install/workspaces). [pnpm 12.7 release](https://pnpm.io/blog/releases/12.7).
 
 ## CLI contract
 
@@ -286,7 +324,7 @@ The Ruby adapter uses a small bundled helper to query Bundler's definitions, loc
 
 6. Stage changed dependency-only manifests and commit them at stable final context paths before native installation. Native lockfiles must reference final relative paths, not staging directories. Journal previous metadata for recovery; never replace unchanged contexts or their native dependency layout on a no-op install. Proscenium writes no frontend files.
 
-7. Invoke native JS install in the actual project root. Respect native auth, registries, proxies, private packages, patches, overrides, and linking configuration. Frozen commands are `npm ci`, `pnpm install --frozen-lockfile`, Modern `yarn install --immutable`, and `bun install --frozen-lockfile`, qualified per version. Preserve tree-affecting flags used to create locks.
+7. Invoke native JS install in the actual project root. Respect native auth, registries, proxies, private packages, patches, overrides, and linking configuration. Frozen commands are `npm ci`, `pnpm install --frozen-lockfile`, and `bun install --frozen-lockfile`, qualified per version. Preserve tree-affecting flags used to create locks.
 
 8. Check source/dependency manifest hashes again, native success, workspace enumeration, peer identity where required, and resolver health. Associate each installed gem root with its native dependency context; do not redirect asset roots. Write local map/state atomically and descriptor provenance in non-frozen operations. Frozen operations verify committed artifacts stayed unchanged.
 
@@ -298,7 +336,7 @@ Frozen mode MUST fail for missing context registration, changed gem dependency m
 
 Do not temporarily register dependency contexts, generate a native lock against them, then remove their registration from package.json. That leaves native inputs inconsistent. For the workspace candidate, generate metadata before root npm ci in CI; there is no frontend tree materialization step.
 
-[npm clean-install guarantees](https://docs.npmjs.com/cli/v12/commands/npm-ci/). [pnpm installation and frozen flags](https://pnpm.io/cli/install). [Yarn immutable installation](https://yarnpkg.com/cli/install). [Bun native lockfiles](https://bun.sh/docs/pm/lockfile). [Bundler deployment behavior](https://bundler.io/guides/deploying.html).
+[npm clean-install guarantees](https://docs.npmjs.com/cli/v12/commands/npm-ci/). [pnpm installation and frozen flags](https://pnpm.io/cli/install). [Bun native lockfiles](https://bun.sh/docs/pm/lockfile). [Bundler deployment behavior](https://bundler.io/guides/deploying.html).
 
 ## Asset resolver integration
 
@@ -360,7 +398,7 @@ Benchmark cold checkout, warm cache with empty node_modules, no-op install, one 
 
 ## Adoption migration and rollback
 
-The maintainer confirms that the existing registry feature is unused and this work replaces it directly. There is no registry-user compatibility obligation, deprecation period, or running-registry rollback path. Adoption first enumerates existing gem asset imports, package manifests, bundled gem versions, and frontend installation assumptions. Legacy registry declarations are cleanup cases for repository fixtures, not a supported user migration population. `migrate --plan` prints exact manifest/config changes and expected native lock updates before applying anything.
+The engine registry controller is unused, so it needs no compatibility obligation, deprecation period, or rollback path. The real migration population is the three known consumers: codaset moves off the hosted registry (its `@rubygems:registry` line in `.npmrc` and its `@rubygems/proscenium-ui` entry in package.json), and platform and london drop their `github:` pins for `@rubygems/hue`. Each is an acceptance case for `migrate`, not a fixture cleanup. The hosted registry is retired by the maintainer after codaset migrates. Adoption first enumerates existing gem asset imports, package manifests, bundled gem versions, and frontend installation assumptions. `migrate --plan` prints exact manifest/config changes and expected native lock updates before applying anything.
 
 1. Snapshot manifests, native locks, owned configuration, and descriptor state. Verify existing gem asset imports and installed source roots as the baseline. Validate participating dependency manifests. No server is required and no frontend assets are copied.
 
@@ -392,7 +430,7 @@ Run core rows for every qualified manager version on macOS ARM64/Intel, glibc Li
 | C04 | Gem imports through Proscenium and native dependency-context lookup | Existing gem asset imports work; explicit context avoids accidental hoisting; metadata contexts are not advertised as native gem packages. |
 | C05 | Existing user monorepo, exclusions and duplicate package name | Existing packages unchanged; collision errors before native writes. |
 | C06 | pnpm 10 YAML; pnpm 12.7 absent/present/stale YAML | Correct workspace enumeration; YAML remains authoritative; no accidental policy overwrite. |
-| C07 | Existing package-lock, shrinkwrap, pnpm lock, yarn lock, bun.lock/bun.lockb | Manager selection and lock precedence correct; no implicit format conversion. |
+| C07 | Existing package-lock, shrinkwrap, pnpm lock, bun.lock/bun.lockb; yarn.lock | Manager selection and lock precedence correct; no implicit format conversion; yarn.lock gives the unsupported-manager error. |
 | C08 | Repeated frozen install on unchanged inputs | Success; committed manifests, native locks and provenance byte-identical. |
 | C09 | Stale/missing descriptor receipt or changed dependency manifest | Frozen fails before JS resolution; no lock repair or registry fallback. |
 | C10 | Version ranges, prereleases, dist-tags, aliases, Git URLs, tarballs | Native per-manager baseline semantics; Ruby and JS versions independent. |
@@ -410,7 +448,7 @@ Run core rows for every qualified manager version on macOS ARM64/Intel, glibc Li
 | C22 | Bundled/unbundled code, dynamic chunks, aliases and import maps | Existing Proscenium outputs preserved; intended missing/external behavior explicit. |
 | C23 | Source maps, metafiles, manifest precompile, Rails side-loading | Original installed-gem source identity and existing virtual mapping preserved; no copy/reverse-copy paths. |
 | C24 | Bun runtime harness plus new installer graph | App/gem imports and CSS module identity correct; harness-specific chunk caveats retained. |
-| C25 | Yarn node-modules; PnP; Yarn pnpm linker; Classic | Qualified modes pass; unqualified modes stop before changing config. |
+| C25 | Yarn project in any mode (packageManager field, yarn.lock, .yarnrc.yml) | Unsupported-manager error (exit 3) before any write; no config or lock change. |
 | C26 | Contained/escaped file refs, cross-gem range and workspace refs | Unsupported relative file/link declarations fail clearly; any qualified variant proves portable native context without frontend copying. |
 | C27 | Unicode/spaces/case collisions/UNC/drive/reserved names/long paths | Valid paths work; unsafe/colliding paths fail deterministically. |
 | C28 | Read-only shared gem install and ordinary-user Windows | Dependency metadata generates without gem writes, source mirrors, or privileged Proscenium links. |
@@ -426,12 +464,15 @@ Run core rows for every qualified manager version on macOS ARM64/Intel, glibc Li
 | C38 | Native JS targeted update; Ruby update changes Go CLI version | JS-only leaves Ruby lock unchanged; Ruby-induced JS changes reported; selected binary/helper protocol handoff works across Unix/Windows without loops or lost signals. |
 | C39 | Existing gem asset app adopts bridge and rolls back; obsolete registry removed | Unaffected declarations unchanged; ordinary JS/legacy asset behavior recoverable; registry endpoint and shim documentation absent. |
 | C40 | Direct Go startup, wrappers, batched helper, warm/cold install, one gem change | Process counts and overhead measured separately; no per-gem Ruby startup; calibrated native-baseline targets; zero frontend-copy bytes; no invented speed claims. |
+| C41 | Real consumers: codaset (Bun, proscenium-ui), platform and london (pnpm, hue) | Fresh checkout installs with no hosted registry and no `github:` pin for a gem; each gem pinned only in Gemfile.lock; existing app imports and side-loaded assets unchanged. |
+| C42 | Gem whose package.json lacks `version`, or whose version differs from the gem version (hue, proscenium-ui) | Behaves as decided in D1; never a silent rejection of a gem that installs today. |
+| C43 | Gem declaring `react`/`react-dom` as `dependencies` instead of peers (hue) | Native result recorded per manager; one React instance in the app, or an author-contract diagnostic naming the fix. |
 
 Test layers: Go unit tests for metadata validation/projection, containment, manager selection, descriptor receipts, cache keys, and journals; Ruby helper protocol tests against native Bundler; real-manager graph/lock/script fixtures; platform-gem artifact tests for the executable, Ruby wrapper, and existing engine library; Ruby/Go asset regressions and Rails/Bun end-to-end imports from original gem sources. Assert zero frontend copying or installed-gem writes. Test source-only edits separately from dependency changes, no-manifest gems, wrapper/helper process counts, and missing/incorrect binary errors.
 
 ## Implementation sequence and release gates
 
-Stage A: prove dependency-only contexts with real installed gems before choosing a native representation. Compare metadata-only workspace, read-only direct-source registration, and metadata-only local descriptor alternatives. Gate on C01-C04, C08, C12, C13, C17, C20, C25, C26, C28, and C33. Require original source paths, zero asset copies, correct external imports, and shared React identity. A failing adapter is unqualified; copied frontend trees are not a fallback.
+Stage A: prove dependency-only contexts with real installed gems before choosing a native representation. Compare metadata-only workspace, read-only direct-source registration, and metadata-only local descriptor alternatives. Gate on C01-C04, C08, C12, C13, C17, C20, C26, C28, C33, C42 and C43. Require original source paths, zero asset copies, correct external imports, and shared React identity. A failing adapter is unqualified; copied frontend trees are not a fallback. The execution contract is below.
 
 Stage B: implement the Go CLI and batched Ruby/Bundler adapter; package prebuilt binaries in the existing Proscenium platform gems behind a tiny RubyGems launcher. Implement Gemfile-first onboarding, idempotent setup, project launcher/bootstrap, descriptor metadata, optional settings, native commands, and frozen drift detection. Gate on correct platform/version artifacts, fresh/missing/changed bundle, selected-binary handoff, read-only gem roots, no Rails/FFI/engine loading by CLI commands, and measured startup overhead. No frontend copying, Go toolchain requirement for users, or separate CLI installation.
 
@@ -439,9 +480,30 @@ Stage C: connect gem identities to native dependency contexts at the existing Ru
 
 Stage D: transactional journals, CLI update/add/remove/doctor, native adapters, migration, ordinary-user Windows and Linux qualification, performance calibration. Release each adapter only after its full mandatory matrix passes. An unqualified adapter remains an explicit error even if others ship.
 
-Stage E: replace registry-backed repository fixtures with clean bridge installations, remove the unused registry feature and setup instructions, publish adoption instructions and compatibility evidence, and introduce stable bridge support for qualified adapters.
+Stage E: replace registry-backed repository fixtures with clean bridge installations, remove the unused registry feature and setup instructions, migrate codaset, platform and london (C41), publish adoption instructions, the gem author guide and compatibility evidence, and introduce stable bridge support for qualified adapters. The maintainer retires `registry.proscenium.rocks` after codaset is migrated.
 
-Suggested repository changes:
+### Stage A execution contract
+
+Implement a disposable proof under `test/package_manager/stage_a/` and publish commands, tool versions, fixture manifests, normalized graph captures, lock hashes, and per-manager verdicts in `docs/plans/154-package-manager-stage-a.md`. The prototype may generate workspace metadata and use a test-only resolver seam to route **external dependencies** from an original installed-gem issuer to its candidate context. It must exercise existing source reads, relative/CSS resolution, and @rubygems URLs. This is a proof for Stage C, not a production CLI or resolver implementation. No prototype may copy assets or write installed gem roots.
+
+Fixtures, all genuinely Bundler-installed into a temporary BUNDLE_PATH and then made read-only:
+
+- Synthetic `.gem` archives built locally: the existing gem_npm fixture (string-length ^6.0.0), a self-contained stage_a_assets gem without package.json, and stage_a_widget_a/b at 1.0.0, which declare React ^18.3.1 peers and is-number 6.0.0 / 7.0.0 respectively; the app supplies React and react-dom 18.3.1. Manifests and frontend files are listed explicitly in each fixture's `spec.files`. Add incompatible/optional peer and separate-provider variants as baseline comparisons.
+- Real Git-source gems at pinned revisions: hue (React as a plain dependency, no manifest `version`, `github:` dependency) and proscenium-ui (manifest version behind the gem version, `github:` dependency). These exercise C42 and C43 with the declarations real apps already depend on.
+
+Order: pnpm with hue first (the drift that has already happened), then Bun with proscenium-ui (codaset's case), then npm with the synthetic fixtures. npm has no real consumer here, so its evidence comes from synthetic gems only; say so in its verdict.
+
+Initial proof matrix: macOS ARM64, Node 25.9.0, Ruby 3.4.8, Go 1.25.7 with GOWORK=off, and Bundler selected by the repository Ruby lock. Pin npm 11.12.1, pnpm 10.34.4 and Bun 1.4.2. Record every runtime version. Repository pins and newer candidates in the compatibility table, Intel macOS, glibc Linux and Windows remain unqualified until their Stage D/release runs. Stage A uses applicable architectural assertions from its listed C rows; production CLI diagnostics/transactions and ordinary-user Windows gates remain later tests, not fictitious Stage A passes.
+
+For each representation, compare to a native consumer graph with identical projected declarations, root policy and seeded choices. Pass means identical normalized package identities/versions, dependency edges, peer providers, optional omission, script markers and success/error classes. Do not require equal physical trees or identical diagnostic prose. Repeated frozen runs must preserve each project's committed bytes. Bundle a joint app/gem probe through the resolver seam and execute it: shared React exports must compare ===, with one intended React module instance in that output. Compare missing/incompatible peers and distinct-provider cases against the native baseline rather than forcing every case to share.
+
+Prefer the stable dependency-only workspace representation when multiple candidates satisfy every invariant. Per-manager alternatives are allowed only as explicit, tested capabilities with portable native locks and identical source-serving boundaries; never switch representation silently. Retain a descriptor receipt only if native committed inputs cannot detect a changed locked gem source/revision, original manifest hash, projection version/options or context registration. Demonstrate those one-at-a-time drift cases without committed host paths.
+
+A candidate GO requires original source identity, distinct dependency contexts, correct peers, reproducible/frozen locks and no asset copies or gem writes. Zero qualifying adapters is an epic NO-GO: report evidence and reopen design without starting Stage B. A partial GO permits Stage B for those adapters only after maintainer sign-off recorded on issue #154; the others remain unsupported. v1 support for all three managers requires three independent GO results and subsequent release qualification.
+
+Track stages as milestones on issue #154; split implementation child issues after Stage A settles the representation.
+
+### Suggested repository changes
 
 | Path | Proposed work |
 |---|---|
@@ -453,14 +515,33 @@ Suggested repository changes:
 | `internal/types/types.go`, plugin/bundler.go, plugin/bundless.go, resolver/resolve.go | Gem dependency-context config and external package lookup; preserve original source resolution and stable asset URLs. |
 | `internal/utils/utils.go`, manifest/source-path handling | Keep current installed-gem physical-to-virtual mapping and path security; qualify any native dependency-store additions. |
 | `lib/proscenium/runtime/`, test preload generator | Consume mapped package contexts without changing runner-specific semantics. |
-| `test/package_manager/`, new built-gem and manager fixtures | C01-C40 cases and executable comparison harness. |
+| `test/package_manager/`, new built-gem and manager fixtures | C01-C43 cases and executable comparison harness. |
 | `.github/workflows/main.yml`, fixture manifests/locks | Clean bridge install; pinned manager matrix; eliminate registry boot dependency. |
 | registry controller/routes/tests | Remove unused controller/routes; convert valuable parsing/integrity cases into bridge tests in this change. |
 | README and migration guides | Gemfile-first onboarding, single everyday install command, gem author contract, CI, native command coexistence, platform caveats and rollback. |
 
-Indicative human engineering planning estimate: 1-2 engineer-weeks feasibility; 2-3 orchestration/provenance; 2-3 resolver integration; 3-5 adapters/conformance/cross-platform; 1-2 migration/docs/performance. Total 9-15 engineer-weeks before external feedback, assuming the workspace peer gates pass. This is a planning assumption, not a benchmark or delivery commitment. If PnP or multiple packages per gem become required, estimate them separately after prototypes.
+Indicative human engineering planning estimate: 1-2 engineer-weeks feasibility; 2-3 orchestration/provenance; 2-3 resolver integration; 3-5 adapters/conformance/cross-platform; 1-2 migration/docs/performance. Total 9-15 engineer-weeks before external feedback, assuming the workspace peer gates pass. This is a planning assumption, not a benchmark or delivery commitment. The estimate predates dropping Yarn from v1, which removes one of four adapters from the adapter/conformance work; re-estimate after Stage A rather than adjusting these numbers by guesswork. If Yarn or multiple packages per gem become required, estimate them separately after prototypes.
 
-Final acceptance: the Go CLI is packaged in each qualified Proscenium platform gem and works through the tiny Ruby launcher/project launcher without loading Rails or the engine; fresh registry-free dependency installation uses native locks; no user Go compiler, separate CLI install, or implicit binary download is required; platform artifacts and version handoff are verified; gem assets remain at installed roots with zero copies/writes; no-manifest behavior and native dependency/peer semantics remain correct; routine/frozen installs preserve user manifests; failures, recovery, exact compatibility, and measured startup/install performance are qualified. All-four-manager support requires all four adapters to pass.
+Final acceptance: the Go CLI is packaged in each qualified Proscenium platform gem and works through the tiny Ruby launcher/project launcher without loading Rails or the engine; fresh registry-free dependency installation uses native locks; no user Go compiler, separate CLI install, or implicit binary download is required; platform artifacts and version handoff are verified; gem assets remain at installed roots with zero copies/writes; no-manifest behavior and native dependency/peer semantics remain correct; routine/frozen installs preserve user manifests; failures, recovery, exact compatibility, and measured startup/install performance are qualified; codaset, platform and london install without the hosted registry or `github:` gem pins (C41). v1 support for npm, pnpm and Bun requires all three adapters to pass; Yarn projects get the unsupported-manager error.
+
+### Acceptance criteria
+
+- [ ] Stage A records reproducible real-gem evidence (synthetic gems, hue and proscenium-ui) and GO/NO-GO results per representation and manager, including peer placement and app/gem React identity.
+- [ ] Decision D1 (context version source) is settled before Stage B.
+- [ ] Packaged Go binaries, RubyGems/project launchers, and the batched Bundler helper pass platform/version, missing-bundle, handoff, cancellation, and frozen/offline tests.
+- [ ] Gem assets remain at Bundler-installed roots with zero Proscenium frontend copies, mirrors, installed-gem writes, or privileged source links.
+- [ ] Gems with package.json install native dependencies; gems without it keep existing serving and app-context dependency lookup.
+- [ ] Existing @rubygems imports, public URLs, CSS identities, source maps, side-loading, precompile behavior, and Bun harness semantics pass regressions.
+- [ ] Routine installs preserve user manifests; repeated frozen installs leave committed manifests, native locks, and required provenance byte-identical.
+- [ ] Clean CI installs with Rails stopped and no scoped registry shim; unused registry code and instructions are removed.
+- [ ] codaset, platform and london are migrated (C41) and `registry.proscenium.rocks` can be retired.
+- [ ] `proscenium gem check` and the gem author guide ship, and `gem check` catches a manifest missing from `spec.files`.
+- [ ] Every released adapter (npm, pnpm, Bun) passes its mandatory C01-C43 matrix on supported hosts; exact versions, unsupported modes (Yarn), and measured performance are documented.
+
+### Related
+
+- #82: existing registry refinement request; this plan replaces that feature.
+- #137: registry findings; preserve useful validation/identity/integrity coverage when removing the controller. Decide closure when the replacement lands.
 
 ## Research limits and remaining decisions
 
@@ -468,4 +549,8 @@ Official manager, RubyGems/Bundler, Node, and esbuild documentation was checked 
 
 Highest-risk open questions: native peer/root attachment for dependency-only contexts, directing the existing engine's external dependency lookup without changing source-local semantics, portable local file dependencies, and cross-platform descriptor collection. Stage A must prove these against real gems and existing engine behavior. If a representation fails, investigate another metadata-only/native mechanism or leave that adapter unqualified. Do not recover by copying frontend assets, flattening dependency declarations, inventing a registry, or replacing native resolvers.
 
-This specification is delivered for review; it does not file an issue, modify the upstream repository, publish a package, or begin implementation.
+Open decisions, each settled by the maintainer and recorded here:
+
+- **D1: where a dependency context's version comes from.** The current rule takes it from the gem's package.json `version` and makes a missing or invalid one a participation error. Both real gems contradict that rule: hue has no `version`, and proscenium-ui's lags its gem version (see [Known consumers](#known-consumers-and-real-gem-findings)). The context is a private, internal identity, so its version mostly matters for lock entries and diagnostics. Options: (a) keep the manifest rule and require authors to maintain `version`, with `gem check` enforcing it, which rejects hue as it stands today; (b) derive the version from the Bundler-locked gem version when it is valid semver, falling back to a fixed placeholder for Ruby-only prerelease syntax, which removes one more pin authors can let drift; (c) always use a fixed placeholder, if Stage A shows no manager needs a meaningful version on a private workspace. Stage A should record what each manager does with (b) and (c) before this is decided.
+
+Settled on 3 October 2026: v1 supports npm, pnpm and Bun; Yarn is out. The hosted registry is retired at the maintainer's discretion after codaset migrates, so there is no deadline driving a stopgap.
