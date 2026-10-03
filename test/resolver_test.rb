@@ -90,6 +90,28 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       )
     end
 
+    # #96: the cache held the manifest's answer, so a path resolved before a load or reset kept it.
+    it 'follows the manifest when it is loaded or reset after a path was resolved' do
+      dir = Pathname.new(Dir.mktmpdir('manifest'))
+      path = dir.join('.manifest.json')
+      out_path = "#{Rails.root}/public/assets/lib/foo-$ABC123$.js"
+      entry_point = Rails.root.join('lib/foo.js').to_s
+      path.write({ outputs: { out_path => { entryPoint: entry_point } } }.to_json)
+      orig = Proscenium.config.manifest_path
+      Proscenium.config.manifest_path = path
+
+      assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
+
+      Proscenium::Manifest.load!
+      assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve('/lib/foo.js')
+
+      Proscenium::Manifest.reset!
+      assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
+    ensure
+      Proscenium.config.manifest_path = orig
+      FileUtils.rm_rf(dir) if dir
+    end
+
     describe 'as_array: true' do
       it 'raises on non-absolute path' do
         error = assert_raises ArgumentError do

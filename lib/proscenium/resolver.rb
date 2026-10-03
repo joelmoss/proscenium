@@ -21,16 +21,19 @@ module Proscenium
         raise ArgumentError, '`path` must be an absolute file system or URL path'
       end
 
-      resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
-                           [Proscenium::Manifest[vpath], "/node_modules/#{vpath}", path]
-                         elsif path.start_with?("#{Rails.root}/")
-                           vpath = path.delete_prefix(Rails.root.to_s)
-                           [Proscenium::Manifest[vpath], vpath, path]
-                         else
-                           [Proscenium::Manifest[path], *Builder.resolve(path)]
-                         end
+      # Caches the manifest key, not its value, so a manifest loaded or reset later is still
+      # honoured. In the gem branch the key differs from the non-manifest path, so it is kept.
+      key, *paths = resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
+                                         [vpath, "/node_modules/#{vpath}", path]
+                                       elsif path.start_with?("#{Rails.root}/")
+                                         vpath = path.delete_prefix(Rails.root.to_s)
+                                         [vpath, vpath, path]
+                                       else
+                                         [path, *Builder.resolve(path)]
+                                       end
+      result = [Proscenium::Manifest[key], *paths]
 
-      as_array ? resolved[path] : resolved[path][0] || resolved[path][1]
+      as_array ? result : result[0] || result[1]
     end
 
     def self.reset
