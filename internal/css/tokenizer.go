@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/utils"
 	"log"
-	"slices"
 	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
@@ -87,10 +86,15 @@ func render(t *tokenizer.Token) string {
 }
 
 func (x *cssTokenizer) next() *tokenizer.Token {
-	// Pop the inserted mixin that ran out last time. It may no longer be on top: whatever its end
-	// completed - a `@mixin` declaration that was its last statement - can have inserted another.
+	// Pop the inserted mixin that ran out last time, if it is still on top. Whatever its end
+	// completed - a `@mixin` declaration that was its last statement - can have inserted another
+	// above it. It then stays below until that one is done, and runs out again: removed at once,
+	// it was gone from cycle detection while the mixin it included expanded, so two mixins
+	// including each other never met as a cycle and the parse never ended.
 	if x.exhausted != nil {
-		x.tokenizers = slices.DeleteFunc(x.tokenizers, func(t *cssTokenizers) bool { return t == x.exhausted })
+		if x.tokenizers[len(x.tokenizers)-1] == x.exhausted {
+			x.tokenizers = x.tokenizers[:len(x.tokenizers)-1]
+		}
 		x.exhausted = nil
 	}
 
@@ -208,11 +212,11 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 // A block's last declaration may go without a semicolon, but an inserted mixin body is followed by
 // whatever came after its `@mixin`, so `@define-mixin m{color:red}a{@mixin m;color:blue}` became
 // `a{color:redcolor:blue}`. The body gets the semicolon it left out. Decided by the body's last
-// token other than whitespace and comments: a body ending in a rule and then a comment, `<!--` or
-// `-->` is not missing one, and given one it stuck to the next selector at the root.
+// token other than whitespace, comments, `<!--` and `-->`: a body ending in a rule and then one of
+// those is not missing one, and given one it stuck to the next selector at the root.
 func terminateBody(body string, last tokenizer.TokenType) string {
 	switch last {
-	case noToken, tokenizer.TokenSemicolon, tokenizer.TokenCloseBrace, tokenizer.TokenCDO, tokenizer.TokenCDC:
+	case noToken, tokenizer.TokenSemicolon, tokenizer.TokenCloseBrace:
 		return body
 	}
 
@@ -221,12 +225,14 @@ func terminateBody(body string, last tokenizer.TokenType) string {
 	return body[:end] + ";" + body[end:]
 }
 
-// The type `captureBlock` reports for a block holding nothing but whitespace and comments. No
+// The type `captureBlock` reports for a block holding nothing but whitespace, comments, `<!--` and
+// `-->`. No
 // captured token has this type: `forEachToken` stops at TokenError, which `endsStream` counts.
 const noToken = tokenizer.TokenError
 
 // Capture all output between the nest opening brace, until the closing brace at the given level,
-// and the type of its last token other than whitespace and comments.
+// and the type of its last token other than whitespace, comments, `<!--` and `-->`, none of which
+// is a statement.
 func (x *cssTokenizer) captureBlock(level int) (string, tokenizer.TokenType) {
 	var content strings.Builder
 	last := noToken
@@ -241,7 +247,9 @@ func (x *cssTokenizer) captureBlock(level int) (string, tokenizer.TokenType) {
 			return false
 		}
 
-		if token.Type != tokenizer.TokenS && token.Type != tokenizer.TokenComment {
+		switch token.Type {
+		case tokenizer.TokenS, tokenizer.TokenComment, tokenizer.TokenCDO, tokenizer.TokenCDC:
+		default:
 			last = token.Type
 		}
 
