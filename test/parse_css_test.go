@@ -2,6 +2,7 @@ package proscenium_test
 
 import (
 	"joelmoss/proscenium/internal/css"
+	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
 	"strings"
@@ -18,13 +19,22 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
 		})
 
-		// The matcher's recover guards everything Match does, the parse included, so a panic fails
-		// this one assertion instead of aborting the suite. A non-string actual panics inside Match.
-		It("fails the assertion, not the run, when the matcher panics", func() {
-			success, err := BeParsedTo("body{}", "/foo.css", testConfig).Match(42)
+		// css.ParseCss recovers a resolver panic into an error and leaves the input unchanged, so a
+		// matcher that dropped the error would pass a pass-through expectation. An empty config makes
+		// the resolver panic on a bare package mixin.
+		It("fails when the parse fails, even if the output matches", func() {
+			input := `a{@mixin m from url("pkg/mixin.css");}`
+			success, err := BeParsedTo(input, "/foo.css", &types.ConfigT{}).Match(input)
 
 			Expect(success).To(BeFalse())
-			Expect(err).To(MatchError(ContainSubstring("panicked")))
+			Expect(err).To(MatchError(ContainSubstring("css.ParseCss failed")))
+		})
+
+		It("refuses a nil config", func() {
+			success, err := BeParsedTo("body{}", "/foo.css", nil).Match("body{}")
+
+			Expect(success).To(BeFalse())
+			Expect(err).To(MatchError(ContainSubstring("nil")))
 		})
 
 		Describe("mixins", func() {
@@ -182,6 +192,12 @@ var _ = Describe("Build(parseCss)", func() {
 
 						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`)
 						AssertCode(`.mixin6 { content: "@rubygems/gem1/mixin.css"; font-size: 60px; }`, Unbundle)
+
+						// Resolves only through the gem this spec added to its config.
+						It("BeParsedTo sees the gem the spec added", func() {
+							Expect(`a { @mixin mixin from url("@rubygems/gem1/mixin.css"); }`).To(
+								BeParsedTo(`a { content: "@rubygems/gem1/mixin.css"; }`, "/foo.css", testConfig))
+						})
 
 						It("undefined @rubygems mixin generates a warning", func() {
 							input := strings.TrimSpace(heredoc.Doc(`

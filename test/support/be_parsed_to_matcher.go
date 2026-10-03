@@ -1,6 +1,7 @@
 package support
 
 import (
+	"errors"
 	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
@@ -23,20 +24,22 @@ type BeParsedToMatcher struct {
 	Expected interface{}
 }
 
-func (matcher *BeParsedToMatcher) Match(actual interface{}) (success bool, matchErr error) {
-	// Set up before the parse, so a panic inside it fails this assertion rather than the run.
-	defer func() {
-		if r := recover(); r != nil {
-			success = false
-			matchErr = fmt.Errorf("css.ParseCss panicked: %v", r)
-		}
-	}()
+// No recover here: Ginkgo already reports a panic in a matcher as that one spec [PANICKED], with
+// its stack. The parse's error is returned, though, since css.ParseCss turns a panic it recovers
+// into one and leaves the input unchanged - which a pass-through expectation would otherwise match.
+func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
+	if matcher.Config == nil {
+		return false, errors.New("BeParsedTo needs the spec's config, but got nil")
+	}
 
 	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
 	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
 
-	matcher.Output, _, _ = css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
-	matcher.Output = strings.TrimSpace(matcher.Output)
+	parsed, _, err := css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
+	if err != nil {
+		return false, fmt.Errorf("css.ParseCss failed for %s: %w", matcher.Path, err)
+	}
+	matcher.Output = strings.TrimSpace(parsed)
 
 	// Strip all newlines and tabs from the output and expected strings. This ensures that we are
 	// comparing apples to apples.
