@@ -28,7 +28,15 @@ func normalizeCss(css string) string {
 		end := i + 1
 		switch {
 		case c == '\\':
+			// A hex escape's terminator is written as one space, whichever whitespace it was, so
+			// `\2E\t` and the parser's `\2E ` compare equal while `\2E  b` stays a descendant.
 			end = escapeEnd(css, i)
+			if hexEnd := hexEscapeEnd(css, i); hexEnd < end {
+				b.WriteString(css[i:hexEnd])
+				b.WriteByte(' ')
+				i = end - 1
+				continue
+			}
 		case c == '"':
 			for end < len(css) && css[end] != c {
 				if css[end] == '\\' {
@@ -52,14 +60,22 @@ func normalizeCss(css string) string {
 	return b.String()
 }
 
-// The end of the escape starting with the backslash at `i`: up to six hex digits and the one
-// whitespace that terminates them (CRLF counting as one, as in CSS), or else the single escaped
-// character.
-func escapeEnd(css string, i int) int {
+// The end of the hex digits of the escape starting with the backslash at `i`, before any
+// terminator.
+func hexEscapeEnd(css string, i int) int {
 	end := i + 1
 	for end < len(css) && end-i <= 6 && isHex(css[end]) {
 		end++
 	}
+
+	return end
+}
+
+// The end of the escape starting with the backslash at `i`: up to six hex digits and the one
+// whitespace that terminates them (CRLF counting as one, as in CSS), or else the single escaped
+// character.
+func escapeEnd(css string, i int) int {
+	end := hexEscapeEnd(css, i)
 	if end == i+1 {
 		return min(end+1, len(css))
 	}
