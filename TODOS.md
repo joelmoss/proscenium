@@ -228,6 +228,23 @@ without passing through the catch-all's URL-conversion tail.
 
 ## Frontend
 
+### An SVG imported from JSX should follow its tsconfig's JSX runtime
+
+**What:** Stamp `/** @jsxImportSource X */` into the component `internal/plugin/svg.go` generates
+for an SVG imported from JSX, with X read from the `tsconfig.json`/`jsconfig.json` nearest the SVG.
+
+**Why:** The generated component is plain JSX, but esbuild compiles it with its default runtime,
+React, whatever the app's tsconfig says: tsconfig only applies to files esbuild reads itself, not
+to a plugin's contents, in the `svgFromJsx` namespace or the `file` one (measured 2026-10-03). So
+a Preact app that imports an SVG from JSX bundles React for it. A stamped pragma does work.
+
+**Context:** Deferred until a non-React app imports SVGs from JSX; every current one is React. The
+policy is settled: the tsconfig nearest the SVG decides, so one module per SVG, and a pragma in the
+importing file does not reach it. esbuild-internal's `resolver/tsconfig_json.go` already parses
+tsconfig (comments and all) and reads `jsxImportSource`.
+
+**Priority:** P4
+
 ### One esbuild build per module, not two
 
 **What:** Return a module's source map from the same `esbuild.Build()` that produced its code,
