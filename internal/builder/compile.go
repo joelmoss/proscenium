@@ -14,6 +14,15 @@ import (
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
+// The most errors, and the most warnings, a compile sends to Ruby - the rest are counted - and the
+// longest text or source line any of them, or their notes, carries. Minified CSS or JS is one long
+// line, a name from the source can be any length, and mixins expanding to thousands of bad
+// declarations get a warning from esbuild for each.
+const (
+	maxMessages    = 100
+	maxMessageText = 10 << 10
+)
+
 type compileResult struct {
 	Errors   []esbuild.Message
 	Warnings []esbuild.Message
@@ -81,6 +90,7 @@ func compile(cfg *types.ConfigT) (bool, string) {
 		AbsWorkingDir:               cfg.RootPath,
 		AbsPaths:                    esbuild.MetafileAbsPath,
 		LogLevel:                    logLevel,
+		LogLimit:                    maxMessages,
 		Outdir:                      cfg.OutputDir,
 		Outbase:                     "./",
 		EntryNames:                  "[dir]/[name]-$[hash]$",
@@ -136,8 +146,8 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	result := esbuild.Build(buildOptions)
 
 	messages, err := json.Marshal(compileResult{
-		Errors:   result.Errors,
-		Warnings: result.Warnings,
+		Errors:   boundMessages(result.Errors, "error"),
+		Warnings: boundMessages(result.Warnings, "warning"),
 	})
 	if err != nil {
 		return false, string(err.Error())
@@ -185,6 +195,46 @@ func OutputDirUnderRoot(cfg *types.ConfigT) (string, bool) {
 	}
 
 	return filepath.ToSlash(target), true
+}
+
+// The first `maxMessages` of msgs, then a count of the rest, each bounded by `boundMessage`.
+func boundMessages(msgs []esbuild.Message, kind string) []esbuild.Message {
+	if len(msgs) > maxMessages {
+		more := fmt.Sprintf("%d more %s(s) not reported", len(msgs)-maxMessages, kind)
+		msgs = append(msgs[:maxMessages:maxMessages], esbuild.Message{Text: more})
+	}
+
+	for i := range msgs {
+		boundMessage(&msgs[i])
+	}
+
+	return msgs
+}
+
+// Cuts a message's text, and its notes', at `maxMessageText`, and leaves out a source line any
+// longer: esbuild windows a long line when it prints one, so only the copy for Ruby goes without.
+func boundMessage(msg *esbuild.Message) {
+	msg.Text = cutMessageText(msg.Text)
+	dropLongLineText(msg.Location)
+
+	for i := range msg.Notes {
+		msg.Notes[i].Text = cutMessageText(msg.Notes[i].Text)
+		dropLongLineText(msg.Notes[i].Location)
+	}
+}
+
+func cutMessageText(s string) string {
+	if len(s) <= maxMessageText {
+		return s
+	}
+
+	return strings.ToValidUTF8(s[:maxMessageText], "")
+}
+
+func dropLongLineText(loc *esbuild.Location) {
+	if loc != nil && len(loc.LineText) > maxMessageText {
+		loc.LineText = ""
+	}
 }
 
 func compileError(msg string, detail string) (bool, string) {

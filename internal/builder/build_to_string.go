@@ -63,6 +63,9 @@ func buildToString(filePath string, cfg *types.ConfigT) (success bool, code stri
 	}
 
 	if len(result.Errors) != 0 {
+		// Bounded as compile bounds it: the dev error page shows the line as is.
+		boundMessage(&result.Errors[0])
+
 		j, err := json.Marshal(result.Errors[0])
 		if err != nil {
 			return buildError(string(err.Error()))

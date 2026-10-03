@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"strings"
 
 	b "joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/types"
@@ -106,6 +107,156 @@ var _ = Describe("Compile", func() {
 		Expect(string(code)).To(ContainSubstring(`"it's x"`))
 	})
 
+	// A CSS module imported from JS is built on its own, and its warnings were dropped whenever that
+	// build succeeded: a stylesheet stopped at a mixin limit said nothing at all.
+	It("passes on the warnings of a CSS module imported from JS", func() {
+		dir := compileFixtures(map[string]string{
+			"a.js":         `import s from "./a.module.css"; console.log(s)`,
+			"a.module.css": ".a{@mixin nope;}",
+		})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.js"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).To(ContainElement(
+			HaveField("Text", HavePrefix(`Mixin "nope" not defined`))))
+	})
+
+	// Each message carried its whole source line, and minified CSS or JS is one line: a hundred
+	// warnings on a megabyte sent Ruby a hundred megabytes.
+	It("leaves out the source line of a message on a line over 10 KiB", func() {
+		dir := compileFixtures(map[string]string{
+			"long.css":  "/*" + strings.Repeat("x", 1<<20) + "*/.a{@mixin nope;}",
+			"short.css": ".b{@mixin nope;}",
+		})
+		root := "./tmp/" + filepath.Base(dir)
+		testConfig.Precompile = []string{root + "/long.css", root + "/short.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).To(HaveLen(2))
+		for _, w := range result.Warnings {
+			Expect(w.Location.Line).To(Equal(1))
+			if strings.HasSuffix(w.Location.File, "long.css") {
+				Expect(w.Location.LineText).To(BeEmpty())
+			} else {
+				Expect(w.Location.LineText).To(Equal(".b{@mixin nope;}"))
+			}
+		}
+	})
+
+	// esbuild notes on a message carry a line too: a CSS module's warnings each point at the JS that
+	// imported it, and on one line of minified JS that is a megabyte a warning.
+	It("leaves out the source line of a note on a line over 10 KiB", func() {
+		dir := compileFixtures(map[string]string{
+			"a.js":         `import s from "./a.module.css"; console.log(s); /*` + strings.Repeat("x", 1<<20) + `*/`,
+			"a.module.css": ".a{@mixin nope;}",
+		})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.js"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).NotTo(BeEmpty())
+		Expect(result.Warnings[0].Notes).NotTo(BeEmpty())
+		for _, w := range result.Warnings {
+			for _, n := range w.Notes {
+				Expect(n.Location).NotTo(BeNil())
+				Expect(n.Location.LineText).To(BeEmpty())
+			}
+		}
+	})
+
+	It("leaves out the source line of an error on a line over 10 KiB", func() {
+		dir := compileFixtures(map[string]string{
+			"long.css": "/*" + strings.Repeat("x", 1<<20) + `*/@import "./missing.css";`,
+		})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/long.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeFalse())
+
+		var result struct{ Errors []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Errors).To(HaveLen(1))
+		Expect(result.Errors[0].Location.LineText).To(BeEmpty())
+	})
+
+	// esbuild's own warnings are not the parser's, so its cap never saw them: mixins expanding to
+	// thousands of bad declarations sent Ruby a warning for each.
+	It("reports at most 100 warnings, then how many more there were", func() {
+		dir := compileFixtures(map[string]string{"a.css": ".a{" + strings.Repeat(":;", 150) + "}"})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).To(HaveLen(101))
+		Expect(result.Warnings[100].Text).To(Equal("50 more warning(s) not reported"))
+	})
+
+	// A warning names what it is about, and a name from the CSS has no length.
+	It("cuts the text of a message at 10 KiB", func() {
+		name := strings.Repeat("x", 20<<10)
+		dir := compileFixtures(map[string]string{"a.css": ".a{@mixin " + name + ";}"})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).To(HaveLen(1))
+		Expect(result.Warnings[0].Text).To(HavePrefix(`Mixin "xxx`))
+		Expect(len(result.Warnings[0].Text)).To(BeNumerically("<=", 10<<10))
+	})
+
+	// A cut inside a multi-byte character would reach Ruby as U+FFFD, which JSON encoding puts in
+	// place of the half left behind. The plain-ASCII spec never splits a character.
+	It("cuts the text of a message without leaving half a character", func() {
+		name := strings.Repeat("é", 10<<10) // `Mixin "` is 7 bytes, so the 10 KiB cut splits an é
+		dir := compileFixtures(map[string]string{"a.css": ".a{@mixin " + name + ";}"})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeTrue(), messages)
+
+		var result struct{ Warnings []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Warnings).To(HaveLen(1))
+		Expect(result.Warnings[0].Text).To(HavePrefix(`Mixin "éé`))
+		Expect(len(result.Warnings[0].Text)).To(BeNumerically("<=", 10<<10))
+		Expect(result.Warnings[0].Text).NotTo(ContainSubstring("�"))
+	})
+
+	// Errors are bounded as warnings are, but reach boundMessages by their own argument and kind.
+	It("reports at most 100 errors, then how many more there were", func() {
+		imports := make([]string, 150)
+		for i := range imports {
+			imports[i] = `@import "./missing` + strings.Repeat("x", i) + `.css";`
+		}
+		dir := compileFixtures(map[string]string{"a.css": strings.Join(imports, "\n")})
+		testConfig.Precompile = []string{"./tmp/" + filepath.Base(dir) + "/a.css"}
+
+		success, messages := b.Compile(testConfig)
+		Expect(success).To(BeFalse())
+
+		var result struct{ Errors []esbuild.Message }
+		Expect(json.Unmarshal([]byte(messages), &result)).To(Succeed())
+		Expect(result.Errors).To(HaveLen(101))
+		Expect(result.Errors[100].Text).To(Equal("50 more error(s) not reported"))
+	})
+
 	It("reports a config that does not parse as a message", func() {
 		var result struct{ Errors []esbuild.Message }
 		Expect(json.Unmarshal([]byte(b.CompileErrorJSON("Invalid config", "detail")), &result)).To(Succeed())
@@ -115,6 +266,21 @@ var _ = Describe("Compile", func() {
 })
 
 var _ = Describe("BuildToString", func() {
+	// The dev error page shows the failing message's line as is.
+	It("leaves out the source line of a failure on a line over 10 KiB", func() {
+		dir := compileFixtures(map[string]string{
+			"long.css": "/*" + strings.Repeat("x", 1<<20) + `*/@import "./missing.css";`,
+		})
+
+		success, code, _ := b.BuildToString("tmp/"+filepath.Base(dir)+"/long.css", testConfig)
+		Expect(success).To(BeFalse())
+
+		var msg esbuild.Message
+		Expect(json.Unmarshal([]byte(code), &msg)).To(Succeed())
+		Expect(msg.Text).To(ContainSubstring("missing.css"))
+		Expect(msg.Location.LineText).To(BeEmpty())
+	})
+
 	It("compiles!", func() {
 		testConfig.Precompile = []string{
 			"./app/models/**/*.js",
@@ -137,3 +303,16 @@ var _ = Describe("BuildToString", func() {
 		Expect(success).To(BeTrue())
 	})
 })
+
+// Writes the given files to a fresh directory under the app's tmp, removed after the spec.
+func compileFixtures(files map[string]string) string {
+	dir, err := os.MkdirTemp(filepath.Join(testConfig.RootPath, "tmp"), "compile-")
+	Expect(err).NotTo(HaveOccurred())
+	DeferCleanup(os.RemoveAll, dir)
+
+	for name, contents := range files {
+		Expect(os.WriteFile(filepath.Join(dir, name), []byte(contents), 0o600)).To(Succeed())
+	}
+
+	return dir
+}

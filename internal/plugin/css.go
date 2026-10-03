@@ -108,10 +108,13 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 
 						debug.Debug(cfg.Debug, "OnLoad:end", args)
 
+						// With the module's own warnings: built on its own, a stylesheet stopped at a
+						// mixin limit, or with any other warning, said nothing at all.
 						return esbuild.OnLoadResult{
 							Contents:   &contents,
 							ResolveDir: cfg.RootPath,
 							Loader:     esbuild.LoaderJS,
+							Warnings:   cssResult.Warnings,
 						}, nil
 					}
 
