@@ -162,6 +162,13 @@ var _ = Describe("Build(parseCss)", func() {
 			})
 		})
 
+		// A mixin body cannot define a mixin. Expanded inside a rule it already passed through; at the
+		// root, where the nesting is zero, it was defined.
+		It("passes through a @define-mixin in a mixin expanded at the root", func() {
+			Expect("@define-mixin w{@define-mixin z{q:r}}@mixin w;a{@mixin z;}").To(
+				BeParsedTo("@define-mixin z{q:r}a{@mixin z;}", "/foo.css", testConfig, `Mixin "z" not defined in "/foo.css"`))
+		})
+
 		// A `}` with no block to close counted the nesting below zero, where nothing is ever at the
 		// root again: a later `@define-mixin` captured to the end of the file, and all of it was
 		// dropped without a warning. The brace is left for esbuild to report.

@@ -170,8 +170,10 @@ func (x *cssTokenizer) isExpanding(mixinKey string) bool {
 
 // Fetch the mixin definition at the current token, and return its name and definition.
 func (x *cssTokenizer) parseMixinDefinition() (string, string) {
-	if x.nesting > 0 {
-		// @define-mixin must be declared at the root level. Pass it through as is.
+	// @define-mixin must be declared at the root level of a file, never inside a block or a mixin
+	// body. Pass it through as is. A body expanded at the root is at nesting zero, so the stream is
+	// checked too: one in a body was defined there, though passed through inside a rule.
+	if x.nesting > 0 || x.tokenizers[len(x.tokenizers)-1].mixinKey != "" {
 		return "", ""
 	}
 
