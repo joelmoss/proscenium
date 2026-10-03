@@ -55,6 +55,8 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("escaped quote keeps the string open", `a{content:"x \"  y";}`, `a{content:"x \" y";}`, false),
 			Entry("comment", `/* a  b */ a{}`, `/* a b */ a{}`, false),
 			Entry("hex escape keeps its terminating space", `.a\2E  b{color:red;}`, `.a\2E b{color:red;}`, false),
+			Entry("hex escape ended by CRLF", `.a\2E b{color:red;}`, ".a\\2E\r\n b{color:red;}", false),
+			Entry("hex escape ended by a form feed", `.a\2E b{color:red;}`, ".a\\2E\f b{color:red;}", false),
 			Entry("hex escape and layout around it", `.a\2E  b  {color:red;}`, `.a\2E  b {color:red;}`, true),
 		)
 
