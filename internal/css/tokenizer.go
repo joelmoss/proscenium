@@ -39,13 +39,20 @@ func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) 
 	}
 
 	tk := cssTokenizers{
-		tokenizer: tokenizer.NewTokenizer(strings.NewReader(inputString)),
+		tokenizer: newTokenizer(inputString),
 		filePath:  filePath,
 	}
 
 	return &cssTokenizer{
 		tokenizers: []*cssTokenizers{&tk},
 	}, nil
+}
+
+// CSS input preprocessing turns CR, CRLF and form feed into LF. The tokenizer does the first two
+// and not the form feed, so a form feed ending a hex escape (`.a\2E\fb`, class `a.b`) was kept
+// after it and written back as `.a\2E \fb`: class `a.` and a descendant `b`.
+func newTokenizer(input string) *tokenizer.Tokenizer {
+	return tokenizer.NewTokenizer(strings.NewReader(strings.ReplaceAll(input, "\f", "\n")))
 }
 
 func (x *cssTokenizer) next() *tokenizer.Token {
@@ -90,7 +97,7 @@ func (x *cssTokenizer) currentFilePath() string {
 
 func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinKey string) {
 	x.tokenizers = append(x.tokenizers, &cssTokenizers{
-		tokenizer: tokenizer.NewTokenizer(strings.NewReader(tokens)),
+		tokenizer: newTokenizer(tokens),
 		filePath:  filePath,
 		mixinKey:  mixinKey,
 	})

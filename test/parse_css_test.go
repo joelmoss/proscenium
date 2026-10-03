@@ -25,6 +25,26 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).To(MatchError(ContainSubstring("needs the spec's config")))
 		})
 
+		// The tokenizer turned CR and CRLF into LF but not a form feed, which CSS treats the same.
+		It("ends a hex escape at a form feed, as at any other whitespace", func() {
+			Expect(".a\\2E\fb{color:red;}").To(BeParsedTo(`.a\2E b{color:red;}`, "/foo.css", testConfig))
+		})
+
+		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
+		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space.
+		It("parses the input as written, without dedenting or trimming it", func() {
+			input := "a{content:\"x\\\n  y\";}"
+			Expect(input).To(BeParsedTo(`a{content:"x  y";}`, "/foo.css", testConfig))
+
+			success, err := BeParsedTo(`a{content:"xy";}`, "/foo.css", testConfig).Match(input)
+			Expect(success).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
+
+			success, err = BeParsedTo("a{}", "/foo.css", testConfig).Match("a{}\u00a0")
+			Expect(success).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
+		})
+
 		It("ignores layout but not whitespace inside a quoted string", func() {
 			Expect("a { content: \"x  y\"; }").To(BeParsedTo("a {\n\tcontent: \"x  y\";\n}", "/foo.css", testConfig))
 
@@ -62,14 +82,15 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("layout collapses after a hex escape's terminator", `.a\2E  b{color:red;}`, ".a\\2E \n\t b{color:red;}", true),
 		)
 
-		It("fails on a warning whose text differs, and refuses an empty expected warning", func() {
+		It("fails on a warning whose text differs, or only begins the same", func() {
 			input := "a{@mixin nope;display:block;}"
 
 			_, err := BeParsedTo(input, "/foo.css", testConfig, "something else").Match(input)
 			Expect(err).To(MatchError(ContainSubstring(`but the spec expected ["something else"]`)))
 
-			_, err = BeParsedTo(input, "/foo.css", testConfig, "").Match(input)
-			Expect(err).To(MatchError(ContainSubstring("empty expected warning")))
+			// A substring would accept the start of the real warning; only the whole text matches.
+			_, err = BeParsedTo(input, "/foo.css", testConfig, `Mixin "nope" not defined`).Match(input)
+			Expect(err).To(MatchError(ContainSubstring("but the spec expected")))
 		})
 
 		It("does not match different output", func() {
@@ -90,7 +111,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin foo;
 						}
-					`, "/foo.css", testConfig, `Mixin "foo" not defined`))
+					`, "/foo.css", testConfig, `Mixin "foo" not defined in "/foo.css"`))
 				})
 
 				It("undefined local mixin generates a warning", func() {
@@ -129,7 +150,7 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin foo;
 							}
 						}
-					`, "/foo.css", testConfig, `Mixin "foo" not defined`))
+					`, "/foo.css", testConfig, `Mixin "foo" not defined in "/foo.css"`))
 				})
 
 				It("mixin is replaced with defined mixin", func() {
@@ -317,7 +338,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin red from url("/unknown.css");
 						}
-					`, "/foo.css", testConfig, `Could not resolve mixin file "/unknown.css"`))
+					`, "/foo.css", testConfig, `Could not resolve mixin file "/unknown.css" for mixin "red"`))
 					})
 
 					It("should generate a warning", func() {
@@ -348,7 +369,8 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin unknown from url("/lib/mixins/colors.css");
 						}
-					`, "/foo.css", testConfig, `Mixin "unknown" not found in`))
+					`, "/foo.css", testConfig,
+							`Mixin "unknown" not found in "`+utils.JoinFsPath(testConfig.RootPath, "lib/mixins/colors.css")+`"`))
 					})
 
 					It("should generate a warning", func() {
@@ -379,7 +401,8 @@ var _ = Describe("Build(parseCss)", func() {
 							header {
 								@mixin purple from url("/lib/mixins/colors.css");
 							}
-						`, "/foo.css", testConfig, `Mixin "purple" not found in`))
+						`, "/foo.css", testConfig,
+							`Mixin "purple" not found in "`+utils.JoinFsPath(testConfig.RootPath, "lib/mixins/colors.css")+`"`))
 					})
 				})
 
@@ -484,7 +507,7 @@ var _ = Describe("Build(parseCss)", func() {
 
 				It("keeps the token after an unresolved mixin, and emits it once", func() {
 					Expect("a{@mixin nope;display:block;}").To(
-						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css", testConfig, `Mixin "nope" not defined`))
+						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css", testConfig, `Mixin "nope" not defined in "/foo.css"`))
 				})
 			})
 
