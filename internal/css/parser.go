@@ -148,6 +148,15 @@ func (p *cssParser) handleNextToken() (string, bool) {
 	case tokenizer.TokenAtKeyword:
 		switch token.Value {
 		case "define-mixin":
+			// A mixin body cannot define a mixin. Expanded at the root, where the nesting is zero,
+			// one in a body was defined; inside a rule it passed through without a word.
+			if outer := p.tokens.tokenizers[len(p.tokens.tokenizers)-1].mixinKey; outer != "" {
+				name := outer[strings.LastIndex(outer, "#")+1:]
+				p.addWarning("@mixin "+name, "Mixin %q cannot define a mixin", name)
+
+				return render(token), true
+			}
+
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
 				return render(token), true
