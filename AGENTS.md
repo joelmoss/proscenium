@@ -114,7 +114,7 @@ golangci-lint run
 - Test helper sets `ENV['PROSCENIUM_TESTS'] = '1'`
 - Go tests use Ginkgo/Gomega and are in `test/`
 - Go test suite file: `test/proscenium_suite_test.go`
-- Custom Go test matchers: `ContainCode`, `BeParsedTo(expected, path, cfg)` (in `test/support/`); pass `BeParsedTo` the spec's `testConfig`
+- Custom Go test matchers: `ContainCode`, `BeParsedTo(expected, path, cfg, warnings...)` (in `test/support/`); pass `BeParsedTo` the spec's `testConfig`, and every warning the parse must produce
 - Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Bundle`, `Unbundle`, `Production` for options
 - Go tests build a fresh per-spec `testConfig` in BeforeEach (with `InternalTesting: true`), not the old shared `types.Config` global
 - JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`

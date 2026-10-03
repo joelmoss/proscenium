@@ -27,7 +27,8 @@ type BeParsedToMatcher struct {
 // No recover here: Ginkgo already reports a panic in a matcher as that one spec [PANICKED], with
 // its stack. The parse's error is returned, though: the resolver recovers its own panics, and the
 // parser keeps one as its error and leaves the failing mixin unexpanded - which a pass-through
-// expectation would match.
+// expectation would match. That branch has no spec: every panic the resolver recovers is a bug, and
+// once the Environment zero-value underflow was fixed no input was left that triggers one.
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 	if matcher.Config == nil {
 		return false, errors.New("BeParsedTo needs the spec's config, but got nil")
