@@ -247,7 +247,6 @@ Proposed generated descriptor receipt, with illustrative digest placeholders. Pr
     "rubyVersion": "2.0.0.pre",
     "source": { "type": "git", "revision": "<full revision>" },
     "contextName": "@rubygems/widgets",
-    "contextVersion": "2.0.0-beta.1",
     "context": ".proscenium/packages/widgets",
     "sourceManifestSha256": "<digest>",
     "dependencyManifestSha256": "<digest>"
@@ -269,7 +268,7 @@ Authors include frontend files and any dependency manifest in the built gem's `s
 
 The candidate native dependency-context name is `@rubygems/<gem-name>` and must be valid under the selected manager. This is an internal graph identity, not a promise of an importable gem package for native JS tools. Explicit name overrides are recorded and validated against collisions. Per decision D1, the generated context omits `version`: the gem's manifest version is neither required nor copied, so a missing or stale one (hue, proscenium-ui) is not an error, and a Ruby version is never written there (pnpm 10 and 11 reject Ruby prerelease syntax such as `0.5.3.pre1`). Every reference Proscenium generates to a context uses the adapter's local-link syntax: `workspace:*` for pnpm and Bun, `*` for npm, which rejects `workspace:` inside a workspace package on every supported line (`EUNSUPPORTEDPROTOCOL`) but always links a workspace package whatever the range says. A missing or invalid context name is still a participation error.
 
-The proposed `dependency-context-v1` projection generates installation metadata only: context identity/version, `private: true`, runtime `dependencies`, `peerDependencies`, `peerDependenciesMeta`, `optionalDependencies`, and qualified engine/OS/CPU/libc constraints. Exclude gem-author devDependencies, lifecycle/task scripts, nested workspaces, and nested packageManager selection. Do not expose main/module/browser, exports/imports, types, bin, sideEffects, or files as pointers to nonexistent workspace assets. The original package.json stays in the gem for the existing asset engine's applicable lookup behavior. Inspect reports every projection rule; Stage A compares this explicit consumer graph with a native baseline.
+The proposed `dependency-context-v1` projection generates installation metadata only: the context name (no `version`, per D1), `private: true`, runtime `dependencies`, `peerDependencies`, `peerDependenciesMeta`, `optionalDependencies`, and qualified engine/OS/CPU/libc constraints. Exclude gem-author devDependencies, lifecycle/task scripts, nested workspaces, and nested packageManager selection. Do not expose main/module/browser, exports/imports, types, bin, sideEffects, or files as pointers to nonexistent workspace assets. The original package.json stays in the gem for the existing asset engine's applicable lookup behavior. Inspect reports every projection rule; Stage A compares this explicit consumer graph with a native baseline.
 
 App-level overrides, resolutions, patches, catalogs, and script approvals remain authoritative. A gem cannot promote its own install policy into the app. Reject nested workspace declarations for v1 with a clear participation error. Unknown source metadata remains inert data and is not automatically copied into executable bridge policy.
 
@@ -359,9 +358,9 @@ The Ruby adapter uses a small bundled helper to query Bundler's definitions, loc
 
 4. Resolve the configured frontend universe, including locked excluded groups. Use the installed source, a matching cached gem archive, or a pinned Git source. Never select a different Ruby version to obtain frontend metadata. Missing source in frozen offline mode is an error.
 
-5. Validate dependency-context identity, semver, dependency fields, prohibited hooks, paths, platform constraints, and metadata projection. Gems without manifests skip this phase and retain ordinary asset behavior. Detect native workspace collisions before JS installation. Compute descriptor provenance, never a copied asset tree digest.
+5. Validate the dependency-context name, dependency fields (rewriting references to other gems' contexts to the adapter's local-link syntax, per D1), prohibited hooks, paths, platform constraints, and metadata projection. Gems without manifests skip this phase and retain ordinary asset behavior. Detect native workspace collisions before JS installation. Compute descriptor provenance, never a copied asset tree digest.
 
-6. Stage changed dependency-only manifests and commit them at stable final context paths before native installation. Native lockfiles must reference final relative paths, not staging directories. Journal previous metadata for recovery; never replace unchanged contexts or their native dependency layout on a no-op install. Proscenium writes no frontend files.
+6. In non-frozen mode, stage changed dependency-only manifests and write them at stable final context paths before native installation. In frozen mode, regenerate them in memory and compare with the committed contexts; on any difference fail (exit 4) before writing a file or starting JS installation. Native lockfiles must reference final relative paths, not staging directories. Journal previous metadata for recovery; never replace unchanged contexts or their native dependency layout on a no-op install. Proscenium writes no frontend files.
 
 7. Invoke native JS install in the actual project root. Respect native auth, registries, proxies, private packages, patches, overrides, and linking configuration. Frozen commands are `npm ci`, `pnpm install --frozen-lockfile`, and `bun install --frozen-lockfile`, qualified per version. Preserve tree-affecting flags used to create locks.
 
@@ -449,7 +448,7 @@ The engine registry controller is unused, so it needs no compatibility obligatio
 
 5. Run a fresh frozen installation with Rails stopped, existing gem asset regressions, and dependency-context import smoke tests. Assert that no gem frontend copies or installed-gem writes occurred. Update bootstrap/CI instructions, then remove reliance on tracked fixture node_modules.
 
-Gems without package manifests keep existing asset serving and app-level dependency lookup before and after adoption. Self-contained files need no JS install. Missing app-provided external dependencies retain existing actionable behavior. Invalid present manifests, unsupported identity/version, required frontend build hooks, nested projects, and unsupported local file references receive concrete participation errors.
+Gems without package manifests keep existing asset serving and app-level dependency lookup before and after adoption. Self-contained files need no JS install. Missing app-provided external dependencies retain existing actionable behavior. Invalid present manifests, an invalid context name, required frontend build hooks, nested projects, and unsupported local file references receive concrete participation errors.
 
 Replace the registry implementation in this feature: remove the controller, its engine routes, registry setup documentation/comments, and obsolete registry-specific dependency rationale. Convert strict JSON, unreadable manifest, package identity, and deterministic-content tests into bridge validation/provenance coverage. Retain the asset-serving RubyGems middleware: it is distinct from the registry. Review whether the json dependency bounds remain needed elsewhere before changing them. Publish the bridge as experimental until each adapter qualifies; no registry transition release is required.
 
