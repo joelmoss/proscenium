@@ -16,9 +16,11 @@ type cssTokenizers struct {
 	// The file path of the current file being parsed.
 	filePath string
 
-	// The mixin whose expansion this stream is, as `<file path>#<name>`. Empty for the stream of
-	// the file being parsed. Read by `isExpanding` to refuse re-entering a mixin already open.
-	mixinKey string
+	// The mixin whose expansion this stream is, as `<file path>#<name>`, and its name alone. Empty
+	// for the stream of the file being parsed. The key is read by `isExpanding` to refuse
+	// re-entering a mixin already open.
+	mixinKey  string
+	mixinName string
 }
 
 type cssTokenizer struct {
@@ -152,12 +154,15 @@ func (x *cssTokenizer) currentFilePath() string {
 	return x.tokenizers[len(x.tokenizers)-1].filePath
 }
 
-func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinKey string) {
-	x.tokenizers = append(x.tokenizers, &cssTokenizers{
-		tokenizer: newTokenizer(tokens),
-		filePath:  filePath,
-		mixinKey:  mixinKey,
-	})
+// Insert the given tokens into the stream: the definition of the mixin `mixinName` from `filePath`,
+// or with no name, tokens that are no mixin's.
+func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinName string) {
+	t := &cssTokenizers{tokenizer: newTokenizer(tokens), filePath: filePath, mixinName: mixinName}
+	if mixinName != "" {
+		t.mixinKey = filePath + "#" + mixinName
+	}
+
+	x.tokenizers = append(x.tokenizers, t)
 }
 
 // Whether the given mixin is already open somewhere up the stack, ie. expanding it again would
@@ -224,8 +229,8 @@ func terminateBody(body string, last tokenizer.TokenType) string {
 }
 
 // The type `captureBlock` reports for a block holding nothing but whitespace, comments, `<!--` and
-// `-->`. No
-// captured token has this type: `forEachToken` stops at TokenError, which `endsStream` counts.
+// `-->`. No captured token has this type: `forEachToken` stops at TokenError, which `endsStream`
+// counts.
 const noToken = tokenizer.TokenError
 
 // Capture all output between the nest opening brace, until the closing brace at the given level,

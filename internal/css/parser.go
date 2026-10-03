@@ -148,11 +148,18 @@ func (p *cssParser) handleNextToken() (string, bool) {
 	case tokenizer.TokenAtKeyword:
 		switch token.Value {
 		case "define-mixin":
-			// A mixin body cannot define a mixin. Expanded at the root, where the nesting is zero,
-			// one in a body was defined; inside a rule it passed through without a word.
-			if outer := p.tokens.tokenizers[len(p.tokens.tokenizers)-1].mixinKey; outer != "" {
-				name := outer[strings.LastIndex(outer, "#")+1:]
-				p.addWarning("@mixin "+name, "Mixin %q cannot define a mixin", name)
+			// A mixin is defined only at the root of a file: never in a mixin body, where one
+			// expanded at the root was defined, nor inside a block, where one was passed through
+			// without a word. Either is passed through as written, with a warning.
+			if stream := p.tokens.tokenizers[len(p.tokens.tokenizers)-1]; stream.mixinName != "" {
+				p.addWarning("@mixin "+stream.mixinName, "Mixin %q in %q cannot define a mixin",
+					stream.mixinName, stream.filePath)
+
+				return render(token), true
+			}
+
+			if p.tokens.nesting > 0 {
+				p.addWarning("@define-mixin", "A mixin can only be defined at the root of a file")
 
 				return render(token), true
 			}

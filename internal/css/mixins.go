@@ -50,7 +50,7 @@ func (p *cssParser) resolveMixin(mixinIdent string, uri string) bool {
 			return false
 		}
 
-		p.tokens.insertTokens(def, filePath, key)
+		p.tokens.insertTokens(def, filePath, mixinName)
 
 		return true
 	}
