@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/types"
+	"slices"
 
-	"strings"
-
-	"github.com/MakeNowJust/heredoc"
 	"github.com/onsi/ginkgo/v2"
 	"github.com/onsi/gomega/format"
 	gomegaTypes "github.com/onsi/gomega/types"
@@ -34,8 +32,9 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 		return false, errors.New("BeParsedTo needs the spec's config, but got nil")
 	}
 
-	matcher.Input = strings.TrimSpace(heredoc.Doc(actual.(string)))
-	matcher.Expected = strings.TrimSpace(heredoc.Doc(matcher.Expected.(string)))
+	// Taken as written: normalizeCss already ignores layout, and dedenting first changed what was
+	// parsed - indentation inside a multi-line string or comment is part of its value.
+	matcher.Input = actual.(string)
 
 	parsed, warnings, err := css.ParseCss(matcher.Input, matcher.Path, matcher.Config)
 	if err != nil {
@@ -44,31 +43,23 @@ func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 	if err := matcher.checkWarnings(warnings); err != nil {
 		return false, err
 	}
-	matcher.Output = strings.TrimSpace(parsed)
+	matcher.Output = parsed
 
 	return normalizeCss(matcher.Output) == normalizeCss(matcher.Expected.(string)), nil
 }
 
-// Each expected warning must be contained in the warning at the same position, and there must be
-// no others. An unresolved mixin is left in the output and reported only as a warning, so without
-// this a pass-through expectation also passed when a broken config resolved nothing. Returned as
-// an error, so it fails a negated assertion too.
+// The parse's warnings must equal the expected ones exactly, in order. An unresolved mixin is left
+// in the output and reported only as a warning, so without this a pass-through expectation also
+// passed when a broken config resolved nothing. Exact rather than a substring, since two mixin
+// warnings share a first half (mixins.go). Returned as an error, so it fails a negated assertion
+// too.
 func (matcher *BeParsedToMatcher) checkWarnings(warnings []css.CssWarning) error {
-	for _, w := range matcher.Warnings {
-		if strings.TrimSpace(w) == "" {
-			return errors.New("BeParsedTo got an empty expected warning, which would match any warning")
-		}
-	}
-
 	texts := make([]string, len(warnings))
 	for i, w := range warnings {
 		texts[i] = w.Text
 	}
 
-	ok := len(texts) == len(matcher.Warnings)
-	for i := 0; ok && i < len(texts); i++ {
-		ok = strings.Contains(texts[i], matcher.Warnings[i])
-	}
+	ok := slices.Equal(texts, matcher.Warnings)
 	if ok {
 		return nil
 	}
@@ -102,7 +93,7 @@ func (matcher *BeParsedToMatcher) message(isNegated bool) string {
 }
 
 // Parses with the spec's own config, so per-spec changes such as an added gem apply. `warnings` are
-// the warnings the parse must produce, in order, each matched as a substring; none means none.
+// the warnings the parse must produce, exactly and in order; none means none.
 func BeParsedTo(expected interface{}, path string, cfg *types.ConfigT, warnings ...string) gomegaTypes.GomegaMatcher {
 	return &BeParsedToMatcher{
 		Path:     path,
