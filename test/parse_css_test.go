@@ -19,22 +19,31 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
 		})
 
-		// css.ParseCss recovers a resolver panic into an error and leaves the input unchanged, so a
-		// matcher that dropped the error would pass a pass-through expectation. An empty config makes
-		// the resolver panic on a bare package mixin.
+		// css.ParseCss recovers a resolver panic into an error and leaves the failing mixin
+		// unexpanded, so a matcher that dropped the error would pass a pass-through expectation. The
+		// trigger: an empty config's zero Environment underflows Environment.String() when the
+		// resolver resolves a bare package mixin.
 		It("fails when the parse fails, even if the output matches", func() {
 			input := `a{@mixin m from url("pkg/mixin.css");}`
 			success, err := BeParsedTo(input, "/foo.css", &types.ConfigT{}).Match(input)
 
 			Expect(success).To(BeFalse())
 			Expect(err).To(MatchError(ContainSubstring("css.ParseCss failed")))
+			Expect(err).To(MatchError(ContainSubstring("panic:")))
 		})
 
 		It("refuses a nil config", func() {
 			success, err := BeParsedTo("body{}", "/foo.css", nil).Match("body{}")
 
 			Expect(success).To(BeFalse())
-			Expect(err).To(MatchError(ContainSubstring("nil")))
+			Expect(err).To(MatchError(ContainSubstring("needs the spec's config")))
+		})
+
+		It("does not match different output", func() {
+			success, err := BeParsedTo("a{color:blue;}", "/foo.css", testConfig).Match("a{color:red;}")
+
+			Expect(success).To(BeFalse())
+			Expect(err).NotTo(HaveOccurred())
 		})
 
 		Describe("mixins", func() {

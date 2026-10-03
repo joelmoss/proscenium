@@ -26,7 +26,7 @@ type BeParsedToMatcher struct {
 
 // No recover here: Ginkgo already reports a panic in a matcher as that one spec [PANICKED], with
 // its stack. The parse's error is returned, though, since css.ParseCss turns a panic it recovers
-// into one and leaves the input unchanged - which a pass-through expectation would otherwise match.
+// into one and leaves the failing mixin unexpanded - which a pass-through expectation would match.
 func (matcher *BeParsedToMatcher) Match(actual interface{}) (bool, error) {
 	if matcher.Config == nil {
 		return false, errors.New("BeParsedTo needs the spec's config, but got nil")
@@ -69,7 +69,7 @@ func (matcher *BeParsedToMatcher) message(isNegated bool) string {
 
 	to := ""
 	if isNegated {
-		to = "not"
+		to = "not "
 	}
 
 	return fmt.Sprintf("Expected:\n\n%s\n\n<<< %sto be parsed as:\n\n%s\n\n=== But was:\n\n%s\n",
