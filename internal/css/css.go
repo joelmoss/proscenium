@@ -36,16 +36,20 @@ func ParseCssFile(path string, cfg *types.ConfigT) (string, []CssWarning, error)
 //   - input: The CSS to parse.
 //   - path: The absolute file system path of the file being parsed.
 func ParseCss(input string, path string, cfg *types.ConfigT) (string, []CssWarning, error) {
+	return newCssParser(input, path, cfg).parse()
+}
+
+func newCssParser(input string, path string, cfg *types.ConfigT) *cssParser {
 	t, _ := newCssTokenizer(input, path)
 
-	p := cssParser{
-		tokens:          t,
-		input:           input,
-		filePath:        path,
-		cfg:             cfg,
-		mixins:          cssMixins{},
-		malformedMixins: map[string]bool{},
+	return &cssParser{
+		tokens:             t,
+		input:              input,
+		filePath:           path,
+		cfg:                cfg,
+		mixins:             cssMixins{},
+		malformedMixins:    map[string]bool{},
+		mixinFiles:         map[string]bool{},
+		resolvedMixinFiles: map[mixinFileKey]resolvedMixinFile{},
 	}
-
-	return p.parse()
 }

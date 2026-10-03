@@ -1,9 +1,12 @@
 package proscenium_test
 
 import (
+	"fmt"
 	"joelmoss/proscenium/internal/css"
 	"joelmoss/proscenium/internal/utils"
 	. "joelmoss/proscenium/test/support"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -692,6 +695,244 @@ var _ = Describe("Build(parseCss)", func() {
 				})
 			})
 
+			// Cycle detection cannot stop a mixin that includes another twice: it doubles at every
+			// level, and 22 levels did not finish within 5s. Each cap ends one shape of it, with one
+			// warning however many `@mixin`s are then refused.
+			Describe("mixin expansion limits", func() {
+				const expansions = 100_000
+				limit := "exceeds the limit of 100000 mixin expansions, 4194304 bytes of mixin definitions, " +
+					"or 100 levels of mixin nesting"
+
+				It("stops a doubling chain at the expansion cap", func() {
+					code, warnings := parseWithDeadline(mixinChain(22, "a:b;"), "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(MatchRegexp(`^Mixin "m\d+" not expanded: `))
+					Expect(warnings[0].Text).To(ContainSubstring(limit))
+					Expect(strings.Count(code, "a:b;")).To(BeNumerically("<", expansions))
+				})
+
+				It("stops a chain of large bodies at the byte cap", func() {
+					code, warnings := parseWithDeadline(mixinChain(6, strings.Repeat("a:b;", 25_000)), "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(ContainSubstring(limit))
+					Expect(len(code)).To(BeNumerically("<=", 4<<20+200_000))
+				})
+
+				It("warns once for many uses past the cap", func() {
+					input := "@define-mixin m{a:b;}.x{" + strings.Repeat("@mixin m;", expansions+10_000) + "}"
+					code, warnings := parseWithDeadline(input, "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "m" not expanded: the stylesheet ` + limit))
+					Expect(strings.Count(code, "a:b;")).To(Equal(expansions))
+				})
+
+				// Once a cap trips, every later `@mixin` is refused, even one small enough to fit under
+				// the byte cap. The byte-cap spec ends its chain at the first refusal, and the count cap
+				// keeps refusing by itself, so only this reaches a use that fits after a refusal.
+				It("keeps refusing after a byte-cap refusal, even for a mixin that would fit", func() {
+					big := strings.Repeat("a:b;", threeMiBOfDecls)
+					input := "@define-mixin big{" + big + "}@define-mixin small{s:t;}" +
+						".x{@mixin big;@mixin big;@mixin small;}"
+					code, warnings := parseWithDeadline(input, "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(ContainSubstring(limit))
+					Expect(strings.Count(code, "a:b;")).To(Equal(threeMiBOfDecls))
+					Expect(code).NotTo(ContainSubstring("s:t;"))
+				})
+
+				// The warning cap dropped it, so a stylesheet with 100 other warnings lost the rest of its
+				// mixins with nothing but a count to say why.
+				It("reports the limit warning even after 100 other warnings", func() {
+					big := strings.Repeat("a:b;", threeMiBOfDecls)
+					input := ".a{" + strings.Repeat("@mixin nope;", 100) + "}" +
+						"@define-mixin big{" + big + "}.x{@mixin big;@mixin big;}"
+					_, warnings := parseWithDeadline(input, "/foo.css")
+
+					Expect(warnings).To(HaveLen(101))
+					Expect(warnings[100].Text).To(Equal(`Mixin "big" not expanded: the stylesheet ` + limit))
+				})
+
+				// A cap of 10,000 broke this: a button of 19 mixins used in 600 rules is 12,000.
+				It("expands a design system's worth of nested mixins", func() {
+					var b strings.Builder
+					for i := range 19 {
+						fmt.Fprintf(&b, "@define-mixin leaf%d{p%d:v;}", i, i)
+					}
+					b.WriteString("@define-mixin btn{")
+					for i := range 19 {
+						fmt.Fprintf(&b, "@mixin leaf%d;", i)
+					}
+					b.WriteString("}")
+					for i := range 600 {
+						fmt.Fprintf(&b, ".r%d{@mixin btn;}", i)
+					}
+					code, warnings := parseWithDeadline(b.String(), "/foo.css")
+
+					Expect(warnings).To(BeEmpty())
+					Expect(strings.Count(code, "p0:v;")).To(Equal(600))
+					Expect(strings.Count(code, "p18:v;")).To(Equal(600))
+				})
+
+				// Each open mixin keeps its own tokenizer, and cycle detection scans them all: a chain
+				// 10,000 deep held 164MB and slowed every `@mixin` in it.
+				It("stops a chain of mixins nested deeper than 100", func() {
+					var b strings.Builder
+					for i := range 150 {
+						fmt.Fprintf(&b, "@define-mixin n%d{d%d:v;@mixin n%d;}", i, i, i+1)
+					}
+					b.WriteString("@define-mixin n150{}.x{@mixin n0;}")
+					code, warnings := parseWithDeadline(b.String(), "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "n100" not expanded: the stylesheet ` + limit))
+					Expect(code).To(ContainSubstring("d99:v;"))
+					Expect(code).NotTo(ContainSubstring("d100:v;"))
+				})
+
+				// A `@mixin` ending its block without a semicolon puts the `}` back as a stream of its own,
+				// which counted as a level of nesting: the 100th mixin was refused, and every mixin after.
+				It("counts only mixins toward the nesting limit", func() {
+					var b strings.Builder
+					for i := range 99 {
+						fmt.Fprintf(&b, "@define-mixin n%d{d%d:v;@mixin n%d}", i, i, i+1)
+					}
+					b.WriteString("@define-mixin n99{d99:v;}@define-mixin other{o:v;}")
+					b.WriteString(".x{@mixin n0}.y{@mixin other}")
+					code, warnings := parseWithDeadline(b.String(), "/foo.css")
+
+					Expect(warnings).To(BeEmpty())
+					Expect(code).To(ContainSubstring("d99:v;"))
+					Expect(code).To(ContainSubstring("o:v;"))
+				})
+
+				// A mixin from another file refused at a cap warns once, with the limit, and not also as
+				// "not found" in its file. The other specs use mixins defined in the stylesheet itself,
+				// which never reach that branch.
+				It("refuses a mixin from another file past the cap with one warning", func() {
+					input := "@define-mixin m{a:b;}.x{" + strings.Repeat("@mixin m;", expansions) +
+						`@mixin red from url("/lib/mixins/colors.css");` +
+						`@mixin red from url("/lib/mixins/colors.css");}`
+					code, warnings := parseWithDeadline(input, "/foo.css")
+
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "red" not expanded: the stylesheet ` + limit))
+					Expect(strings.Count(code, "a:b;")).To(Equal(expansions))
+					Expect(code).NotTo(ContainSubstring("color: red"))
+				})
+
+				// A miss in a mixin file is no expansion, so the caps never counted it, and each one
+				// read and tokenized the whole file again: a doubling chain ending in one took minutes.
+				It("parses a mixin file once however often a mixin is missing from it", func() {
+					dir, err := os.MkdirTemp(filepath.Join(testConfig.RootPath, "tmp"), "mixin-reparse-")
+					Expect(err).NotTo(HaveOccurred())
+					DeferCleanup(os.RemoveAll, dir)
+
+					big := "@define-mixin big{" + strings.Repeat("a:b;", 130_000) + "}"
+					Expect(os.WriteFile(filepath.Join(dir, "big.css"), []byte(big), 0o600)).To(Succeed())
+
+					uri := "/tmp/" + filepath.Base(dir) + "/big.css"
+					leaf := `@mixin nope from url("` + uri + `");`
+					_, warnings := parseWithDeadline(mixinChain(12, leaf), "/foo.css")
+
+					Expect(warnings[0].Text).To(HavePrefix(`Mixin "nope" not found in "`))
+					Expect(warnings[len(warnings)-1].Text).To(
+						Equal(fmt.Sprintf("%d more warning(s) not reported", 1<<12-100)))
+				})
+
+				// Resolving a mixin file's url runs esbuild's resolver, about 1ms, and a url that does
+				// not resolve is no expansion either: a doubling chain ending in a few of them took
+				// minutes.
+				It("resolves a mixin url once however often it is used", func() {
+					leaf := strings.Repeat(`@mixin a from url(nope);`, 100)
+					_, warnings := parseWithDeadline(mixinChain(8, leaf), "/foo.css")
+
+					Expect(warnings[0].Text).To(HavePrefix(`Could not resolve mixin file "nope" for mixin "a"`))
+					Expect(warnings[len(warnings)-1].Text).To(
+						Equal(fmt.Sprintf("%d more warning(s) not reported", 100<<8-100)))
+				})
+
+				// A relative url resolves against the file of the mixin using it, so the same url in two
+				// mixin files is two files.
+				It("resolves the same relative mixin url once per file that uses it", func() {
+					dir, err := os.MkdirTemp(filepath.Join(testConfig.RootPath, "tmp"), "mixin-relative-")
+					Expect(err).NotTo(HaveOccurred())
+					DeferCleanup(os.RemoveAll, dir)
+
+					for name, decl := range map[string]string{"a": "one:1;", "b": "two:2;"} {
+						Expect(os.Mkdir(filepath.Join(dir, name), 0o700)).To(Succeed())
+						main := "@define-mixin " + name + `{@mixin dep from url("./dep.css");}`
+						Expect(os.WriteFile(filepath.Join(dir, name, "main.css"), []byte(main), 0o600)).To(Succeed())
+						dep := "@define-mixin dep{" + decl + "}"
+						Expect(os.WriteFile(filepath.Join(dir, name, "dep.css"), []byte(dep), 0o600)).To(Succeed())
+					}
+
+					root := "/tmp/" + filepath.Base(dir)
+					code, warnings := parseWithDeadline(`.x{@mixin a from url("`+root+`/a/main.css");`+
+						`@mixin b from url("`+root+`/b/main.css");}`, "/foo.css")
+
+					Expect(warnings).To(BeEmpty())
+					Expect(code).To(ContainSubstring("one:1;"))
+					Expect(code).To(ContainSubstring("two:2;"))
+				})
+			})
+
+			// Each warning searches the input for its position, so a stylesheet could pay for one
+			// per use of a missing mixin, without limit.
+			It("reports at most 100 warnings, then how many more there were", func() {
+				input := ".a{" + strings.Repeat("@mixin nope;", 150) + "}"
+				_, warnings := parseWithDeadline(input, "/foo.css")
+
+				Expect(warnings).To(HaveLen(101))
+				Expect(warnings[99].Text).To(Equal(`Mixin "nope" not defined in "/foo.css"`))
+				Expect(warnings[100].Text).To(Equal("50 more warning(s) not reported"))
+			})
+
+			// esbuild sorts a file's warnings by location, then text, and the dev build shows the first.
+			// A count with no location sorted first, and so did one sharing the location of the warnings
+			// from a mixin body, which all point at the one `@mixin` in its definition.
+			It("locates the count of unreported warnings after every reported one", func() {
+				_, warnings := parseWithDeadline(mixinChain(8, "@mixin nope;"), "/foo.css")
+
+				Expect(warnings).To(HaveLen(101))
+				count := warnings[100]
+				Expect(count.Text).To(Equal(fmt.Sprintf("%d more warning(s) not reported", 1<<8-100)))
+				for _, w := range warnings[:100] {
+					Expect(count.Line > w.Line || count.Line == w.Line && count.Column > w.Column).To(BeTrue())
+				}
+			})
+
+			It("locates the count of unreported warnings at the end of a stylesheet of many lines", func() {
+				body := ".a{\n" + strings.Repeat("@mixin nope;\n", 150) + "}"
+				_, warnings := parseWithDeadline(body, "/foo.css")
+
+				Expect(warnings).To(HaveLen(101))
+				Expect(warnings[100].Line).To(Equal(152))
+				Expect(warnings[100].Column).To(Equal(1))
+				Expect(warnings[100].LineText).To(Equal("}"))
+
+				_, warnings = parseWithDeadline(body+"\n", "/foo.css")
+
+				Expect(warnings[100].Line).To(Equal(153))
+				Expect(warnings[100].Column).To(Equal(0))
+				Expect(warnings[100].LineText).To(BeEmpty())
+			})
+
+			It("reports the mixin limit warning and the count past 100 other warnings", func() {
+				big := strings.Repeat("a:b;", threeMiBOfDecls)
+				input := ".a{" + strings.Repeat("@mixin nope;", 150) + "}" +
+					"@define-mixin big{" + big + "}.x{@mixin big;@mixin big;}"
+				_, warnings := parseWithDeadline(input, "/foo.css")
+
+				Expect(warnings).To(HaveLen(102))
+				Expect(warnings[99].Text).To(Equal(`Mixin "nope" not defined in "/foo.css"`))
+				Expect(warnings[100].Text).To(HavePrefix(`Mixin "big" not expanded:`))
+				Expect(warnings[101].Text).To(Equal("50 more warning(s) not reported"))
+			})
+
 			// The token after a mixin's terminator used to be consumed by an eager skip, so a
 			// declaration on the same line as `@mixin foo;` lost its first token: `a{@mixin m;
 			// display:block;}` became `a{color:red;:block;}`, and `a{@mixin m;}` lost its closing
@@ -777,4 +1018,21 @@ func parseWithDeadline(input string, filePath string) (string, []css.CssWarning)
 		Fail("ParseCss did not terminate within 5s")
 		return "", nil
 	}
+}
+
+// Repeats of `a:b;` filling 3 MiB: a mixin of them fits under the 4 MiB byte cap once, not twice.
+const threeMiBOfDecls = 786_432
+
+// A chain of mixins `m0` to `m<depth>`, each including the one before it twice, so using the last
+// expands `m0`, whose body is `leaf`, 2^depth times.
+func mixinChain(depth int, leaf string) string {
+	var b strings.Builder
+
+	fmt.Fprintf(&b, "@define-mixin m0{%s}", leaf)
+	for i := 1; i <= depth; i++ {
+		fmt.Fprintf(&b, "@define-mixin m%d{@mixin m%d;@mixin m%d;}", i, i-1, i-1)
+	}
+	fmt.Fprintf(&b, ".x{@mixin m%d;}", depth)
+
+	return b.String()
 }

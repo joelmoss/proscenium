@@ -39,6 +39,9 @@ type cssTokenizer struct {
 
 	// An inserted mixin whose end `next` has just returned, still on the stack until the next call.
 	exhausted *cssTokenizers
+
+	// How many of the streams on the stack are mixins, not the `}` the parser puts back.
+	openMixins int
 }
 
 func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) {
@@ -96,6 +99,9 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	if x.exhausted != nil {
 		if x.tokenizers[len(x.tokenizers)-1] == x.exhausted {
 			x.tokenizers = x.tokenizers[:len(x.tokenizers)-1]
+			if x.exhausted.mixinName != "" {
+				x.openMixins--
+			}
 		}
 		x.exhausted = nil
 	}
@@ -160,6 +166,7 @@ func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinName st
 	t := &cssTokenizers{tokenizer: newTokenizer(tokens), filePath: filePath, mixinName: mixinName}
 	if mixinName != "" {
 		t.mixinKey = filePath + "#" + mixinName
+		x.openMixins++
 	}
 
 	x.tokenizers = append(x.tokenizers, t)

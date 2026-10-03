@@ -22,6 +22,21 @@ type cssParser struct {
 	// Mixins from other files whose definition held a bad token, refused when used.
 	malformedMixins map[string]bool
 
+	// How many mixins this parse has expanded, and the length of the definitions inserted, both
+	// capped by `maxMixinExpansions` and `maxMixinBytes`. Once either cap trips, or nesting reaches
+	// `maxMixinDepth`, the latch refuses every later `@mixin`, even one that would still fit, and
+	// keeps the warning to one.
+	mixinExpansions    int
+	mixinBytes         int
+	mixinLimitExceeded bool
+
+	// Mixin file uris this parse has resolved, and the files it has read, with whether each could be.
+	resolvedMixinFiles map[mixinFileKey]resolvedMixinFile
+	mixinFiles         map[string]bool
+
+	// Warnings past `maxWarnings`, counted but not reported.
+	unreportedWarnings int
+
 	// Warnings accumulated during parsing.
 	warnings []CssWarning
 
@@ -29,6 +44,12 @@ type cssParser struct {
 	// recovered while looking up a mixin file. Warnings are for the stylesheet's own mistakes.
 	err error
 }
+
+// Each warning searches the input for its position, so past this many a stylesheet with a broken
+// mixin used everywhere would pay for a search per use. The rest are only counted, into one
+// warning of their own. The mixin limit warning is reported past it too, so a parse has at most
+// two more.
+const maxWarnings = 100
 
 func (p *cssParser) parse() (string, []CssWarning, error) {
 	for {
@@ -38,6 +59,21 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 		}
 
 		p.append(result)
+	}
+
+	// The count of unreported warnings is located at the end of the input, after every warning it
+	// follows. esbuild sorts a file's warnings by location, then text, and the dev build shows only
+	// the first: with no location it sorted first, and sharing the location of the warnings from a
+	// mixin body - which all point at the one `@mixin` in its definition - its digit sorted first.
+	if p.unreportedWarnings > 0 {
+		lastNL := strings.LastIndex(p.input, "\n")
+		p.warnings = append(p.warnings, CssWarning{
+			Text:     fmt.Sprintf("%d more warning(s) not reported", p.unreportedWarnings),
+			FilePath: p.filePath,
+			Line:     strings.Count(p.input, "\n") + 1,
+			Column:   len(p.input) - lastNL - 1,
+			LineText: p.input[lastNL+1:],
+		})
 	}
 
 	// Malformed CSS: a bad token in the input itself, definitions included. Stopping at one used to
@@ -55,6 +91,16 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 // addWarning adds a warning associated with the current file. The search string is used to locate
 // the warning position within the input by searching for it starting from the current output length.
 func (p *cssParser) addWarning(search string, format string, args ...any) {
+	if len(p.warnings) >= maxWarnings {
+		p.unreportedWarnings++
+		return
+	}
+
+	p.warnings = append(p.warnings, p.newWarning(search, format, args...))
+}
+
+// newWarning builds a warning associated with the current file, located as `addWarning` describes.
+func (p *cssParser) newWarning(search string, format string, args ...any) CssWarning {
 	w := CssWarning{
 		Text:     fmt.Sprintf(format, args...),
 		FilePath: p.filePath,
@@ -75,8 +121,7 @@ func (p *cssParser) addWarning(search string, format string, args ...any) {
 			idx += startFrom
 		} else if idx = strings.Index(p.input, search); idx < 0 {
 			// Not found at all; skip location info.
-			p.warnings = append(p.warnings, w)
-			return
+			return w
 		}
 
 		prefix := p.input[:idx]
@@ -99,7 +144,7 @@ func (p *cssParser) addWarning(search string, format string, args ...any) {
 		}
 	}
 
-	p.warnings = append(p.warnings, w)
+	return w
 }
 
 // Append the given input to the output.
