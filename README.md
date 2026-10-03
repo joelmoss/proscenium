@@ -63,7 +63,6 @@ Getting started obviously depends on whether you are adding Proscenium to an exi
 - [Getting Started with a new Rails app](docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app
   - [Migrate from Sprockets](docs/guides/migrate_from_sprockets.md)
-- [Render a React component with Proscenium](docs/guides/basic_react.md)
 
 ## Installation
 

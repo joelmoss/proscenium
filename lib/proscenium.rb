@@ -32,7 +32,6 @@ module Proscenium
   autoload :EnsureLoaded
   autoload :SideLoad
   autoload :CssModule
-  autoload :ReactComponentable
   autoload :Helper
   autoload :Builder
   autoload :Importer
