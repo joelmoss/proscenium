@@ -21,8 +21,9 @@ import (
 )
 
 // When importing an svg image from a jsx module, the svg is exported as a component that renders it.
-// The component is plain JSX with no import of its own, so the JSX runtime compiles it like any
-// other JSX: esbuild's automatic runtime, which defaults to React.
+// The component is plain JSX with no import of its own. esbuild compiles it with its default
+// automatic runtime, React, whatever an app's tsconfig sets: tsconfig only applies to files esbuild
+// reads itself, not to a plugin's contents (see TODOS.md).
 func Svg(cfg *types.ConfigT) api.Plugin {
 	return api.Plugin{
 		Name: "svg",
@@ -51,7 +52,8 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 						return api.OnLoadResult{}, fmt.Errorf("cannot read %v as SVG: %w", args.Path, err)
 					}
 
-					contents = fmt.Sprintf("export default function() {\n\treturn %s;\n}\n", contents)
+					// Built once, at module scope, so every render returns the same element.
+					contents = fmt.Sprintf("const svg = %s;\nexport default function() {\n\treturn svg;\n}\n", contents)
 
 					loader := api.LoaderJSX
 					if utils.PathIsTsx(args.Path) {
@@ -123,7 +125,7 @@ func svgToJsx(svg string) (string, error) {
 			}
 
 			flushText()
-			fmt.Fprintf(&out, "<%s", name)
+			fmt.Fprintf(&out, "<%s", jsxTagName(name, len(open) == 0))
 			for _, attr := range t.Attr {
 				attrName := xmlName(attr.Name)
 				if !svgName.MatchString(attrName) {
@@ -149,7 +151,7 @@ func svgToJsx(svg string) (string, error) {
 			}
 
 			flushText()
-			fmt.Fprintf(&out, "</%s>", name)
+			fmt.Fprintf(&out, "</%s>", jsxTagName(name, len(open) == 1))
 
 			open = open[:len(open)-1]
 			if len(open) == 0 {
@@ -163,6 +165,15 @@ func svgToJsx(svg string) (string, error) {
 			}
 		}
 	}
+}
+
+// The root is always rendered as `svg`, whatever its name in the source, so a namespace prefix
+// such as `s:svg` does not make it an element JSX renders outside the SVG namespace.
+func jsxTagName(name string, isRoot bool) string {
+	if isRoot {
+		return "svg"
+	}
+	return name
 }
 
 var jsxLineBreak = regexp.MustCompile("\r\n|[\r\n\u2028\u2029]")

@@ -15,19 +15,19 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	`
 
 	EntryPoint("lib/svg/absolute_jsx.jsx", func() {
-		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/absolute_tsx.tsx", func() {
-		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/relative.jsx", func() {
-		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/bare.jsx", func() {
-		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	When("Bundle = false", func() {
@@ -42,6 +42,15 @@ var _ = Describe("b.BuildToString(svg)", func() {
 
 			Expect(code).To(ContainCode(`("svg"`))
 			Expect(code).NotTo(ContainCode(`from "/public/at.svg"`))
+		})
+
+		// Unbundled, React's own source is not in the output, so any React API the component
+		// imported would show here.
+		It("imports nothing from React for an svg imported from jsx", func() {
+			_, code, _ := b.BuildToString("lib/svg/absolute_jsx.jsx", testConfig)
+
+			Expect(code).NotTo(ContainSubstring("cloneElement"))
+			Expect(code).NotTo(ContainSubstring("Children"))
 		})
 
 		It("wraps an svg imported from tsx as a component", func() {
@@ -87,7 +96,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		It("bundles", func() {
 			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.jsx", testConfig)
 
-			Expect(code).To(ContainCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem1/at.svg";`))
 		})
 
@@ -108,7 +117,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		It("bundles", func() {
 			_, code, _ := b.BuildToString("lib/svg/external_rubygem.jsx", testConfig)
 
-			Expect(code).To(ContainCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem2/at.svg";`))
 		})
 
@@ -135,7 +144,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		_, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(code).To(ContainCode(`
-			return /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
+			var svg = /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
 		`))
 	})
 
@@ -191,7 +200,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(success).To(BeTrue())
-		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("text", { children: "a & b\xA0c" }) }) });`))
+		Expect(code).To(ContainCode(`var svg = /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("text", { children: "a & b\xA0c" }) }) });`))
 	})
 
 	// The component is the SVG's own JSX, with no import and nothing from a particular JSX library,
@@ -206,7 +215,19 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		Expect(success).To(BeTrue())
 		Expect(code).NotTo(ContainSubstring("Children.only("))
 		Expect(code).NotTo(ContainSubstring("svg.props"))
-		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("path", { d: "1" }) });`))
+		Expect(code).To(ContainCode(`var svg = /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("path", { d: "1" }) });`))
+		Expect(code).To(ContainCode(`return svg;`))
+	})
+
+	// The root is always rendered as an svg element, as the old wrapper did, so a namespace prefix
+	// on it does not turn it into an unknown element that renders nothing.
+	It("renders a namespace-prefixed root as svg", func() {
+		MockURL("/at.svg", `<s:svg xmlns:s="http://www.w3.org/2000/svg"><path d="1" /></s:svg>`)
+
+		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
+
+		Expect(success).To(BeTrue())
+		Expect(code).To(ContainCode(`jsx("svg", { "xmlns:s": "http://www.w3.org/2000/svg", children: /* @__PURE__ */ jsx("path", { d: "1" }) })`))
 	})
 
 	It("renders the root class as className, and leaves a descendant's class alone", func() {
@@ -225,7 +246,8 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(success).To(BeTrue())
-		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsxs("svg", { children: [ /* @__PURE__ */ jsx("path", { d: "1" }), /* @__PURE__ */ jsx("path", { d: "2" }) ] });`))
+		Expect(code).To(ContainCode(`var svg = /* @__PURE__ */ jsxs("svg", { children: [ /* @__PURE__ */ jsx("path", { d: "1" }), /* @__PURE__ */ jsx("path", { d: "2" }) ] });`))
+		Expect(code).NotTo(ContainSubstring("Children.only("))
 	})
 
 	It("keeps namespaced attributes, and skips the xml declaration and comments", func() {
