@@ -149,6 +149,14 @@ var _ = Describe("Build(parseCss)", func() {
 					BeParsedTo("@media print{.a{color:red;}}.b{color:blue;}", "/foo.css", testConfig))
 			})
 
+			// Counting the pushed-back brace again matters inside a block too. At the root, the nesting
+			// count's floor at zero hides a missing count, so only an enclosing block shows it.
+			It("keeps the nesting count inside an enclosing block, so a @define-mixin there passes through", func() {
+				Expect("@define-mixin m{color:red;}@media print{.a{@mixin m}@define-mixin n{x:y}}.b{@mixin n;}").To(
+					BeParsedTo("@media print{.a{color:red;}@define-mixin n{x:y}}.b{@mixin n;}", "/foo.css", testConfig,
+						`Mixin "n" not defined in "/foo.css"`))
+			})
+
 			It("keeps them for a mixin file that cannot be resolved", func() {
 				code, warnings := parseWithDeadline(".a{@mixin m from url(\"/lib/mixins/nonexist.css\")}.b{c:d}", "/foo.css")
 
