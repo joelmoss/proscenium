@@ -6,9 +6,11 @@ module Proscenium
 
     module_function
 
+    # Built aside and assigned once, so a resolve during a load never sees a half-built manifest,
+    # and a manifest that fails to parse leaves the previous one in place.
     def load!
       public_path = Rails.configuration.paths['public'].first
-      self.manifest = {}
+      entries = {}
 
       if Proscenium.config.manifest_path.exist?
         JSON.parse(Proscenium.config.manifest_path.read)['outputs'].each do |outpath, details|
@@ -19,14 +21,14 @@ module Proscenium
           ep = fs_path(details['entryPoint'])
           ep = BundledGems.virtual_path(ep) || ep.delete_prefix(Rails.root.to_s)
 
-          manifest[ep] = [
+          entries[ep] = [
             "/#{outpath}",
             details['cssBundle'] && fs_path(details['cssBundle']).delete_prefix(public_path)
           ].compact
         end
       end
 
-      manifest
+      self.manifest = entries
     end
 
     # esbuild records absolute paths in the metafile in the form the platform produced. Left in

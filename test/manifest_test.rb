@@ -52,6 +52,24 @@ class Proscenium::ManifestTest < ActiveSupport::TestCase
     end
   end
 
+  # The manifest is assigned once at the end, so a load that fails partway changes nothing.
+  describe '.load! with a manifest that fails to parse' do
+    it 'keeps the manifest it had' do
+      dir = Pathname.new(Dir.mktmpdir('manifest'))
+      path = dir.join('.manifest.json')
+      path.write('{"outputs": ')
+      orig = Proscenium.config.manifest_path
+      Proscenium.config.manifest_path = path
+      Proscenium::Manifest.manifest = { '/x.js' => ['/assets/x.js'] }
+
+      assert_raises(JSON::ParserError) { Proscenium::Manifest.load! }
+      assert_equal ['/assets/x.js'], Proscenium::Manifest['/x.js']
+    ensure
+      Proscenium.config.manifest_path = orig if orig
+      FileUtils.rm_rf(dir) if dir
+    end
+  end
+
   describe '.load! with a gem entry point' do
     around do |test|
       @dir = Pathname.new(Dir.mktmpdir('manifest'))
