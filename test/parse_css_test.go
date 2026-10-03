@@ -47,6 +47,16 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).NotTo(HaveOccurred())
 		})
 
+		It("fails on a warning the spec did not expect, or an expected one that never came", func() {
+			input := "a{@mixin nope;display:block;}"
+
+			_, err := BeParsedTo(input, "/foo.css", testConfig).Match(input)
+			Expect(err).To(MatchError(ContainSubstring(`Mixin \"nope\" not defined`)))
+
+			_, err = BeParsedTo("body{}", "/foo.css", testConfig, "anything").Match("body{}")
+			Expect(err).To(MatchError(ContainSubstring(`but the spec expected ["anything"]`)))
+		})
+
 		It("does not match different output", func() {
 			success, err := BeParsedTo("a{color:blue;}", "/foo.css", testConfig).Match("a{color:red;}")
 
@@ -65,7 +75,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin foo;
 						}
-					`, "/foo.css", testConfig))
+					`, "/foo.css", testConfig, `Mixin "foo" not defined`))
 				})
 
 				It("undefined local mixin generates a warning", func() {
@@ -104,7 +114,7 @@ var _ = Describe("Build(parseCss)", func() {
 								@mixin foo;
 							}
 						}
-					`, "/foo.css", testConfig))
+					`, "/foo.css", testConfig, `Mixin "foo" not defined`))
 				})
 
 				It("mixin is replaced with defined mixin", func() {
@@ -292,7 +302,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin red from url("/unknown.css");
 						}
-					`, "/foo.css", testConfig))
+					`, "/foo.css", testConfig, `Could not resolve mixin file "/unknown.css"`))
 					})
 
 					It("should generate a warning", func() {
@@ -323,7 +333,7 @@ var _ = Describe("Build(parseCss)", func() {
 						header {
 							@mixin unknown from url("/lib/mixins/colors.css");
 						}
-					`, "/foo.css", testConfig))
+					`, "/foo.css", testConfig, `Mixin "unknown" not found in`))
 					})
 
 					It("should generate a warning", func() {
@@ -354,7 +364,7 @@ var _ = Describe("Build(parseCss)", func() {
 							header {
 								@mixin purple from url("/lib/mixins/colors.css");
 							}
-						`, "/foo.css", testConfig))
+						`, "/foo.css", testConfig, `Mixin "purple" not found in`))
 					})
 				})
 
@@ -459,7 +469,7 @@ var _ = Describe("Build(parseCss)", func() {
 
 				It("keeps the token after an unresolved mixin, and emits it once", func() {
 					Expect("a{@mixin nope;display:block;}").To(
-						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css", testConfig))
+						BeParsedTo("a{@mixin nope;display:block;}", "/foo.css", testConfig, `Mixin "nope" not defined`))
 				})
 			})
 
