@@ -14,8 +14,9 @@ module Proscenium
       # Normalised before anything reads it, the guard and the cache key included. The bun test
       # harness hands this Bun's own spelling of a module path, which on Windows is `D:\...`;
       # matched against a slash-form Rails.root it fell through to the Go resolver and came back
-      # as the url path unchanged - a backslash path the harness then refused to build.
-      path = Utils.fs_path(path)
+      # as the url path unchanged - a backslash path the harness then refused to build. Frozen,
+      # because the cache keeps it: a caller mutating its string later must not change the entry.
+      path = -Utils.fs_path(path)
 
       if path.start_with?('./', '../')
         raise ArgumentError, '`path` must be an absolute file system or URL path'

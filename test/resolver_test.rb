@@ -134,6 +134,18 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
         Proscenium::Manifest.reset!
         assert_equal [nil, '/node_modules/@rubygems/proscenium/runtime/bun.js', gem_file],
                      subject.resolve(gem_file, as_array: true)
+        assert_equal [nil, '/lib/foo.js', app_file], subject.resolve(app_file, as_array: true)
+      end
+    end
+
+    it 'keeps its entry when the caller later mutates the path it passed' do
+      with_manifest('lib/foo-$ABC123$.js' => Rails.root.join('lib/foo.js').to_s) do
+        Proscenium::Manifest.load!
+        path = +'/lib/foo.js'
+        subject.resolve(path)
+        path.replace('/lib/bar.js')
+
+        assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve('/lib/foo.js')
       end
     end
 
