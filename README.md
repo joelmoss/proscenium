@@ -709,6 +709,10 @@ p {
 
 A mixin must be defined at the root of a file. A `@define-mixin` inside a rule or an at-rule block such as `@media`, or inside another mixin, does not define anything: it is passed through as written, with a warning.
 
+One stylesheet may expand at most 100,000 mixins, inserting at most 4 MiB (4,194,304 bytes) of mixin definitions, with mixins nested at most 100 deep, so a chain of mixins that each include another more than once cannot grow without bound. Past any limit, each remaining `@mixin` is left as written, with one warning.
+
+Each stylesheet reports at most 100 warnings, plus one saying how many more were not reported and, past a limit, the mixin limit warning. A precompile sends at most 100 errors and 100 warnings in all, with a count of the rest, so in a build that noisy the limit warning can be one of those counted.
+
 CSS modules and Mixins works perfectly together. You can include a mixin in a CSS module.
 
 ### CSS Caveats
