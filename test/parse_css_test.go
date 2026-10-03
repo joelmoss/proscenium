@@ -106,6 +106,22 @@ var _ = Describe("Build(parseCss)", func() {
 				BeParsedTo("a{\n  color: red;\ncolor:blue}", "/foo.css", testConfig))
 		})
 
+		// Only a body whose last statement is a declaration needs the semicolon. A trailing comment is
+		// not one: a rules mixin ending in a comment used to get `;` after it, which stuck to the next
+		// selector at the root, so a browser dropped that rule.
+		DescribeTable("terminating a mixin body",
+			func(input, expected string) {
+				Expect(input).To(BeParsedTo(expected, "/foo.css", testConfig))
+			},
+			Entry("empty", "@define-mixin m{}a{@mixin m;color:blue}", "a{color:blue}"),
+			Entry("ending in a rule", "@define-mixin m{x{y:z}}a{@mixin m;color:blue}", "a{x{y:z}color:blue}"),
+			Entry("already terminated", "@define-mixin m{color:red;}a{@mixin m;color:blue}", "a{color:red;color:blue}"),
+			Entry("a declaration then a comment", "@define-mixin m{color:red/* c */}a{@mixin m;color:blue}", "a{color:red/* c */;color:blue}"),
+			Entry("a rule then a comment, at the root", "@define-mixin m{a{color:red}/* c */}@mixin m;b{color:blue}", "a{color:red}/* c */b{color:blue}"),
+			Entry("a rule then `-->`, at the root", "@define-mixin m{a{b:c}-->}@mixin m;d{e:f}", "a{b:c}-->d{e:f}"),
+			Entry("a rule then `<!--`, at the root", "@define-mixin m{a{b:c}<!--}@mixin m;d{e:f}", "a{b:c}<!--d{e:f}"),
+		)
+
 		// A @mixin declaration was read up to the next semicolon, so as a block's last statement with
 		// none it ran past the block's `}` to the next `;` in the file, and all of it was discarded.
 		Describe("a @mixin declaration ending its block without a semicolon", func() {
@@ -122,6 +138,22 @@ var _ = Describe("Build(parseCss)", func() {
 			It("keeps them inside a mixin body", func() {
 				Expect("@define-mixin i{color:red;}@define-mixin o{a{@mixin i}b{c:d;}}x{@mixin o;}y{e:f;}").To(
 					BeParsedTo("x{a{color:red;}b{c:d;}}y{e:f;}", "/foo.css", testConfig))
+			})
+
+			// The brace is read twice, so it is counted back first. Without that, nesting stayed one
+			// too low, a later root `@define-mixin` was not seen as one, and the rest was dropped.
+			It("keeps the nesting count, so a later @define-mixin is still at the root", func() {
+				Expect("@define-mixin m{color:red;}.a{@mixin m}@define-mixin n{color:blue;}.b{@mixin n;}").To(
+					BeParsedTo(".a{color:red;}.b{color:blue;}", "/foo.css", testConfig))
+				Expect("@define-mixin m{color:red;}@media print{.a{@mixin m}}@define-mixin n{color:blue;}.b{@mixin n;}").To(
+					BeParsedTo("@media print{.a{color:red;}}.b{color:blue;}", "/foo.css", testConfig))
+			})
+
+			It("keeps them for a mixin file that cannot be resolved", func() {
+				code, warnings := parseWithDeadline(".a{@mixin m from url(\"/lib/mixins/nonexist.css\")}.b{c:d}", "/foo.css")
+
+				Expect(code).To(Equal(".a{@mixin m from url(\"/lib/mixins/nonexist.css\")}.b{c:d}"))
+				Expect(warnings).To(HaveLen(1))
 			})
 
 			It("keeps them for a mixin that is not defined", func() {
