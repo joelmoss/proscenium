@@ -138,14 +138,20 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
       end
     end
 
-    it 'keeps its entry when the caller later mutates the path it passed' do
-      with_manifest('lib/foo-$ABC123$.js' => Rails.root.join('lib/foo.js').to_s) do
-        Proscenium::Manifest.load!
+    # The URL handed back for a Rails.root path is the cached manifest key itself.
+    it 'keeps its entry when a caller mutates the path it passed or the URL it got back' do
+      app_file = Rails.root.join('lib/foo.js').to_s
+
+      with_manifest('lib/foo-$ABC123$.js' => app_file) do
         path = +'/lib/foo.js'
         subject.resolve(path)
         path.replace('/lib/bar.js')
+        url = subject.resolve(app_file)
+        assert_raises(FrozenError) { url.replace('/lib/bar.js') }
 
+        Proscenium::Manifest.load!
         assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve('/lib/foo.js')
+        assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve(app_file)
       end
     end
 

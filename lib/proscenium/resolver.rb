@@ -14,28 +14,35 @@ module Proscenium
       # Normalised before anything reads it, the guard and the cache key included. The bun test
       # harness hands this Bun's own spelling of a module path, which on Windows is `D:\...`;
       # matched against a slash-form Rails.root it fell through to the Go resolver and came back
-      # as the url path unchanged - a backslash path the harness then refused to build. Frozen,
-      # because the cache keeps it: a caller mutating its string later must not change the entry.
-      path = -Utils.fs_path(path)
+      # as the url path unchanged - a backslash path the harness then refused to build.
+      path = Utils.fs_path(path)
 
       if path.start_with?('./', '../')
         raise ArgumentError, '`path` must be an absolute file system or URL path'
       end
 
       # Caches the manifest key, not its value, so a manifest loaded or reset later is still
-      # honoured. In the gem branch the key differs from the non-manifest path, so it is kept.
-      key, url_path, abs_path = resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
-                                                     [vpath, "/node_modules/#{vpath}", path]
-                                                   elsif path.start_with?("#{Rails.root}/")
-                                                     vpath = path.delete_prefix(Rails.root.to_s)
-                                                     [vpath, vpath, path]
-                                                   else
-                                                     [path, *Builder.resolve(path)]
-                                                   end
+      # honoured. Every string is frozen: the URL path is handed back to callers, and in the
+      # Rails.root branch it is the key itself, so mutating it would redirect later lookups.
+      key, url_path, abs_path = resolved[path] ||= entry_for(path).map(&:-@).freeze
       manifest_path = Proscenium::Manifest[key]
 
       as_array ? [manifest_path, url_path, abs_path] : manifest_path || url_path
     end
+
+    # The manifest key, URL path and absolute file system path for `path`. In the gem branch the
+    # key differs from the URL path, so it is kept rather than derived.
+    def self.entry_for(path)
+      if (vpath = BundledGems.virtual_path(path))
+        [vpath, "/node_modules/#{vpath}", path]
+      elsif path.start_with?("#{Rails.root}/")
+        vpath = path.delete_prefix(Rails.root.to_s)
+        [vpath, vpath, path]
+      else
+        [path, *Builder.resolve(path)]
+      end
+    end
+    private_class_method :entry_for
 
     def self.reset
       self.resolved = {}
