@@ -424,7 +424,7 @@ proscenium.env.RAILS_ENV === "development" && doSomethingDangerous();
 start();
 ```
 
-In development the above code will be transformed into the following code, discarding the definition, and call to`doSomethingDangerous()`.
+In any environment other than development, such as production, the above code will be transformed into the following code, discarding the definition of, and call to, `doSomethingDangerous()`.
 
 ```js
 function start() {
