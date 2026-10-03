@@ -106,6 +106,30 @@ var _ = Describe("Build(parseCss)", func() {
 				BeParsedTo("a{\n  color: red;\ncolor:blue}", "/foo.css", testConfig))
 		})
 
+		// A @mixin declaration was read up to the next semicolon, so as a block's last statement with
+		// none it ran past the block's `}` to the next `;` in the file, and all of it was discarded.
+		Describe("a @mixin declaration ending its block without a semicolon", func() {
+			It("keeps the block's closing brace and the rules after it", func() {
+				Expect("@define-mixin m{color:red;}.a{@mixin m}.b{color:blue;}").To(
+					BeParsedTo(".a{color:red;}.b{color:blue;}", "/foo.css", testConfig))
+			})
+
+			It("keeps them for a mixin from another file", func() {
+				Expect(".a { @mixin red from url(\"/lib/mixins/colors.css\") }\n.b { color: red; }").To(
+					BeParsedTo(".a {\n  color: red;\n}\n.b { color: red; }", "/foo.css", testConfig))
+			})
+
+			It("keeps them inside a mixin body", func() {
+				Expect("@define-mixin i{color:red;}@define-mixin o{a{@mixin i}b{c:d;}}x{@mixin o;}y{e:f;}").To(
+					BeParsedTo("x{a{color:red;}b{c:d;}}y{e:f;}", "/foo.css", testConfig))
+			})
+
+			It("keeps them for a mixin that is not defined", func() {
+				Expect(".a{@mixin nope}.b{color:blue;}").To(
+					BeParsedTo(".a{@mixin nope}.b{color:blue;}", "/foo.css", testConfig, `Mixin "nope" not defined in "/foo.css"`))
+			})
+		})
+
 		It("uses the last definition of a mixin in another file, even after a malformed one", func() {
 			Expect("a{@mixin m from url(\"/lib/mixins/redefined.css\");}").To(
 				BeParsedTo("a{ color: green; }", "/foo.css", testConfig))
