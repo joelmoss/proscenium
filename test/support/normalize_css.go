@@ -53,7 +53,8 @@ func normalizeCss(css string) string {
 }
 
 // The end of the escape starting with the backslash at `i`: up to six hex digits and the one
-// whitespace that terminates them, or else the single escaped character.
+// whitespace that terminates them (CRLF counting as one, as in CSS), or else the single escaped
+// character.
 func escapeEnd(css string, i int) int {
 	end := i + 1
 	for end < len(css) && end-i <= 6 && isHex(css[end]) {
@@ -62,7 +63,10 @@ func escapeEnd(css string, i int) int {
 	if end == i+1 {
 		return min(end+1, len(css))
 	}
-	if end < len(css) && (css[end] == ' ' || css[end] == '\t' || css[end] == '\n') {
+	switch {
+	case strings.HasPrefix(css[end:], "\r\n"):
+		end += 2
+	case end < len(css) && strings.IndexByte(" \t\n\r\f", css[end]) >= 0:
 		end++
 	}
 
