@@ -17,6 +17,4 @@ Rails.application.routes.draw do
   # get '/sideloadpartial', to: 'pages#sideloadpartial'
   # get '/variant', to: 'pages#variant'
   # get 'first_component', to: 'pages#first_component'
-  # get 'first_react_component', to: 'pages#first_react_component'
-  # get 'second_react_component', to: 'pages#second_react_component'
 end
