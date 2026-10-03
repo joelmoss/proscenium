@@ -389,9 +389,12 @@ You can define and access any environment variable from your JavaScript and Type
 For performance and security reasons you must declare the environment variable names that you wish to expose in your `config/application.rb` file.
 
 ```ruby
-config.proscenium.env_vars = Set['API_KEY', 'SOME_SECRET_VARIABLE']
-config.proscenium.env_vars << 'ANOTHER_API_KEY'
+config.proscenium.env_vars = Set['APP_VERSION', 'PUBLIC_API_URL']
+config.proscenium.env_vars << 'SENTRY_DSN'
 ```
+
+> [!WARNING]
+> A declared variable's value is written as a plain string into any JavaScript that references it, both in what Proscenium serves and in what `assets:precompile` writes under `public/`. Anyone who loads the page can read it. Never declare a secret, such as an API key, password or token.
 
 This assumes that the environment variable of the same name has already been defined. If not, you will need to define it yourself either in your code using Ruby's `ENV` object, or in your shell.
 
