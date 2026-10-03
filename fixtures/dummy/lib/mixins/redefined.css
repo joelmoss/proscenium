@@ -1,0 +1,7 @@
+@define-mixin m {
+  content: "x
+;}
+
+@define-mixin m {
+  color: green;
+}

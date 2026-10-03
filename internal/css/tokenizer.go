@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"joelmoss/proscenium/internal/utils"
 	"log"
+	"slices"
 	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
@@ -34,6 +35,9 @@ type cssTokenizer struct {
 	// Set when the stream's own text - not an inserted mixin - held a bad token, which only
 	// malformed CSS has. Every token passes through `next`, definition captures included.
 	malformed bool
+
+	// An inserted mixin whose end `next` has just returned, still on the stack until the next call.
+	exhausted *cssTokenizers
 }
 
 func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) {
@@ -75,16 +79,34 @@ func isBad(t tokenizer.TokenType) bool {
 	return t == tokenizer.TokenBadString || t == tokenizer.TokenBadURI || t == tokenizer.TokenBadEscape
 }
 
+// The token as CSS text. The tokenizer decodes `\c ` in a string into a literal form feed and writes
+// it back raw, which CSS reads as a newline, ending the string: a captured mixin holding one came out
+// broken. Written back as the escape.
+func render(t *tokenizer.Token) string {
+	return strings.ReplaceAll(t.Render(), "\f", `\c `)
+}
+
 func (x *cssTokenizer) next() *tokenizer.Token {
+	// Pop the inserted mixin that ran out last time. It may no longer be on top: whatever its end
+	// completed - a `@mixin` declaration that was its last statement - can have inserted another.
+	if x.exhausted != nil {
+		x.tokenizers = slices.DeleteFunc(x.tokenizers, func(t *cssTokenizers) bool { return t == x.exhausted })
+		x.exhausted = nil
+	}
+
 	token := x.currentTokenizer().Next()
 	if isBad(token.Type) && len(x.tokenizers) == 1 {
 		x.malformed = true
 	}
 
-	// An inserted mixin definition has run out, so pop back to the stream that included it.
+	// An inserted mixin has run out. Its end is returned, and it stays on the stack until the next
+	// call, so whatever was reading - a `@mixin` declaration that is the mixin's last statement,
+	// with no semicolon - ends there too and resolves while the mixin is still open to cycle
+	// detection. Popping first walked the declaration on into the stream that included the mixin,
+	// swallowing what followed, and let `@define-mixin m{@mixin m}` re-insert itself forever.
 	if endsStream(token.Type) && len(x.tokenizers) > 1 {
-		x.tokenizers = x.tokenizers[:len(x.tokenizers)-1]
-		return x.next()
+		x.exhausted = x.tokenizers[len(x.tokenizers)-1]
+		return &token
 	}
 
 	if x.incrNestingOnNext {
@@ -150,7 +172,7 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
 	x.forEachToken(func(token *tokenizer.Token) bool {
-		original.WriteString(token.Render())
+		original.WriteString(render(token))
 
 		switch token.Type {
 		case tokenizer.TokenOpenBrace:
@@ -187,7 +209,7 @@ func (x *cssTokenizer) captureBlock(level int) string {
 			return false
 		}
 
-		content.WriteString(token.Render())
+		content.WriteString(render(token))
 		return true
 	})
 
