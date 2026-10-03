@@ -1,0 +1,8 @@
+@define-mixin bad {
+  content: "x
+  color: red;
+}
+
+@define-mixin good {
+  color: green;
+}

@@ -39,11 +39,12 @@ func ParseCss(input string, path string, cfg *types.ConfigT) (string, []CssWarni
 	t, _ := newCssTokenizer(input, path)
 
 	p := cssParser{
-		tokens:   t,
-		input:    input,
-		filePath: path,
-		cfg:      cfg,
-		mixins:   cssMixins{},
+		tokens:          t,
+		input:           input,
+		filePath:        path,
+		cfg:             cfg,
+		mixins:          cssMixins{},
+		malformedMixins: map[string]bool{},
 	}
 
 	return p.parse()

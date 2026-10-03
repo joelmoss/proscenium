@@ -30,6 +30,10 @@ type cssTokenizer struct {
 	nesting int
 
 	incrNestingOnNext bool
+
+	// Set when the stream's own text - not an inserted mixin - held a bad token, which only
+	// malformed CSS has. Every token passes through `next`, definition captures included.
+	malformed bool
 }
 
 func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) {
@@ -60,8 +64,7 @@ func newTokenizer(input string) *tokenizer.Tokenizer {
 }
 
 // Whether `t` ends the stream. The tokenizer's own StopToken also counts a bad string, url or
-// escape, which the parser handles itself (see isBad) rather than letting it end a mixin stream
-// or a scan early.
+// escape, which is recorded as `malformed` instead of ending a mixin stream or a scan early.
 func endsStream(t tokenizer.TokenType) bool {
 	return t == tokenizer.TokenEOF || t == tokenizer.TokenError
 }
@@ -74,6 +77,9 @@ func isBad(t tokenizer.TokenType) bool {
 
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
+	if isBad(token.Type) && len(x.tokenizers) == 1 {
+		x.malformed = true
+	}
 
 	// An inserted mixin definition has run out, so pop back to the stream that included it.
 	if endsStream(token.Type) && len(x.tokenizers) > 1 {
