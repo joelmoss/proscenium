@@ -52,7 +52,18 @@ class Proscenium::ManifestTest < ActiveSupport::TestCase
     end
   end
 
-  # The manifest is assigned once at the end, so a load that fails partway changes nothing.
+  it '.load! with no manifest file empties a manifest loaded before' do
+    orig = Proscenium.config.manifest_path
+    Proscenium.config.manifest_path = Pathname.new(Dir.tmpdir).join('no-such-dir/.manifest.json')
+    Proscenium::Manifest.manifest = { '/x.js' => ['/assets/x.js'] }
+
+    Proscenium::Manifest.load!
+    assert_empty Proscenium::Manifest.manifest
+  ensure
+    Proscenium.config.manifest_path = orig if orig
+  end
+
+  # The manifest is assigned once at the end, so a load that fails to parse changes nothing.
   describe '.load! with a manifest that fails to parse' do
     it 'keeps the manifest it had' do
       dir = Pathname.new(Dir.mktmpdir('manifest'))
