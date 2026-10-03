@@ -135,7 +135,8 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 func (p *cssParser) handleNextToken() (string, bool) {
 	token := p.tokens.next()
 	if endsStream(token.Type) {
-		return "", false
+		// The end of an inserted mixin, not of the input: carry on in the stream that included it.
+		return "", p.tokens.exhausted != nil
 	}
 
 	// Malformed, so the input will be returned as it is (see parse): nothing more to do.
@@ -149,7 +150,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		case "define-mixin":
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
-				return token.Render(), true
+				return render(token), true
 			}
 
 			p.mixins[p.filePath+"#"+key] = def
@@ -160,12 +161,11 @@ func (p *cssParser) handleNextToken() (string, bool) {
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
 			var original strings.Builder
-			original.WriteString(token.Render())
+			original.WriteString(render(token))
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
-			depth := len(p.tokens.tokenizers)
 			p.forEachToken(func(token *tokenizer.Token) bool {
-				original.WriteString(token.Render())
+				original.WriteString(render(token))
 
 				if token.Type == tokenizer.TokenSemicolon {
 					// Current token is a semicolon, so we're done. `original` already ends with it,
@@ -192,14 +192,6 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				return "", false
 			}
 
-			// Started inside an inserted mixin and ran past its end with no semicolon: resolving it
-			// would insert the mixin again with the stream it came from already closed, so cycle
-			// detection could not see it, and `@define-mixin m{@mixin m}` looped forever. Passed
-			// through as written instead.
-			if len(p.tokens.tokenizers) < depth {
-				return original.String(), true
-			}
-
 			if p.resolveMixin(mixinIdent, uri) {
 				return "", true
 			}
@@ -210,5 +202,5 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		}
 	}
 
-	return token.Render(), true
+	return render(token), true
 }

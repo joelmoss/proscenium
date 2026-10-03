@@ -139,12 +139,17 @@ func (p *cssParser) parseMixinDefinitions(filePath string) bool {
 			// A bad token in the definition: the tokenizer cannot write it back as written, so the
 			// mixin is refused with a warning rather than expanded lossily, or made to return the
 			// whole valid stylesheet that uses it unchanged.
+			// The last definition of a name wins, malformed or not.
+			k := filePath + "#" + key
 			if tokens.malformed {
-				p.malformedMixins[filePath+"#"+key] = true
+				p.malformedMixins[k] = true
+				delete(p.mixins, k)
+
 				return true
 			}
 
-			p.mixins[filePath+"#"+key] = def
+			p.mixins[k] = def
+			delete(p.malformedMixins, k)
 		}
 
 		return true

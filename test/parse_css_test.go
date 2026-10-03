@@ -70,12 +70,32 @@ var _ = Describe("Build(parseCss)", func() {
 					`Mixin "bad" in "`+file+`" is malformed CSS`))
 		})
 
-		// A @mixin declaration that starts inside an inserted mixin and runs past its end used to
-		// resolve the mixin again after its stream had closed, out of cycle detection's sight.
-		It("passes through an unterminated @mixin inside a mixin instead of looping", func() {
-			code, _ := parseWithDeadline("@define-mixin m{@mixin m}a{@mixin m;}", "/foo.css")
+		// A @mixin declaration that is a mixin's last statement, with no semicolon, ends with the
+		// mixin. It used to run on into the stream that included the mixin, swallowing what followed,
+		// and resolve after the mixin had closed, out of cycle detection's sight, so this looped.
+		It("ends a mixin's last @mixin declaration with the mixin, so a cycle is caught", func() {
+			code, warnings := parseWithDeadline("@define-mixin m{@mixin m}a{@mixin m;}", "/foo.css")
 
 			Expect(code).To(Equal("a{@mixin m}"))
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0].Text).To(Equal(`Mixin "m" includes itself`))
+		})
+
+		It("expands a mixin's last @mixin declaration without swallowing what follows", func() {
+			Expect("@define-mixin outer { color: blue; @mixin inner }\n@define-mixin inner { color: green; }\n.a{ @mixin outer; padding: 0; }").To(
+				BeParsedTo(".a{ color: blue; color: green; padding: 0; }", "/foo.css", testConfig))
+		})
+
+		// The tokenizer decodes `\c ` into a literal form feed and wrote it back raw, which CSS reads
+		// as a newline, ending the string.
+		It("keeps an escaped form feed in a mixin as an escape", func() {
+			Expect("@define-mixin m{content:\"\\c \";}a{@mixin m;}").To(
+				BeParsedTo(`a{content:"\c ";}`, "/foo.css", testConfig))
+		})
+
+		It("uses the last definition of a mixin in another file, even after a malformed one", func() {
+			Expect("a{@mixin m from url(\"/lib/mixins/redefined.css\");}").To(
+				BeParsedTo("a{ color: green; }", "/foo.css", testConfig))
 		})
 
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
