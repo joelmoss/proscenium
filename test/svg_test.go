@@ -15,19 +15,19 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	`
 
 	EntryPoint("lib/svg/absolute_jsx.jsx", func() {
-		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/absolute_tsx.tsx", func() {
-		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/relative.jsx", func() {
-		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	EntryPoint("lib/svg/bare.jsx", func() {
-		AssertCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
+		AssertCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`)
 	})
 
 	When("Bundle = false", func() {
@@ -87,7 +87,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		It("bundles", func() {
 			_, code, _ := b.BuildToString("lib/svg/internal_rubygem.jsx", testConfig)
 
-			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).To(ContainCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem1/at.svg";`))
 		})
 
@@ -108,7 +108,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		It("bundles", func() {
 			_, code, _ := b.BuildToString("lib/svg/external_rubygem.jsx", testConfig)
 
-			Expect(code).To(ContainCode(`svg = /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
+			Expect(code).To(ContainCode(`return /* @__PURE__ */ (0, import_jsx_runtime.jsx)("svg"`))
 			Expect(code).NotTo(ContainCode(`import AtIcon from "@rubygems/gem2/at.svg";`))
 		})
 
@@ -135,7 +135,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		_, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(code).To(ContainCode(`
-			var svg = /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
+			return /* @__PURE__ */ jsx("svg", { "aria-hidden": "true", focusable: "false", role: "img", xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 512 512", children: /* @__PURE__ */ jsx("path", { fill: "currentColor", d: "M504" }) });
 		`))
 	})
 
@@ -184,14 +184,48 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	)
 
 	// Whitespace-only text between elements is dropped, as JSX dropped it, so a pretty-printed svg
-	// keeps a single child and Children.only does not throw.
+	// gains no text children from its indentation.
 	It("reads pretty-printed svg with a doctype and entities", func() {
 		MockURL("/at.svg", "<?xml version=\"1.0\"?>\n<!DOCTYPE svg>\n<svg>\n  <g>\n    <text>a &amp; b&nbsp;c</text>\n  </g>\n</svg>\n")
 
 		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
 
 		Expect(success).To(BeTrue())
-		Expect(code).To(ContainCode(`var svg = /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("text", { children: "a & b\xA0c" }) }) });`))
+		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("g", { children: /* @__PURE__ */ jsx("text", { children: "a & b\xA0c" }) }) });`))
+	})
+
+	// The component is the SVG's own JSX, with no import and nothing from a particular JSX library,
+	// so whatever JSX runtime compiles it renders it.
+	It("renders remote svg from jsx with no import of its own", func() {
+		MockURL("/at.svg", `<svg><path d="1" /></svg>`)
+
+		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
+
+		// React is bundled here as the default JSX runtime, so its own source is in the output;
+		// only the old wrapper ever called Children.only or read svg.props.
+		Expect(success).To(BeTrue())
+		Expect(code).NotTo(ContainSubstring("Children.only("))
+		Expect(code).NotTo(ContainSubstring("svg.props"))
+		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsx("svg", { children: /* @__PURE__ */ jsx("path", { d: "1" }) });`))
+	})
+
+	It("renders the root class as className, and leaves a descendant's class alone", func() {
+		MockURL("/at.svg", `<svg class="a"><g class="b"></g></svg>`)
+
+		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
+
+		Expect(success).To(BeTrue())
+		Expect(code).To(ContainCode(`jsx("svg", { className: "a", children: /* @__PURE__ */ jsx("g", { class: "b" }) })`))
+	})
+
+	// The old wrapper passed the children through Children.only, which throws for more than one.
+	It("renders every child of remote svg from jsx", func() {
+		MockURL("/at.svg", `<svg><path d="1" /><path d="2" /></svg>`)
+
+		success, code, _ := b.BuildToString("lib/svg/remote.jsx", testConfig)
+
+		Expect(success).To(BeTrue())
+		Expect(code).To(ContainCode(`return /* @__PURE__ */ jsxs("svg", { children: [ /* @__PURE__ */ jsx("path", { d: "1" }), /* @__PURE__ */ jsx("path", { d: "2" }) ] });`))
 	})
 
 	It("keeps namespaced attributes, and skips the xml declaration and comments", func() {

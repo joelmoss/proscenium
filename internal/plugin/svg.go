@@ -20,7 +20,9 @@ import (
 	"github.com/peterbourgon/diskv"
 )
 
-// When importing an svg image from a jsx module, the svg is exported as a react component.
+// When importing an svg image from a jsx module, the svg is exported as a component that renders it.
+// The component is plain JSX with no import of its own, so the JSX runtime compiles it like any
+// other JSX: esbuild's automatic runtime, which defaults to React.
 func Svg(cfg *types.ConfigT) api.Plugin {
 	return api.Plugin{
 		Name: "svg",
@@ -49,15 +51,7 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 						return api.OnLoadResult{}, fmt.Errorf("cannot read %v as SVG: %w", args.Path, err)
 					}
 
-					contents = fmt.Sprintf(`
-					import { cloneElement, Children } from 'react';
-					const svg = %s;
-					const props = { ...svg.props, className: svg.props.class };
-					delete props.class;
-					export default function() {
-						return <svg { ...props }>{Children.only(svg.props.children)}</svg>
-					}
-				`, contents)
+					contents = fmt.Sprintf("export default function() {\n\treturn %s;\n}\n", contents)
 
 					loader := api.LoaderJSX
 					if utils.PathIsTsx(args.Path) {
@@ -136,6 +130,12 @@ func svgToJsx(svg string) (string, error) {
 					return "", fmt.Errorf("invalid attribute name %q", attrName)
 				}
 
+				// The root's `class` is written as `className`, which the component has always
+				// rendered it as. Descendants keep `class`.
+				if attrName == "class" && len(open) == 0 {
+					attrName = "className"
+				}
+
 				fmt.Fprintf(&out, " %s={%s}", attrName, utils.JsString(attr.Value))
 			}
 			out.WriteString(">")
@@ -169,8 +169,8 @@ var jsxLineBreak = regexp.MustCompile("\r\n|[\r\n\u2028\u2029]")
 
 // JSX's rule for text between tags, which SVG text followed while it was spliced in as JSX: a line
 // break and the spaces and tabs around it become one space, and text that is only that is dropped.
-// So the indentation of a pretty-printed SVG adds no children, which would make Children.only
-// throw, while a space between two elements on one line is kept.
+// So the indentation of a pretty-printed SVG adds no children, while a space between two elements
+// on one line is kept.
 //
 // ponytail: encoding/xml decodes entities before this sees the text, so an entity that is
 // whitespace (`&#10;`) is treated as formatting, where JSX kept it. Only spaces and tabs are
