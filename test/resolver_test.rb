@@ -5,6 +5,21 @@ require 'test_helper'
 class Proscenium::ResolverTest < ActiveSupport::TestCase
   let(:subject) { Proscenium::Resolver }
 
+  # Points the manifest at a temporary one built from `outputs`, a Hash of output path (under
+  # public/assets) to entry point, without loading it.
+  def with_manifest(outputs)
+    dir = Pathname.new(Dir.mktmpdir('manifest'))
+    path = dir.join('.manifest.json')
+    outputs = outputs.to_h { |out, ep| ["#{Rails.root}/public/assets/#{out}", { entryPoint: ep }] }
+    path.write({ outputs: }.to_json)
+    orig = Proscenium.config.manifest_path
+    Proscenium.config.manifest_path = path
+    yield
+  ensure
+    Proscenium.config.manifest_path = orig if orig
+    FileUtils.rm_rf(dir) if dir
+  end
+
   describe '.resolve' do
     it 'raises on non-absolute path' do
       error = assert_raises ArgumentError do
@@ -92,24 +107,34 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
 
     # #96: the cache held the manifest's answer, so a path resolved before a load or reset kept it.
     it 'follows the manifest when it is loaded or reset after a path was resolved' do
-      dir = Pathname.new(Dir.mktmpdir('manifest'))
-      path = dir.join('.manifest.json')
-      out_path = "#{Rails.root}/public/assets/lib/foo-$ABC123$.js"
-      entry_point = Rails.root.join('lib/foo.js').to_s
-      path.write({ outputs: { out_path => { entryPoint: entry_point } } }.to_json)
-      orig = Proscenium.config.manifest_path
-      Proscenium.config.manifest_path = path
+      with_manifest('lib/foo-$ABC123$.js' => Rails.root.join('lib/foo.js').to_s) do
+        assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
 
-      assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
+        Proscenium::Manifest.load!
+        assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve('/lib/foo.js')
 
-      Proscenium::Manifest.load!
-      assert_equal ['/assets/lib/foo-$ABC123$.js'], subject.resolve('/lib/foo.js')
+        Proscenium::Manifest.reset!
+        assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
+      end
+    end
 
-      Proscenium::Manifest.reset!
-      assert_equal '/lib/foo.js', subject.resolve('/lib/foo.js')
-    ensure
-      Proscenium.config.manifest_path = orig
-      FileUtils.rm_rf(dir) if dir
+    # A gem path and an absolute Rails.root path are looked up by a key that differs from the
+    # path given, unlike the URL path above, so keying by the wrong one only shows here.
+    it 'looks up the manifest by its own key for a gem path and a Rails.root path' do
+      gem_file = Proscenium.root.join('lib/proscenium/runtime/bun.js').to_s
+      app_file = Rails.root.join('lib/foo.js').to_s
+
+      with_manifest('runtime/bun-$ABC123$.js' => gem_file, 'lib/foo-$ABC123$.js' => app_file) do
+        Proscenium::Manifest.load!
+
+        assert_equal ['/assets/runtime/bun-$ABC123$.js'], subject.resolve(gem_file)
+        assert_equal [['/assets/lib/foo-$ABC123$.js'], '/lib/foo.js', app_file],
+                     subject.resolve(app_file, as_array: true)
+
+        Proscenium::Manifest.reset!
+        assert_equal [nil, '/node_modules/@rubygems/proscenium/runtime/bun.js', gem_file],
+                     subject.resolve(gem_file, as_array: true)
+      end
     end
 
     describe 'as_array: true' do

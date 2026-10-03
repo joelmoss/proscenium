@@ -23,17 +23,17 @@ module Proscenium
 
       # Caches the manifest key, not its value, so a manifest loaded or reset later is still
       # honoured. In the gem branch the key differs from the non-manifest path, so it is kept.
-      key, *paths = resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
-                                         [vpath, "/node_modules/#{vpath}", path]
-                                       elsif path.start_with?("#{Rails.root}/")
-                                         vpath = path.delete_prefix(Rails.root.to_s)
-                                         [vpath, vpath, path]
-                                       else
-                                         [path, *Builder.resolve(path)]
-                                       end
-      result = [Proscenium::Manifest[key], *paths]
+      key, url_path, abs_path = resolved[path] ||= if (vpath = BundledGems.virtual_path(path))
+                                                     [vpath, "/node_modules/#{vpath}", path]
+                                                   elsif path.start_with?("#{Rails.root}/")
+                                                     vpath = path.delete_prefix(Rails.root.to_s)
+                                                     [vpath, vpath, path]
+                                                   else
+                                                     [path, *Builder.resolve(path)]
+                                                   end
+      manifest_path = Proscenium::Manifest[key]
 
-      as_array ? result : result[0] || result[1]
+      as_array ? [manifest_path, url_path, abs_path] : manifest_path || url_path
     end
 
     def self.reset
