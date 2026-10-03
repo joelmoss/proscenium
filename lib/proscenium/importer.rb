@@ -35,32 +35,16 @@ module Proscenium
       def import(filepath = nil, sideloaded: false, **)
         self.imported ||= {}
 
-        digest = nil
-
         if filepath.end_with?('.module.css')
-          if imported.key?(filepath)
-            digest = imported[filepath][:digest]
-            abs_path = imported[filepath][:abs_path]
-          else
-            manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
-            filepath = Array(manifest_path || non_manifest_path)[0]
-            # A URL has no file on disk, so the URL is the module's identity. Taken after the
-            # reassignment above, so the digest and the suffix cache below agree on it.
-            digest = Utils.css_module_digest(abs_path.presence || filepath)
+          manifest_path, non_manifest_path, abs_path = Resolver.resolve(filepath, as_array: true)
+          filepath = Array(manifest_path || non_manifest_path)[0]
 
-            if sideloaded
-              ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: filepath,
-                                                                             sideloaded: do
-                imported[filepath] = { ** }
-                imported[filepath][:digest] = digest
-                imported[filepath][:abs_path] = abs_path
-              end
-            else
-              imported[filepath] = { ** }
-              imported[filepath][:digest] = digest
-              imported[filepath][:abs_path] = abs_path
-            end
-          end
+          # A URL has no file on disk, so the URL is the module's identity. Taken after the
+          # reassignment above, so the digest and the suffix cache below agree on it. An entry the
+          # stylesheet got as a plain file has no digest of its own.
+          digest = imported.dig(filepath, :digest) ||
+                   Utils.css_module_digest(abs_path.presence || filepath)
+          store(filepath, sideloaded, **, digest:)
 
           transformed_path = ''
           # Mirrors ConfigT#ShouldMinify - the suffix exists whenever identifiers are not
@@ -82,18 +66,7 @@ module Proscenium
 
           "#{digest}#{transformed_path}"
         else
-          return if imported.key?(filepath)
-
-          Array(Resolver.resolve(filepath)).each do |fp|
-            if sideloaded
-              ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: fp,
-                                                                             sideloaded: do
-                imported[fp] = { ** }
-              end
-            else
-              imported[fp] = { ** }
-            end
-          end
+          Array(Resolver.resolve(filepath)).each { |fp| store(fp, sideloaded, **) }
         end
       end
 
@@ -191,6 +164,25 @@ module Proscenium
 
       def imported?(filepath = nil)
         filepath ? imported&.key?(filepath) : !imported.blank?
+      end
+
+      private
+
+      # Keyed by the resolved path, never the path given: a sideload passes an absolute file
+      # system path. A repeat import merges its options in, later ones winning key by key, and does
+      # not notify again; proscenium-ui's Select sideloads itself `lazy: true` over an eager
+      # sideload of the same file.
+      def store(key, sideloaded, **options)
+        if (existing = imported[key])
+          existing.merge!(options)
+        elsif sideloaded
+          ActiveSupport::Notifications.instrument 'sideload.proscenium', identifier: key,
+                                                                         sideloaded: do
+            imported[key] = options
+          end
+        else
+          imported[key] = options
+        end
       end
     end
   end

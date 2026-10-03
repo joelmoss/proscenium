@@ -90,7 +90,8 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       digest = subject.import('https://cdn.example/x.module.css')
 
       assert_match(/\A[0-9a-f]{8}_https/, digest)
-      assert_equal '', subject.imported['https://cdn.example/x.module.css'][:abs_path]
+      assert_equal Proscenium::Utils.css_module_digest('https://cdn.example/x.module.css'),
+                   subject.imported['https://cdn.example/x.module.css'][:digest]
     end
 
     # A gem on another drive than the app - RubyInstaller's gems on C:, the app on D: - has no
@@ -142,6 +143,95 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       end
     end
 
+    # A sideload passes an absolute file system path, but imports are keyed by URL path, so a
+    # repeat sideload missed the duplicate check and fired `sideload.proscenium` again.
+    it 'sideloads the first JS match once, however often it is sideloaded' do
+      events = []
+      subscriber = ActiveSupport::Notifications.subscribe('sideload.proscenium') do |*, payload|
+        events << payload[:identifier]
+      end
+
+      mock_files 'app/views/user.rb', 'app/views/user.tsx', 'app/views/user.js' do
+        2.times { subject.sideload Rails.root.join('app/views/user.rb') }
+      end
+
+      assert_equal ['/app/views/user.tsx'], events
+      assert_equal({ '/app/views/user.tsx' => {} }, subject.imported)
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
+    it 'sideloads a css module once, however often it is sideloaded' do
+      events = []
+      subscriber = ActiveSupport::Notifications.subscribe('sideload.proscenium') do |*, payload|
+        events << payload[:identifier]
+      end
+
+      digests = Array.new(2) do
+        subject.sideload_css_module Rails.root.join('lib/css_modules/basic2.rb')
+      end
+
+      assert_equal ['/lib/css_modules/basic2.module.css'], events
+      assert_equal 1, digests.uniq.size
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
+    # Value: protects=repeat sideload of a pre-compiled css module is keyed by its manifest path;
+    # fails_when=the dedup check or store uses the un-resolved or non-manifest path again;
+    # why_new=the other sideload tests only see un-compiled URL paths, where input and key agree;
+    # seam=none
+    it 'sideloads a pre-compiled css module once, keyed by its manifest path' do
+      Proscenium.config.precompile = Set['./lib/css_modules/basic2.module.css']
+      Proscenium::Builder.compile
+      Proscenium::Manifest.load!
+
+      events = []
+      subscriber = ActiveSupport::Notifications.subscribe('sideload.proscenium') do |*, payload|
+        events << payload[:identifier]
+      end
+
+      digests = Array.new(2) do
+        subject.sideload_css_module Rails.root.join('lib/css_modules/basic2.rb')
+      end
+
+      assert_equal 1, events.size
+      assert_match(%r{^/assets/lib/css_modules/basic2\.module-\$[A-Z0-9]{8}\$\.css$}, events.first)
+      assert_equal events, subject.imported.keys
+      assert_equal 1, digests.uniq.size
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+      Proscenium.config.output_path.rmtree
+    end
+
+    # proscenium-ui's Select sideloads its own file again with `lazy: true` after the component's
+    # inheritance chain sideloaded it eagerly, and relies on the later options winning.
+    it 'merges the options of a repeat sideload, notifying once' do
+      events = []
+      subscriber = ActiveSupport::Notifications.subscribe('sideload.proscenium') do |*, payload|
+        events << payload[:identifier]
+      end
+
+      mock_files 'app/views/user.rb', 'app/views/user.jsx' do
+        subject.sideload_js Rails.root.join('app/views/user.rb'), js: { type: 'module' }
+        subject.sideload Rails.root.join('app/views/user.rb'), lazy: true
+      end
+
+      assert_equal ['/app/views/user.jsx'], events
+      assert_equal({ '/app/views/user.jsx' => { js: { type: 'module' }, lazy: true } },
+                   subject.imported)
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
+    # The stylesheet was imported as a plain file first, so its entry has no digest of its own.
+    it 'computes a css module digest for a stylesheet already imported as a plain file' do
+      subject.import 'pkg/one.module'
+      digest = subject.import('pkg/one.module.css')
+
+      assert_match(/\A[0-9a-f]{8}_/, digest)
+    end
+
     context 'no js, no css' do
       it 'sideloads nothing' do
         mock_file 'app/views/user.rb' do
@@ -168,8 +258,7 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
           subject.sideload Rails.root.join('app/views/user.rb')
         end
 
-        assert_not_equal({ '/app/views/user.module.css' => { digest: 'ab65a4fd' } },
-                         subject.imported)
+        assert_equal({ '/app/views/user.css' => {} }, subject.imported)
       end
     end
   end
