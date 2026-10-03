@@ -122,7 +122,12 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 		x.incrNestingOnNext = true
 
 	case tokenizer.TokenCloseBrace:
-		x.nesting--
+		// A `}` with no block to close leaves the root the root. Counted, it took the nesting below
+		// zero, where nothing was at the root again: a later `@define-mixin` captured to the end of
+		// the file and everything after it was dropped.
+		if x.nesting > 0 {
+			x.nesting--
+		}
 	}
 
 	x.logToken()

@@ -162,6 +162,26 @@ var _ = Describe("Build(parseCss)", func() {
 			})
 		})
 
+		// A `}` with no block to close counted the nesting below zero, where nothing is ever at the
+		// root again: a later `@define-mixin` captured to the end of the file, and all of it was
+		// dropped without a warning. The brace is left for esbuild to report.
+		Describe("a stray closing brace at the root", func() {
+			It("keeps a later mixin definition and its use", func() {
+				Expect("a{}}@define-mixin n{d:e}b{@mixin n;}").To(
+					BeParsedTo("a{}}b{d:e;}", "/foo.css", testConfig))
+			})
+
+			It("keeps them when the stray brace comes first", func() {
+				Expect("}@define-mixin n{d{e:f}}@mixin n;").To(
+					BeParsedTo("}d{e:f}", "/foo.css", testConfig))
+			})
+
+			It("keeps them after a @mixin declaration ending its block", func() {
+				Expect("a{@mixin m}}}}@define-mixin n{d:e}b{@mixin n;}").To(
+					BeParsedTo("a{@mixin m}}}}b{d:e;}", "/foo.css", testConfig, `Mixin "m" not defined in "/foo.css"`))
+			})
+		})
+
 		It("uses the last definition of a mixin in another file, even after a malformed one", func() {
 			Expect("a{@mixin m from url(\"/lib/mixins/redefined.css\");}").To(
 				BeParsedTo("a{ color: green; }", "/foo.css", testConfig))
