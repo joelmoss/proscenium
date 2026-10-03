@@ -163,7 +163,8 @@ func (p *cssParser) handleNextToken() (string, bool) {
 			var original strings.Builder
 			original.WriteString(render(token))
 
-			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
+			// Iterate over all tokens until the next semicolon, or the closing brace of the block
+			// holding the declaration, to find the mixin name and URI.
 			p.forEachToken(func(token *tokenizer.Token) bool {
 				// The declaration was the block's last statement, with no semicolon. Reading on to
 				// the next `;` swallowed the block's end and every rule up to it. The brace goes back

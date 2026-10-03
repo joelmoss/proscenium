@@ -70,11 +70,11 @@ var _ = Describe("Build(parseCss)", func() {
 					`Mixin "bad" in "`+file+`" is malformed CSS`))
 		})
 
-		// A @mixin declaration that is a mixin's last statement, with no semicolon, ends with the
-		// mixin. It used to run on into the stream that included the mixin, swallowing what followed,
-		// and resolve after the mixin had closed, out of cycle detection's sight, so this looped. The
-		// body now gets the semicolon it left out when defined, so the refused declaration has one.
-		It("ends a mixin's last @mixin declaration with the mixin, so a cycle is caught", func() {
+		// A @mixin declaration that is a mixin's last statement, with no semicolon, used to run on into
+		// the stream that included the mixin, swallowing what followed, and resolve after the mixin had
+		// closed, out of cycle detection's sight, so this looped. The body now gets the semicolon it
+		// left out when defined, so the declaration ends inside the mixin and the cycle is caught.
+		It("refuses a mixin including itself as its last statement without a semicolon", func() {
 			code, warnings := parseWithDeadline("@define-mixin m{@mixin m}a{@mixin m;}", "/foo.css")
 
 			Expect(code).To(Equal("a{@mixin m;}"))
@@ -120,6 +120,7 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("a rule then a comment, at the root", "@define-mixin m{a{color:red}/* c */}@mixin m;b{color:blue}", "a{color:red}/* c */b{color:blue}"),
 			Entry("a rule then `-->`, at the root", "@define-mixin m{a{b:c}-->}@mixin m;d{e:f}", "a{b:c}-->d{e:f}"),
 			Entry("a rule then `<!--`, at the root", "@define-mixin m{a{b:c}<!--}@mixin m;d{e:f}", "a{b:c}<!--d{e:f}"),
+			Entry("a declaration then `-->`", "@define-mixin m{color:red -->}a{@mixin m;color:blue}", "a{color:red -->;color:blue}"),
 		)
 
 		// A @mixin declaration was read up to the next semicolon, so as a block's last statement with
@@ -168,6 +169,18 @@ var _ = Describe("Build(parseCss)", func() {
 				Expect(".a{@mixin nope}.b{color:blue;}").To(
 					BeParsedTo(".a{@mixin nope}.b{color:blue;}", "/foo.css", testConfig, `Mixin "nope" not defined in "/foo.css"`))
 			})
+		})
+
+		// A `-->` or `<!--` after a body's last `@mixin` left it without a semicolon, so the
+		// declaration ran to the end of the mixin, where the finished mixin was dropped from the stack
+		// while the one it included expanded. Two mixins including each other then never met as a
+		// cycle, and the parse never ended.
+		It("refuses two mixins including each other, each ending in `-->`", func() {
+			code, warnings := parseWithDeadline("@define-mixin a{@mixin b -->}@define-mixin b{@mixin a -->}x{@mixin a;}", "/foo.css")
+
+			Expect(code).To(Equal("x{@mixin a -->;}"))
+			Expect(warnings).To(HaveLen(1))
+			Expect(warnings[0].Text).To(Equal(`Mixin "a" includes itself`))
 		})
 
 		// A mixin body cannot define a mixin. Expanded inside a rule it already passed through; at the
