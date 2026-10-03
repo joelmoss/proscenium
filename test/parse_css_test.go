@@ -36,14 +36,23 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(".a\\2E\r\fb{color:red;}").To(BeParsedTo(`.a\2E  b{color:red;}`, "/foo.css", testConfig))
 		})
 
-		// A newline inside a string is a bad string to the tokenizer, which the parser used to stop at,
-		// silently dropping the rest of the stylesheet. It is passed through for esbuild to report.
-		It("carries on past a string broken by a newline", func() {
-			output, _, err := css.ParseCss("b{content:\"x\ny\";}\nc{color:blue}", "/foo.css", testConfig)
+		// A newline inside a string or url(), or after a backslash, is a bad token to the tokenizer,
+		// which the parser used to stop at, silently dropping the rest of the stylesheet. They are
+		// written back as they came, newline count included, so esbuild reports them at the right
+		// line. A bad url keeps its value and closing paren but not its quotes, which the tokenizer
+		// does not keep.
+		DescribeTable("writes a bad token back and carries on past it",
+			func(input string, expected string) {
+				output, _, err := css.ParseCss(input, "/foo.css", testConfig)
 
-			Expect(err).NotTo(HaveOccurred())
-			Expect(output).To(HaveSuffix("c{color:blue}"))
-		})
+				Expect(err).NotTo(HaveOccurred())
+				Expect(output).To(Equal(expected))
+			},
+			Entry("string broken by a newline", "a{content:\"x\ny\";}\nb{color:blue}", "a{content:\"x\ny\";}\nb{color:blue}"),
+			Entry("backslash before a newline", "a{color:red\\\n;}\nb{color:blue}", "a{color:red\\\n;}\nb{color:blue}"),
+			Entry("url ending in a quote", "a{background:url(a\"b\")}\nb{color:blue}", "a{background:url(ab\")}\nb{color:blue}"),
+			Entry("quoted url broken by a newline", "a{background:url(\"x\ny\")}\nb{color:blue}", "a{background:url(x\ny\")}\nb{color:blue}"),
+		)
 
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
 		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space.

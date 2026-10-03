@@ -129,7 +129,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		case "define-mixin":
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
-				return token.Render(), true
+				return render(token), true
 			}
 
 			p.mixins[p.filePath+"#"+key] = def
@@ -140,11 +140,11 @@ func (p *cssParser) handleNextToken() (string, bool) {
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
 			var original strings.Builder
-			original.WriteString(token.Render())
+			original.WriteString(render(token))
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
 			p.forEachToken(func(token *tokenizer.Token) bool {
-				original.WriteString(token.Render())
+				original.WriteString(render(token))
 
 				if token.Type == tokenizer.TokenSemicolon {
 					// Current token is a semicolon, so we're done. `original` already ends with it,
@@ -177,5 +177,5 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		}
 	}
 
-	return token.Render(), true
+	return render(token), true
 }
