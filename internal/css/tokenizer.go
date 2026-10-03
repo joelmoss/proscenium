@@ -67,6 +67,26 @@ func endsStream(t tokenizer.TokenType) bool {
 	return t == tokenizer.TokenEOF || t == tokenizer.TokenError
 }
 
+// The token as CSS text. The tokenizer's own rendering of a bad token adds a newline - the real one
+// follows as a whitespace token, so every later line shifted by one - and a bad url whose value
+// ended in a quote came out as `url("ab\<LF>)`, the escaped newline continuing a string that
+// swallowed the rules after it. A bad url is written back unquoted with its closing paren, which
+// the tokenizer consumed, so the parens stay balanced; esbuild reads it as the same bad url.
+func render(t *tokenizer.Token) string {
+	switch t.Type {
+	case tokenizer.TokenBadString:
+		return `"` + badStringEscaper.Replace(t.Value)
+	case tokenizer.TokenBadURI:
+		return "url(" + t.Value + ")"
+	case tokenizer.TokenBadEscape:
+		return `\`
+	}
+
+	return t.Render()
+}
+
+var badStringEscaper = strings.NewReplacer(`\`, `\\`, `"`, `\"`)
+
 func (x *cssTokenizer) next() *tokenizer.Token {
 	token := x.currentTokenizer().Next()
 
@@ -139,7 +159,7 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
 	x.forEachToken(func(token *tokenizer.Token) bool {
-		original.WriteString(token.Render())
+		original.WriteString(render(token))
 
 		switch token.Type {
 		case tokenizer.TokenOpenBrace:
@@ -176,7 +196,7 @@ func (x *cssTokenizer) captureBlock(level int) string {
 			return false
 		}
 
-		content.WriteString(token.Render())
+		content.WriteString(render(token))
 		return true
 	})
 
