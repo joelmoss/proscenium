@@ -19,10 +19,10 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
 		})
 
-		// css.ParseCss recovers a resolver panic into an error and leaves the failing mixin
-		// unexpanded, so a matcher that dropped the error would pass a pass-through expectation. The
-		// trigger: an empty config's zero Environment underflows Environment.String() when the
-		// resolver resolves a bare package mixin.
+		// The resolver recovers its own panic and css.ParseCss returns it as the error, leaving the
+		// failing mixin unexpanded, so a matcher that dropped the error would pass a pass-through
+		// expectation. The trigger: an empty config's zero Environment underflows
+		// Environment.String() when the resolver resolves a bare package mixin.
 		It("fails when the parse fails, even if the output matches", func() {
 			input := `a{@mixin m from url("pkg/mixin.css");}`
 			success, err := BeParsedTo(input, "/foo.css", &types.ConfigT{}).Match(input)
