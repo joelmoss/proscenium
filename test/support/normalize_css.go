@@ -31,7 +31,7 @@ func normalizeCss(css string) string {
 			// A hex escape's terminator is written as one space, whichever whitespace it was, so
 			// `\2E\t` and the parser's `\2E ` compare equal while `\2E  b` stays a descendant.
 			end = escapeEnd(css, i)
-			if hexEnd := hexEscapeEnd(css, i); hexEnd < end {
+			if hexEnd := hexEscapeEnd(css, i); hexEnd > i+1 && hexEnd < end {
 				b.WriteString(css[i:hexEnd])
 				b.WriteByte(' ')
 				i = end - 1

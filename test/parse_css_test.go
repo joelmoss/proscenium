@@ -58,6 +58,7 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("hex escape ended by CRLF", `.a\2E b{color:red;}`, ".a\\2E\r\nb{color:red;}", true),
 			Entry("hex escape ended by a tab", `.a\2E b{color:red;}`, ".a\\2E\tb{color:red;}", true),
 			Entry("hex escape ended by a form feed", `.a\2E b{color:red;}`, ".a\\2E\f b{color:red;}", false),
+			Entry("non-hex escape keeps its character", `.\-1{color:red;}`, `.\+1{color:red;}`, false),
 			Entry("layout collapses after a hex escape's terminator", `.a\2E  b{color:red;}`, ".a\\2E \n\t b{color:red;}", true),
 		)
 
