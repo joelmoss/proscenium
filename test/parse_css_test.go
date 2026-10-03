@@ -36,22 +36,25 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(".a\\2E\r\fb{color:red;}").To(BeParsedTo(`.a\2E  b{color:red;}`, "/foo.css", testConfig))
 		})
 
-		// A newline inside a string or url(), or after a backslash, is a bad token to the tokenizer,
-		// which the parser used to stop at, silently dropping the rest of the stylesheet. They are
-		// written back as they came, newline count included, so esbuild reports them at the right
-		// line. A bad url keeps its value and closing paren but not its quotes, which the tokenizer
-		// does not keep.
-		DescribeTable("writes a bad token back and carries on past it",
-			func(input string, expected string) {
+		// A newline inside a string or url(), or after a backslash, is a bad token: only malformed CSS
+		// has one. The parser used to stop there and silently drop the rest of the stylesheet, and the
+		// tokenizer cannot write one back as written (it decodes escapes and drops quotes and the
+		// whitespace inside), so the input is returned unchanged for esbuild to report.
+		DescribeTable("returns malformed CSS unchanged",
+			func(input string) {
 				output, _, err := css.ParseCss(input, "/foo.css", testConfig)
 
 				Expect(err).NotTo(HaveOccurred())
-				Expect(output).To(Equal(expected))
+				Expect(output).To(Equal(input))
 			},
-			Entry("string broken by a newline", "a{content:\"x\ny\";}\nb{color:blue}", "a{content:\"x\ny\";}\nb{color:blue}"),
-			Entry("backslash before a newline", "a{color:red\\\n;}\nb{color:blue}", "a{color:red\\\n;}\nb{color:blue}"),
-			Entry("url ending in a quote", "a{background:url(a\"b\")}\nb{color:blue}", "a{background:url(ab\")}\nb{color:blue}"),
-			Entry("quoted url broken by a newline", "a{background:url(\"x\ny\")}\nb{color:blue}", "a{background:url(x\ny\")}\nb{color:blue}"),
+			Entry("string broken by a newline", "a{content:\"x\ny\";}\nb{color:blue}"),
+			Entry("string holding an escaped newline", "a{content:\"\\a x\n;}\nb{color:blue}"),
+			Entry("backslash before a newline", "a{color:red\\\n;}\nb{color:blue}"),
+			Entry("url ending in a quote", "a{background:url(a\"b\")}\nb{color:blue}"),
+			Entry("url with whitespace inside", "a{background:url(a\nb)}\nb{color:blue}"),
+			Entry("url holding an escaped paren", "a{background:url(a\\29  b)}\nb{color:blue}"),
+			Entry("bad token inside a mixin declaration", "a{@mixin red from url(a\nb);}\nb{color:blue}"),
+			Entry("bad token after a mixin that resolves", "a{@mixin red from url(\"/lib/mixins/colors.css\");}\nb{content:\"x\ny\";}"),
 		)
 
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",

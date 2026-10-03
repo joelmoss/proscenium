@@ -22,6 +22,9 @@ type cssParser struct {
 	// Warnings accumulated during parsing.
 	warnings []CssWarning
 
+	// The input held a bad token, so it is returned unchanged: see handleNextToken.
+	malformed bool
+
 	// A failure that has to fail the build rather than become a warning: a panic the resolver
 	// recovered while looking up a mixin file. Warnings are for the stylesheet's own mistakes.
 	err error
@@ -35,6 +38,10 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 		}
 
 		p.append(result)
+	}
+
+	if p.malformed {
+		return p.input, p.warnings, p.err
 	}
 
 	return p.output.String(), p.warnings, p.err
@@ -109,6 +116,10 @@ func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 		if endsStream(token.Type) {
 			break
 		}
+		if isBad(token.Type) {
+			p.malformed = true
+			break
+		}
 
 		if !iterFn(token) {
 			break
@@ -123,13 +134,22 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		return "", false
 	}
 
+	// Malformed CSS. Stopping here used to drop the rest of the stylesheet silently, and the
+	// tokenizer cannot write a bad token back as it was: it decodes escapes and drops the quotes
+	// and the whitespace inside one. So the input goes on unchanged, mixins unexpanded, for esbuild
+	// to report at the right line - as it would with Proscenium out of the way.
+	if isBad(token.Type) {
+		p.malformed = true
+		return "", false
+	}
+
 	switch token.Type {
 	case tokenizer.TokenAtKeyword:
 		switch token.Value {
 		case "define-mixin":
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
-				return render(token), true
+				return token.Render(), true
 			}
 
 			p.mixins[p.filePath+"#"+key] = def
@@ -140,11 +160,11 @@ func (p *cssParser) handleNextToken() (string, bool) {
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
 			var original strings.Builder
-			original.WriteString(render(token))
+			original.WriteString(token.Render())
 
 			// Iterate over all tokens until the next semicolon, to find the mixin name and URI.
 			p.forEachToken(func(token *tokenizer.Token) bool {
-				original.WriteString(render(token))
+				original.WriteString(token.Render())
 
 				if token.Type == tokenizer.TokenSemicolon {
 					// Current token is a semicolon, so we're done. `original` already ends with it,
@@ -167,6 +187,10 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				return true
 			})
 
+			if p.malformed {
+				return "", false
+			}
+
 			if p.resolveMixin(mixinIdent, uri) {
 				return "", true
 			}
@@ -177,5 +201,5 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		}
 	}
 
-	return render(token), true
+	return token.Render(), true
 }
