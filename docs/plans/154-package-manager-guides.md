@@ -48,6 +48,35 @@ as it does today; `bundle exec proscenium inspect` lists them, and `proscenium.j
 fixture gems in CI: the registration on a fresh app and spliced into an existing
 pnpm-workspace.yaml, the contexts, frozen installs, and imports resolving from the contexts.
 
+### When the engine refuses to build
+
+Once an app has adopted, the engine checks its contexts against the bundle. While any is stale it
+refuses every build and names the gem and `bundle exec proscenium install`. A context is stale when
+a participating gem has none, its gem left Gemfile.lock or stopped participating, the gem's
+dependencies changed since it was written, or a shared peer such as React split into two copies.
+Development logs this once at boot and shows it on the error page. `assets:precompile` refuses too,
+which is how a deploy with stale contexts fails. For an incident, `PROSCENIUM_STALE_CONTEXT=warn`
+logs it instead. While `proscenium install` runs, or after one stopped before it finished, the
+engine refuses to build until the install completes; running it again recovers.
+
+In development, finishing an install or editing a path gem's package.json takes effect within a
+second, without a restart. Adding or upgrading a gem still needs one, as it always has.
+
+### Deploying
+
+- Run `bundle exec proscenium install --frozen` (or a frozen native install) before
+  `assets:precompile`. Restart after the deploy: production reads the contexts once per process.
+- Unbundled pages load packages from their real paths, such as `/node_modules/.pnpm/...`, and a
+  copy a linker nested under a context from `/.proscenium/packages/<gem>/node_modules/...`. A proxy
+  rule that denies dotfile paths (nginx's common `location ~ /\.`) blocks both; allow those two
+  prefixes, or bundle in production.
+- The contexts live at the bundle's root, beside the Gemfile. When that is not the Rails root, a
+  nested copy has no URL under the app and keeps its link path.
+
+**Exercised in Stage C** by `fixtures/adopted`, a Rails app that ran `proscenium install`: a gem's
+dependency from its context beside the app's own version, one React shared, gems that do not
+participate served as before, an archive gem, precompiling, the refusals, and `bun test`.
+
 ## Gem author guide
 
 ### Checklist

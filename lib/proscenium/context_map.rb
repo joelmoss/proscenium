@@ -51,6 +51,8 @@ module Proscenium
       BundledGems.participating(specs, overrides: BundledGems.overrides(root)).keys.to_h do |gem|
         [gem, File.join(root, CONTEXTS, gem)]
       end
+    rescue BundledGems::ConfigError
+      {} # StaleContexts reports it, so every build is refused with the reason
     end
 
     INSTALLING = File.join('.proscenium', 'installing')

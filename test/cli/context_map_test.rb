@@ -5,6 +5,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'json'
 require 'proscenium/context_map'
+require 'proscenium/stale_contexts'
 
 # What the engine tells Go about gem dependency contexts (#154, Stage C): nothing until the app
 # adopts them, then a context for every participating gem, and the app's own local packages.
@@ -43,6 +44,15 @@ describe Proscenium::ContextMap do
     assert CM.adopted?(@root)
     assert_empty CM.contexts(@root, specs.drop(1))
     assert_nil CM.adoption_notice(@root, specs.drop(1))
+  end
+
+  it 'maps nothing for an unreadable proscenium.json, which staleness reports instead' do
+    write('pnpm-workspace.yaml', "packages:\n  - .proscenium/packages/*\n")
+    write('proscenium.json', '{"schema": 2}')
+
+    assert_empty CM.contexts(@root, specs)
+    assert_equal ['proscenium.json must have "schema": 1'],
+                 Proscenium::StaleContexts.problems(@root, specs, [])
   end
 
   it "takes Bun's registration in package.json only in a Bun app" do
