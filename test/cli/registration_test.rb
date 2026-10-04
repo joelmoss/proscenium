@@ -148,6 +148,61 @@ describe Proscenium::CLI::Registration do
     end
   end
 
+  # C48: a Bun app that sets no linker gets the one it uses today, in the registration diff.
+  describe 'the Bun linker' do
+    before { @root = Dir.mktmpdir('linker') }
+    after { FileUtils.rm_rf(@root) }
+
+    def write(path, body)
+      FileUtils.mkdir_p(File.dirname(File.join(@root, path)))
+      File.write(File.join(@root, path), body)
+    end
+
+    def linker = Proscenium::CLI::BunLinker.current(@root)
+
+    it 'keeps the layout already installed' do
+      FileUtils.mkdir_p(File.join(@root, 'node_modules/react'))
+
+      assert_equal 'hoisted', linker
+      FileUtils.mkdir_p(File.join(@root, 'node_modules/.bun'))
+
+      assert_equal 'isolated', linker
+    end
+
+    it 'takes what Bun would pick with nothing installed yet' do
+      write('package.json', '{"name": "app"}')
+
+      assert_equal 'hoisted', linker
+      write('package.json', '{"workspaces": ["packages/*"]}')
+      write('bun.lock', '{"lockfileVersion": 1, "configVersion": 1}')
+
+      assert_equal 'isolated', linker
+      write('bun.lock', '{"lockfileVersion": 1}')
+
+      assert_equal 'hoisted', linker
+    end
+
+    it 'splices it into bunfig.toml, keeping what is there' do
+      splice = ->(text) { Proscenium::CLI::BunLinker.splice(text, 'hoisted') }
+
+      assert_equal "[install]\nlinker = \"hoisted\"\n", splice.call('')
+      assert_equal "[test]\nx = 1\n\n[install]\nlinker = \"hoisted\"\n",
+                   splice.call("[test]\nx = 1\n")
+      assert_equal "[install] # mine\nlinker = \"hoisted\"\nexact = true\n",
+                   splice.call("[install] # mine\nexact = true\n")
+    end
+
+    it 'is one of the registration edits only when no linker is set' do
+      write('package.json', '{"name": "app", "trustedDependencies": []}')
+      FileUtils.mkdir_p(File.join(@root, 'node_modules/react'))
+
+      assert_includes R.edits(@root, 'bun').map { File.basename(it[0]) }, 'bunfig.toml'
+      write('bunfig.toml', "[install]\nlinker = \"isolated\"\n")
+
+      refute_includes R.edits(@root, 'bun').map { File.basename(it[0]) }, 'bunfig.toml'
+    end
+  end
+
   it 'prints an edit as a unified diff' do
     before = "packages:\n  - apps/*\n"
     after = R.splice_pnpm_workspace(before)

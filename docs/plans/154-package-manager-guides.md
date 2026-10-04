@@ -25,9 +25,10 @@ them. The gem's files stay where Bundler installed them.
 
    The first run registers `.proscenium/packages/*` with your package manager (pnpm-workspace.yaml,
    or `workspaces` in package.json for Bun) and adds three `.gitignore` lines, printing both as a
-   diff before it writes them. On Bun it also needs an explicit `[install] linker` in bunfig.toml
-   and an explicit `trustedDependencies` in package.json, and tells you which to add if they are
-   missing.
+   diff before it writes them. On Bun it also pins the linker your app uses today in bunfig.toml,
+   in the same diff, since registering workspaces would otherwise switch it. It needs an explicit
+   `trustedDependencies` in package.json, and stops once to tell you to add one if it is missing:
+   only you can say which packages' scripts your app relies on.
 
 3. Commit what it lists: each `.proscenium/packages/<gem>/package.json`, the registration,
    `.gitignore` and your lockfile.

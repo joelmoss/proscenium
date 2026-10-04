@@ -2,6 +2,8 @@
 
 require 'json'
 require_relative '../context_map'
+require_relative 'bun_linker'
+require_relative 'manager'
 
 module Proscenium
   module CLI
@@ -20,8 +22,13 @@ module Proscenium
       # changes. Empty once registered.
       def edits(root, manager)
         file = manager == 'bun' ? 'package.json' : 'pnpm-workspace.yaml'
-        [[file, method(manager == 'bun' ? :splice_package_json : :splice_pnpm_workspace)],
-         ['.gitignore', method(:splice_gitignore)]].filter_map do |name, splice|
+        splices = [[file, method(manager == 'bun' ? :splice_package_json : :splice_pnpm_workspace)],
+                   ['.gitignore', method(:splice_gitignore)]]
+        if manager == 'bun' && !Manager.new('bun', root).bun_linker
+          linker = BunLinker.current(root)
+          splices << ['bunfig.toml', ->(text) { BunLinker.splice(text, linker) }]
+        end
+        splices.filter_map do |name, splice|
           path = File.join(root, name)
           text = File.exist?(path) ? File.read(path) : ''
           spliced = splice.call(text)

@@ -177,8 +177,13 @@ describe Proscenium::CLI::Manager do
   describe 'Bun preconditions' do
     def bun = M.new('bun', @dir)
 
-    it 'needs an explicit linker and trustedDependencies' do
+    # Install writes a missing linker (C48); only --frozen, which writes nothing, refuses it.
+    it 'needs trustedDependencies, and a linker for a frozen install' do
       write('package.json', '{"trustedDependencies": []}')
+
+      assert_same bun.class, bun.check_project!.class
+      assert_equal('PSM-E-BUN-LINKER', code { bun.check_project!(frozen: true) })
+      write('bunfig.toml', "[install]\nlinker = \"nested\"\n")
 
       assert_equal('PSM-E-BUN-LINKER', code { bun.check_project! })
       write('bunfig.toml',

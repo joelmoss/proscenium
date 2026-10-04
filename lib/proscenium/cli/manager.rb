@@ -117,11 +117,14 @@ module Proscenium
 
       def self.unc?(path) = path.start_with?('//', '\\\\')
 
-      def check_project!
+      # A missing Bun linker is written by registration (BunLinker), so only `frozen`, which writes
+      # nothing, refuses it; an unknown one is always refused.
+      def check_project!(frozen: false)
         check_not_nested!
         return self unless @name == 'bun'
 
-        raise Error, 'PSM-E-BUN-LINKER' unless LINKERS.include?(bun_linker)
+        linker = bun_linker
+        raise Error, 'PSM-E-BUN-LINKER' if linker ? !LINKERS.include?(linker) : frozen
 
         package = File.join(@root, 'package.json')
         trusted = File.exist?(package) && JSON.parse(File.read(package))['trustedDependencies']

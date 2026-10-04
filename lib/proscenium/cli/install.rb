@@ -35,7 +35,7 @@ module Proscenium
         timed(:manager_check) do
           @manager = Manager.select(@root, requested: @options[:manager])
           @manager.check_version!(experimental: @options[:experimental], frozen: frozen?)
-          @manager.check_project!
+          @manager.check_project!(frozen: frozen?)
         end
         if (warning = @manager.end_of_life_warning)
           @reporter.warning(warning, phase: 'manager')

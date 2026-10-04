@@ -409,15 +409,25 @@ describe 'proscenium install' do
     assert_includes err, 'PSM-E-UNC-SHIM'
   end
 
-  it 'refuses Bun without an explicit linker, changing nothing' do
+  # C48: a Bun app that sets no linker gets the one it uses today written with the registration,
+  # here hoisted, as nothing is installed and the app declares no workspaces of its own. A frozen
+  # install writes nothing, so it still refuses.
+  it 'writes the Bun linker the app uses today, and refuses one frozen without it' do
     dir = app('bun')
     File.delete(File.join(dir, 'bunfig.toml'))
     before = Dir.children(dir).sort
-    _, err, status = proscenium(dir, 'install', manager: 'bun')
+    _, err, status = proscenium(dir, 'install', '--frozen', manager: 'bun')
 
     assert_equal 3, status.exitstatus
     assert_includes err, 'PSM-E-BUN-LINKER'
     assert_equal before, Dir.children(dir).sort
+
+    out, err, status = proscenium(dir, 'install', manager: 'bun')
+
+    assert_predicate status, :success?, err
+    assert_includes out, '+linker = "hoisted"'
+    assert_equal "[install]\nlinker = \"hoisted\"\n", File.read(File.join(dir, 'bunfig.toml'))
+    refute_path_exists File.join(dir, 'node_modules/.bun')
   end
 
   it 'refuses a Yarn project, changing nothing' do
