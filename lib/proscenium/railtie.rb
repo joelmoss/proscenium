@@ -36,6 +36,10 @@ module Proscenium
 
       Proscenium::Manifest.load!
 
+      if (notice = Proscenium::ContextMap.adoption_notice(app.root.to_s))
+        Rails.logger.info "[Proscenium] #{notice}"
+      end
+
       if config.proscenium.logging
         require 'proscenium/log_subscriber'
         Proscenium::LogSubscriber.attach_to :proscenium

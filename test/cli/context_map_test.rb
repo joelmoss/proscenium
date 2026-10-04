@@ -45,6 +45,27 @@ describe Proscenium::ContextMap do
     assert CM.adopted?(@root)
   end
 
+  describe 'adoption notice' do
+    it 'names the opted-in gems and the command, before adoption' do
+      assert_equal 'hue opt in to installing their JavaScript dependencies through Proscenium. ' \
+                   'Run `bundle exec proscenium install` to install them.',
+                   CM.adoption_notice(@root, specs)
+    end
+
+    it 'says Yarn and npm keep managing them' do
+      write('yarn.lock', '')
+
+      assert_includes CM.adoption_notice(@root, specs), 'but Yarn is not supported'
+    end
+
+    it 'says nothing once adopted, or with no gem opted in' do
+      assert_nil CM.adoption_notice(@root, specs.drop(1))
+      write('pnpm-workspace.yaml', "packages:\n  - .proscenium/packages/*\n")
+
+      assert_nil CM.adoption_notice(@root, specs)
+    end
+  end
+
   it "lists the app's own link:, file: and workspace packages" do
     write('package.json', JSON.generate(
                             'dependencies' => { 'mine' => 'link:vendor/mine', 'react' => '18.3.1' },

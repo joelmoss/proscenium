@@ -45,6 +45,30 @@ module Proscenium
       end
     end
 
+    UNSUPPORTED = { 'yarn.lock' => 'Yarn', 'package-lock.json' => 'npm',
+                    'npm-shrinkwrap.json' => 'npm' }.freeze
+
+    # The one notice a process logs at boot when gems opt in but the app has not adopted dependency
+    # contexts, or nil. Those gems' imports keep resolving as they always have, so upgrading
+    # Proscenium never breaks an app that has not run `proscenium install` (C52).
+    def adoption_notice(root, specs = BundledGems.installed_specs)
+      return if adopted?(root)
+
+      gems = BundledGems.participating(specs, overrides: BundledGems.overrides(root)).keys
+      return if gems.empty?
+
+      opted = "#{gems.join(', ')} opt in to installing their JavaScript dependencies " \
+              'through Proscenium'
+      manager = UNSUPPORTED.find { |file, _| File.exist?(File.join(root, file)) }&.last
+      if manager
+        "#{opted}, but #{manager} is not supported, so the app keeps managing them."
+      else
+        "#{opted}. Run `bundle exec proscenium install` to install them."
+      end
+    rescue BundledGems::ConfigError => e
+      e.message
+    end
+
     # The names of the app's own `link:`, `file:` and workspace dependencies. They keep their link
     # paths once dependency contexts make other packages real-path.
     def local_packages(root)
