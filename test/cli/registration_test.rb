@@ -116,7 +116,10 @@ describe Proscenium::CLI::Registration do
       write('package.json', JSON.generate(
                               'dependencies' => { '@rubygems/hue' => 'github:harleytherapy/hue#1',
                                                   '@rubygems/other' => '1.0.0', 'react' => '18' },
-                              'devDependencies' => { '@rubygems/widget' => 'workspace:*' }
+                              'devDependencies' => { '@rubygems/widget' => 'workspace:*' },
+                              'optionalDependencies' => {
+                                '@rubygems/hue' => 'link:.proscenium/packages/hue'
+                              }
                             ))
 
       assert_equal ['package.json dependencies has @rubygems/hue as "github:harleytherapy/hue#1"'],

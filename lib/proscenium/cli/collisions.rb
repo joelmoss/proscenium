@@ -21,7 +21,7 @@ module Proscenium
         app = read_json(File.join(root, 'package.json')) || {}
         pinned = DEPENDENCY_FIELDS.flat_map do |field|
           (app[field] || {}).filter_map do |name, spec|
-            next if !names.key?(name) || spec.to_s.start_with?('workspace:')
+            next if !names.key?(name) || spec.to_s.start_with?('workspace:', 'link:')
 
             "package.json #{field} has #{name} as \"#{spec}\""
           end
@@ -52,7 +52,8 @@ module Proscenium
           Array(workspaces.is_a?(Hash) ? workspaces['packages'] : workspaces)
         else
           path = File.join(root, 'pnpm-workspace.yaml')
-          File.exist?(path) ? Array(YAML.safe_load_file(path)&.dig('packages')) : []
+          workspace = File.exist?(path) && YAML.safe_load_file(path)
+          workspace.is_a?(Hash) ? Array(workspace['packages']) : []
         end
       rescue Psych::SyntaxError
         [] # the manager reports it
