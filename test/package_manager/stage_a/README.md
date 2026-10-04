@@ -97,23 +97,27 @@ So the hermetic fixtures can serve Git dependencies from a local bare repository
 supported lines. A `github:` specifier itself cannot be redirected there; step 2 decides whether
 the CI copy of `stage_a_hue_shape` uses `git+file://` and only the local hue leg keeps `github:`.
 
-## The london leg (step 2)
+## The app legs (steps 2 and 3)
 
 `probe/` is a Go command that builds a list of entry points through the engine, with the seam on
-or off, and records the modules or imports each one pulls in. `london_hue.rb` drives it against
-copies of london's JS configuration and the local hue checkout:
+or off, and records the modules or imports each one pulls in. `leg.rb` drives it against copies
+of an app's JS configuration and the local checkout of the gem its bundle points at, on pnpm or
+Bun:
 
 ```sh
-ruby test/package_manager/stage_a/london_hue.rb ~/dev/clients/harleytherapy/london \
+ruby test/package_manager/stage_a/leg.rb ~/dev/clients/harleytherapy/london \
   ~/dev/clients/harleytherapy/hue CONFIG tmp/stage_a_london
+ruby test/package_manager/stage_a/leg.rb ~/dev/codaset ~/dev/proscenium-ui CONFIG \
+  tmp/stage_a_codaset
 ```
 
-CONFIG is a local JSON file with london's entry points, aliases and externals (the script's
-header gives the format); london's configuration stays out of this repository. It writes only
-under the output directory. Its CI half is `hue_shape_test.rb`: the same check
-for `stage_a_hue_shape`, through `Proscenium::Builder`, run by the `stage-a` CI job and locally
-with `STAGE_A=1 bin/test test/package_manager/stage_a/`. Both write contexts with `context.rb`.
-The verdicts are in `docs/plans/154-package-manager-stage-a.md`.
+CONFIG is a local JSON file naming the gem, the manager, and the app's entry points, aliases and
+externals (the script's header gives the format); the apps' configuration stays out of this
+repository. It writes only under the output directory, which it refuses to delete unless it made
+it. The CI half of the london leg is `hue_shape_test.rb`: the same check for `stage_a_hue_shape`,
+through `Proscenium::Builder`, run by the `stage-a` CI job and locally with
+`STAGE_A=1 bin/test test/package_manager/stage_a/`. Both write contexts with `context.rb`. The
+verdicts are in `docs/plans/154-package-manager-stage-a.md`.
 
 ## Not yet built
 

@@ -21,7 +21,7 @@ broken browser import.
 
 | | |
 |---|---|
-| Command | `ruby test/package_manager/stage_a/london_hue.rb LONDON HUE CONFIG OUT` |
+| Command | `ruby test/package_manager/stage_a/leg.rb LONDON HUE CONFIG OUT` (CONFIG names hue and pnpm) |
 | Host | macOS 27.0.1 (26A434), arm64 |
 | Node | 26.10.0 |
 | pnpm | 10.33.1, selected by london's `packageManager` field |
