@@ -33,7 +33,8 @@ describe Proscenium::CLI::Error do
     'PSM-E-EXPERIMENTAL-FROZEN' => {},
     'PSM-E-BUN-LINKER' => {},
     'PSM-E-BUN-TRUSTED' => {},
-    'PSM-E-NESTED-WORKSPACE' => { enclosing: '/src/monorepo' }
+    'PSM-E-NESTED-WORKSPACE' => { enclosing: '/src/monorepo' },
+    'PSM-E-REGISTRATION' => { file: 'package.json' }
   }.freeze
 
   def render(error, json:)

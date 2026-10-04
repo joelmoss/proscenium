@@ -118,6 +118,11 @@ module Proscenium
                         'Proscenium does not support.',
           'Install gems\' JavaScript dependencies yourself in that workspace, as today.'
         ],
+        'PSM-E-REGISTRATION' => [
+          :input, 'Could not add the gem contexts to %<file>s without rewriting it.',
+          'Add ".proscenium/packages/*" to the workspaces in %<file>s by hand, then run install ' \
+          'again.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \

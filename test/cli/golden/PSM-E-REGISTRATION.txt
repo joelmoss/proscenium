@@ -1,0 +1,2 @@
+PSM-E-REGISTRATION: Could not add the gem contexts to package.json without rewriting it.
+Add ".proscenium/packages/*" to the workspaces in package.json by hand, then run install again.
