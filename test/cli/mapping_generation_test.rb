@@ -63,6 +63,16 @@ describe Proscenium::MappingGeneration do
     assert MG.refresh(@root, every: 0).last
   end
 
+  # The Railtie takes the first look at boot, so a change made after boot, such as running
+  # `proscenium install` while the server runs, starts a new generation at the next build.
+  it 'sees a change made after the first look' do
+    MG.reset!
+    MG.refresh(@root) # at boot
+    touch('package.json', 5)
+
+    assert MG.refresh(@root, every: 0).last
+  end
+
   it 'looks at most once per interval' do
     touch('package.json', 5)
 

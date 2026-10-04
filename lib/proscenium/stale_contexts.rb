@@ -5,6 +5,7 @@ require_relative 'bundled_gems'
 require_relative 'context_map'
 require_relative 'cli/contexts'
 require_relative 'cli/error'
+require_relative 'cli/verify'
 
 module Proscenium
   # Whether an adopted app's committed gem dependency contexts are what its bundle calls for
@@ -34,8 +35,20 @@ module Proscenium
       end
       excluded = (locked || []) - specs.map(&:name)
       orphans = committed.keys - participating.keys - excluded
-      found + orphans.map { "#{it}: its context belongs to no participating gem" }
+      found + orphans.map { "#{it}: its context belongs to no participating gem" } +
+        split_peers(root, contexts.contexts.keys & committed.keys)
     rescue BundledGems::ConfigError => e
+      [e.message]
+    end
+
+    # A peer meant to be shared that the gem and the app reach as two copies, as an app-only
+    # `pnpm update react` can leave it: install checks this too, and the engine repeats it for each
+    # generation.
+    def split_peers(root, gems)
+      pnpm = ContextMap.registers?(root, 'pnpm-workspace.yaml')
+      CLI::Verify.new(root, Struct.new(:name).new(pnpm ? 'pnpm' : 'bun'), gems).check_peers
+      []
+    rescue CLI::Error => e
       [e.message]
     end
 

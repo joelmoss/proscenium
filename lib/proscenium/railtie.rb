@@ -40,9 +40,14 @@ module Proscenium
       if (notice = Proscenium::ContextMap.adoption_notice(project))
         Rails.logger.info "[Proscenium] #{notice}"
       end
-      # Production finds stale contexts at assets:precompile, which refuses to compile.
-      if !Rails.env.production? && (stale = Proscenium::StaleContexts.message(project))
-        Rails.logger.warn "[Proscenium] #{stale}"
+      # Production finds stale contexts at assets:precompile, which refuses to compile. Elsewhere
+      # the first mapping generation starts here, so a change after boot, such as running
+      # `proscenium install`, starts the next one. No Go call: Puma may fork after boot.
+      unless Rails.env.production?
+        generation, = Proscenium::MappingGeneration.refresh(project)
+        if (stale = Proscenium::StaleContexts.message(project, generation))
+          Rails.logger.warn "[Proscenium] #{stale}"
+        end
       end
 
       if config.proscenium.logging

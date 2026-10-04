@@ -74,6 +74,21 @@ describe Proscenium::StaleContexts do
                  problems([@hue], %w[hue dev_only])
   end
 
+  it 'finds a shared peer the gem and the app reach as two copies' do
+    manifest = '{"peerDependencies": {"react": "^18.0.0"}}'
+    hue = gem_spec('hue', manifest)
+    write_context('hue', manifest)
+    write('package.json', '{"dependencies": {"react": "18.3.1"}}')
+    write('node_modules/react/package.json', '{}')
+
+    assert_empty problems([hue])
+
+    write('.proscenium/packages/hue/node_modules/react/package.json', '{}')
+
+    assert_equal 1, problems([hue]).size
+    assert_includes problems([hue]).first, 'hue and the app resolve react to different copies'
+  end
+
   it 'reports the build error with the command, once per root' do
     SC.reset!
     message = SC.message(@root) # this process's bundle has no hue, so its context is an orphan
