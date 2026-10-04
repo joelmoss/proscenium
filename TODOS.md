@@ -318,6 +318,87 @@ Under about 10%, delete this item.
 **Priority:** P4
 **Depends on:** That measurement.
 
+## Package manager (#154)
+
+### Regenerate dependency contexts from a Bundler `after-install-all` hook
+
+**What:** Ship a Bundler plugin that hooks `Bundler::Plugin::Events::GEM_AFTER_INSTALL_ALL` and
+regenerates `.proscenium/packages/<gem>/package.json` after every `bundle install`, so a Gemfile
+change never leaves contexts stale even when nobody runs `bin/proscenium install`.
+
+**Why:** The plan's orchestrator exists largely to keep contexts in step with Gemfile.lock. A
+Bundler hook does that at the moment the Ruby graph changes, with no wrapper command.
+
+**Context:** Deferred by the 2026-10-03 /autoplan CEO review of `docs/plans/154-package-manager.md`,
+behind the open question of whether an orchestrator is needed at all (the CLI became Ruby, running under `bundle exec`, at the 2026-10-04 gate). Plugins need a `plugin`
+line in the app's Gemfile, which is a manifest edit the plan has to own. Revisit after Stage A.
+
+**Effort:** M (human) / S (CC)
+**Priority:** P3
+**Depends on:** #154 Stage A result and the orchestrator decision
+
+### `proscenium inspect --why <js-package>`
+
+**What:** Name which gem contexts (and the app) declare a given JS package, with each declared range.
+
+**Why:** Once several gems contribute dependencies, "why is this package installed" has no native
+answer that maps back to gems.
+
+**Context:** Deferred by the 2026-10-03 /autoplan CEO review of #154 as outside the minimum scope.
+Builds on `inspect`'s existing per-gem projection.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P4
+**Depends on:** #154 `proscenium inspect`
+
+### npm adapter for the package manager bridge
+
+**What:** Add npm (10.9.x, 11.x, 12.x lines) as a qualified adapter: its `*` local-link rule, hoisted layout, nested copies under contexts, `npm ci` frozen path and conformance rows.
+
+**Why:** v1 ships pnpm and Bun only (user decision at the 2026-10-04 /autoplan gate, UC1); npm is the default manager for many fresh Rails apps and outside authors.
+
+**Context:** The plan's npm evidence so far is synthetic: the version, fresh-checkout and layout probes kept in the "Measured evidence" section of `docs/plans/154-package-manager.md`. Until this lands, npm projects get the unsupported-manager error. Start from those probes; the conformance matrix will need npm rows of its own.
+
+**Effort:** L (human) / M (CC)
+**Priority:** P3
+**Depends on:** #154 pilot GO on pnpm and Bun; a real npm user
+
+### Deferred package manager commands
+
+**What:** Decide, one by one, whether to add `init`, `sync`, `lock`, `update`, `add`/`remove`, `migrate`, `clean`, a committed `bin/proscenium` launcher with version handoff, transactional journals and the 100-gem performance gate.
+
+**Why:** v1 ships only `install`, `install --frozen`, `inspect` and `gem check` (UC2, 2026-10-04). Each deferred piece is another contract with native tools; add one only when a user hits the need.
+
+**Context:** The original contracts were folded out of the plan body on 2026-10-04; they survive in the plan's git history (before that fold) and in its Review record. The three app migrations use a written recipe instead of `migrate`.
+
+**Effort:** M per command (human) / S (CC)
+**Priority:** P4
+**Depends on:** #154 v1 in use by london, platform and codaset
+
+### Manager-independent dependency URLs
+
+**What:** Design a dependency URL scheme that does not change when the package manager or its hoisting changes, with an identity that covers source and patch provenance (Git revision, tarball, patch) and the copy's dependency environment, plus precompiled-manifest invalidation and a deploy test.
+
+**Why:** Moved out of #154 v1 (UC3, 2026-10-04). v1 keeps real-path URLs, which still carry `.pnpm`/`.bun` segments and change if an app switches manager.
+
+**Context:** The rejected first draft (name, version, path, peer digest) collides for Git, tarball and patched copies of the same version (Eng review, Codex). Open as its own GitHub issue when picked up.
+
+**Effort:** L (human) / M (CC)
+**Priority:** P4
+**Depends on:** #154 v1
+
+### Context name override for gems with invalid npm names
+
+**What:** Let `proscenium.json` rename a gem's dependency context (`gemOverrides.<gem>.name`) so a gem whose name is not a valid npm package name, such as one with uppercase letters, can participate.
+
+**Why:** v1 gives such a gem a participation error instead. The override was cut in the 2026-10-04 /autoplan Eng pass because no known gem needs it and a renamed context would sit outside the `@rubygems/*` alias and lock-scan protections.
+
+**Context:** If added, apply the cross-gem reference rules, `npm:` alias normalization and the post-install lock scan to the full participating name map, overridden names included, with a request-logging fixture proving an overridden name never reaches a registry.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P4
+**Depends on:** a real gem with a non-npm-valid name opting in
+
 ## Done
 
 ### Map gem paths to `@rubygems/` without a regex (#95)

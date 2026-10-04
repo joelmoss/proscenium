@@ -1,0 +1,86 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Stage A entry gate for the #154 package manager plan (docs/plans/154-package-manager.md).
+#
+# The plan's accepted review requirements were folded into its body on 4 October 2026. Stage A
+# starts only while the body stays the single source of truth: no review-pipeline labels, no text
+# for work that was dropped or deferred, and one conformance table that says which stage each row
+# gates. The maintainer runs this before starting Stage A; it must exit 0.
+#
+# The body is everything between the "## Implementation plan" and "## Review record" lines. The
+# Review record is history and is never checked: it uses these terms by design.
+#
+# The npm rule skips the "## Measured evidence" section, whose probe tables are measurements kept
+# for a later npm adapter. Anywhere else a line may name npm only to say it is unsupported, as an
+# `npm:` alias, or as "npm package name". The match is case-sensitive on purpose, so the README's
+# "Import from NPM" heading can be named.
+#
+# Usage: bin/check-154-plan [path]
+#   Exits 0 when the body passes, 1 with one line per problem when it does not.
+
+FORBIDDEN = {
+  /\bUC[1-4]\b/ => 'review user-challenge label',
+  /\bD[2-9]\b/ => 'review gate question number (D1 is the only settled decision name)',
+  /autoplan/i => 'review pipeline reference',
+  /\b(?:CEO|DX|Eng)\s+(?:requirement|phase|pass|re-run)/i => 'review pipeline reference',
+  /map\.json/ => 'engine-read CLI state was dropped',
+  /journal/i => 'transactional journals are deferred',
+  %r{bin/proscenium} => 'the project launcher is deferred',
+  %r{cmd/proscenium} => 'the CLI is Ruby',
+  /CGO_ENABLED/ => 'the CLI is Ruby',
+  /\bGo CLI\b/i => 'the CLI is Ruby',
+  /packaged binary/i => 'the CLI is Ruby'
+}.freeze
+NPM_ALLOWED = /unsupported|`npm:|npm package name/i
+EVIDENCE = '## Measured evidence'
+CELL = /(?<!\\)\|/ # a table cell boundary; `\|` inside a cell is not one
+
+path = ARGV.first || File.expand_path('../docs/plans/154-package-manager.md', __dir__)
+lines = File.readlines(path, chomp: true)
+first = lines.index('## Implementation plan')
+last = lines.index('## Review record')
+unless first && last && first < last
+  abort "#{path}: needs an '## Implementation plan' line followed by a '## Review record' line"
+end
+
+body = ((first + 1)...last).map { |i| [i + 1, lines[i]] }
+problems = []
+
+in_evidence = false
+body.each do |number, text|
+  in_evidence = text == EVIDENCE if text.start_with?('## ')
+  FORBIDDEN.each do |pattern, why|
+    problems << "line #{number}: #{why}: #{text[pattern]}" if text.match?(pattern)
+  end
+  next if in_evidence || !text.match?(/\bnpm\b/) || text.match?(NPM_ALLOWED)
+
+  problems << "line #{number}: npm is named outside the unsupported-manager error"
+end
+
+tables = body.slice_when { |(_, a), (_, b)| a.start_with?('|') != b.start_with?('|') }
+             .select { |rows| rows.first[1].start_with?('|') }
+conformance = tables.select { |rows| rows.any? { |_, text| text.match?(/\A\| C\d+ \|/) } }
+if conformance.size == 1
+  rows = conformance.first
+  gate = ->(text) { text.split(CELL).reject(&:empty?).last.to_s.strip }
+  header_number, header = rows.first
+  problems << "line #{header_number}: the conformance table's last column must be Gate" \
+    unless gate.call(header) == 'Gate'
+  c_rows = rows.select { |_, text| text.match?(/\A\| C\d+ \|/) }
+  c_rows.each do |number, text|
+    problems << "line #{number}: conformance row has no gate" if gate.call(text).empty?
+  end
+  problems << 'no conformance row gates the Stage A pilot (a Gate cell starting with A)' \
+    unless c_rows.any? { |_, text| gate.call(text).start_with?('A') }
+else
+  problems << "conformance rows must live in one table; found #{conformance.size}"
+end
+
+name = File.basename(path)
+if problems.empty?
+  puts "#{name}: Stage A entry gate passes"
+else
+  warn problems
+  abort "#{name}: #{problems.size} problem(s); Stage A cannot start"
+end
