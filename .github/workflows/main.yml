@@ -149,8 +149,9 @@ jobs:
   # adopted app. Stage D qualification runs them on every host the gem ships for. They reach npm
   # and GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
   stage-a:
-    # A hang must fail the run, not hold a runner for the default six hours.
-    timeout-minutes: 25
+    # A hang must fail the run, not hold a runner for the default six hours. The Windows leg runs
+    # the install suite twice, the second time as a standard user.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -228,6 +229,73 @@ jobs:
       - if: matrix.ruby == '4.0'
         run: bin/test -v
         shell: bash
+      # #154's C28: an ordinary Windows user. The runner is an administrator, so the install suite
+      # runs again as a standard user created here, with Developer Mode off, so the user cannot
+      # create a symbolic link either (the launcher proves that before the suite runs). The user
+      # gets its own profile, so the managers start with empty caches of their own.
+      - name: Install suite as a standard Windows user
+        if: runner.os == 'Windows' && matrix.ruby == 'default' && matrix.pnpm_line == 0
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $user = 'psmuser'
+          # At most 14 characters: net user stops to ask about a longer one.
+          $password = 'Ps1!' + [guid]::NewGuid().ToString('N').Substring(0, 10)
+          net user $user $password /add /y | Out-Null
+          $unlock = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\AppModelUnlock'
+          New-Item -Force $unlock | Out-Null
+          Set-ItemProperty $unlock AllowDevelopmentWithoutDevLicense 0
+          # Read access to the checkout and the tools. A tool installed under the runner's own
+          # profile, which other users cannot read, gets it on its top directory there.
+          $dirs = @($env:GITHUB_WORKSPACE)
+          foreach ($tool in 'ruby', 'pnpm', 'bun') {
+            $path = (Get-Command $tool).Source
+            Write-Host "$tool at $path"
+            if ($path.StartsWith("$env:USERPROFILE\")) {
+              $dirs += Join-Path $env:USERPROFILE $path.Substring($env:USERPROFILE.Length + 1).Split('\')[0]
+            } else {
+              $dirs += Split-Path (Split-Path $path)
+            }
+          }
+          foreach ($dir in $dirs | Select-Object -Unique) {
+            Write-Host "granting $user read access to $dir"
+            icacls $dir /grant "${user}:(OI)(CI)RX" /Q | Out-Null
+          }
+          $work = 'C:\psm'
+          New-Item -ItemType Directory -Force $work | Out-Null
+          icacls $work /grant "${user}:(OI)(CI)M" /Q | Out-Null
+
+          $userHome = "C:\Users\$user"
+          $vars = [ordered]@{}
+          Get-ChildItem env: | Where-Object { $_.Name -match '^(PATH|BUNDLE_.*|STAGE_A|RAILS_ENV|GOWORK|PROSCENIUM_PNPM)$' } |
+            ForEach-Object { $vars[$_.Name] = $_.Value }
+          $vars['USERPROFILE'] = $userHome
+          $vars['HOME'] = $userHome
+          $vars['APPDATA'] = "$userHome\AppData\Roaming"
+          $vars['LOCALAPPDATA'] = "$userHome\AppData\Local"
+          $vars['TEMP'] = "$userHome\AppData\Local\Temp"
+          $vars['TMP'] = "$userHome\AppData\Local\Temp"
+          $lines = @('@echo off', 'chcp 65001 >nul')
+          $lines += $vars.GetEnumerator() | ForEach-Object { "set `"$($_.Key)=$($_.Value)`"" }
+          $lines += @(
+            'whoami',
+            'whoami /groups | findstr /C:"S-1-5-32-544" && (echo still an administrator & exit /b 98)',
+            "mklink $work\probe-link $work\launch.cmd >nul 2>&1 && (echo can create symbolic links & exit /b 99)",
+            'echo no administrator group, no symbolic link privilege',
+            "cd /d `"$env:GITHUB_WORKSPACE`"",
+            'ruby bin\test -v test\cli\install_test.rb',
+            'exit /b %ERRORLEVEL%'
+          )
+          Set-Content -Encoding utf8 "$work\launch.cmd" $lines
+
+          Start-Service seclogon -ErrorAction SilentlyContinue
+          $credential = [pscredential]::new($user, (ConvertTo-SecureString $password -AsPlainText -Force))
+          $process = Start-Process cmd -ArgumentList '/c', "$work\launch.cmd" -Credential $credential `
+            -LoadUserProfile -WorkingDirectory $work -PassThru `
+            -RedirectStandardOutput "$work\out.log" -RedirectStandardError "$work\err.log"
+          if (-not $process.WaitForExit(1200000)) { $process.Kill($true); Write-Error 'timed out' }
+          Get-Content "$work\out.log", "$work\err.log"
+          if ($process.ExitCode -ne 0) { Write-Error "exit $($process.ExitCode)" }
 
   # #154's C48: the first run as a new user meets it, from `rails new -j bun` on. Generates an app
   # and installs its gems from the network, so it runs on its own.
