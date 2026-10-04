@@ -178,6 +178,12 @@ module Proscenium
           :input, "%<count>s of the app's own packages take a gem context's name:\n%<list>s",
           'Remove the dependency, as Gemfile.lock pins the gem now, or rename the package.'
         ],
+        'PSM-E-UNC-SHIM' => [
+          :unsupported, '%<manager>s is a .cmd shim, and cmd.exe cannot run in %<root>s, a ' \
+                        'UNC path: it would run the manager in C:\\Windows instead.',
+          'Map a drive letter to the share (`net use Z: \\\\server\\share`) and run from it, ' \
+          'or install %<manager>s as a native executable.'
+        ],
         'PSM-E-OWNED-LINK' => [
           :input, '%<paths>s is a symbolic link, so an install would write outside the app.',
           'Replace it with a real directory: Proscenium writes its own state only inside ' \

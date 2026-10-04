@@ -63,6 +63,7 @@ module Proscenium
       def check_version!(experimental: false, frozen: false)
         @executable = self.class.which(@name) or raise Error.new('PSM-E-MANAGER-MISSING',
                                                                  manager: @name)
+        check_launchable!
         out, status = Bundler.with_unbundled_env do
           Open3.capture2e(@executable, '--version', chdir: @root)
         end
@@ -105,6 +106,17 @@ module Proscenium
       # dependencies explicitly: without them, registering a workspace can switch the app to
       # another linker, and Bun's default trusted list would run scripts of packages a gem
       # introduces.
+      # A `.cmd` or `.bat` shim, as npm installs pnpm, runs under cmd.exe, which cannot use a UNC
+      # path as its working directory: it falls back to C:\Windows and runs the manager there
+      # (C27). So a project reached through a UNC path needs a native executable or a drive.
+      def check_launchable!
+        return unless @executable.match?(/\.(?:cmd|bat)\z/i) && self.class.unc?(@root)
+
+        raise Error.new('PSM-E-UNC-SHIM', manager: @name, root: @root)
+      end
+
+      def self.unc?(path) = path.start_with?('//', '\\\\')
+
       def check_project!
         check_not_nested!
         return self unless @name == 'bun'

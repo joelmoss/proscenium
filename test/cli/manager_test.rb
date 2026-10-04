@@ -146,6 +146,24 @@ describe Proscenium::CLI::Manager do
       ENV['PATHEXT'] = pathext
     end
 
+    # C27: cmd.exe cannot run in a UNC directory, so a shim is refused there before it runs.
+    it 'refuses a .cmd shim for a project reached through a UNC path' do
+      path = ENV.fetch('PATH', nil)
+      pathext = ENV.fetch('PATHEXT', nil)
+      write('bin/pnpm.cmd', "@echo off\r\n")
+      File.chmod(0o755, File.join(@dir, 'bin/pnpm.cmd'))
+      ENV['PATH'] = File.join(@dir, 'bin')
+      ENV['PATHEXT'] = '.COM;.EXE;.BAT;.CMD'
+
+      %w[//server/share/app \\\\server\\share\\app].each do |root|
+        assert_equal('PSM-E-UNC-SHIM', code { M.new('pnpm', root).check_version! })
+      end
+      refute M.unc?('D:/app')
+    ensure
+      ENV['PATH'] = path
+      ENV['PATHEXT'] = pathext
+    end
+
     it 'says when the manager is not installed' do
       path = ENV.fetch('PATH', nil)
       ENV['PATH'] = @dir

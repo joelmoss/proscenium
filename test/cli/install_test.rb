@@ -295,8 +295,9 @@ describe 'proscenium install' do
   end
 
   # C27: an app reached through a UNC path, as from a network share. The admin share of the
-  # runner's own drive stands in for one.
-  it 'installs an app reached through a UNC path on Windows' do
+  # runner's own drive stands in for one. The runner's pnpm is a .cmd shim, which cmd.exe cannot
+  # run there, so the install is refused before the manager runs at all.
+  it 'refuses a .cmd shim for an app reached through a UNC path on Windows' do
     skip 'UNC paths are Windows only' unless Gem.win_platform?
 
     dir = app('pnpm')
@@ -309,7 +310,8 @@ describe 'proscenium install' do
     _, err, status = proscenium(unc.call(dir), 'install', '--frozen',
                                 env: { 'BUNDLE_GEMFILE' => unc.call(File.join(dir, 'Gemfile')) })
 
-    assert_predicate status, :success?, err
+    assert_equal 3, status.exitstatus, err
+    assert_includes err, 'PSM-E-UNC-SHIM'
   end
 
   it 'refuses Bun without an explicit linker, changing nothing' do

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-UNC-SHIM","message":"pnpm is a .cmd shim, and cmd.exe cannot run in //server/share/app, a UNC path: it would run the manager in C:\\Windows instead.","fix":"Map a drive letter to the share (`net use Z: \\\\server\\share`) and run from it, or install pnpm as a native executable."}
