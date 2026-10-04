@@ -155,6 +155,9 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        # Stage D qualifies Ruby 4.0: its legs run the whole suite, the default legs the
+        # package-manager suites.
+        ruby: [default, '4.0']
     runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
@@ -179,6 +182,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
       # The versions come from the CLI's capability table, the one source of truth for what
@@ -204,7 +208,11 @@ jobs:
       - if: runner.os == 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
       # Verbose, so the log names each test as it runs: a hang otherwise shows only as dots.
-      - run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/
+      - if: matrix.ruby == 'default'
+        run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/
+        shell: bash
+      - if: matrix.ruby == '4.0'
+        run: bin/test -v
         shell: bash
 
   # #154's C48: the first run as a new user meets it, from `rails new -j bun` on. Generates an app
