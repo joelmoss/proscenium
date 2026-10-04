@@ -74,10 +74,10 @@ module Proscenium
         end
       end
 
-      # A manager that failed after the CLI was interrupted was interrupted too: on Windows it exits
-      # with a status, not a signal.
+      # An interrupted install stops, however the manager ended: on Windows it exits with a status,
+      # not a signal, and may even exit 0, and Ctrl-C still means stop before verifying anything.
       def check(status, manager, args, output, interrupted = nil)
-        return status if status.success?
+        return status if status.success? && !interrupted
 
         command = [manager, *args].join(' ')
         error = if status.signaled? || interrupted

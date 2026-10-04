@@ -103,6 +103,22 @@ describe 'project lock and runner' do
     assert_equal ['PSM-E-INTERRUPTED', 8], [error.code, error.exit_status]
   end
 
+  # Ctrl-C means stop, even when the manager catches it and exits 0, as one did on Windows.
+  it 'reports an interrupted install even when the manager exits 0 (exit 8)' do
+    skip 'Windows presses a real Ctrl-C in its own test below' if Gem.win_platform?
+
+    ready = File.join(@root, 'ready')
+    exe, args = ruby("trap(:INT) { exit 0 }; File.write(#{ready.inspect}, '1'); sleep 10")
+    sender = Thread.new do
+      sleep 0.05 until File.exist?(ready)
+      Process.kill(:INT, Process.pid)
+    end
+    error = assert_raises(Proscenium::CLI::Error) { Runner.run(exe, args, root: @root) }
+    sender.join
+
+    assert_equal ['PSM-E-INTERRUPTED', 8], [error.code, error.exit_status]
+  end
+
   # A manager that outlives the CLI keeps the project locked (C35): it was handed the lock.
   it 'passes the lock to the manager, which holds it while it runs' do
     skip 'descriptor inheritance is qualified on Windows separately' if Gem.win_platform?
