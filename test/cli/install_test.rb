@@ -126,6 +126,14 @@ describe 'proscenium install' do
         assert_predicate status, :success?, err
         assert_path_exists context(dir, 'stage_a_widget_a')
         refute_path_exists File.join(sub, '.proscenium')
+
+        # C53: BUNDLE_GEMFILE names the app, and install runs from somewhere else entirely.
+        Dir.mktmpdir('elsewhere') do |elsewhere|
+          _, err, status = proscenium(elsewhere, 'install', '--frozen', manager:)
+
+          assert_predicate status, :success?, err
+          assert_empty Dir.children(elsewhere)
+        end
       end
 
       it 'fails --frozen on a hand edit, an orphan or a missing registration, before the manager' do
