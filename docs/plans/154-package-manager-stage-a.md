@@ -336,3 +336,45 @@ install until the app allows it by its full specifier (`<name>@git+…#<sha>` in
 `onlyBuiltDependencies`), so the CLI's error should name the gem that introduced it; and Bun skips
 the scripts silently, so the CLI should list them itself. `git_scripts_test.rb` checks this in CI,
 with the app's approval as the control that the scripts would otherwise run.
+
+## Production installs (4 October 2026)
+
+Can a production install leave out the context of a gem that is only in an excluded Ruby group?
+A synthetic app with two contexts, one standing for a development-only gem:
+
+| Command | Excluded gem's context installed | Running gem's context and the app installed |
+|---|---|---|
+| `pnpm install --prod --frozen-lockfile` (10.34.4) | yes | yes |
+| ...with `--filter='!@rubygems/<gem>'` | no | yes |
+| `bun install --production --frozen-lockfile` (1.4.2) | yes | yes |
+| ...with `--filter='!@rubygems/<gem>'` | no | yes |
+
+Both managers can, with a negative workspace filter, and the frozen lockfile still applies. So
+`install --frozen --production` can pass one filter per excluded gem; without one, an excluded
+gem's JS dependencies are installed in production too, which is harmless but wasted.
+
+## The apps' layout and hosts (4 October 2026)
+
+None of london, platform or codaset sits inside an enclosing JS workspace: no directory above any
+of them has a package.json or pnpm-workspace.yaml. All three are developed on macOS arm64, run CI
+on Ubuntu, and deploy as Linux containers built from `ruby:*-slim` images; their Gemfile.locks
+declare Linux x86_64 and aarch64 among their platforms. None runs on Windows. So the qualification
+hosts for v1 are macOS arm64 and Linux x86_64 and aarch64.
+
+## Descriptor receipt (4 October 2026)
+
+**Decision: no receipt.** `drift_test.rb` applies each drift case alone to a clean app and checks
+that `Context.drift`, which reads only the registration, the committed contexts and the installed
+gems, reports it:
+
+| Drift | Detected without a receipt |
+|---|---|
+| The gem changes revision or source, but not its dependencies | nothing to detect: the context is still correct |
+| The gem changes its dependencies | yes, the context's `projectionSha256` no longer matches |
+| The projection version changes | yes, from the context's `projection` field |
+| The registration is removed | yes, from pnpm-workspace.yaml or package.json |
+| A participating gem has no context | yes |
+| A context's gem no longer participates | yes, as an orphan |
+
+A changed revision that leaves the dependencies alone needs no install, so a receipt would only
+add a file to keep in step. The locked source identity the CLI needs is in Gemfile.lock.
