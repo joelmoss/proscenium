@@ -46,7 +46,8 @@ describe 'dependency spec kinds' do
     FileUtils.mkdir_p(native)
     File.write(File.join(native, 'package.json'),
                JSON.generate('name' => 'native', 'private' => true,
-                             'dependencies' => MANIFEST['dependencies']))
+                             'dependencies' => MANIFEST['dependencies'],
+                             'optionalDependencies' => MANIFEST['optionalDependencies']))
     package = { 'name' => 'app', 'private' => true }
     if manager == 'bun'
       package['workspaces'] = ['packages/*']
@@ -60,6 +61,8 @@ describe 'dependency spec kinds' do
     File.write(File.join(app, 'package.json'), JSON.pretty_generate(package))
     app
   end
+
+  def darwin? = RbConfig::CONFIG['host_os'].include?('darwin')
 
   def version(context, name)
     JSON.parse(File.read(File.join(context, 'node_modules', name, 'package.json')))['version']
@@ -89,6 +92,13 @@ describe 'dependency spec kinds' do
       end
 
       assert_equal(VERSIONS.values, VERSIONS.keys.map { version(context, it) })
+
+      # C15: fsevents runs only on macOS. Each host installs the variant it can run, and omits
+      # an optional one it cannot, the same for the context as natively.
+      fsevents = ->(dir) { File.exist?(File.join(dir, 'node_modules/fsevents/package.json')) }
+      installed = { 'context' => fsevents.call(context), 'native' => fsevents.call(native) }
+
+      assert_equal({ 'context' => darwin?, 'native' => darwin? }, installed)
       refute JSON.parse(File.read(File.join(context, 'package.json'))).key?('version'),
              "the gem's manifest version is not the context's: Ruby and JS versions are independent"
     end
