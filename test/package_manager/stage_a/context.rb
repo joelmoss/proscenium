@@ -36,9 +36,21 @@ module StageA
       dir
     end
 
-    # The one-time registration: pnpm's workspace file listing every context.
+    PATTERN = '.proscenium/packages/*'
+
+    # The one-time registration: the context pattern in pnpm's workspace file, spliced into an
+    # existing one as text so its settings and comments survive (the plan's textual splice).
     def register_pnpm(app)
-      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages:\n  - .proscenium/packages/*\n")
+      path = File.join(app, 'pnpm-workspace.yaml')
+      text = File.exist?(path) ? File.read(path) : ''
+      return if text.include?(PATTERN)
+
+      text = if text.match?(/^packages:[ \t]*$/)
+               text.sub(/^packages:[ \t]*\n/) { "#{it}  - #{PATTERN}\n" }
+             else
+               "packages:\n  - #{PATTERN}\n#{"\n" unless text.empty?}#{text}"
+             end
+      File.write(path, text)
     end
   end
 end

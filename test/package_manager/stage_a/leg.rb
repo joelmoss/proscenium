@@ -48,7 +48,7 @@ CELLS = if MANAGER == 'pnpm'
             'unref-isolated' => [false, 'isolated', true],
             'ref-hoisted' => [true, 'hoisted', true] }
         end.freeze
-COPIED = { 'pnpm' => %w[package.json pnpm-lock.yaml .npmrc],
+COPIED = { 'pnpm' => %w[package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc],
            'bun' => %w[package.json bun.lock bunfig.toml .npmrc] }.fetch(MANAGER).freeze
 
 def run!(*cmd, chdir: Dir.pwd, env: {})
@@ -78,6 +78,8 @@ gems = run!('mise', 'exec', '--', 'ruby', '-rbundler', '-e', <<~RUBY, chdir: app
     puts [s.name, root].join("\t")
   end
 RUBY
+# Bundler may print progress ("Resolving dependencies...") before the list.
+gems = gems.lines.grep(/\t/).join
 File.write("#{out}/gems.tsv", gems)
 unless gems.include?("#{GEM}\t#{gem_root}\n")
   abort "the app's bundle does not point #{GEM} at #{gem_root}"
