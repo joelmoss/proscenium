@@ -74,10 +74,20 @@ gem drops that dependency. Add what your app imports to your own package.json.
 
 - Run `bundle exec proscenium install --frozen` (or a frozen native install) before
   `assets:precompile`. Restart after the deploy: production reads the contexts once per process.
-- Unbundled pages load packages from their real paths, such as `/node_modules/.pnpm/...`, and a
-  copy a linker nested under a context from `/.proscenium/packages/<gem>/node_modules/...`. A proxy
-  rule that denies dotfile paths (nginx's common `location ~ /\.`) blocks both; allow those two
-  prefixes, or bundle in production.
+- Unbundled pages load packages from their real paths: pnpm's store under `/node_modules/.pnpm/`,
+  Bun's isolated store under `/node_modules/.bun/`, and a copy a linker nested under a context from
+  `/.proscenium/packages/<gem>/node_modules/...`. A proxy rule that denies dotfile paths (nginx's
+  common `location ~ /\.`) blocks all three. Allow those prefixes ahead of it, or bundle in
+  production. For nginx, with `app` as your upstream:
+
+  ```nginx
+  location ^~ /node_modules/.pnpm/ { proxy_pass http://app; }
+  location ^~ /node_modules/.bun/ { proxy_pass http://app; }
+  location ^~ /.proscenium/packages/ { proxy_pass http://app; }
+  location ~ /\. { deny all; }
+  ```
+
+  `^~` makes nginx take those prefixes without checking the regular expression.
 - The contexts live at the bundle's root, beside the Gemfile. When that is not the Rails root, a
   nested copy has no URL under the app and keeps its link path.
 

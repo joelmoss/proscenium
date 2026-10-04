@@ -214,13 +214,17 @@ jobs:
         with:
           bun-version: ${{ steps.caps.outputs.bun }}
 
+      # test/proxy_rule_test.rb runs the guide's nginx rule through real nginx (C54).
+      - if: runner.os == 'Linux'
+        run: command -v nginx || (sudo apt-get update -q && sudo apt-get install -yq nginx-light)
+
       - if: runner.os != 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
       - if: runner.os == 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
       # Verbose, so the log names each test as it runs: a hang otherwise shows only as dots.
       - if: matrix.ruby == 'default' && matrix.pnpm_line == 0
-        run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/
+        run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/ test/proxy_rule_test.rb
         shell: bash
       # fixtures/adopted is a committed app that pins pnpm 11 itself, so the pnpm 12 leg skips it.
       - if: matrix.pnpm_line == 1
