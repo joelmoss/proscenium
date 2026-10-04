@@ -52,6 +52,17 @@ describe Proscenium::DependencyContext do
     assert_equal({ 'node' => '>= 20' }, context['engines'])
   end
 
+  # C19: only the app approves a dependency's scripts. A gem's own approvals, in any manager's
+  # spelling, never reach its context.
+  it "drops a gem's own script approvals" do
+    approvals = { 'trustedDependencies' => ['ms'], 'allowBuilds' => { 'ms@2.1.3' => true },
+                  'pnpm' => { 'onlyBuiltDependencies' => ['ms'], 'allowBuilds' => ['ms'] } }
+    context = Proscenium::DependencyContext.project('widget', BASE.merge(approvals))
+
+    assert_empty context.keys & %w[trustedDependencies allowBuilds pnpm]
+    assert_equal sha(BASE), sha(BASE.merge(approvals))
+  end
+
   it 'treats an empty field as an absent one' do
     assert_equal sha(BASE), sha(BASE.merge('optionalDependencies' => {}, 'os' => []))
   end
