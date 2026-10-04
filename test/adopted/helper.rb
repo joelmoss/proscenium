@@ -18,7 +18,10 @@ module Adopted
   module_function
 
   def env
-    env = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RAILS_ENV' => 'test' }
+    # Frozen, so installing never rewrites the committed lock: Bundler would record a checksum
+    # for stage_a_widget_b, which is rebuilt each run and so never has the same one twice.
+    env = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RAILS_ENV' => 'test',
+            'BUNDLE_FROZEN' => 'true' }
     # CI installs gems into a bundle path; the fixture's gems are the same versions.
     path = Bundler.settings[:path]
     env['BUNDLE_PATH'] = File.expand_path(path, Bundler.root) if path

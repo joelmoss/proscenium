@@ -311,12 +311,12 @@ CHECKSUMS
   stage_a_app_dependent (1.0.0)
   stage_a_assets (1.0.0)
   stage_a_widget_a (1.0.0)
-  stage_a_widget_b (1.0.0) sha256=9d4d6d960e6ef4cab2da32fdec511b1062c17ebc4d66ccc300922a708ac7b068
+  stage_a_widget_b (1.0.0) sha256=d6e391a4f5035db829bbe73163148394f3b53f46e2e79f0d2cba8a1318c343a9
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f
   tzinfo (2.0.6) sha256=8daf828cc77bcf7d63b0e3bdb6caa47e2272dcfaf4fbfe46f8c3a9df087a829b
-  tzinfo-data (1.2026.4)
+  tzinfo-data (1.2026.4) sha256=22f5f02608f14938ab8b78513a70a22f0b0277614a07273d3bedb3ea45ece104
   uri (1.1.1) sha256=379fa58d27ffb1387eaada68c749d1426738bd0f654d812fcc07e7568f5c57c6
   useragent (0.16.11) sha256=700e6413ad4bb954bb63547fa098dddf7b0ebe75b40cc6f93b8d54255b173844
   websocket-driver (0.8.2) sha256=97c556b019bf3410b4961002ac501621e9322d3f8a7bc02161a09301cc4c4146

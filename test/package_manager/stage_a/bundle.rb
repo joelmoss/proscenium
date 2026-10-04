@@ -56,13 +56,20 @@ module StageA
       FileUtils.chmod_R('u+w', bundle) if File.exist?(bundle)
     end
 
+    # Every build of a fixture gem is byte-identical: RubyGems stamps the archive with
+    # SOURCE_DATE_EPOCH, and otherwise with today, so a lock's checksum of it held for a day.
+    EPOCH = '1767225600' # 2026-01-01
+
     def build(source, cache)
       spec = Gem::Specification.load(Dir[File.join(source, '*.gemspec')].first)
       yield spec if block_given?
 
+      epoch = ENV.fetch('SOURCE_DATE_EPOCH', nil)
+      ENV['SOURCE_DATE_EPOCH'] = EPOCH
       file = Gem::DefaultUserInteraction.use_ui(Gem::SilentUI.new) do
         Dir.chdir(source) { Gem::Package.build(spec) }
       end
+      ENV['SOURCE_DATE_EPOCH'] = epoch
       FileUtils.mv(File.join(source, file), cache)
     end
 
