@@ -205,6 +205,33 @@ describe 'proscenium install' do
         refute_path_exists File.join(dir, '.proscenium/packages/gem_npm/node_modules/string-length')
       end
 
+      # C29: install writes only inside .proscenium/, never through a link out of it.
+      it 'refuses to write through a linked .proscenium/packages' do
+        dir = app(manager)
+        outside = Dir.mktmpdir('outside')
+        FileUtils.mkdir_p(File.join(dir, '.proscenium'))
+        begin
+          File.symlink(outside, File.join(dir, '.proscenium/packages'))
+        rescue NotImplementedError, Errno::EPERM, Errno::EACCES
+          skip 'symlinks need privileges here'
+        end
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_equal 2, status.exitstatus, err
+        assert_includes err, 'PSM-E-OWNED-LINK'
+        assert_empty Dir.children(outside)
+      ensure
+        link = dir && File.join(dir, '.proscenium/packages')
+        if link && File.symlink?(link)
+          begin
+            File.unlink(link)
+          rescue SystemCallError
+            Dir.rmdir(link) # a directory link on Windows
+          end
+        end
+        FileUtils.rm_rf(outside) if outside
+      end
+
       it 'fails --frozen on a hand edit, an orphan or a missing registration, before the manager' do
         dir = app(manager)
         proscenium(dir, 'install', manager:)

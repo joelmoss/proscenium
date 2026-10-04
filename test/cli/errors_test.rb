@@ -49,6 +49,7 @@ describe Proscenium::CLI::Error do
     'PSM-E-COLLISION' => { count: 1, list: '  - package.json dependencies has @rubygems/hue as ' \
                                            '"github:harleytherapy/hue#22e6604"' },
     'PSM-E-OWNED-DIR' => { entries: 'mine' },
+    'PSM-E-OWNED-LINK' => { paths: '.proscenium/packages' },
     'PSM-W-END-OF-LIFE' => { manager: 'pnpm', version: '11.28.4', eol: '2027-04-30' }
   }.freeze
 

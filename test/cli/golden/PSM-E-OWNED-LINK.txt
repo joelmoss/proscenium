@@ -1,0 +1,2 @@
+PSM-E-OWNED-LINK: .proscenium/packages is a symbolic link, so an install would write outside the app.
+Replace it with a real directory: Proscenium writes its own state only inside .proscenium/.

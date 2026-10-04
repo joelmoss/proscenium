@@ -88,6 +88,7 @@ module Proscenium
       # there without the generated `proscenium` block is someone's own package, and install
       # refuses rather than delete it as an orphan.
       def check_owned_directory
+        check_owned_links
         foreign = @committed.select do |_, path|
           next false unless File.exist?(path)
 
@@ -99,6 +100,16 @@ module Proscenium
         return if foreign.empty?
 
         raise Error.new('PSM-E-OWNED-DIR', entries: foreign.keys.join(', '))
+      end
+
+      # Everything install writes is under .proscenium/ (C29). A link anywhere on the way, or in
+      # place of a context, would send those writes outside the app.
+      def check_owned_links
+        owned = ['.proscenium', Contexts::DIR] + @committed.flat_map do |gem, path|
+          [File.join(Contexts::DIR, gem), relative(path)]
+        end
+        links = owned.select { File.symlink?(File.join(@root, it)) }
+        raise Error.new('PSM-E-OWNED-LINK', paths: links.join(', ')) if links.any?
       end
 
       def check_collisions

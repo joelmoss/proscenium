@@ -176,6 +176,11 @@ module Proscenium
           :input, "%<count>s of the app's own packages take a gem context's name:\n%<list>s",
           'Remove the dependency, as Gemfile.lock pins the gem now, or rename the package.'
         ],
+        'PSM-E-OWNED-LINK' => [
+          :input, '%<paths>s is a symbolic link, so an install would write outside the app.',
+          'Replace it with a real directory: Proscenium writes its own state only inside ' \
+          '.proscenium/.'
+        ],
         'PSM-E-OWNED-DIR' => [
           :input, '.proscenium/packages/ holds packages Proscenium did not generate: %<entries>s.',
           'Move them out: that directory is Proscenium\'s, and every entry in it is a gem context.'
