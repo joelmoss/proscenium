@@ -36,6 +36,15 @@ describe Proscenium::ContextMap do
                  CM.contexts(@root, specs))
   end
 
+  # C52: an adopted app whose last participating gem left still builds, with an empty map.
+  it 'maps nothing for an adopted app with no participating gem' do
+    write('pnpm-workspace.yaml', "packages:\n  - .proscenium/packages/*\n")
+
+    assert CM.adopted?(@root)
+    assert_empty CM.contexts(@root, specs.drop(1))
+    assert_nil CM.adoption_notice(@root, specs.drop(1))
+  end
+
   it "takes Bun's registration in package.json only in a Bun app" do
     write('package.json', '{"workspaces": [".proscenium/packages/*"]}')
 

@@ -137,6 +137,21 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(code).To(ContainSubstring(reactURL))
 		})
 
+		// C22: a dynamic import inside the nested copy keeps the nested copy's URL, which the
+		// middleware serves (test/middleware_test.rb).
+		It("loads a nested copy's dynamic import from the nested copy", func() {
+			dep := ".proscenium/packages/" + gem + "/node_modules/stage-a-dep/"
+			write(dep+"lazy.js", "export default 'lazy 6.0.0'\n")
+			write(dep+"dynamic.js", "export const load = () => import('./lazy.js')\n")
+			write("vendor/"+gem+"/dynamic.js", "export { load } from 'stage-a-dep/dynamic.js'\n")
+
+			_, entry := build("node_modules/@rubygems/" + gem + "/dynamic.js")
+			_, nested := build(dep + "dynamic.js")
+
+			Expect(entry).To(ContainSubstring(`"/` + dep + `dynamic.js"`))
+			Expect(nested).To(ContainSubstring(`import("/` + dep + `lazy.js")`))
+		})
+
 		It("gives the app the same React URL as the gem", func() {
 			_, code := build("app/app.js")
 
