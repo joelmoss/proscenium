@@ -164,6 +164,17 @@ describe Proscenium::CLI::Manager do
       ENV['PATHEXT'] = pathext
     end
 
+    # The first run of a pinned pnpm prints that it is downloading it, before the version.
+    it 'reads the version past a download notice' do
+      notice = '! Corepack is about to download https://registry.npmjs.org/pnpm/-/pnpm-12.9.1.tgz' \
+               "\n" \
+               "Downloading the pnpm 12.9.1 binary for darwin-arm64...\n12.9.1\n"
+
+      assert_equal '12.9.1', M.version_in(notice)
+      assert_equal '1.4.2', M.version_in("1.4.2\n")
+      assert_equal 'not a version', M.version_in("not a version\n")
+    end
+
     it 'says when the manager is not installed' do
       path = ENV.fetch('PATH', nil)
       ENV['PATH'] = @dir

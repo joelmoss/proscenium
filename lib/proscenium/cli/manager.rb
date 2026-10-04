@@ -65,11 +65,11 @@ module Proscenium
                                                                  manager: @name)
         check_launchable!
         out, status = Bundler.with_unbundled_env do
-          Open3.capture2e(@executable, '--version', chdir: @root)
+          Open3.capture2(@executable, '--version', chdir: @root)
         end
         raise Error.new('PSM-E-MANAGER-MISSING', manager: @name) unless status.success?
 
-        @version = out.strip
+        @version = self.class.version_in(out)
         return self if line
 
         raise Error, 'PSM-E-EXPERIMENTAL-FROZEN' if experimental && frozen
@@ -113,6 +113,12 @@ module Proscenium
         return unless @executable.match?(/\.(?:cmd|bat)\z/i) && self.class.unc?(@root)
 
         raise Error.new('PSM-E-UNC-SHIM', manager: @name, root: @root)
+      end
+
+      # The version a `--version` run printed. Only stdout, and its last line that is one: the first
+      # run of a pinned manager also prints that it is downloading it.
+      def self.version_in(output)
+        output.lines.map(&:strip).grep(/\A\d+\.\d+\.\d+\S*\z/).last || output.strip
       end
 
       def self.unc?(path) = path.start_with?('//', '\\\\')
