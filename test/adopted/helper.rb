@@ -41,12 +41,30 @@ module Adopted
   end
 
   def sh(*command)
-    out, status = Bundler.with_unbundled_env do
-      Open3.capture2e(env, *command, chdir: ROOT)
-    end
-    raise "#{command.join(' ')} failed:\n#{out}" unless status.success?
+    out, err, status = capture(*command)
+    raise "#{command.join(' ')} failed:\n#{out}#{err}" unless status.success?
 
-    out
+    out + err
+  end
+
+  # A command's stdout, stderr and status, or a failure naming it once it has run for TIMEOUT
+  # seconds: a hang on one host fails its test rather than the whole CI job.
+  TIMEOUT = 180
+
+  def capture(*command)
+    Bundler.with_unbundled_env do
+      Open3.popen3(env, *command, chdir: ROOT) do |stdin, stdout, stderr, process|
+        stdin.close
+        out = Thread.new { stdout.read }
+        err = Thread.new { stderr.read }
+        unless process.join(TIMEOUT)
+          Process.kill(:KILL, process.pid)
+          raise "#{command.first(3).join(' ')} did not finish in #{TIMEOUT}s"
+        end
+
+        [out.value, err.value, process.value]
+      end
+    end
   end
 
   # Boots the app, evaluates `code` and returns its value, round-tripped through JSON, with the
@@ -54,9 +72,7 @@ module Adopted
   def run(code)
     script = "require './config/environment'\n" \
              "result = begin\n#{code}\nend\n$stdout.write(JSON.generate(result))\n"
-    out, err, status = Bundler.with_unbundled_env do
-      Open3.capture3(env, RbConfig.ruby, '-e', script, chdir: ROOT)
-    end
+    out, err, status = capture(RbConfig.ruby, '-e', script)
     raise "the adopted app failed:\n#{err}" unless status.success?
 
     [JSON.parse(out), err]

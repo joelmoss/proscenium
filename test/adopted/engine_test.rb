@@ -68,6 +68,7 @@ describe 'an adopted app' do
     compile = "Proscenium::Builder.compile(Precompile: ['lib/app.js', '#{WIDGET}']); " \
               "JSON.parse(File.read('public/assets/.manifest.json'))['outputs'].keys"
     outputs, = Adopted.run(compile)
+    outputs = outputs.map { it.tr('\\', '/') } # esbuild writes Windows paths with backslashes
 
     assert_includes outputs.join("\n"), 'lib/app-$'
     assert_includes outputs.join("\n"), '@rubygems/stage_a_widget_a/index-$'
