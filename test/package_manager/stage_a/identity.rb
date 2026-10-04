@@ -102,12 +102,15 @@ File.write(probe, <<~JS)
   const { chromium } = require(#{playwright.to_json})
   const root = #{site.to_json}
   const server = http.createServer((req, res) => {
-    const file = path.join(root, decodeURIComponent(req.url))
-    if (!fs.existsSync(file)) { res.writeHead(404); return res.end() }
+    const file = path.resolve(root, '.' + decodeURIComponent(new URL(req.url, 'http://x').pathname))
+    if (!file.startsWith(root + path.sep) || !fs.existsSync(file)) {
+      res.writeHead(404)
+      return res.end()
+    }
     const type = file.endsWith('.html') ? 'text/html' : 'text/javascript'
     res.writeHead(200, { 'content-type': type })
     res.end(fs.readFileSync(file))
-  }).listen(0, async () => {
+  }).listen(0, '127.0.0.1', async () => {
     const browser = await chromium.launch()
     const results = {}
     for (const name of ['page', 'control']) {
@@ -127,3 +130,12 @@ result = JSON.parse(run!('node', probe, chdir: out).lines.last)
 
 puts "preact URLs built: #{built.keys.grep(/preact/).join(', ')}"
 result.each { |name, r| puts "#{name}: #{r.to_json}" }
+
+# The page must share one preact, the control must load two, and neither may have failed.
+expected = { 'page' => true, 'control' => false }
+failures = expected.filter_map do |name, same|
+  r = result.fetch(name)
+  "#{name}: #{r.to_json}" unless r['errors'].empty? && r.dig('identity', 'same') == same
+end
+abort "identity probe failed:\n#{failures.join("\n")}" if failures.any?
+puts 'identity probe passed'

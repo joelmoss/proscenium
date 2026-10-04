@@ -373,8 +373,9 @@ marker files, served from a local bare repository over `git+file://`.
 
 No line runs a gem-introduced Git dependency's scripts without approval, so C55's Stage A part
 passes. Two consequences for Stage B: on pnpm a Git dependency that needs `prepare` stops the
-install until the app allows it by its full specifier (`<name>@git+…#<sha>` in
-`onlyBuiltDependencies`), so the CLI's error should name the gem that introduced it; and Bun skips
+install until the app allows it, and how to name a Git package in `onlyBuiltDependencies` changed
+between pnpm 10.33.1 (the name, or `allowBuilds`) and 10.34.4 (`<name>@git+…#<sha>`), so the CLI's
+error should name the gem that introduced it and the exact entry to add; and Bun skips
 the scripts silently, so the CLI should list them itself. `git_scripts_test.rb` checks this in CI,
 with the app's approval as the control that the scripts would otherwise run.
 
