@@ -59,6 +59,15 @@ class StageA::DriftTest < ActiveSupport::TestCase
     assert_equal ["#{GEM}: stale"], StageA::Context.drift(app, { GEM => root })
   end
 
+  it 'reports a context edited by hand, even with its hash left alone' do
+    path = File.join(app, '.proscenium/packages', GEM, 'package.json')
+    context = JSON.parse(File.read(path))
+    context['dependencies']['ms'] = '2.1.3'
+    File.write(path, JSON.generate(context))
+
+    assert_equal ["#{GEM}: edited"], StageA::Context.drift(app, { GEM => self.class.root })
+  end
+
   it 'reports a changed projection version' do
     assert_equal ["#{GEM}: projection changed from dependency-context-v1 to dependency-context-v2"],
                  StageA::Context.drift(app, { GEM => self.class.root },
