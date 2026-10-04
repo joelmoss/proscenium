@@ -71,6 +71,19 @@ describe 'proscenium install' do
     end
   end
 
+  def remove_node_modules(dir)
+    FileUtils.rm_rf(Dir[File.join(dir, '{,.proscenium/packages/*/}node_modules')])
+  end
+
+  # Whether a native frozen Bun install succeeds in `dir`, from a clean tree.
+  def native_bun_frozen(dir, env)
+    remove_node_modules(dir)
+    Bundler.with_unbundled_env do
+      system(env, 'bun', 'install', '--frozen-lockfile', chdir: dir, out: File::NULL,
+                                                         err: File::NULL)
+    end
+  end
+
   def context(dir, gem) = File.join(dir, '.proscenium/packages', gem, 'package.json')
 
   %w[pnpm bun].each do |manager|
@@ -223,7 +236,10 @@ describe 'proscenium install' do
 
       # C30: the manager's own integrity check still guards every package a context installs. A
       # lock whose recorded hash for ms no longer matches the package fails a frozen install.
-      it 'fails a frozen install whose lock no longer matches a package (exit 6)' do
+      # pnpm refuses such a lock on every host. Bun does on Linux and macOS, but on Windows it
+      # installed one anyway, so for Bun the test holds Proscenium to whatever Bun does natively
+      # on the same tampered tree.
+      it 'keeps the manager\'s verdict on a lock that no longer matches a package' do
         dir = app(manager)
         _, err, status = proscenium(dir, 'install', manager:)
 
@@ -234,14 +250,16 @@ describe 'proscenium install' do
 
         refute_equal text, tampered, 'the lock had no integrity for ms to tamper with'
         File.write(lock, tampered)
-        FileUtils.rm_rf(Dir[File.join(dir, '{,.proscenium/packages/*/}node_modules')])
         # A cold cache, so the package is fetched and checked. Measured: Bun with a warm cache
         # reuses a cached package without checking it against the lock, natively too.
         cache = Dir.mktmpdir('cold')
         cold = { 'BUN_INSTALL_CACHE_DIR' => cache }
+        native = manager == 'bun' && native_bun_frozen(dir, cold)
+        File.write(lock, tampered)
+        remove_node_modules(dir)
         _, err, status = proscenium(dir, 'install', '--frozen', manager:, env: cold)
 
-        assert_equal 6, status.exitstatus, err
+        assert_equal native ? 0 : 6, status.exitstatus, err
       ensure
         FileUtils.rm_rf(cache) if cache
       end
