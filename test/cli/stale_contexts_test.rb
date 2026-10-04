@@ -60,6 +60,23 @@ describe Proscenium::StaleContexts do
     assert_empty problems
   end
 
+  # C36: editing a path gem's frontend files needs no install; dropping its manifest does, and
+  # withdrawing participation orphans its context.
+  it "ignores an edit to a gem's assets, but not a dropped manifest or withdrawn participation" do
+    write('gems/hue/index.js', 'export default 2')
+
+    assert_empty problems
+
+    File.delete(File.join(@root, 'gems/hue/package.json'))
+
+    assert_equal 1, problems.size
+    assert_includes problems.first, 'package.json'
+
+    @hue.metadata = {}
+
+    assert_equal ['hue: its context belongs to no participating gem'], problems
+  end
+
   it 'finds a participating gem with no context' do
     widget = gem_spec('widget', '{}')
 
