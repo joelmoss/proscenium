@@ -290,7 +290,8 @@ jobs:
 
           Start-Service seclogon -ErrorAction SilentlyContinue
           $credential = [pscredential]::new($user, (ConvertTo-SecureString $password -AsPlainText -Force))
-          $process = Start-Process cmd -ArgumentList '/c', "$work\launch.cmd" -Credential $credential `
+          # With -Credential, Start-Process does not search PATH: it needs the full path.
+          $process = Start-Process "$env:SystemRoot\System32\cmd.exe" -ArgumentList '/c', "$work\launch.cmd" -Credential $credential `
             -LoadUserProfile -WorkingDirectory $work -PassThru `
             -RedirectStandardOutput "$work\out.log" -RedirectStandardError "$work\err.log"
           if (-not $process.WaitForExit(1200000)) { $process.Kill($true); Write-Error 'timed out' }
