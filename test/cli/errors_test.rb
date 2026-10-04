@@ -29,7 +29,7 @@ describe Proscenium::CLI::Error do
     'PSM-E-BUN-LOCKB' => {},
     'PSM-E-MANAGER-MISSING' => { manager: 'pnpm' },
     'PSM-E-MANAGER-VERSION' => { manager: 'pnpm', version: '9.15.0',
-                                 supported: '>= 10.33.0, < 11; >= 11.0.0, < 12' },
+                                 supported: '>= 11.0.0, < 12; >= 12.0.0, < 13' },
     'PSM-E-EXPERIMENTAL-FROZEN' => {},
     'PSM-E-BUN-LINKER' => {},
     'PSM-E-BUN-TRUSTED' => {},

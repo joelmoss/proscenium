@@ -168,8 +168,8 @@ module Proscenium
         'PSM-E-PEER-SPLIT' => [
           :integrity, '%<gem>s and the app resolve %<package>s to different copies, so the ' \
                       'page would load it twice.',
-          'Make the app and %<gem>s agree on %<package>s. On pnpm 10, `pnpm dedupe` usually ' \
-          'repairs this after an upgrade; `auto-install-peers=false` in .npmrc prevents it.'
+          "Make the app's %<package>s satisfy %<gem>s's peer range, then run " \
+          '`bundle exec proscenium install` again.'
         ],
         'PSM-E-OWNED-DIR' => [
           :input, '.proscenium/packages/ holds packages Proscenium did not generate: %<entries>s.',

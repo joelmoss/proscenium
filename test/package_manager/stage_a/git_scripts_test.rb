@@ -56,12 +56,13 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
                              'dependencies' => { name => spec }))
     package = { 'name' => 'app', 'private' => true }
     if manager == 'pnpm'
-      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages:\n  - .proscenium/packages/*\n")
-      # No side-effects cache, so one install's build cannot stand in for the next one's. The
-      # control approves with pnpm 10's allow-all switch: how one Git package is named in
-      # onlyBuiltDependencies changed between 10.33 and 10.34.
-      allow = approve ? "dangerously-allow-all-builds=true\n" : ''
-      File.write(File.join(app, '.npmrc'), "side-effects-cache=false\n#{allow}")
+      # The control approves the Git package by its full specifier in allowBuilds, which is how
+      # pnpm 11 and 12 name one.
+      allow = approve ? "allowBuilds:\n  \"#{name}@#{spec}\": true\n" : ''
+      File.write(File.join(app, 'pnpm-workspace.yaml'),
+                 "packages:\n  - .proscenium/packages/*\n#{allow}")
+      # No side-effects cache, so one install's build cannot stand in for another's.
+      File.write(File.join(app, '.npmrc'), "side-effects-cache=false\n")
     else
       package['workspaces'] = ['.proscenium/packages/*']
       package['trustedDependencies'] = approve ? [name] : []
@@ -74,8 +75,6 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
   end
 
   # The markers a package's scripts wrote.
-  def pnpm_major = Open3.capture2('pnpm', '--version').first.to_i
-
   def ran(name) = Dir.exist?(markers) ? Dir.children(markers).grep(/\A#{name}-/).sort : []
 
   it 'runs no prepare, install or postinstall script on pnpm, and fails the install on prepare' do
@@ -88,18 +87,19 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
     assert_includes out, 'ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED'
     out, ok = install('pnpm', 'pnpm-install', without)
 
-    # pnpm 10 installs and ignores the scripts; 11 and later refuse the install for them. Either
-    # way the install has to have reached the scripts, not failed for some other reason.
+    # pnpm refuses the install for the ignored scripts; it must be that refusal, not a failure
+    # for some other reason.
     assert ok || out.include?('ERR_PNPM_IGNORED_BUILDS'), "pnpm install failed:\n#{out}"
     assert_empty ran('pnpm-prepare')
     assert_empty ran('pnpm-install')
 
-    # The control: once the app approves the package, its scripts do run. pnpm 11 and later
-    # approve differently; CI pins pnpm 10.
-    skip 'the approval control needs pnpm 10' unless pnpm_major == 10
-    install('pnpm', 'pnpm-install', without, approve: true)
+    # The control: once the app approves the package, its scripts do run. A package of its own,
+    # because pnpm 12 does not build a Git package an earlier install left unbuilt, approved or
+    # not.
+    approved = repository('pnpm-approved', %w[install postinstall])
+    install('pnpm', 'pnpm-approved', approved, approve: true)
 
-    assert_equal %w[pnpm-install-install pnpm-install-postinstall], ran('pnpm-install')
+    assert_equal %w[pnpm-approved-install pnpm-approved-postinstall], ran('pnpm-approved')
   end
 
   it 'runs no prepare, install or postinstall script on Bun' do

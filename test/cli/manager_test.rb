@@ -31,7 +31,7 @@ describe Proscenium::CLI::Manager do
     end
 
     it 'takes packageManager, then --manager over it' do
-      write('package.json', '{"packageManager": "pnpm@10.33.1+sha512.abc"}')
+      write('package.json', '{"packageManager": "pnpm@11.28.4+sha512.abc"}')
 
       assert_equal 'pnpm', M.select(@dir).name
       assert_equal 'bun', M.select(@dir, requested: 'bun').name
@@ -101,6 +101,12 @@ describe Proscenium::CLI::Manager do
         manager['lines'].each do |line|
           with_manager(name, line['ci']) { assert_equal line, it.check_version!.line }
         end
+      end
+    end
+
+    it 'refuses pnpm 10, which is not supported' do
+      with_manager('pnpm', '10.34.4') do |manager|
+        assert_equal('PSM-E-MANAGER-VERSION', code { manager.check_version! })
       end
     end
 

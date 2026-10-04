@@ -1,17 +1,28 @@
 {
   "schema": 1,
-  "comment": "The pnpm and Bun lines Proscenium supports (#154). The source of truth: the CLI checks manager versions against it, and CI pins the versions it lists. `ci` is the exact version CI runs; `eol` is when the line's owner stops maintaining it.",
+  "comment": "The pnpm and Bun lines Proscenium supports (#154). The source of truth: the CLI checks manager versions against it, and CI pins the versions it lists. `ci` is the exact version CI runs; `eol` is when the line's owner stops maintaining it. pnpm 10 is not supported (decided 4 October 2026): it leaves a context on an older copy of a shared peer after the app upgrades it, and 11 and 12 do not.",
   "managers": {
     "pnpm": {
       "lines": [
-        { "range": ">= 10.33.0, < 11", "ci": "10.33.1", "eol": "2027-04-30" },
-        { "range": ">= 11.0.0, < 12", "ci": "11.28.4", "eol": "2027-04-30" },
-        { "range": ">= 12.0.0, < 13", "ci": "12.9.1", "eol": null }
+        {
+          "range": ">= 11.0.0, < 12",
+          "ci": "11.28.4",
+          "eol": "2027-04-30"
+        },
+        {
+          "range": ">= 12.0.0, < 13",
+          "ci": "12.9.1",
+          "eol": null
+        }
       ]
     },
     "bun": {
       "lines": [
-        { "range": ">= 1.4.0, < 1.5", "ci": "1.4.2", "eol": null }
+        {
+          "range": ">= 1.4.0, < 1.5",
+          "ci": "1.4.2",
+          "eol": null
+        }
       ]
     }
   }

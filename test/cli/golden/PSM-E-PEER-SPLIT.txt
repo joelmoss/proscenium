@@ -1,2 +1,2 @@
 PSM-E-PEER-SPLIT: widget and the app resolve react to different copies, so the page would load it twice.
-Make the app and widget agree on react. On pnpm 10, `pnpm dedupe` usually repairs this after an upgrade; `auto-install-peers=false` in .npmrc prevents it.
+Make the app's react satisfy widget's peer range, then run `bundle exec proscenium install` again.

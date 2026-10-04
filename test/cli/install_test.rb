@@ -45,7 +45,8 @@ describe 'proscenium install' do
       package['trustedDependencies'] = []
       File.write(File.join(dir, 'bunfig.toml'), "[install]\nlinker = \"isolated\"\n")
     else
-      package['packageManager'] = 'pnpm@10.33.1'
+      package['packageManager'] =
+        "pnpm@#{Proscenium::CLI::Manager::CAPABILITIES.dig('managers', 'pnpm', 'lines', 0, 'ci')}"
     end
     File.write(File.join(dir, 'package.json'), "#{JSON.pretty_generate(package)}\n")
     dir
