@@ -7,4 +7,6 @@
 .proscenium/*
 !.proscenium/packages/
 .proscenium/packages/*/node_modules/
-/vendor/cache/
+/vendor/cache/*
+# Committed: built once, so its bytes, and the lock's checksum of them, never change.
+!/vendor/cache/stage_a_widget_b-1.0.0.gem

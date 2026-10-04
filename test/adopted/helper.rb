@@ -18,8 +18,8 @@ module Adopted
   module_function
 
   def env
-    # Frozen, so installing never rewrites the committed lock: Bundler would record a checksum
-    # for stage_a_widget_b, which is rebuilt each run and so never has the same one twice.
+    # Frozen, so installing never rewrites the committed lock, and Bundler checks every gem
+    # against the checksums it holds.
     env = { 'BUNDLE_GEMFILE' => File.join(ROOT, 'Gemfile'), 'RAILS_ENV' => 'test',
             'BUNDLE_FROZEN' => 'true' }
     # CI installs gems into a bundle path; the fixture's gems are the same versions.
@@ -29,15 +29,14 @@ module Adopted
   end
 
   # Installs the fixture's gems and runs a frozen native install, once per process: a fresh
-  # checkout of an adopted app needs nothing else (C45). stage_a_widget_b is an archive gem,
-  # built into vendor/cache first, as a registry would serve it.
+  # checkout of an adopted app needs nothing else (C45). stage_a_widget_b is an archive gem in
+  # vendor/cache, as a registry would serve it. It is committed rather than built here: RubyGems
+  # versions build different bytes, and Gemfile.lock holds its checksum.
   def setup!
     @setup ||= begin
-      cache = File.join(ROOT, 'vendor', 'cache')
-      unless File.exist?(File.join(cache, 'stage_a_widget_b-1.0.0.gem'))
-        FileUtils.mkdir_p(cache)
-        StageA::Bundle.build(File.join(StageA::Bundle::GEMS, 'stage_a_widget_b'), cache)
-      end
+      gem = File.join(ROOT, 'vendor/cache/stage_a_widget_b-1.0.0.gem')
+      raise "#{gem} is committed, and its checksum is in Gemfile.lock" unless File.exist?(gem)
+
       sh('bundle', 'install', '--local', '--quiet')
       sh('pnpm', 'install', '--frozen-lockfile')
       true
