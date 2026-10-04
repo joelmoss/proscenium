@@ -1,0 +1,2 @@
+PSM-E-NAME: Widget cannot be a JavaScript package: @rubygems/Widget is not a valid npm name.
+npm names are lowercase letters, digits, and - . _ ~. Rename the gem to participate.

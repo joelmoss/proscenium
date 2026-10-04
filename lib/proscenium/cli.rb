@@ -3,6 +3,7 @@
 require_relative 'version'
 require_relative 'cli/error'
 require_relative 'cli/reporter'
+require_relative 'cli/gem_check'
 
 module Proscenium
   # The `proscenium` command (#154): installs participating gems' JavaScript dependencies through
@@ -52,6 +53,12 @@ module Proscenium
         reporter.info(Proscenium::VERSION, event: 'version', version: Proscenium::VERSION)
       when '--help', '-h', nil
         reporter.info(USAGE, event: 'help')
+      when 'gem'
+        unless args[1] == 'check'
+          raise Error.new('PSM-E-USAGE', detail: 'Did you mean `proscenium gem check`?')
+        end
+
+        return GemCheck.new(args[2], reporter).call
       else
         raise Error.new('PSM-E-USAGE', detail: "Unknown command: #{args.join(' ')}")
       end

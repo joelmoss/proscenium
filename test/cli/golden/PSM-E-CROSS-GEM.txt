@@ -1,0 +1,2 @@
+PSM-E-CROSS-GEM: widget's package.json references @rubygems/other, but its gemspec does not depend on other.
+Add `spec.add_dependency 'other'` to the gemspec, or remove the reference.

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-SPEC","message":"widget depends on x as \"file:../x\", a kind of dependency Proscenium refuses.","fix":"Use a semver range, a dist-tag, an npm: alias, a github: or git+https: URL, or an https: tarball."}

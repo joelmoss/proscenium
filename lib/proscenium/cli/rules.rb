@@ -1,0 +1,63 @@
+# frozen_string_literal: true
+
+module Proscenium
+  module CLI
+    # The author contract for a participating gem's package.json (#154): what `gem check` and
+    # `install` refuse. Each rule yields a problem as [error code, format arguments]; the caller
+    # decides whether a problem is fatal and how to word the escape.
+    module Rules
+      DEPENDENCY_FIELDS = %w[dependencies peerDependencies optionalDependencies].freeze
+      HOOKS = %w[preinstall install postinstall prepare].freeze
+      REACT = %w[react react-dom].freeze
+
+      # npm's rules for a package name, as `@rubygems/<gem>` must satisfy them.
+      VALID_NAME = %r{\A@rubygems/[a-z0-9][a-z0-9._~-]*\z}
+
+      # Specs Proscenium accepts. Anything with a protocol not listed is refused.
+      GIT_URL = %r{\A(?:github:[\w.-]+/[\w.-]+|git\+(?:https|ssh)://\S+)(?:#\S+)?\z}
+      TARBALL = %r{\Ahttps://\S+\z}
+      PROTOCOL = /\A[a-z][a-z0-9+.-]*:/i
+
+      module_function
+
+      # Problems with the manifest of `gem`, rooted at `root` (where binding.gyp would be).
+      def check(gem, manifest, root: nil)
+        problems = []
+        problems << ['PSM-E-NAME', { gem: }] unless VALID_NAME.match?("@rubygems/#{gem}")
+        problems << ['PSM-E-WORKSPACES', { gem: }] if manifest.key?('workspaces')
+
+        hooks = HOOKS & (manifest['scripts'] || {}).keys
+        hooks << 'binding.gyp' if root && File.exist?(File.join(root, 'binding.gyp'))
+        problems << ['PSM-E-HOOK', { gem:, hooks: hooks.join(', ') }] if hooks.any?
+
+        DEPENDENCY_FIELDS.each do |field|
+          (manifest[field] || {}).each do |name, spec|
+            problem = spec_problem(gem, name, spec.to_s)
+            problems << problem if problem
+          end
+        end
+
+        react = REACT & (manifest['dependencies'] || {}).keys
+        problems << ['PSM-E-REACT', { gem:, packages: react.join(' and ') }] if react.any?
+        problems
+      end
+
+      # Why `spec` for dependency `name` is refused, or nil. A gem-to-gem reference
+      # (`@rubygems/<other>`) is checked against the bundle at install time, not here.
+      def spec_problem(gem, name, spec)
+        return nil if name.start_with?('@rubygems/')
+
+        if spec.start_with?('npm:')
+          target = spec.delete_prefix('npm:')
+          return ['PSM-E-ALIAS', { gem:, name:, spec: }] if target.start_with?('@rubygems/')
+
+          return nil
+        end
+        return nil if GIT_URL.match?(spec) || TARBALL.match?(spec)
+        return ['PSM-E-SPEC', { gem:, name:, spec: }] if PROTOCOL.match?(spec)
+
+        nil # a semver range or a dist-tag
+      end
+    end
+  end
+end

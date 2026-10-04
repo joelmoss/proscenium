@@ -1,0 +1,2 @@
+PSM-E-FRONTEND-ROOT: widget's proscenium.frontend_root (../outside) is outside the gem.
+Set proscenium.frontend_root to a directory inside the gem, relative to its root.

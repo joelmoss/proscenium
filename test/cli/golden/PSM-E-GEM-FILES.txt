@@ -1,0 +1,2 @@
+PSM-E-GEM-FILES: widget does not list package.json in spec.files, so a built gem leaves it out.
+Add the package.json and every frontend file to spec.files in the gemspec.

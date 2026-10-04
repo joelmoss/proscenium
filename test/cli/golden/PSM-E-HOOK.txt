@@ -1,0 +1,2 @@
+PSM-E-HOOK: widget needs install-time build steps (postinstall, binding.gyp), which Proscenium never runs.
+Ship built assets in the gem and remove the install, prepare and native build hooks.

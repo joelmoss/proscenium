@@ -29,6 +29,12 @@ describe 'CLI load isolation' do
     assert_empty loaded_after(%w[--version])
   end
 
+  it 'loads none of the engine for gem check' do
+    gem = File.expand_path('../package_manager/stage_a/gems/stage_a_widget_a', __dir__)
+
+    assert_empty loaded_after(['gem', 'check', gem])
+  end
+
   it 'loads none of the engine for an error' do
     assert_empty loaded_after(%w[frobnicate])
   end

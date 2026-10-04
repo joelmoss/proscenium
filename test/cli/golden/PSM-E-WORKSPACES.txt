@@ -1,0 +1,2 @@
+PSM-E-WORKSPACES: widget's package.json declares workspaces, which a gem cannot.
+Remove "workspaces" from the gem's package.json.

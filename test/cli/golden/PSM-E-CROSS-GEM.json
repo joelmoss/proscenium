@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-CROSS-GEM","message":"widget's package.json references @rubygems/other, but its gemspec does not depend on other.","fix":"Add `spec.add_dependency 'other'` to the gemspec, or remove the reference."}

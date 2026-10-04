@@ -1,0 +1,2 @@
+PSM-E-GEMSPEC: Expected one gemspec in /src/widget, found 0.
+Run `proscenium gem check` in the gem's directory, or pass that directory or a built .gem.

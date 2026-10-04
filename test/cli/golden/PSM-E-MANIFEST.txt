@@ -1,0 +1,2 @@
+PSM-E-MANIFEST: widget's package.json cannot be used: it is missing.
+Ship a package.json that is a JSON object at that path.

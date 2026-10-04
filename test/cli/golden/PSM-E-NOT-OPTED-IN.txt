@@ -1,0 +1,2 @@
+PSM-E-NOT-OPTED-IN: widget does not opt in to JavaScript dependency installation.
+Add `spec.metadata['proscenium.dependencies'] = 'true'` to the gemspec.

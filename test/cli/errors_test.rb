@@ -10,7 +10,19 @@ describe Proscenium::CLI::Error do
   # Arguments that render each code. A new code needs an entry here, which gives it a golden.
   EXAMPLES = {
     'PSM-E-USAGE' => { detail: 'Unknown command: frobnicate' },
-    'PSM-E-INTERNAL' => { detail: 'ArgumentError: boom' }
+    'PSM-E-INTERNAL' => { detail: 'ArgumentError: boom' },
+    'PSM-E-GEMSPEC' => { path: '/src/widget', found: 0 },
+    'PSM-E-NOT-OPTED-IN' => { gem: 'widget' },
+    'PSM-E-FRONTEND-ROOT' => { gem: 'widget', root: '../outside' },
+    'PSM-E-MANIFEST' => { gem: 'widget', path: 'package.json', cause: 'it is missing' },
+    'PSM-E-GEM-FILES' => { gem: 'widget', files: 'package.json' },
+    'PSM-E-NAME' => { gem: 'Widget' },
+    'PSM-E-WORKSPACES' => { gem: 'widget' },
+    'PSM-E-HOOK' => { gem: 'widget', hooks: 'postinstall, binding.gyp' },
+    'PSM-E-SPEC' => { gem: 'widget', name: 'x', spec: 'file:../x' },
+    'PSM-E-ALIAS' => { gem: 'widget', name: 'x', spec: 'npm:@rubygems/other@*' },
+    'PSM-E-REACT' => { gem: 'widget', packages: 'react and react-dom' },
+    'PSM-E-CROSS-GEM' => { gem: 'widget', other: 'other' }
   }.freeze
 
   def render(error, json:)

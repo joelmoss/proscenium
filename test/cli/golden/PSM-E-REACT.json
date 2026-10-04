@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-REACT","message":"widget declares react and react-dom as dependencies, so it would get its own copy.","fix":"Declare react and react-dom as peerDependencies, so the gem shares the app's."}

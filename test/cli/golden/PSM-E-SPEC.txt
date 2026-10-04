@@ -1,0 +1,2 @@
+PSM-E-SPEC: widget depends on x as "file:../x", a kind of dependency Proscenium refuses.
+Use a semver range, a dist-tag, an npm: alias, a github: or git+https: URL, or an https: tarball.

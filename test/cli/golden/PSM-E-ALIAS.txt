@@ -1,0 +1,2 @@
+PSM-E-ALIAS: widget aliases x to "npm:@rubygems/other@*", a gem context.
+Depend on the gem in the gemspec and reference @rubygems/<gem> directly.
