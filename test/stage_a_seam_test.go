@@ -79,7 +79,7 @@ var _ = Describe("Stage A resolver seam", func() {
 
 		testConfig.RootPath = root
 		testConfig.RubyGems = map[string]string{gem: root + "/vendor/" + gem}
-		testConfig.StageAContexts = map[string]string{gem: contextDir}
+		testConfig.DependencyContexts = map[string]string{gem: contextDir}
 	})
 
 	When("bundling", func() {
@@ -91,7 +91,7 @@ var _ = Describe("Stage A resolver seam", func() {
 		})
 
 		It("reaches the app's copy without the seam (the fixture's positive control)", func() {
-			testConfig.StageAContexts = nil
+			testConfig.DependencyContexts = nil
 			_, code := build("node_modules/@rubygems/" + gem + "/index.js")
 
 			Expect(code).To(ContainSubstring("app stage-a-dep 7.0.0"))

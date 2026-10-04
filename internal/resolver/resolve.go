@@ -90,15 +90,15 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		return returnResolve("", "", err, cfg)
 	}
 
-	// Stage A seam: a bare specifier from a mapped gem resolves from its context alone. An
+	// Dependency contexts: a bare specifier from a mapped gem resolves from its context alone. An
 	// `@rubygems/` specifier is bare too, but names a gem file, not a dependency.
-	stageAGem, stageAContext, stageAMapped := "", "", false
+	mappedGem, mappedContext, mapped := "", "", false
 	if !isGem && utils.IsBareModule(filePath) {
-		stageAGem, stageAContext, stageAMapped = utils.StageAContext(importer, cfg)
+		mappedGem, mappedContext, mapped = utils.GemContext(importer, cfg)
 	}
 
-	if stageAMapped {
-		rootPath = stageAContext
+	if mapped {
+		rootPath = mappedContext
 	} else if isGem {
 		rootPath = gem.Root
 
@@ -164,8 +164,8 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 
 	// A miss names the gem; any other error, such as the resolved entry failing to parse, keeps
 	// esbuild's own diagnostic.
-	if len(result.Errors) > 0 && stageAMapped && strings.HasPrefix(result.Errors[0].Text, "Could not resolve") {
-		return returnResolve("", "", utils.StageAMiss(stageAGem, filePath), cfg)
+	if len(result.Errors) > 0 && mapped && strings.HasPrefix(result.Errors[0].Text, "Could not resolve") {
+		return returnResolve("", "", utils.ContextMiss(mappedGem, filePath), cfg)
 	}
 
 	if len(result.Errors) > 0 {
@@ -192,12 +192,12 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		key = k
 	}
 
-	if stageAMapped {
-		absPath := utils.StageARealPath(utils.JoinFsPath(stageAContext, key), cfg)
+	if mapped {
+		absPath := utils.ContextRealPath(utils.JoinFsPath(mappedContext, key), cfg)
 
 		urlPath, ok := utils.UrlPathFromFsPath(absPath, cfg)
 		if !ok {
-			return returnResolve("", "", fmt.Errorf("%q from gem %q resolved outside the app root", filePath, stageAGem), cfg)
+			return returnResolve("", "", fmt.Errorf("%q from gem %q resolved outside the app root", filePath, mappedGem), cfg)
 		}
 
 		return returnResolve(urlPath, absPath, nil, cfg)
