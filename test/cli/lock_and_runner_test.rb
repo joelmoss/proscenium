@@ -152,7 +152,7 @@ describe 'project lock and runner' do
     # The console calls the harness and the Ctrl-C helper make, through ffi, which Proscenium
     # already depends on: fiddle stopped being a default gem in Ruby 4.0, so a bundle cannot load
     # it there.
-    KERNEL32 = <<~RUBY
+    KERNEL32 = <<~RUBY.freeze
       require 'ffi'
       module Kernel32
         extend FFI::Library
@@ -168,7 +168,7 @@ describe 'project lock and runner' do
     # An install as the CLI runs one: it takes the project lock and runs a manager that records
     # its pid in `started`, then sleeps. It writes its own pid to `harness_pid`, and its exit
     # status, which a Proscenium error decides, to `result` when given one.
-    HARNESS = <<~RUBY
+    HARNESS = <<~RUBY.freeze
       require 'rbconfig'
       require 'proscenium/cli/error'
       require 'proscenium/cli/project_lock'
@@ -198,7 +198,7 @@ describe 'project lock and runner' do
 
     # Sends Ctrl-C to every process on the console of the process ARGV[0], as pressing it there
     # does: it attaches to that console, ignores the event itself, and generates CTRL_C_EVENT.
-    CTRL_C = <<~RUBY
+    CTRL_C = <<~RUBY.freeze
       #{KERNEL32}
       Kernel32.FreeConsole
       abort "AttachConsole: \#{FFI::LastError.winapi_error}" if Kernel32.AttachConsole(ARGV[0].to_i).zero?
