@@ -1,0 +1,2 @@
+PSM-E-USAGE: Unknown command: frobnicate
+Run `bundle exec proscenium --help` for usage.

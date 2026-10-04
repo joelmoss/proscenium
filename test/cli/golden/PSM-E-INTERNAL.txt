@@ -1,0 +1,2 @@
+PSM-E-INTERNAL: Unexpected error: ArgumentError: boom
+This is a bug in Proscenium. Please report it at https://github.com/joelmoss/proscenium/issues with the output above.

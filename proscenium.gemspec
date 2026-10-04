@@ -23,6 +23,7 @@ Gem::Specification.new do |spec|
   spec.metadata['rubygems_mfa_required'] = 'true'
 
   files = Dir[
+    'exe/*',
     'lib/proscenium/**/*',
     'lib/generators/**/*',
     'lib/tasks/**/*',
@@ -54,6 +55,10 @@ Gem::Specification.new do |spec|
   # gem it silently changes nothing, and out comes a platform-less gem carrying a DLL.
   spec.platform = ENV['PROSCENIUM_PLATFORM'] if ENV['PROSCENIUM_PLATFORM']
   spec.require_paths = ['lib']
+
+  # `bundle exec proscenium` (#154): plain Ruby, so every gem, platform or plain, carries it.
+  spec.bindir = 'exe'
+  spec.executables = ['proscenium']
 
   spec.add_dependency 'ffi', '~> 1.17.0'
   # 2.20 added allow_comments; the registry must refuse comments, as npm does. Below 3, which

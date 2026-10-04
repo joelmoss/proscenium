@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Run as `bundle exec proscenium`. Loads the CLI alone: never `proscenium` itself, Rails, FFI or
+# the engine library (see lib/proscenium/cli.rb).
+require 'proscenium/cli'
+
+exit Proscenium::CLI.start(ARGV)
