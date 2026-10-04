@@ -46,6 +46,8 @@ describe Proscenium::CLI::Error do
     'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
     'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
     'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' },
+    'PSM-E-COLLISION' => { count: 1, list: '  - package.json dependencies has @rubygems/hue as ' \
+                                           '"github:harleytherapy/hue#22e6604"' },
     'PSM-E-OWNED-DIR' => { entries: 'mine' },
     'PSM-W-END-OF-LIFE' => { manager: 'pnpm', version: '11.28.4', eol: '2027-04-30' }
   }.freeze

@@ -172,6 +172,10 @@ module Proscenium
           "Make the app's %<package>s satisfy %<gem>s's peer range, then run " \
           '`bundle exec proscenium install` again.'
         ],
+        'PSM-E-COLLISION' => [
+          :input, "%<count>s of the app's own packages take a gem context's name:\n%<list>s",
+          'Remove the dependency, as Gemfile.lock pins the gem now, or rename the package.'
+        ],
         'PSM-E-OWNED-DIR' => [
           :input, '.proscenium/packages/ holds packages Proscenium did not generate: %<entries>s.',
           'Move them out: that directory is Proscenium\'s, and every entry in it is a gem context.'

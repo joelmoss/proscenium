@@ -4,8 +4,10 @@ require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
 require 'proscenium/cli/registration'
+require 'proscenium/cli/collisions'
 require 'proscenium/cli/diff'
 require 'yaml'
+require 'json'
 
 # Registering the contexts, spliced into the app's own files (#154, C06), and the diff install
 # prints first.
@@ -97,6 +99,49 @@ describe Proscenium::CLI::Registration do
 
       assert_empty R.edits(root, 'pnpm')
       assert R.registered?(root, 'pnpm')
+    end
+  end
+
+  # C05: the app's own packages are left alone, and one taking a context's name is refused.
+  describe 'collisions' do
+    before { @root = Dir.mktmpdir('collisions') }
+    after { FileUtils.rm_rf(@root) }
+
+    def write(path, body)
+      FileUtils.mkdir_p(File.dirname(File.join(@root, path)))
+      File.write(File.join(@root, path), body)
+    end
+
+    it 'names a dependency on a gem that is not its context, as a pin from before adopting' do
+      write('package.json', JSON.generate(
+                              'dependencies' => { '@rubygems/hue' => 'github:harleytherapy/hue#1',
+                                                  '@rubygems/other' => '1.0.0', 'react' => '18' },
+                              'devDependencies' => { '@rubygems/widget' => 'workspace:*' }
+                            ))
+
+      assert_equal ['package.json dependencies has @rubygems/hue as "github:harleytherapy/hue#1"'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
+    end
+
+    it 'names a workspace package with a context name, skipping excluded ones' do
+      write('pnpm-workspace.yaml', "packages:\n  - packages/*\n  - '!packages/old'\n  " \
+                                   "- .proscenium/packages/*\n")
+      write('packages/hue/package.json', '{"name": "@rubygems/hue"}')
+      write('packages/old/package.json', '{"name": "@rubygems/widget"}')
+      write('packages/ui/package.json', '{"name": "ui"}')
+      write('.proscenium/packages/hue/package.json', '{"name": "@rubygems/hue"}')
+
+      assert_equal ['packages/hue/package.json is named @rubygems/hue'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
+    end
+
+    it "reads Bun's workspaces from package.json" do
+      write('package.json', '{"workspaces": {"packages": ["libs/*", ".proscenium/packages/*"]}}')
+      write('libs/hue/package.json', '{"name": "@rubygems/hue"}')
+
+      assert_equal ['libs/hue/package.json is named @rubygems/hue'],
+                   Proscenium::CLI::Collisions.find(@root, 'bun', %w[hue])
+      assert_empty Proscenium::CLI::Collisions.find(@root, 'bun', %w[widget])
     end
   end
 

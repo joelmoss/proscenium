@@ -169,6 +169,20 @@ describe 'proscenium install' do
     refute_path_exists File.join(dir, '.proscenium/installing')
   end
 
+  it "refuses an app still depending on a gem's package itself, changing nothing (C05)" do
+    dir = app('pnpm')
+    package = JSON.parse(File.read(File.join(dir, 'package.json')))
+    package['dependencies']['@rubygems/stage_a_hue_shape'] = 'github:harleytherapy/hue#22e6604'
+    File.write(File.join(dir, 'package.json'), JSON.generate(package))
+    before = Dir.children(dir).sort
+    _, err, status = proscenium(dir, 'install')
+
+    assert_equal 2, status.exitstatus
+    assert_includes err, 'PSM-E-COLLISION'
+    assert_includes err, '@rubygems/stage_a_hue_shape as "github:harleytherapy/hue#22e6604"'
+    assert_equal before, Dir.children(dir).sort
+  end
+
   it 'refuses Bun without an explicit linker, changing nothing' do
     dir = app('bun')
     File.delete(File.join(dir, 'bunfig.toml'))

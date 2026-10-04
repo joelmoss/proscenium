@@ -4,6 +4,7 @@ require 'fileutils'
 require 'bundler'
 require_relative '../bundled_gems'
 require_relative '../dependency_context'
+require_relative 'collisions'
 require_relative 'contexts'
 require_relative 'diff'
 require_relative 'manager'
@@ -66,6 +67,7 @@ module Proscenium
         @committed = Contexts.committed(@root)
         check_owned_directory
         report_problems
+        check_collisions
       rescue BundledGems::ConfigError => e
         raise Error.new('PSM-E-CONFIG', detail: e.message)
       end
@@ -97,6 +99,14 @@ module Proscenium
         return if foreign.empty?
 
         raise Error.new('PSM-E-OWNED-DIR', entries: foreign.keys.join(', '))
+      end
+
+      def check_collisions
+        found = Collisions.find(@root, @manager.name, @contexts.contexts.keys)
+        return if found.empty?
+
+        raise Error.new('PSM-E-COLLISION', count: found.size,
+                                           list: found.map { "  - #{it}" }.join("\n"))
       end
 
       # Committed contexts no participating gem owns. A locked gem that is not installed (another
