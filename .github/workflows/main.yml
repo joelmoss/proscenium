@@ -204,7 +204,7 @@ jobs:
       - if: runner.os == 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
       # Verbose, so the log names each test as it runs: a hang otherwise shows only as dots.
-      - run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/adopted/
+      - run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/
         shell: bash
 
   bun-test:

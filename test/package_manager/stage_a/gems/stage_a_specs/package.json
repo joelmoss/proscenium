@@ -1,0 +1,12 @@
+{
+  "name": "@rubygems/stage_a_specs",
+  "version": "9.9.9",
+  "dependencies": {
+    "ms": "^2.0.0",
+    "ms-beta": "npm:ms@3.0.0-beta.2",
+    "ms-old": "npm:ms@2.0.0",
+    "clsx": "latest",
+    "escape-string-regexp": "github:sindresorhus/escape-string-regexp#ba9a447",
+    "left-pad": "https://registry.npmjs.org/left-pad/-/left-pad-1.3.0.tgz"
+  }
+}
