@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+# An app that has adopted gem dependency contexts (#154, Stage C): its Gemfile, package.json and
+# .proscenium/packages/ at its own root, so Bundler.root is the JavaScript project root, as in a
+# real app. Tests drive it as a subprocess (test/adopted/helper.rb).
+source 'https://rubygems.org'
+
+gem 'proscenium', path: '../..'
+gem 'rails', '8.1.3.1'
+
+gem 'stage_a_widget_a', path: '../../test/package_manager/stage_a/gems/stage_a_widget_a'

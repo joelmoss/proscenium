@@ -1,0 +1,9 @@
+/node_modules/
+/log/
+/tmp/
+/public/assets/
+
+# Proscenium
+.proscenium/*
+!.proscenium/packages/
+.proscenium/packages/*/node_modules/

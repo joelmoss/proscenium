@@ -122,6 +122,7 @@ golangci-lint run
 - JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`
 - `bun test` runs the app's real modules through a Rails daemon, so it needs the Go library compiled first, same as the Ruby tests
 - A dummy Rails app for integration testing is at `fixtures/dummy/`
+- `fixtures/adopted/` is a second Rails app, one that has adopted gem dependency contexts (#154): its own Gemfile, pnpm 11 lock and committed `.proscenium/packages/`. `test/adopted/` drives it as a subprocess, because the engine reads contexts at `Bundler.root`; it runs with `STAGE_A=1`. After changing its Gemfile, keep every gem at the version the repo's Gemfile.lock has, so CI installs it with `--local`
 - Dummy app uses pnpm as its package manager
 - Multi-Rails version testing uses Appraisals: `gemfiles/rails_7.2.gemfile`, `gemfiles/rails_8.gemfile` (Rails 8.0) and `gemfiles/rails_8.1.gemfile`
 
