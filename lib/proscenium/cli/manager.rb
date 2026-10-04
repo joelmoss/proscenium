@@ -64,12 +64,7 @@ module Proscenium
         @executable = self.class.which(@name) or raise Error.new('PSM-E-MANAGER-MISSING',
                                                                  manager: @name)
         check_launchable!
-        out, status = Bundler.with_unbundled_env do
-          Open3.capture2(@executable, '--version', chdir: @root)
-        end
-        raise Error.new('PSM-E-MANAGER-MISSING', manager: @name) unless status.success?
-
-        @version = self.class.version_in(out)
+        @version = pinned_version || probed_version
         return self if line
 
         raise Error, 'PSM-E-EXPERIMENTAL-FROZEN' if experimental && frozen
@@ -119,6 +114,30 @@ module Proscenium
       # run of a pinned manager also prints that it is downloading it.
       def self.version_in(output)
         output.lines.map(&:strip).grep(/\A\d+\.\d+\.\d+\S*\z/).last || output.strip
+      end
+
+      # The version package.json's packageManager pins for this manager, or nil. pnpm runs exactly
+      # that version or refuses to run, so it is the one install gets, and reading it runs nothing:
+      # pnpm 12 writes pnpm-lock.yaml on any command in a pinned project, `--version` included, so
+      # probing would change the project before install could refuse anything.
+      def pinned_version
+        path = File.join(@root, 'package.json')
+        field = File.exist?(path) && JSON.parse(File.read(path))['packageManager']
+        return unless field.is_a?(String)
+
+        name, version = field.split('+').first.split('@', 2)
+        version if name == @name && version
+      rescue JSON::ParserError
+        nil
+      end
+
+      def probed_version
+        out, status = Bundler.with_unbundled_env do
+          Open3.capture2(@executable, '--version', chdir: @root)
+        end
+        raise Error.new('PSM-E-MANAGER-MISSING', manager: @name) unless status.success?
+
+        self.class.version_in(out)
       end
 
       def self.unc?(path) = path.start_with?('//', '\\\\')
