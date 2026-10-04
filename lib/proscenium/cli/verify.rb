@@ -40,7 +40,8 @@ module Proscenium
         missing = @gems.reject do |gem|
           path = ".proscenium/packages/#{gem}"
           if @manager.name == 'pnpm'
-            lock.match?(/^  #{Regexp.escape(path)}:$/)
+            # An importer with no dependencies is written on one line: `  <path>: {}`.
+            lock.match?(/^  #{Regexp.escape(path)}:(?: \{\})?$/)
           else
             lock.include?("\"#{path}\"")
           end

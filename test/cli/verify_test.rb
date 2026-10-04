@@ -98,6 +98,15 @@ describe Proscenium::CLI::Verify do
     assert_equal('PSM-E-REGISTRY-TARBALL', code { verify('bun').check_registry(bun) })
   end
 
+  # pnpm writes a context left with no dependencies, such as one whose only optional dependency
+  # was skipped, on one line.
+  it 'accepts a context with no dependencies' do
+    lock = "#{PNPM_LOCK}\n  .proscenium/packages/empty: {}\n"
+
+    verify('pnpm', %w[widget empty]).check_workspaces(lock)
+    pass
+  end
+
   it 'refuses a context the manager did not install' do
     assert_equal('PSM-E-WORKSPACE-MISSING', code do
       verify('pnpm', %w[widget other]).check_workspaces(PNPM_LOCK)
