@@ -145,6 +145,35 @@ jobs:
       - run: bin/test
         shell: bash
 
+  # The CI half of #154's Stage A london leg: stage_a_hue_shape gets its dependencies from a
+  # hand-written context through pnpm. One host and london's pnpm line; it reaches npm and GitHub
+  # until the hermetic registry exists. See test/package_manager/stage_a/README.md.
+  stage-a:
+    runs-on: ubuntu-latest
+    env:
+      RAILS_ENV: test
+      GOWORK: off
+      STAGE_A: 1
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10.33.1
+
+      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - run: bin/test test/package_manager/stage_a/
+
   bun-test:
     strategy:
       fail-fast: false
