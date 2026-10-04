@@ -115,8 +115,17 @@ describe Proscenium::CLI::GemCheck do
     assert_equal [0, []], codes(backed)
   end
 
-  it 'flags a gem whose name is not a valid npm name' do
-    assert_equal [2, %w[PSM-E-NAME]], codes(gem_dir(manifest: {}, name: 'Example'))
+  # C27: the same verdict on every host for a name one host could not hold.
+  %w[Example con nul.js com1 lpt9].push('x' * 205).each do |name|
+    it "flags a gem named #{name[0, 12]}, which cannot be a JavaScript package everywhere" do
+      assert_equal [2, %w[PSM-E-NAME]], codes(gem_dir(manifest: {}, name:))
+    end
+  end
+
+  it 'accepts a name a reserved one is only part of, and one at the length limit' do
+    %w[console nul_gem].push('x' * 204).each do |name|
+      assert_equal [0, []], codes(gem_dir(manifest: {}, name:)), name
+    end
   end
 
   it 'flags frontend files missing from spec.files, but not tests' do

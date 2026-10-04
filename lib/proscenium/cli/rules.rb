@@ -10,8 +10,14 @@ module Proscenium
       HOOKS = %w[preinstall install postinstall prepare].freeze
       REACT = %w[react react-dom].freeze
 
-      # npm's rules for a package name, as `@rubygems/<gem>` must satisfy them.
+      # npm's rules for a package name, as `@rubygems/<gem>` must satisfy them: lowercase, so no two
+      # contexts can differ only in case, and at most 214 characters.
       VALID_NAME = %r{\A@rubygems/[a-z0-9][a-z0-9._~-]*\z}
+      NAME_LIMIT = 214
+
+      # Names Windows reserves for devices, with or without an extension. A context directory so
+      # named cannot exist there, so the gem is refused on every host alike (C27).
+      RESERVED = /\A(?:con|prn|aux|nul|com[0-9]|lpt[0-9])(?:\..*)?\z/
 
       # Specs Proscenium accepts. Anything with a protocol not listed is refused.
       GIT_URL = %r{\A(?:github:[\w.-]+/[\w.-]+|git\+(?:https|ssh)://\S+)(?:#\S+)?\z}
@@ -23,7 +29,7 @@ module Proscenium
       # Problems with the manifest of `gem`, rooted at `root` (where binding.gyp would be).
       def check(gem, manifest, root: nil)
         problems = []
-        problems << ['PSM-E-NAME', { gem: }] unless VALID_NAME.match?("@rubygems/#{gem}")
+        problems << ['PSM-E-NAME', { gem: }] unless valid_name?(gem)
         problems << ['PSM-E-WORKSPACES', { gem: }] if manifest.key?('workspaces')
 
         hooks = HOOKS & (manifest['scripts'] || {}).keys
@@ -40,6 +46,11 @@ module Proscenium
         react = REACT & (manifest['dependencies'] || {}).keys
         problems << ['PSM-E-REACT', { gem:, packages: react.join(' and ') }] if react.any?
         problems
+      end
+
+      def valid_name?(gem)
+        name = "@rubygems/#{gem}"
+        VALID_NAME.match?(name) && name.length <= NAME_LIMIT && !RESERVED.match?(gem)
       end
 
       # Larger than any real package.json, small enough to read without a second thought.

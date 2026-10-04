@@ -38,7 +38,9 @@ module Proscenium
         'PSM-E-NAME' => [
           :input, '%<gem>s cannot be a JavaScript package: @rubygems/%<gem>s is not a valid ' \
                   'npm name.',
-          'npm names are lowercase letters, digits, and - . _ ~. Rename the gem to participate.'
+          'npm names are lowercase letters, digits, and - . _ ~, at most 214 characters in all, ' \
+          'and a Windows device name (con, nul, com1...) cannot be a directory. Rename the gem ' \
+          'to participate.'
         ],
         'PSM-E-WORKSPACES' => [
           :input, "%<gem>s's package.json declares workspaces, which a gem cannot.",
