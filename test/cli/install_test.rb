@@ -291,6 +291,24 @@ describe 'proscenium install' do
     assert_equal before, Dir.children(dir).sort
   end
 
+  # C27: an app reached through a UNC path, as from a network share. The admin share of the
+  # runner's own drive stands in for one.
+  it 'installs an app reached through a UNC path on Windows' do
+    skip 'UNC paths are Windows only' unless Gem.win_platform?
+
+    dir = app('pnpm')
+    _, err, status = proscenium(dir, 'install')
+
+    assert_predicate status, :success?, err
+    unc = ->(path) { "\\\\localhost\\#{path[0]}$#{path[2..].tr('/', '\\')}" }
+    skip "no admin share here: #{unc.call(dir)}" unless File.directory?(unc.call(dir))
+
+    _, err, status = proscenium(unc.call(dir), 'install', '--frozen',
+                                env: { 'BUNDLE_GEMFILE' => unc.call(File.join(dir, 'Gemfile')) })
+
+    assert_predicate status, :success?, err
+  end
+
   it 'refuses Bun without an explicit linker, changing nothing' do
     dir = app('bun')
     File.delete(File.join(dir, 'bunfig.toml'))
