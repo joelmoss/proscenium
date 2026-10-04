@@ -62,6 +62,13 @@ engine refuses to build until the install completes; running it again recovers.
 In development, finishing an install or editing a path gem's package.json takes effect within a
 second, without a restart. Adding or upgrading a gem still needs one, as it always has.
 
+### Import only what your app declares
+
+A gem's dependencies are the gem's. Under pnpm, and Bun's isolated linker, a package only a gem
+declares never reaches your app's own `node_modules`, so importing it from app code fails. Under
+Bun's hoisted linker it does reach it, so such an import works by accident and breaks the day the
+gem drops that dependency. Add what your app imports to your own package.json.
+
 ### Deploying
 
 - Run `bundle exec proscenium install --frozen` (or a frozen native install) before
