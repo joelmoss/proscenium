@@ -502,11 +502,10 @@ module Proscenium
       # one-shot run and wrong in a watching one - a suite passing against bytes the app no longer
       # produces. A route render is cheap next to a build, so it happens each time instead.
       # Before the cache, so an earlier result is not handed out while an install changes what it
-      # resolved against (C24).
+      # resolved against, or while contexts are stale (C24).
       def refuse_while_installing!
-        return unless Proscenium::ContextMap.installing?(Rails.root.to_s)
-
-        raise Proscenium::ContextMap::INSTALLING_MESSAGE
+        reason = Proscenium::Builder.refusal
+        raise reason if reason
       end
 
       def cached(path, *extra)

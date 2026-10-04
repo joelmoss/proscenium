@@ -5,6 +5,7 @@ require 'bundler'
 require_relative '../bundled_gems'
 require_relative 'contexts'
 require_relative 'manager'
+require_relative '../stale_contexts'
 
 module Proscenium
   module CLI
@@ -61,7 +62,7 @@ module Proscenium
         {
           'gem' => name, 'version' => spec.version.to_s, 'source' => redact(source(name)),
           'context' => ".proscenium/packages/#{name}",
-          'status' => status(context, on_disk),
+          'status' => status(context, on_disk, path),
           'projectionSha256' => current&.dig('proscenium', 'projectionSha256'),
           'kept' => current ? (current.keys & DependencyContext::FIELDS) : [],
           'gitAndUrl' => (context&.git_and_url || []).map { redact(it) },
@@ -69,11 +70,14 @@ module Proscenium
         }
       end
 
-      def status(context, on_disk)
+      # `stale` exactly when the engine refuses to build: the projection hash differs. Different
+      # bytes with the same hash are a hand edit, which only `install --frozen` refuses.
+      def status(context, on_disk, path)
         return 'invalid' unless context
         return 'missing' unless on_disk
+        return 'current' if on_disk == context.json
 
-        on_disk == context.json ? 'current' : 'stale'
+        StaleContexts.compare(context, path) ? 'stale' : 'edited'
       end
 
       # Where Gemfile.lock takes the gem from.

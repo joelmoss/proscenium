@@ -36,8 +36,13 @@ module Proscenium
 
       Proscenium::Manifest.load!
 
-      if (notice = Proscenium::ContextMap.adoption_notice(app.root.to_s))
+      project = Proscenium::ContextMap.project_root
+      if (notice = Proscenium::ContextMap.adoption_notice(project))
         Rails.logger.info "[Proscenium] #{notice}"
+      end
+      # Production finds stale contexts at assets:precompile, which refuses to compile.
+      if !Rails.env.production? && (stale = Proscenium::StaleContexts.message(project))
+        Rails.logger.warn "[Proscenium] #{stale}"
       end
 
       if config.proscenium.logging

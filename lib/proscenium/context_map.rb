@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'bundler'
 require 'json'
 require_relative 'bundled_gems'
 
@@ -14,6 +15,10 @@ module Proscenium
     LOCAL_SPECS = %w[link: file: workspace: portal:].freeze
 
     module_function
+
+    # Where the `proscenium` CLI keeps contexts, its lock and its marker: the bundle's root, which
+    # need not be Rails.root.
+    def project_root = Bundler.root.to_s
 
     # The config keys Go reads, for the app at `root`. Read once per process and root.
     def config(root)

@@ -107,6 +107,11 @@ describe 'proscenium install' do
         out, = proscenium(dir, 'inspect', 'gem_npm')
 
         assert_includes out, 'gem_npm 1.0.0: context stale'
+
+        File.write(context(dir, 'gem_npm'), bytes['gem_npm'].gsub('  ', '    '))
+        out, = proscenium(dir, 'inspect', 'gem_npm')
+
+        assert_includes out, 'gem_npm 1.0.0: context edited'
       end
 
       it 'refuses a package of its own in .proscenium/packages, and runs from a subdirectory' do

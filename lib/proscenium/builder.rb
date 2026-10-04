@@ -198,6 +198,21 @@ module Proscenium
     # Resets nothing any more - Go keeps no config between calls. Kept because it is the one call
     # into Go that needs no Rails app, which is how bin/verify-installed-gem and the packaging test
     # prove the library loads, and benchmarks/bridge.rb times it as the bare cost of an FFI call.
+    # Why no build may run now, or nil (#154): an install is under way or stopped before it
+    # finished, or the committed gem dependency contexts are stale. With
+    # PROSCENIUM_STALE_CONTEXT=warn, for an incident, stale contexts are logged once instead.
+    def self.refusal
+      project = ContextMap.project_root
+      return ContextMap::INSTALLING_MESSAGE if ContextMap.installing?(project)
+
+      stale = StaleContexts.message(project) or return
+      return stale unless ENV['PROSCENIUM_STALE_CONTEXT'] == 'warn'
+
+      @warned ||= Set.new
+      Rails.logger.warn("[Proscenium] #{stale}") if @warned.add?(stale)
+      nil
+    end
+
     def self.reset_config!
       Request.reset_config
     end
@@ -208,9 +223,8 @@ module Proscenium
     # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
     # any it does not know.
     def initialize(root: nil, **overrides)
-      @root = root = (root || Rails.root).to_s
       config_hash = {
-        RootPath: root,
+        RootPath: (root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
@@ -222,7 +236,7 @@ module Proscenium
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
         Debug: Proscenium.config.debug,
-        **Proscenium::ContextMap.config(root)
+        **ContextMap.config(ContextMap.project_root)
       }.merge(overrides)
 
       @request_config = self.class.request_config_pointer(config_hash)
@@ -254,7 +268,9 @@ module Proscenium
     end
 
     def build_to_string(path)
-      raise BuildError.new(path, ContextMap::INSTALLING_MESSAGE) if installing?
+      if (reason = self.class.refusal)
+        raise BuildError.new(path, reason)
+      end
 
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
         raw = Request.build_to_string(path, @request_config)
@@ -268,7 +284,9 @@ module Proscenium
     end
 
     def resolve(path)
-      raise ResolveError.new(path, ContextMap::INSTALLING_MESSAGE) if installing?
+      if (reason = self.class.refusal)
+        raise ResolveError.new(path, reason)
+      end
 
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         raw = Request.resolve(path, @request_config)
@@ -284,7 +302,9 @@ module Proscenium
 
     # Returns true, or raises CompileError with esbuild's messages.
     def compile
-      raise CompileError, ContextMap::INSTALLING_MESSAGE if installing?
+      if (reason = self.class.refusal)
+        raise CompileError, reason
+      end
 
       raw = Request.compile(@request_config)
       messages = read_and_free(raw[:messages])
@@ -295,8 +315,6 @@ module Proscenium
     end
 
     private
-
-    def installing? = ContextMap.installing?(@root)
 
     # The Go side allocates each of these strings with C.CString, which the Go runtime cannot
     # see or collect - it must be freed from this side once we're done reading it.
