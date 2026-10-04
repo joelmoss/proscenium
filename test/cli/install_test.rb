@@ -9,8 +9,11 @@ require_relative '../package_manager/stage_a/bundle'
 
 # The fixture bundle, installed once for every class in this file: nested `describe`s are classes
 # of their own, so a class-level memo would install it again for each.
+#
+# C27: the fixture lives under a directory whose name has a space and a non-ASCII character, so
+# every install here runs from such a path, on every host.
 module InstallFixture
-  DIR = Dir.mktmpdir('cli_install')
+  DIR = Dir.mktmpdir('cli install ü')
   Minitest.after_run do
     StageA::Bundle.writable!(DIR)
     FileUtils.rm_rf(DIR)
