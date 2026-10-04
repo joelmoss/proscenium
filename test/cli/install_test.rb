@@ -35,8 +35,9 @@ describe 'proscenium install' do
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
-  # C40: Proscenium's own share of a warm no-op frozen install, measured on CI 2026-10-04: Linux
-  # pnpm 741 ms / Bun 245, macOS 846 / 281, Windows 1385 / 609. The slowest plus headroom.
+  # C40: Proscenium's own share of an install. Calibrated on CI 2026-10-04 from the warm no-op
+  # frozen install: Linux pnpm 741 ms / Bun 245, macOS 846 / 281, Windows 1385 / 609. The slowest
+  # plus headroom. The cold and one-gem-changed installs are held to the same ceiling.
   OVERHEAD_BUDGET_MS = 2000
   # Each lock's recorded integrity for ms 2.1.3, up to the hash itself.
   TAMPER = { 'pnpm' => /(ms@2\.1\.3:\n\s+resolution: \{integrity: )sha512-[^}]+/,
@@ -97,6 +98,21 @@ describe 'proscenium install' do
   end
 
   def context(dir, gem) = File.join(dir, '.proscenium/packages', gem, 'package.json')
+
+  # Proscenium's own share of one `install` in milliseconds: its wall time less the manager's run.
+  def overhead(dir, manager, label, *, env: {})
+    started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    out, err, status = proscenium(dir, 'install', *, '--json', manager:, env:)
+    wall = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+
+    assert_predicate status, :success?, err
+    timings = out.lines.map { JSON.parse(it) }.find { %w[installed frozen].include?(it['event']) }
+                 .dig('details', 'timings')
+    overhead = wall - timings.fetch('manager')
+    warn "C40 #{RUBY_PLATFORM} #{manager} #{label}: wall #{wall} ms, Proscenium #{overhead} ms, " \
+         "phases #{timings}"
+    overhead
+  end
 
   %w[pnpm bun].each do |manager|
     describe manager do
@@ -278,26 +294,31 @@ describe 'proscenium install' do
 
       # C40: what Proscenium adds to a native install, split by phase, and no frontend file
       # copied into a context. Printed on every host; the budget is the calibrated ceiling on
-      # Proscenium's own share of a warm, no-op frozen install (everything but the manager's run).
-      it "keeps its own share of a frozen install within #{OVERHEAD_BUDGET_MS} ms" do
+      # Proscenium's own share (everything but the manager's run) of a cold first install, with an
+      # empty manager store, a no-op frozen install, and an install after one gem changed: its
+      # context missing, as when the gem joins the bundle.
+      it "keeps its own share of an install within #{OVERHEAD_BUDGET_MS} ms" do
         dir = app(manager)
-        proscenium(dir, 'install', manager:)
-        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-        out, err, status = proscenium(dir, 'install', '--frozen', '--json', manager:)
-        wall = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+        cache = Dir.mktmpdir('cold')
+        env = {}
+        if manager == 'pnpm'
+          File.write(File.join(dir, 'pnpm-workspace.yaml'), "storeDir: #{cache.to_json}\n")
+        else
+          env['BUN_INSTALL_CACHE_DIR'] = cache
+        end
+        cold = overhead(dir, manager, 'cold', env:)
+        noop = overhead(dir, manager, 'no-op', '--frozen', env:)
+        remove!(File.dirname(context(dir, 'stage_a_widget_a')))
+        changed = overhead(dir, manager, 'one gem changed', env:)
 
-        assert_predicate status, :success?, err
-        timings = out.lines.map { JSON.parse(it) }.find { it['event'] == 'frozen' }
-                     .dig('details', 'timings')
-        overhead = wall - timings.fetch('manager')
-        warn "C40 #{RUBY_PLATFORM} #{manager}: wall #{wall} ms, Proscenium #{overhead} ms, " \
-             "phases #{timings}"
-
-        assert_operator overhead, :<=, OVERHEAD_BUDGET_MS
+        assert_path_exists File.join(dir, '.proscenium/packages/stage_a_widget_a/node_modules/ms')
+        assert_operator [cold, noop, changed].max, :<=, OVERHEAD_BUDGET_MS
         copied = Dir.glob('*/**/*', base: File.join(dir, '.proscenium/packages'))
                     .reject { it.include?('/node_modules') || File.basename(it) == 'package.json' }
 
         assert_empty copied, 'a context holds only its package.json'
+      ensure
+        remove!(cache) if cache
       end
 
       # C32: a deploy without the development group trusts that gem's committed context, leaves
