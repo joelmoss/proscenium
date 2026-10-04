@@ -23,7 +23,9 @@ module Proscenium
       def run(executable, args, root:, **opts)
         reader, writer = IO.pipe
         spawn = { chdir: root, out: writer, err: writer, in: File::NULL }
-        spawn[opts[:lock_io]] = opts[:lock_io] if opts[:lock_io]
+        # Ruby on Windows cannot hand a child a descriptor ("wrong file descriptor"), so there the
+        # CLI alone holds the lock (C53).
+        spawn[opts[:lock_io]] = opts[:lock_io] if opts[:lock_io] && !Gem.win_platform?
         pid = Bundler.with_unbundled_env { Process.spawn(ENV.to_h, executable, *args, **spawn) }
         writer.close
         output = relay(reader, opts.fetch(:out, $stderr))

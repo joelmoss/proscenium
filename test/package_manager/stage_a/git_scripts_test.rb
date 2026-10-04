@@ -42,7 +42,8 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
     git(src, 'commit', '-q', '-m', name)
     bare = File.join(DIR, "#{name}.git")
     git(DIR, 'clone', '-q', '--bare', src, bare)
-    "git+file://#{bare}##{git(src, 'rev-parse', 'HEAD').strip}"
+    # `file:///D:/...` on Windows: after `file://` comes a host, so a drive letter needs a slash.
+    "git+file://#{'/' unless bare.start_with?('/')}#{bare}##{git(src, 'rev-parse', 'HEAD').strip}"
   end
 
   # Installs an app whose only dependency arrives through a context, and returns the output and
