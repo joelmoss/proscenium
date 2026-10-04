@@ -149,6 +149,8 @@ jobs:
   # adopted app. Stage D qualification runs them on every host the gem ships for. They reach npm
   # and GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
   stage-a:
+    # A hang must fail the run, not hold a runner for the default six hours.
+    timeout-minutes: 25
     strategy:
       fail-fast: false
       matrix:

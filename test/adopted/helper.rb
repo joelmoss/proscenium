@@ -3,6 +3,7 @@
 require_relative '../cli/helper'
 require 'json'
 require 'open3'
+require 'tmpdir'
 require 'rbconfig'
 require_relative '../package_manager/stage_a/bundle'
 
@@ -48,41 +49,30 @@ module Adopted
   end
 
   # A command's stdout, stderr and status, or a failure naming it once it has run for TIMEOUT
-  # seconds: a hang on one host fails its test rather than the whole CI job. The failure carries
-  # what the command had printed. The whole process tree is killed, because `bun test` starts a
-  # Rails daemon that holds the output pipes open.
+  # seconds: a hang on one host fails its test rather than the whole CI job. Output goes to
+  # files, not pipes: `bun test` and its Rails daemon write a lot, and on Windows a pipe nobody
+  # drains in time fills and blocks them for good. The process is polled, so nothing waits on
+  # it, and on timeout its whole tree is killed and the failure carries what it had printed.
   TIMEOUT = 180
 
   def capture(*command)
-    Bundler.with_unbundled_env do
-      out_r, out_w = IO.pipe
-      err_r, err_w = IO.pipe
-      pid = Process.spawn(env, *command, chdir: ROOT, in: File::NULL, out: out_w, err: err_w,
-                                         **(Gem.win_platform? ? {} : { pgroup: true }))
-      [out_w, err_w].each(&:close)
-      out = drain(out_r)
-      err = drain(err_r)
-      waiter = Process.detach(pid)
-      unless waiter.join(TIMEOUT)
+    Dir.mktmpdir('adopted') do |dir|
+      out, err = %w[out err].map { File.join(dir, it) }
+      pid = Bundler.with_unbundled_env do
+        Process.spawn(env, *command, chdir: ROOT, in: File::NULL, out:, err:,
+                                     **(Gem.win_platform? ? {} : { pgroup: true }))
+      end
+      deadline = Time.now + TIMEOUT
+      nil
+      sleep 0.1 until (status = Process.wait2(pid, Process::WNOHANG)&.last) || Time.now > deadline
+      unless status
         kill_tree(pid)
         raise "#{command.first(3).join(' ')} did not finish in #{TIMEOUT}s. It printed:\n" \
-              "#{out.value_so_far}#{err.value_so_far}"
+              "#{File.read(out)}#{File.read(err)}"
       end
 
-      [out.value, err.value, waiter.value]
+      [File.read(out), File.read(err), status]
     end
-  end
-
-  # Reads `io` to its end in a thread, keeping what has arrived so far readable.
-  def drain(io)
-    buffer = +''
-    thread = Thread.new do
-      loop { buffer << io.readpartial(4096) }
-    rescue IOError
-      buffer
-    end
-    thread.define_singleton_method(:value_so_far) { buffer.dup }
-    thread
   end
 
   def kill_tree(pid)
@@ -91,7 +81,8 @@ module Adopted
     else
       Process.kill(:KILL, -pid)
     end
-  rescue Errno::ESRCH
+    Process.wait(pid)
+  rescue Errno::ESRCH, Errno::ECHILD
     nil
   end
 
