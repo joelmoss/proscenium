@@ -89,7 +89,16 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		return returnResolve("", "", err, cfg)
 	}
 
-	if isGem {
+	// Stage A seam: a bare specifier from a mapped gem resolves from its context alone. An
+	// `@rubygems/` specifier is bare too, but names a gem file, not a dependency.
+	stageAGem, stageAContext, stageAMapped := "", "", false
+	if !isGem && utils.IsBareModule(filePath) {
+		stageAGem, stageAContext, stageAMapped = utils.StageAContext(importer, cfg)
+	}
+
+	if stageAMapped {
+		rootPath = stageAContext
+	} else if isGem {
 		rootPath = gem.Root
 
 		if _, ok := utils.HasExtension(filePath); ok {
@@ -152,6 +161,10 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		MainFields: []string{"module", "browser", "main"},
 	})
 
+	if len(result.Errors) > 0 && stageAMapped {
+		return returnResolve("", "", utils.StageAMiss(stageAGem, filePath), cfg)
+	}
+
 	if len(result.Errors) > 0 {
 		// Text plus notes: a panic the esbuild fork recovered in a plugin carries its stack in a
 		// note, and Ruby's ResolveError only takes a string.
@@ -174,6 +187,17 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	key := ""
 	for k := range metadata.Inputs {
 		key = k
+	}
+
+	if stageAMapped {
+		absPath := utils.StageARealPath(utils.JoinFsPath(stageAContext, key), cfg)
+
+		urlPath, ok := utils.UrlPathFromFsPath(absPath, cfg)
+		if !ok {
+			return returnResolve("", "", fmt.Errorf("%q from gem %q resolved outside the app root", filePath, stageAGem), cfg)
+		}
+
+		return returnResolve(urlPath, absPath, nil, cfg)
 	}
 
 	if isGem {

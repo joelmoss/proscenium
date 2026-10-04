@@ -76,6 +76,11 @@ type ConfigT struct {
 	// For testing
 	InternalTesting      bool
 	UseDevCSSModuleNames bool
+
+	// The Stage A resolver seam for #154, set only by test/package_manager/stage_a: gem name to the
+	// absolute path of its hand-written dependency context. A bare import from a mapped gem
+	// resolves from the context alone. Stage C replaces it with the real context map.
+	StageAContexts map[string]string
 }
 
 type PluginData = struct {

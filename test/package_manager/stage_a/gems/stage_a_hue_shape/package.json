@@ -1,0 +1,8 @@
+{
+  "name": "@rubygems/stage_a_hue_shape",
+  "dependencies": {
+    "escape-string-regexp": "github:sindresorhus/escape-string-regexp#ba9a447",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  }
+}
