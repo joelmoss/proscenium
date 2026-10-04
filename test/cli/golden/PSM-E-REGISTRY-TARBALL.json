@@ -1,1 +1,1 @@
-{"schema":1,"event":"error","status":"error","code":"PSM-E-REGISTRY-TARBALL","message":"The lockfile resolves @rubygems/widget from a registry, not from the gem.","fix":"Remove the registry or GitHub dependency on it from package.json, then run `bundle exec proscenium install`."}
+{"schema":1,"event":"error","status":"error","code":"PSM-E-REGISTRY-TARBALL","message":"The lockfile resolves @rubygems/widget from a registry or Git, not from the gem.","fix":"Remove the registry or GitHub dependency on it from package.json, then run `bundle exec proscenium install`."}

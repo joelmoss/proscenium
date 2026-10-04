@@ -156,7 +156,8 @@ module Proscenium
           'Run `bundle exec proscenium install` and commit what it lists.'
         ],
         'PSM-E-REGISTRY-TARBALL' => [
-          :integrity, 'The lockfile resolves %<packages>s from a registry, not from the gem.',
+          :integrity, 'The lockfile resolves %<packages>s from a registry or Git, not from the ' \
+                      'gem.',
           'Remove the registry or GitHub dependency on it from package.json, then run ' \
           '`bundle exec proscenium install`.'
         ],

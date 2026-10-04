@@ -1,2 +1,2 @@
-PSM-E-REGISTRY-TARBALL: The lockfile resolves @rubygems/widget from a registry, not from the gem.
+PSM-E-REGISTRY-TARBALL: The lockfile resolves @rubygems/widget from a registry or Git, not from the gem.
 Remove the registry or GitHub dependency on it from package.json, then run `bundle exec proscenium install`.

@@ -84,6 +84,20 @@ describe Proscenium::CLI::Verify do
     end)
   end
 
+  it 'refuses a gem pinned to Git, as an app installed it before adopting (exit 5)' do
+    ['git+ssh://git@github.com/harleytherapy/hue.git#22e6604',
+     'git+https://git@github.com:harleytherapy/hue.git#22e6604',
+     'https://codeload.github.com/harleytherapy/hue/tar.gz/22e6604'].each do |source|
+      lock = "#{PNPM_LOCK}\n  '@rubygems/widget@#{source}':\n    resolution: {tarball: x}\n"
+
+      assert_equal('PSM-E-REGISTRY-TARBALL', code { verify('pnpm').check_registry(lock) })
+    end
+    bun = BUN_LOCK.sub('"@rubygems/widget@workspace:.proscenium/packages/widget"',
+                       '"@rubygems/widget@github:harleytherapy/hue#22e6604", {}, "x"')
+
+    assert_equal('PSM-E-REGISTRY-TARBALL', code { verify('bun').check_registry(bun) })
+  end
+
   it 'refuses a context the manager did not install' do
     assert_equal('PSM-E-WORKSPACE-MISSING', code do
       verify('pnpm', %w[widget other]).check_workspaces(PNPM_LOCK)
