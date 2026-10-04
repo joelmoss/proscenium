@@ -1,0 +1,2 @@
+PSM-E-BUSY: proscenium install (pid 4242) is already running in this project.
+Wait for it to finish, then run `bundle exec proscenium install` again.

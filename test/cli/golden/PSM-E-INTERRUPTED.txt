@@ -1,0 +1,2 @@
+PSM-E-INTERRUPTED: `pnpm install` was interrupted before it finished.
+Run `bundle exec proscenium install` again to finish the install.

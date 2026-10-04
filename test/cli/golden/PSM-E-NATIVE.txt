@@ -1,0 +1,2 @@
+PSM-E-NATIVE: `pnpm install` failed with exit status 1.
+Its output is above. Fix what it reports, then run `bundle exec proscenium install` again; Proscenium has not changed your manager or regenerated your lockfile.

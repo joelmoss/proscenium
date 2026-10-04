@@ -34,7 +34,10 @@ describe Proscenium::CLI::Error do
     'PSM-E-BUN-LINKER' => {},
     'PSM-E-BUN-TRUSTED' => {},
     'PSM-E-NESTED-WORKSPACE' => { enclosing: '/src/monorepo' },
-    'PSM-E-REGISTRATION' => { file: 'package.json' }
+    'PSM-E-REGISTRATION' => { file: 'package.json' },
+    'PSM-E-BUSY' => { holder: 'proscenium install (pid 4242)' },
+    'PSM-E-NATIVE' => { command: 'pnpm install', status: 1 },
+    'PSM-E-INTERRUPTED' => { command: 'pnpm install' }
   }.freeze
 
   def render(error, json:)

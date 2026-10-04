@@ -123,6 +123,19 @@ module Proscenium
           'Add ".proscenium/packages/*" to the workspaces in %<file>s by hand, then run install ' \
           'again.'
         ],
+        'PSM-E-BUSY' => [
+          :busy, '%<holder>s is already running in this project.',
+          'Wait for it to finish, then run `bundle exec proscenium install` again.'
+        ],
+        'PSM-E-NATIVE' => [
+          :native, '`%<command>s` failed with exit status %<status>s.',
+          'Its output is above. Fix what it reports, then run `bundle exec proscenium install` ' \
+          'again; Proscenium has not changed your manager or regenerated your lockfile.'
+        ],
+        'PSM-E-INTERRUPTED' => [
+          :interrupted, '`%<command>s` was interrupted before it finished.',
+          'Run `bundle exec proscenium install` again to finish the install.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \
