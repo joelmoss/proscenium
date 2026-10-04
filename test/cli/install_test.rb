@@ -10,10 +10,11 @@ require_relative '../package_manager/stage_a/bundle'
 # The fixture bundle, installed once for every class in this file: nested `describe`s are classes
 # of their own, so a class-level memo would install it again for each.
 #
-# C27: the fixture lives under a directory whose name has a space and a non-ASCII character, so
-# every install here runs from such a path, on every host.
+# C27: the fixture lives under a directory whose name has a space and a non-ASCII character, and
+# is 120 characters longer than it needs to be, so every install here runs from such a path, on
+# every host. On Windows that takes the managers' deepest paths past the old 260-character limit.
 module InstallFixture
-  DIR = Dir.mktmpdir('cli install ü')
+  DIR = Dir.mktmpdir("cli install ü #{'long-path-' * 12}")
   Minitest.after_run do
     StageA::Bundle.writable!(DIR)
     FileUtils.rm_rf(DIR)
