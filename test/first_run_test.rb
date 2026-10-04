@@ -14,7 +14,7 @@ require 'tmpdir'
 # Runs only with FIRST_RUN=1: it generates a Rails app and installs its gems from the network.
 describe 'the first run' do
   REPO = File.expand_path('..', __dir__)
-  WIDGET = File.join(REPO, 'test/package_manager/stage_a/gems/stage_a_widget_a')
+  WIDGET_SOURCE = File.join(REPO, 'test/package_manager/stage_a/gems/stage_a_widget_a')
 
   before do
     skip 'set FIRST_RUN=1 to run (generates a Rails app from the network)' unless ENV['FIRST_RUN']
@@ -43,11 +43,11 @@ describe 'the first run' do
   it 'installs and builds a gem component after the documented commands' do
     rails = File.join(Gem.loaded_specs.fetch('railties').full_gem_path, 'exe', 'rails')
     sh!(:rails_new, RbConfig.ruby, rails, 'new', 'app', '-j', 'bun', '--skip-git', '--skip-test',
-         '--skip-system-test', '--skip-active-record', '--skip-kamal', '--skip-thruster',
-         '--skip-docker', '--skip-ci', '--skip-rubocop', '--skip-brakeman', chdir: @dir)
+        '--skip-system-test', '--skip-active-record', '--skip-kamal', '--skip-thruster',
+        '--skip-docker', '--skip-ci', '--skip-rubocop', '--skip-brakeman', chdir: @dir)
     app = File.join(@dir, 'app')
     File.write(File.join(app, 'Gemfile'), "\ngem 'proscenium', path: '#{REPO}'\n" \
-                                          "gem 'stage_a_widget_a', path: '#{WIDGET}'\n",
+                                          "gem 'stage_a_widget_a', path: '#{WIDGET_SOURCE}'\n",
                mode: 'a')
     sh!(:bundle_install, 'bundle', 'install', chdir: app)
 

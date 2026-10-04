@@ -7,7 +7,7 @@ require 'rbconfig'
 # The CLI must never load the engine (C37): not `proscenium` itself, ActiveSupport, Rails, FFI or
 # Proscenium::Builder. Checked in a fresh process, since this one may already have loaded them.
 describe 'CLI load isolation' do
-  LIB = File.expand_path('../../lib', __dir__)
+  ISOLATION_LIB = File.expand_path('../../lib', __dir__)
   FORBIDDEN = %w[ActiveSupport Rails FFI Proscenium::Builder].freeze
 
   # Runs `proscenium` with `argv` in a clean Ruby process, after `preamble`, and returns the names
@@ -20,7 +20,7 @@ describe 'CLI load isolation' do
       Proscenium::CLI.start(#{argv.inspect}, out: StringIO.new, err: StringIO.new)
       puts #{FORBIDDEN.inspect}.select { |name| Object.const_defined?(name) }
     RUBY
-    out, status = Open3.capture2e(RbConfig.ruby, '-I', LIB, '-rstringio', '-e', script)
+    out, status = Open3.capture2e(RbConfig.ruby, '-I', ISOLATION_LIB, '-rstringio', '-e', script)
     raise "subprocess failed:\n#{out}" unless status.success?
 
     out.split

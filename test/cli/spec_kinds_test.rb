@@ -15,8 +15,8 @@ require_relative 'private_registry'
 #
 # Runs only with STAGE_A=1: it needs pnpm, Bun and the network.
 describe 'dependency spec kinds' do
-  LIB = File.expand_path('../../lib', __dir__)
-  EXE = File.expand_path('../../exe/proscenium', __dir__)
+  SPEC_KINDS_LIB = File.expand_path('../../lib', __dir__)
+  SPEC_KINDS_EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEM = 'stage_a_specs'
   SOURCE = File.join(StageA::Bundle::GEMS, GEM)
   MANIFEST = JSON.parse(File.read(File.join(SOURCE, 'package.json')))
@@ -72,8 +72,8 @@ describe 'dependency spec kinds' do
 
   def install(app, manager)
     Bundler.with_unbundled_env do
-      Open3.capture3(StageA::Bundle.env(@dir), RbConfig.ruby, '-I', LIB, EXE, 'install',
-                     '--manager', manager, chdir: app)
+      Open3.capture3(StageA::Bundle.env(@dir), RbConfig.ruby, '-I', SPEC_KINDS_LIB,
+                     SPEC_KINDS_EXE, 'install', '--manager', manager, chdir: app)
     end
   end
 

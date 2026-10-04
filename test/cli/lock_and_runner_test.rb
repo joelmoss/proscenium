@@ -147,7 +147,7 @@ describe 'project lock and runner' do
   describe 'on Windows' do
     before { skip 'Windows only' unless Gem.win_platform? }
 
-    LIB = File.expand_path('../../lib', __dir__)
+    HARNESS_LIB = File.expand_path('../../lib', __dir__)
 
     # An install as the CLI runs one: it takes the project lock and runs a manager that records
     # its pid in `started`, then sleeps. It writes its own pid to `harness_pid`, and its exit
@@ -198,7 +198,8 @@ describe 'project lock and runner' do
     def install(**)
       @started = File.join(@root, 'started')
       @log = File.join(@root, 'harness.log')
-      pid = Process.spawn(RbConfig.ruby, '-I', LIB, '-e', HARNESS, @root, @started, err: @log, **)
+      pid = Process.spawn(RbConfig.ruby, '-I', HARNESS_LIB, '-e', HARNESS, @root, @started,
+                          err: @log, **)
       deadline = Time.now + 30
       sleep 0.05 until (File.exist?(@started) && !File.empty?(@started)) || Time.now > deadline
       [pid, File.read(@started).to_i]
@@ -239,7 +240,8 @@ describe 'project lock and runner' do
       started = File.join(@root, 'started')
       result = File.join(@root, 'result')
       File.write(File.join(@root, 'harness.rb'), HARNESS)
-      args = [RbConfig.ruby, '-I', LIB, File.join(@root, 'harness.rb'), @root, started, result]
+      args = [RbConfig.ruby, '-I', HARNESS_LIB, File.join(@root, 'harness.rb'), @root, started,
+              result]
       File.write(File.join(@root, 'launch.cmd'),
                  "start \"\" /min #{args.map { "\"#{it.tr('/', '\\')}\"" }.join(' ')}\r\n")
       system(File.join(@root, 'launch.cmd'), exception: true)
