@@ -205,12 +205,23 @@ module Proscenium
       project = ContextMap.project_root
       return ContextMap::INSTALLING_MESSAGE if ContextMap.installing?(project)
 
-      stale = StaleContexts.message(project) or return
+      stale = StaleContexts.message(project, generation) or return
       return stale unless ENV['PROSCENIUM_STALE_CONTEXT'] == 'warn'
 
       @warned ||= Set.new
       Rails.logger.warn("[Proscenium] #{stale}") if @warned.add?(stale)
       nil
+    end
+
+    # The mapping generation builds use now (#154). Development and test start a new one when the
+    # files the context map is built from change, and forget resolved paths with it; production
+    # keeps one for the process.
+    def self.generation
+      return 0 if Rails.env.production?
+
+      number, changed = MappingGeneration.refresh(ContextMap.project_root)
+      Resolver.reset if changed
+      number
     end
 
     def self.reset_config!
@@ -223,6 +234,7 @@ module Proscenium
     # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
     # any it does not know.
     def initialize(root: nil, **overrides)
+      generation = self.class.generation
       config_hash = {
         RootPath: (root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
@@ -236,7 +248,7 @@ module Proscenium
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
         Debug: Proscenium.config.debug,
-        **ContextMap.config(ContextMap.project_root)
+        **ContextMap.config(ContextMap.project_root, generation)
       }.merge(overrides)
 
       @request_config = self.class.request_config_pointer(config_hash)

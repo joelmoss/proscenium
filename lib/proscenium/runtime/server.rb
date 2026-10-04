@@ -515,7 +515,7 @@ module Proscenium
         # One bucket per module variant. A new mtime replaces the bucket, lock and all, which is
         # what keeps a long `--watch` session at one entry per module - and holds for a build that
         # raised, which leaves its bucket without a value rather than a lock outside the cache.
-        key = [path, *extra]
+        key = [path, Proscenium::Builder.generation, *extra]
         bucket = @cache_mutex.synchronize do
           current = @cache[key]
           next current if current && current[:mtime] == mtime

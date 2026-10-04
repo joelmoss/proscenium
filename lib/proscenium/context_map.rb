@@ -20,12 +20,15 @@ module Proscenium
     # need not be Rails.root.
     def project_root = Bundler.root.to_s
 
-    # The config keys Go reads, for the app at `root`. Read once per process and root.
-    def config(root)
+    # The config keys Go reads, for the app at `root`. Read once per mapping generation: a value
+    # read during an older one is kept under that one's key, never handed to the next.
+    def config(root, generation = 0)
       @config ||= {}
-      @config[root] ||= { DependencyContexts: contexts(root),
-                          AppLocalPackages: local_packages(root) }.freeze
+      @config[[root, generation]] ||= { DependencyContexts: contexts(root),
+                                        AppLocalPackages: local_packages(root) }.freeze
     end
+
+    def reset! = @config = {}
 
     # Whether the app at `root` adopted gem dependency contexts: pnpm's workspace file registers
     # them, or package.json does in a Bun app. Yarn and npm apps never have.

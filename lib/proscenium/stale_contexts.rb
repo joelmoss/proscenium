@@ -51,16 +51,17 @@ module Proscenium
     end
 
     # The build error for the app at `root`, or nil when its contexts are current. Read once per
-    # process and root.
-    def message(root)
+    # mapping generation, as ContextMap.config is.
+    def message(root, generation = 0)
       @message ||= {}
-      return @message[root] if @message.key?(root)
+      key = [root, generation]
+      return @message[key] if @message.key?(key)
 
       found = problems(root)
-      @message[root] = if found.any?
-                         "Gem dependency contexts are out of date:\n" \
-                           "#{found.map { "  - #{it}" }.join("\n")}\n#{COMMAND}"
-                       end
+      @message[key] = if found.any?
+                        "Gem dependency contexts are out of date:\n" \
+                          "#{found.map { "  - #{it}" }.join("\n")}\n#{COMMAND}"
+                      end
     end
 
     def reset! = @message = {}

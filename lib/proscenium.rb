@@ -41,6 +41,7 @@ module Proscenium
   autoload :BundledGems
   autoload :ContextMap
   autoload :StaleContexts
+  autoload :MappingGeneration
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
