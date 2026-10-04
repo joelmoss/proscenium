@@ -56,7 +56,8 @@ module Adopted
   TIMEOUT = 180
 
   def capture(*command)
-    Dir.mktmpdir('adopted') do |dir|
+    dir = Dir.mktmpdir('adopted')
+    begin
       out, err = %w[out err].map { File.join(dir, it) }
       pid = Bundler.with_unbundled_env do
         Process.spawn(env, *command, chdir: ROOT, in: File::NULL, out:, err:,
@@ -72,6 +73,10 @@ module Adopted
       end
 
       [File.read(out), File.read(err), status]
+    ensure
+      # rm_rf ignores a file still open: `bun test`'s Rails daemon outlives it for a moment,
+      # holding the output files, and Windows will not delete an open file.
+      FileUtils.rm_rf(dir)
     end
   end
 

@@ -159,9 +159,14 @@ describe 'project lock and runner' do
       require 'proscenium/cli/runner'
       root, started, result = ARGV
       File.write(File.join(root, 'harness_pid'), Process.pid.to_s)
+      if result # Ctrl-C on, as in an interactive console; a CI runner starts with it ignored
+        require 'fiddle'
+        Fiddle::Function.new(Fiddle.dlopen('kernel32')['SetConsoleCtrlHandler'],
+                             [Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT], Fiddle::TYPE_INT).call(nil, 0)
+      end
       status = begin
         Proscenium::CLI::ProjectLock.new(root).synchronize('harness') do |lock|
-          code = "File.write(\#{started.dump}, Process.pid.to_s); sleep 30"
+          code = "File.write(\#{started.dump}, Process.pid.to_s); sleep 90"
           Proscenium::CLI::Runner.run(RbConfig.ruby, ['-e', code], root:, lock_io: lock.io,
                                       on_spawn: lock.method(:manager_started))
         ensure
@@ -244,11 +249,13 @@ describe 'project lock and runner' do
       manager = File.read(started).to_i
 
       system(RbConfig.ruby, '-e', CTRL_C, harness.to_s, exception: true)
+
+      # The manager sleeps for 90 seconds, so stopping within 30 means Ctrl-C stopped it.
+      assert exited?(manager, 30), 'Ctrl-C did not stop the manager'
       deadline = Time.now + 30
       sleep 0.05 until File.exist?(result) || Time.now > deadline
 
       assert_equal '8', File.exist?(result) && File.read(result), 'the install did not report'
-      assert exited?(manager), 'the manager outlived the interrupted install'
     ensure
       [harness, manager].each { Process.kill(:KILL, it) if it && alive?(it) }
     end
