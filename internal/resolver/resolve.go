@@ -9,6 +9,7 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"path"
 	"path/filepath"
+	"strings"
 
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
@@ -161,7 +162,9 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		MainFields: []string{"module", "browser", "main"},
 	})
 
-	if len(result.Errors) > 0 && stageAMapped {
+	// A miss names the gem; any other error, such as the resolved entry failing to parse, keeps
+	// esbuild's own diagnostic.
+	if len(result.Errors) > 0 && stageAMapped && strings.HasPrefix(result.Errors[0].Text, "Could not resolve") {
 		return returnResolve("", "", utils.StageAMiss(stageAGem, filePath), cfg)
 	}
 

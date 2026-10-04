@@ -158,6 +158,22 @@ var _ = Describe("Stage A resolver seam", func() {
 			Expect(ok).To(BeFalse(), code)
 			Expect(code).To(ContainSubstring(`could not resolve \"nobody-has\" from its dependency context`))
 		})
+
+		// A store outside the app root (pnpm's global virtual store, say) has no URL, so the link
+		// path, which has one, is kept.
+		It("keeps the link path when the real path is outside the app root", func() {
+			outside, err := filepath.EvalSymlinks(GinkgoT().TempDir())
+			Expect(err).NotTo(HaveOccurred())
+			Expect(os.WriteFile(filepath.Join(outside, "package.json"),
+				[]byte(`{"name":"outside-dep","version":"1.0.0","main":"index.js"}`), 0o644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(outside, "index.js"), []byte("export default 1;"), 0o644)).To(Succeed())
+			link(outside, ".proscenium/packages/"+gem+"/node_modules/outside-dep")
+			write("vendor/"+gem+"/outside.js", "export { default } from 'outside-dep'\n")
+
+			_, code := build("node_modules/@rubygems/" + gem + "/outside.js")
+
+			Expect(code).To(ContainSubstring(`"/.proscenium/packages/` + gem + `/node_modules/outside-dep/index.js"`))
+		})
 	})
 
 	It("resolves from the context outside a build", func() {
@@ -166,6 +182,21 @@ var _ = Describe("Stage A resolver seam", func() {
 		Expect(err).NotTo(HaveOccurred())
 		Expect(urlPath).To(Equal(contextURL))
 		Expect(absPath).To(Equal(utils.JoinFsPath(contextDir, "node_modules/stage-a-dep/index.js")))
+	})
+
+	It("names the gem when resolving outside a build misses", func() {
+		_, _, err := r.Resolve("nobody-has", root+"/vendor/"+gem+"/index.js", testConfig)
+
+		Expect(err).To(MatchError(ContainSubstring(`gem "` + gem + `": could not resolve "nobody-has"`)))
+	})
+
+	It("keeps esbuild's diagnostic when the resolved package fails to parse", func() {
+		pkg(".proscenium/packages/"+gem+"/node_modules/broken", "broken", "1.0.0", "export const = ;")
+
+		_, _, err := r.Resolve("broken", root+"/vendor/"+gem+"/index.js", testConfig)
+
+		Expect(err).To(HaveOccurred())
+		Expect(err.Error()).NotTo(ContainSubstring("from its dependency context"))
 	})
 
 	It("still resolves an @rubygems specifier from a mapped gem to the gem", func() {

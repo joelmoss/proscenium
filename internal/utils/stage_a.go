@@ -37,7 +37,9 @@ func StageAMiss(gem string, specifier string) error {
 // One real file is one module: under pnpm and Bun the app and a gem's context reach a shared
 // package such as React through different links to the same file. While the seam is on, a
 // resolved path under `node_modules/` or `.proscenium/packages/` is replaced by its real path, so
-// both importers get one URL. Anything else, or a path that cannot be evaluated, is unchanged.
+// both importers get one URL. Anything else, a path that cannot be evaluated, or one whose real
+// path has no URL (a store outside the app root, such as a global virtual store) is unchanged:
+// the link path is still servable, the real path would not be.
 func StageARealPath(fsPath string, cfg *types.ConfigT) string {
 	if len(cfg.StageAContexts) == 0 ||
 		(!strings.Contains(fsPath, "/node_modules/") && !strings.Contains(fsPath, "/.proscenium/packages/")) {
@@ -49,5 +51,10 @@ func StageARealPath(fsPath string, cfg *types.ConfigT) string {
 		return fsPath
 	}
 
-	return filepath.ToSlash(real)
+	real = filepath.ToSlash(real)
+	if _, ok := UrlPathFromFsPath(real, cfg); !ok {
+		return fsPath
+	}
+
+	return real
 }
