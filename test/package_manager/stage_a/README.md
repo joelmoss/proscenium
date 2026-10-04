@@ -120,7 +120,8 @@ through `Proscenium::Builder`, run by the `stage-a` CI job and locally with
 where Bun's hoisted and isolated linkers put the widgets' conflicting `ms` copies, what each widget
 then builds against, and that an explicit `trustedDependencies` blocks a gem-introduced package
 Bun trusts by default. `git_scripts_test.rb` checks that neither manager runs a gem-introduced
-Git dependency's scripts without approval, and `peers.rb` is the C12 peer probe. They write
+Git dependency's scripts without approval, `drift_test.rb` shows a frozen check needs no
+descriptor receipt, and `peers.rb` is the C12 peer probe. They write
 contexts with `context.rb`. The
 verdicts are in `docs/plans/154-package-manager-stage-a.md`.
 
