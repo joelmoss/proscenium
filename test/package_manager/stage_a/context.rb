@@ -45,8 +45,12 @@ module StageA
       text = File.exist?(path) ? File.read(path) : ''
       return if text.include?(PATTERN)
 
-      text = if text.match?(/^packages:[ \t]*$/)
-               text.sub(/^packages:[ \t]*\n/) { "#{it}  - #{PATTERN}\n" }
+      text = if (flow = text.match(/^packages:[ \t]*\[(?<list>[^\]]*)\](?<rest>.*)$/))
+               # An inline list: `packages: ["apps/*"]`.
+               list = [flow[:list].strip, "'#{PATTERN}'"].reject(&:empty?).join(', ')
+               text.sub(flow[0], "packages: [#{list}]#{flow[:rest]}")
+             elsif text.match?(/^packages:[ \t]*(#.*)?$/)
+               text.sub(/^packages:[ \t]*(#.*)?\n/) { "#{it}  - #{PATTERN}\n" }
              else
                "packages:\n  - #{PATTERN}\n#{"\n" unless text.empty?}#{text}"
              end
