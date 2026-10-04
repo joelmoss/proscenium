@@ -54,6 +54,28 @@ describe 'an adopted app' do
     assert_includes code, '/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js'
   end
 
+  # C23: precompiling for a deploy builds through the contexts and writes the manifest, and it is
+  # where stale contexts stop a deploy.
+  it 'precompiles through the contexts, and refuses to while a context is stale' do
+    compile = "Proscenium::Builder.compile(Precompile: ['lib/app.js', '#{WIDGET}']); " \
+              "JSON.parse(File.read('public/assets/.manifest.json'))['outputs'].keys"
+    outputs, = Adopted.run(compile)
+
+    assert_includes outputs.join("\n"), 'lib/app-$'
+    assert_includes outputs.join("\n"), '@rubygems/stage_a_widget_a/index-$'
+
+    path = '.proscenium/packages/stage_a_widget_a/package.json'
+    stale = File.read(File.join(Adopted::ROOT, path))
+                .sub(/"projectionSha256": "\h+"/, '"projectionSha256": "older"')
+    Adopted.with_file(path, stale) do
+      message, = Adopted.run("begin; #{compile}; rescue Proscenium::Error => e; e.message; end")
+
+      assert_includes message, 'Gem dependency contexts are out of date'
+    end
+  ensure
+    FileUtils.rm_rf(File.join(Adopted::ROOT, 'public'))
+  end
+
   # C34
   it 'refuses to build while an install is in progress' do
     Adopted.with_file('.proscenium/installing', '1') do
