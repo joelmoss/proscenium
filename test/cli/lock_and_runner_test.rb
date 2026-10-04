@@ -149,6 +149,22 @@ describe 'project lock and runner' do
 
     HARNESS_LIB = File.expand_path('../../lib', __dir__)
 
+    # The console calls the harness and the Ctrl-C helper make, through ffi, which Proscenium
+    # already depends on: fiddle stopped being a default gem in Ruby 4.0, so a bundle cannot load
+    # it there.
+    KERNEL32 = <<~RUBY
+      require 'ffi'
+      module Kernel32
+        extend FFI::Library
+        ffi_lib 'kernel32'
+        ffi_convention :stdcall
+        attach_function :FreeConsole, [], :int
+        attach_function :AttachConsole, [:uint], :int
+        attach_function :SetConsoleCtrlHandler, %i[pointer int], :int
+        attach_function :GenerateConsoleCtrlEvent, %i[uint uint], :int
+      end
+    RUBY
+
     # An install as the CLI runs one: it takes the project lock and runs a manager that records
     # its pid in `started`, then sleeps. It writes its own pid to `harness_pid`, and its exit
     # status, which a Proscenium error decides, to `result` when given one.
@@ -160,9 +176,8 @@ describe 'project lock and runner' do
       root, started, result = ARGV
       File.write(File.join(root, 'harness_pid'), Process.pid.to_s)
       if result # Ctrl-C on, as in an interactive console; a CI runner starts with it ignored
-        require 'fiddle'
-        Fiddle::Function.new(Fiddle.dlopen('kernel32')['SetConsoleCtrlHandler'],
-                             [Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT], Fiddle::TYPE_INT).call(nil, 0)
+        #{KERNEL32}
+        Kernel32.SetConsoleCtrlHandler(nil, 0)
       end
       status = begin
         Proscenium::CLI::ProjectLock.new(root).synchronize('harness') do |lock|
@@ -184,15 +199,11 @@ describe 'project lock and runner' do
     # Sends Ctrl-C to every process on the console of the process ARGV[0], as pressing it there
     # does: it attaches to that console, ignores the event itself, and generates CTRL_C_EVENT.
     CTRL_C = <<~RUBY
-      require 'fiddle'
-      kernel32 = Fiddle.dlopen('kernel32')
-      call = lambda do |name, types, *args|
-        Fiddle::Function.new(kernel32[name], types, Fiddle::TYPE_INT).call(*args)
-      end
-      call.('FreeConsole', [])
-      abort "AttachConsole: \#{Fiddle.win32_last_error}" if call.('AttachConsole', [Fiddle::TYPE_INT], ARGV[0].to_i).zero?
-      call.('SetConsoleCtrlHandler', [Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT], nil, 1)
-      abort "GenerateConsoleCtrlEvent: \#{Fiddle.win32_last_error}" if call.('GenerateConsoleCtrlEvent', [Fiddle::TYPE_INT, Fiddle::TYPE_INT], 0, 0).zero?
+      #{KERNEL32}
+      Kernel32.FreeConsole
+      abort "AttachConsole: \#{FFI::LastError.winapi_error}" if Kernel32.AttachConsole(ARGV[0].to_i).zero?
+      Kernel32.SetConsoleCtrlHandler(nil, 1)
+      abort "GenerateConsoleCtrlEvent: \#{FFI::LastError.winapi_error}" if Kernel32.GenerateConsoleCtrlEvent(0, 0).zero?
     RUBY
 
     def install(**)
