@@ -23,6 +23,8 @@ module Proscenium
       GIT_URL = %r{\A(?:github:[\w.-]+/[\w.-]+|git\+(?:https|ssh)://\S+)(?:#\S+)?\z}
       TARBALL = %r{\Ahttps://\S+\z}
       PROTOCOL = /\A[a-z][a-z0-9+.-]*:/i
+      # A user and a password before the host: `scheme://user:password@host`.
+      CREDENTIAL = %r{://[^/@\s]*:[^/@\s]*@}
 
       module_function
 
@@ -81,6 +83,8 @@ module Proscenium
 
           return nil
         end
+        # A password in a URL would be committed with the context (C31).
+        return ['PSM-E-CREDENTIAL', { gem:, name: }] if CREDENTIAL.match?(spec)
         return nil if GIT_URL.match?(spec) || TARBALL.match?(spec)
         return ['PSM-E-SPEC', { gem:, name:, spec: }] if PROTOCOL.match?(spec)
 

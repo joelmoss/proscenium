@@ -155,6 +155,16 @@ describe Proscenium::CLI::GemCheck do
     end
   end
 
+  # C31: a gem never ships a credential, which its context would commit; a Git user is not one.
+  it 'refuses a dependency URL with a password in it' do
+    dir = gem_dir(manifest: { 'dependencies' => {
+                    'secret' => 'https://user:token@registry.example.com/secret-1.0.0.tgz',
+                    'git-user' => 'git+ssh://git@github.com/owner/repo.git#abc123'
+                  } })
+
+    assert_equal [2, %w[PSM-E-CREDENTIAL]], codes(dir)
+  end
+
   # C29: a package.json read safely or not at all.
   describe 'an unsafe manifest' do
     def manifest_message(target)

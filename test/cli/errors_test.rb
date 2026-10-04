@@ -50,6 +50,7 @@ describe Proscenium::CLI::Error do
                                            '"github:harleytherapy/hue#22e6604"' },
     'PSM-E-OWNED-DIR' => { entries: 'mine' },
     'PSM-E-OWNED-LINK' => { paths: '.proscenium/packages' },
+    'PSM-E-CREDENTIAL' => { gem: 'widget', name: 'private-pkg' },
     'PSM-E-PLATFORM-VARIANT' => { variants: 'widget (widget-1.0.0-x86_64-linux.gem)' },
     'PSM-E-UNC-SHIM' => { manager: 'pnpm', root: '//server/share/app' },
     'PSM-W-END-OF-LIFE' => { manager: 'pnpm', version: '11.28.4', eol: '2027-04-30' }

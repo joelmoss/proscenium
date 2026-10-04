@@ -57,6 +57,12 @@ module Proscenium
           'Use a semver range, a dist-tag, an npm: alias, a github: or git+https: URL, or an ' \
           'https: tarball.'
         ],
+        'PSM-E-CREDENTIAL' => [
+          :input, "%<gem>s's dependency %<name>s has a password in its URL, which would be " \
+                  'committed with its context.',
+          'Remove the credential from the URL; the app authenticates to private registries in ' \
+          'its own .npmrc.'
+        ],
         'PSM-E-ALIAS' => [
           :input, '%<gem>s aliases %<name>s to "%<spec>s", a gem context.',
           'Depend on the gem in the gemspec and reference @rubygems/<gem> directly.'
