@@ -42,9 +42,15 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
+					// Stage A seam: a mapped gem's bare asset resolves from its context.
+					resolveDir := args.ResolveDir
+					if _, contextDir, ok := utils.StageAContext(stageAImporter(args), cfg); ok {
+						resolveDir = contextDir
+					}
+
 					// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
 					r := build.Resolve(result.Path, esbuild.ResolveOptions{
-						ResolveDir: args.ResolveDir,
+						ResolveDir: resolveDir,
 						Importer:   args.Importer,
 						Kind:       args.Kind,
 						PluginData: types.PluginData{IsResolvingPath: true},
@@ -58,7 +64,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					absPath = filepath.ToSlash(r.Path)
+					absPath = utils.StageARealPath(filepath.ToSlash(r.Path), cfg)
 				}
 
 				result.Path = absPath
@@ -289,6 +295,9 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					var isBare string
 					var hasExt bool
 
+					// Stage A seam: set when the import comes from a gem the seam maps to a context.
+					stageAGem, stageAContext, stageAMapped := utils.StageAContext(stageAImporter(args), cfg)
+
 					if utils.IsBareModule(result.Path) {
 						if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
 							result.Path = aliasedPath
@@ -342,7 +351,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						goto FINISH
 					}
 
-					if isBare != "" && hasExt {
+					if isBare != "" && hasExt && !stageAMapped {
 						// Bare module with extension, so there is no need to resolve it if we prefix the path
 						// with "/node_modules/".
 						result.Path = "/node_modules/" + result.Path
@@ -394,32 +403,48 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							return result, fmt.Errorf("no gem root attached to %s: its loader dropped the plugin data", args.Path)
 						}
 
-						// 1
-						ok := resolveWithEsbuild(resolveArgs, &result)
-						if !ok {
-							return result, nil
-						}
-
-						// 2
-						if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-							resolveArgs.ResolveDir != gemPath {
-							resolveArgs.ResolveDir = gemPath
-							result.Path = originalPath
-
+						if stageAMapped && isBare != "" {
+							// Stage A seam: the gem's context replaces the whole chain below, including step 1,
+							// whose walk-up from an in-tree gem would reach the app's node_modules first.
+							resolveArgs.ResolveDir = stageAContext
 							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
 								return result, nil
 							}
-						}
-
-						// 3
-						if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-							resolveArgs.ResolveDir != root {
-							resolveArgs.ResolveDir = root
-							result.Path = originalPath
-
-							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+							if result.Path == "" {
+								return result, utils.StageAMiss(stageAGem, originalPath)
+							}
+						} else {
+							// 1
+							ok := resolveWithEsbuild(resolveArgs, &result)
+							if !ok {
 								return result, nil
 							}
+
+							// 2
+							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
+								resolveArgs.ResolveDir != gemPath {
+								resolveArgs.ResolveDir = gemPath
+								result.Path = originalPath
+
+								if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+									return result, nil
+								}
+							}
+
+							// 3
+							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
+								resolveArgs.ResolveDir != root {
+								resolveArgs.ResolveDir = root
+								result.Path = originalPath
+
+								if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+									return result, nil
+								}
+							}
+						}
+
+						if isBare != "" && result.Path != "" {
+							result.Path = utils.StageARealPath(result.Path, cfg)
 						}
 					}
 
@@ -478,4 +503,14 @@ func assetFsPath(p string, args esbuild.OnResolveArgs, root string) (string, boo
 	}
 
 	return "", false
+}
+
+// The file system path the Stage A seam looks a bare import's gem up by. A rubygems-namespaced
+// importer is a virtual `@rubygems/` path; its loader attaches the gem root instead.
+func stageAImporter(args esbuild.OnResolveArgs) string {
+	if args.Namespace == "rubygems" {
+		return types.PluginDataOf(args.PluginData).GemPath
+	}
+
+	return args.Importer
 }

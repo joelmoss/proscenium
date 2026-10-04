@@ -1,0 +1,10 @@
+{
+  "name": "@rubygems/stage_a_widget_a",
+  "version": "1.0.0",
+  "dependencies": {
+    "ms": "2.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
+  }
+}

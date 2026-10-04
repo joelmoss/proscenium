@@ -299,6 +299,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 							}
 						} else {
 							resolveArgs := cloneResolveArgs(args)
+							stageAGem := ""
 
 							if utils.IsBareModule(result.Path) {
 								// replace some npm modules with browser native APIs
@@ -318,7 +319,11 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								// node_modules directory. This ensures that bare imports are resolved relative to the
 								// gem's node_modules directory, and not the app's node_modules directory.
 								gemName, _, foundGem := utils.PathIsRubyGem(args.Importer, cfg)
-								if foundGem {
+								if gem, contextDir, ok := utils.StageAContext(args.Importer, cfg); ok {
+									// Stage A seam: the gem's context is the only lookup base.
+									resolveArgs.ResolveDir = contextDir
+									stageAGem = gem
+								} else if foundGem {
 									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemName)
 									_, err := os.Stat(nodeModulePath)
 									if err == nil {
@@ -337,6 +342,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 							// Unqualified path! - use esbuild to resolve.
 							ok := resolveWithEsbuild(resolveArgs, &result)
 							if !ok {
+								if stageAGem != "" && result.Errors == nil {
+									return result, utils.StageAMiss(stageAGem, result.Path)
+								}
+
 								return result, nil
 							}
 						}
