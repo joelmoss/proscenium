@@ -50,13 +50,17 @@ module StageA
         path = File.join(app, '.proscenium', 'packages', gem, 'package.json')
         next problems << "#{gem}: no context" unless File.exist?(path)
 
-        committed = JSON.parse(File.read(path))['proscenium']
+        committed = JSON.parse(File.read(path))
         manifest = JSON.parse(File.read(File.join(root, 'package.json')))
-        current = project(gem, manifest, projection:)['proscenium']
-        if committed['projection'] != projection
-          problems << "#{gem}: projection changed from #{committed['projection']} to #{projection}"
-        elsif committed['projectionSha256'] != current['projectionSha256']
+        current = project(gem, manifest, projection:)
+        was = committed['proscenium'] || {}
+        if was['projection'] != projection
+          problems << "#{gem}: projection changed from #{was['projection']} to #{projection}"
+        elsif was['projectionSha256'] != current['proscenium']['projectionSha256']
           problems << "#{gem}: stale"
+        elsif committed != current
+          # The hash matches but the fields do not: the context was edited by hand.
+          problems << "#{gem}: edited"
         end
       end
       contexts = File.join(app, '.proscenium', 'packages')

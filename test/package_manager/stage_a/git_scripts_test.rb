@@ -82,8 +82,11 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
 
     refute ok, out
     assert_includes out, 'ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED'
-    install('pnpm', 'pnpm-install', without)
+    out, ok = install('pnpm', 'pnpm-install', without)
 
+    # pnpm 10 installs and ignores the scripts; 11 and later refuse the install for them. Either
+    # way the install has to have reached the scripts, not failed for some other reason.
+    assert ok || out.include?('ERR_PNPM_IGNORED_BUILDS'), "pnpm install failed:\n#{out}"
     assert_empty ran('pnpm-prepare')
     assert_empty ran('pnpm-install')
 
