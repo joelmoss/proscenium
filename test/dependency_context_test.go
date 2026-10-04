@@ -243,6 +243,34 @@ var _ = Describe("Gem dependency contexts", func() {
 		}
 	})
 
+	// The gem-root regressions of 683dc375 (innermost nested gem root) and c9cb03c8 (prefix match,
+	// not a pattern), applied to context routing: a file belongs to the innermost gem whose root
+	// holds it, and `vendor/ab` is not a root of `vendor/abc`.
+	Describe("which gem's context a file uses", func() {
+		BeforeEach(func() {
+			for _, g := range []string{"outer", "outer/inner", "ab", "ab+c"} {
+				name := strings.ReplaceAll(g, "/", "_")
+				write("vendor/"+g+"/index.js", "export { default } from 'stage-a-dep'\n")
+				pkg(".proscenium/packages/"+name+"/node_modules/stage-a-dep", "stage-a-dep", "1.0.0",
+					`export default "`+name+` context";`)
+				testConfig.RubyGems[name] = root + "/vendor/" + g
+				testConfig.DependencyContexts[name] = root + "/.proscenium/packages/" + name
+			}
+		})
+
+		DescribeTable("routes to the innermost root that holds the file", func(gem string, expected string) {
+			ok, code := build("node_modules/@rubygems/" + gem + "/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(expected + " context"))
+		},
+			Entry("outer", "outer", "outer"),
+			Entry("a gem nested in another's tree", "outer_inner", "outer_inner"),
+			Entry("ab", "ab", "ab"),
+			Entry("a root that ab is a text prefix of", "ab+c", "ab+c"),
+		)
+	})
+
 	It("resolves from the context outside a build", func() {
 		urlPath, absPath, err := r.Resolve("stage-a-dep", root+"/vendor/"+gem+"/index.js", testConfig)
 
