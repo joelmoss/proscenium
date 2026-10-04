@@ -311,7 +311,7 @@ CHECKSUMS
   stage_a_app_dependent (1.0.0)
   stage_a_assets (1.0.0)
   stage_a_widget_a (1.0.0)
-  stage_a_widget_b (1.0.0)
+  stage_a_widget_b (1.0.0) sha256=9d4d6d960e6ef4cab2da32fdec511b1062c17ebc4d66ccc300922a708ac7b068
   thor (1.5.0) sha256=e3a9e55fe857e44859ce104a84675ab6e8cd59c650a49106a05f55f136425e73
   timeout (0.6.1) sha256=78f57368a7e7bbadec56971f78a3f5ecbcfb59b7fcbb0a3ed6ddc08a5094accb
   tsort (0.2.0) sha256=9650a793f6859a43b6641671278f79cfead60ac714148aabe4e3f0060480089f

@@ -48,11 +48,21 @@ describe 'proscenium install' do
     InstallFixture.roots
   end
 
+  # Removes `path` for certain. rm_rf ignores what it cannot delete, and on Windows it left a
+  # Bun store behind, so a "fresh" app still had the last install's layout.
+  def remove!(path)
+    FileUtils.rm_rf(path)
+    if File.exist?(path) && Gem.win_platform?
+      system('cmd', '/c', 'rmdir', '/s', '/q', path.tr('/', '\\'), out: File::NULL, err: File::NULL)
+    end
+    raise "could not remove #{path}" if File.exist?(path)
+  end
+
   # A fresh copy of the fixture app for `manager`, ready for its first install.
   def app(manager)
     dir = File.join(BUNDLE, InstallFixture::APP)
     %w[.proscenium node_modules package.json pnpm-workspace.yaml pnpm-lock.yaml bun.lock yarn.lock
-       bunfig.toml .gitignore].each { FileUtils.rm_rf(File.join(dir, it)) }
+       bunfig.toml .gitignore].each { remove!(File.join(dir, it)) }
     package = { 'name' => 'app', 'private' => true,
                 'dependencies' => { 'react' => '18.3.1', 'react-dom' => '18.3.1' } }
     if manager == 'bun'
