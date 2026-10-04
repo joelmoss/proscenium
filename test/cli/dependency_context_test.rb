@@ -39,6 +39,19 @@ describe Proscenium::DependencyContext do
     assert_equal sha(BASE), sha(noisy)
   end
 
+  # C16: policy belongs to the app. A gem's overrides, resolutions, pnpm settings, patches and
+  # engine strictness never reach its context; its engines range does, as information.
+  it "drops a gem's own install policy, and keeps its engines" do
+    policy = { 'overrides' => { 'ms' => '1.0.0' }, 'resolutions' => { 'ms' => '1.0.0' },
+               'pnpm' => { 'overrides' => { 'ms' => '1.0.0' } },
+               'patchedDependencies' => { 'ms@2.1.3' => 'patches/ms.patch' },
+               'engineStrict' => true, 'engines' => { 'node' => '>= 20' } }
+    context = Proscenium::DependencyContext.project('widget', BASE.merge(policy))
+
+    assert_empty context.keys & %w[overrides resolutions pnpm patchedDependencies engineStrict]
+    assert_equal({ 'node' => '>= 20' }, context['engines'])
+  end
+
   it 'treats an empty field as an absent one' do
     assert_equal sha(BASE), sha(BASE.merge('optionalDependencies' => {}, 'os' => []))
   end

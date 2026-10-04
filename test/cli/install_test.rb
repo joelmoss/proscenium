@@ -195,6 +195,29 @@ describe 'proscenium install' do
         end
       end
 
+      # C16: the app's policy is the root's, and reaches every context. An app-wide override of
+      # ms replaces both widgets' pins; pnpm reads it from pnpm-workspace.yaml, Bun from
+      # package.json.
+      it "applies the app's own overrides to every gem's context" do
+        dir = app(manager)
+        if manager == 'pnpm'
+          File.write(File.join(dir, 'pnpm-workspace.yaml'), "overrides:\n  ms: 2.1.2\n")
+        else
+          package = JSON.parse(File.read(File.join(dir, 'package.json')))
+          File.write(File.join(dir, 'package.json'),
+                     JSON.pretty_generate(package.merge('overrides' => { 'ms' => '2.1.2' })))
+        end
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        versions = WIDGETS.map do |gem|
+          manifest = File.join(dir, '.proscenium/packages', gem, 'node_modules/ms/package.json')
+          JSON.parse(File.read(manifest))['version']
+        end
+
+        assert_equal %w[2.1.2 2.1.2], versions
+      end
+
       # C32: a deploy without the development group trusts that gem's committed context, leaves
       # its dependencies out and needs no network.
       it 'installs for production without an excluded group, offline' do
