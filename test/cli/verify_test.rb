@@ -67,6 +67,7 @@ describe Proscenium::CLI::Verify do
 
     verify('pnpm').call
     verify('bun').call
+    pass
   end
 
   it 'refuses a gem resolved from a registry or a GitHub pin (exit 5)' do

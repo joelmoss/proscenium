@@ -22,7 +22,7 @@ module Proscenium
       # involves; the error carries it as `output`.
       def run(executable, args, root:, **opts)
         reader, writer = IO.pipe
-        spawn = { chdir: root, out: writer, err: writer, in: :close }
+        spawn = { chdir: root, out: writer, err: writer, in: File::NULL }
         spawn[opts[:lock_io]] = opts[:lock_io] if opts[:lock_io]
         pid = Bundler.with_unbundled_env { Process.spawn(ENV.to_h, executable, *args, **spawn) }
         writer.close

@@ -199,8 +199,7 @@ describe 'proscenium install' do
     FileUtils.mkdir_p(File.join(dir, '.proscenium'))
     File.open(File.join(dir, '.proscenium/lock'), File::RDWR | File::CREAT) do |io|
       io.flock(File::LOCK_EX)
-      io.write('proscenium install (pid 1)')
-      io.flush
+      File.write(File.join(dir, '.proscenium/holder'), 'proscenium install (pid 1)')
       _, err, status = proscenium(dir, 'install')
 
       assert_equal 7, status.exitstatus

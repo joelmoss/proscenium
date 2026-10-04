@@ -11,6 +11,9 @@ module Proscenium
     # manager, so a manager that outlives a killed CLI still holds it. The marker,
     # `.proscenium/installing`, outlives an interrupted install: the engine refuses to build while
     # it exists, and the next install removes it once it has finished.
+    #
+    # The holder's name goes in `.proscenium/holder`, not in the lock file: Windows locks are
+    # mandatory, so a second install could not read a locked file to say who holds it.
     class ProjectLock
       DIR = '.proscenium'
 
@@ -22,20 +25,19 @@ module Proscenium
 
       def lock_path = File.join(@dir, 'lock')
       def marker_path = File.join(@dir, 'installing')
+      def holder_path = File.join(@dir, 'holder')
 
       # Takes the lock for the block, or raises PSM-E-BUSY naming the install that holds it.
       def synchronize(command)
         FileUtils.mkdir_p(@dir)
         @io = File.open(lock_path, File::RDWR | File::CREAT, 0o644)
         unless @io.flock(File::LOCK_EX | File::LOCK_NB)
-          holder = File.read(lock_path).strip
+          holder = File.exist?(holder_path) ? File.read(holder_path).strip : ''
           @io.close
           raise Error.new('PSM-E-BUSY', holder: holder.empty? ? 'another install' : holder)
         end
 
-        @io.truncate(0)
-        @io.write("#{command} (pid #{Process.pid})\n")
-        @io.flush
+        File.write(holder_path, "#{command} (pid #{Process.pid})\n")
         yield self
       ensure
         @io&.close unless @io&.closed?
