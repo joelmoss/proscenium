@@ -441,3 +441,19 @@ unbundled page cannot load it at all ("Dynamic require of .../react.development.
 supported"), with or without the bridge. That is why london and platform serve an ESM React of
 their own, and why one React instance there is a matter of their configuration rather than of
 pnpm. An app that unbundles React from npm is not a case v1 has to serve.
+
+## Re-estimate before Stage B (proposed, 4 October 2026)
+
+The plan makes a re-estimate a gate before Stage B. Stage A's evidence shrinks the unknowns: no
+receipt, no app edge, no NO-GO adapter, and the seam already covers every lookup site Stage C has
+to make real. Proposed, for the maintainer to accept or change on #154:
+
+| Stage | Work | Estimate (engineer / with Claude Code) |
+|---|---|---|
+| B: Ruby CLI | `exe/proscenium` and four commands, manager selection and capability table, registration splices (pnpm YAML, Bun package.json and bunfig), project lock and install marker, manager runner, peer-sharing and lock checks, error codes with golden outputs, installed-CLI release check | 2-3 weeks / 3-5 days |
+| C: engine | the context map from `bundled_gems.rb` to Go in both config sites, the seam made real, real-path identity, serving nested copies under `.proscenium/packages/*/node_modules/`, adoption, staleness, install-in-progress refusal, mapping generations, the daemon | 2-3 weeks / 3-5 days |
+| D: qualification | release-gate rows on macOS arm64 and Linux x86_64 and aarch64, pnpm 10-12 and Bun 1.4, the hermetic registry, nightly canary, performance budgets | 1-2 weeks / 2-4 days |
+| E: migration and release | remove the registry, migrate codaset, platform and london, README section and the two guides | 1-2 weeks / 2-4 days |
+| **Total** | | **6-10 weeks / 10-18 days** |
+
+The earlier 9-15 engineer-weeks included npm, Windows hosts and a compiled CLI, all now out of v1.
