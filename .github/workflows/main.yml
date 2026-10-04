@@ -183,6 +183,7 @@ jobs:
       # Proscenium supports: the first line of each manager is the floor CI runs.
       - name: Manager versions from the capability table
         id: caps
+        shell: bash
         run: |
           caps=lib/proscenium/cli/capabilities.json
           echo "pnpm=$(jq -r '.managers.pnpm.lines[0].ci' "$caps")" >> "$GITHUB_OUTPUT"
