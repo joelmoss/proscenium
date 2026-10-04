@@ -45,7 +45,8 @@ describe Proscenium::CLI::Error do
                                        '- pnpm-lock.yaml is missing' },
     'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
     'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
-    'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' }
+    'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' },
+    'PSM-E-OWNED-DIR' => { entries: 'mine' }
   }.freeze
 
   def render(error, json:)

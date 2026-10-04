@@ -1,0 +1,2 @@
+PSM-E-OWNED-DIR: .proscenium/packages/ holds packages Proscenium did not generate: mine.
+Move them out: that directory is Proscenium's, and every entry in it is a gem context.

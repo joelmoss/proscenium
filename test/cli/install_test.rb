@@ -107,6 +107,26 @@ describe 'proscenium install' do
         assert_includes out, 'gem_npm 1.0.0: context stale'
       end
 
+      it 'refuses a package of its own in .proscenium/packages, and runs from a subdirectory' do
+        dir = app(manager)
+        FileUtils.mkdir_p(File.join(dir, '.proscenium/packages/mine'))
+        File.write(File.join(dir, '.proscenium/packages/mine/package.json'), '{"name": "mine"}')
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_equal 2, status.exitstatus
+        assert_includes err, 'PSM-E-OWNED-DIR'
+        assert_path_exists File.join(dir, '.proscenium/packages/mine/package.json')
+
+        FileUtils.rm_rf(File.join(dir, '.proscenium/packages/mine'))
+        sub = File.join(dir, 'app', 'views')
+        FileUtils.mkdir_p(sub)
+        _, err, status = proscenium(sub, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        assert_path_exists context(dir, 'stage_a_widget_a')
+        refute_path_exists File.join(sub, '.proscenium')
+      end
+
       it 'fails --frozen on a hand edit, an orphan or a missing registration, before the manager' do
         dir = app(manager)
         proscenium(dir, 'install', manager:)

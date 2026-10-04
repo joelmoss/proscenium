@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-OWNED-DIR","message":".proscenium/packages/ holds packages Proscenium did not generate: mine.","fix":"Move them out: that directory is Proscenium's, and every entry in it is a gem context."}

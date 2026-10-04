@@ -171,6 +171,10 @@ module Proscenium
           'Make the app and %<gem>s agree on %<package>s. On pnpm 10, `pnpm dedupe` usually ' \
           'repairs this after an upgrade; `auto-install-peers=false` in .npmrc prevents it.'
         ],
+        'PSM-E-OWNED-DIR' => [
+          :input, '.proscenium/packages/ holds packages Proscenium did not generate: %<entries>s.',
+          'Move them out: that directory is Proscenium\'s, and every entry in it is a gem context.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \

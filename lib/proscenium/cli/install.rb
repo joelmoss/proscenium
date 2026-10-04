@@ -44,6 +44,7 @@ module Proscenium
         @excluded = BundledGems.excluded_names(specs)
         @contexts = Contexts.new(@root, BundledGems.participating(specs, overrides:))
         @committed = Contexts.committed(@root)
+        check_owned_directory
         report_problems
       rescue BundledGems::ConfigError => e
         raise Error.new('PSM-E-CONFIG', detail: e.message)
@@ -59,6 +60,23 @@ module Proscenium
           @reporter.error(Error.new(code, **args), phase: 'validate', manager: @manager.name)
         end
         raise Error.new('PSM-E-PROBLEMS', count: @contexts.problems.size)
+      end
+
+      # `.proscenium/packages/` is Proscenium's: every entry is a generated context. A package.json
+      # there without the generated `proscenium` block is someone's own package, and install
+      # refuses rather than delete it as an orphan.
+      def check_owned_directory
+        foreign = @committed.select do |_, path|
+          next false unless File.exist?(path)
+
+          package = JSON.parse(File.read(path))
+          !package.is_a?(Hash) || !package.key?('proscenium')
+        rescue JSON::ParserError
+          true
+        end
+        return if foreign.empty?
+
+        raise Error.new('PSM-E-OWNED-DIR', entries: foreign.keys.join(', '))
       end
 
       # Committed contexts no participating gem owns. A locked gem that is not installed (another
