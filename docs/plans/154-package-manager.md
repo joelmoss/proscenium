@@ -8,7 +8,7 @@ Status: reviewed design specification. The asset-serving boundary is confirmed; 
 
 Tracking issue: [#154](https://github.com/joelmoss/proscenium/issues/154). This document is the only copy of the plan. The issue tracks stage status and records maintainer sign-off; it does not restate the plan.
 
-Revised 4 October 2026 after a full plan review: v1 is a time-boxed pilot on pnpm and Bun, npm and Yarn are unsupported, gems opt in to participation, the CLI is Ruby and runs inside the app's bundle, and v1 has four commands. [Research limits and settled decisions](#research-limits-and-settled-decisions) lists every settled decision; the reasoning behind each is in the Review record at the end of this file. `bin/check-154-plan` keeps this body free of superseded text and gates the start of Stage A.
+Revised 4 October 2026 after a full plan review: v1 is a pilot on pnpm and Bun, npm and Yarn are unsupported, gems opt in to participation, the CLI is Ruby and runs inside the app's bundle, and v1 has four commands. [Research limits and settled decisions](#research-limits-and-settled-decisions) lists every settled decision; the reasoning behind each is in the Review record at the end of this file. `bin/check-154-plan` keeps this body free of superseded text and gates the start of Stage A.
 
 ## Motivation
 
@@ -24,7 +24,7 @@ Revised 4 October 2026 after a full plan review: v1 is a time-boxed pilot on pnp
 
 **One command, no extra tooling.** The CLI is Ruby. It ships in the existing gem as `exe/proscenium` and runs under `bundle exec`, where Bundler is already loaded, so there is no separate CLI to install, nothing to compile and nothing to download. Its speed is measured against the bare native install ([Performance](#performance-strategy-and-measurable-gates)).
 
-**Evidence before commitment.** The Stage A pilot must prove original-source lookup, portable locks, native peer policy and shared React identity on pnpm and Bun, inside a time box, before any CLI or engine work starts. A failed adapter stays unsupported; copied assets, registry shims and silent graph changes are excluded fallbacks.
+**Evidence before commitment.** The Stage A pilot must prove original-source lookup, portable locks, native peer policy and shared React identity on pnpm and Bun before any CLI or engine work starts. A failed adapter stays unsupported; copied assets, registry shims and silent graph changes are excluded fallbacks.
 
 ### Why not publish gems' JavaScript to a registry
 
@@ -206,7 +206,7 @@ V1 excludes copying or mirroring gem frontend files, turning gems into complete 
 
 ### The pilot
 
-v1 is a time-boxed pilot. Stage A starts in london with a hand-written hue context on pnpm, then moves to codaset with proscenium-ui on Bun 1.4 or newer. The time box is set when Stage A starts and recorded on #154 (one to two weeks was suggested). Kill criterion: if a context cannot give hue its dependencies and one React instance, in bundled and unbundled mode, within the time box, Stage A is NO-GO and the design reopens. The bridge stays labelled experimental for outside gem authors until at least one gem outside the maintainer's apps adopts it.
+v1 is a pilot. Stage A starts in london with a hand-written hue context on pnpm, then moves to codaset with proscenium-ui on Bun 1.4 or newer. Stage A has no time box: it ends on evidence, not a date. Kill criterion: if a context cannot give hue its dependencies and one React instance, in bundled and unbundled mode, Stage A is NO-GO and the design reopens. The bridge stays labelled experimental for outside gem authors until at least one gem outside the maintainer's apps adopts it.
 
 ### Compatibility
 
@@ -667,7 +667,7 @@ Test layers: Ruby tests for the CLI with their own helper that loads no Rails; g
 
 ## Implementation sequence and release gates
 
-**Stage A: the pilot.** Prove dependency-only contexts with real installed gems on pnpm and Bun before any CLI or engine work, inside the time box. Entry gate, owned by the maintainer: `bin/check-154-plan` passes on this document and the time box is recorded on #154. The GO subset is every conformance row whose Gate includes A. A failing adapter stays unsupported; copied frontend trees are never a fallback. The consumer quickstart and the gem author guide are drafted at the end of Stage A and exercised against its fixtures. Re-estimating the remaining effort is a gate before Stage B. The execution contract is below.
+**Stage A: the pilot.** Prove dependency-only contexts with real installed gems on pnpm and Bun before any CLI or engine work. Entry gate, owned by the maintainer: `bin/check-154-plan` passes on this document. The GO subset is every conformance row whose Gate includes A. A failing adapter stays unsupported; copied frontend trees are never a fallback. The consumer quickstart and the gem author guide are drafted at the end of Stage A and exercised against its fixtures. Re-estimating the remaining effort is a gate before Stage B. The execution contract is below.
 
 **Stage B: the Ruby CLI.** `exe/proscenium` and its gemspec declaration; `install`, `install --frozen`, `inspect` and `gem check`; manager selection and the capability table; registration; the project lock and the install marker; the manager runner; validation; errors, exit codes and golden outputs; release verification of the installed CLI. Gate: rows whose Gate includes B. No Rails, FFI or engine loading by any command.
 
@@ -731,7 +731,7 @@ Effort: the earlier estimate of 9-15 engineer-weeks predates the pilot scope, th
 
 ### Acceptance criteria
 
-- [ ] Stage A records reproducible real-gem evidence (synthetic gems including `stage_a_hue_shape`, proscenium-ui in CI, hue locally) and GO/NO-GO results per manager, including peer placement and app/gem React identity, inside the time box.
+- [ ] Stage A records reproducible real-gem evidence (synthetic gems including `stage_a_hue_shape`, proscenium-ui in CI, hue locally) and GO/NO-GO results per manager, including peer placement and app/gem React identity.
 - [x] Decision D1 (context version) is settled: omit `version`, reference contexts with `workspace:*`.
 - [ ] The installed CLI runs from every platform gem, the plain gem and Git and path sources without loading Rails, FFI or the engine, and passes the frozen, offline, production, lock and interruption tests.
 - [ ] Gem assets remain at Bundler-installed roots with zero Proscenium frontend copies, mirrors, installed-gem writes or privileged source links.
@@ -762,7 +762,7 @@ No decisions are open. Settled, with the reasoning for each in the Review record
 - **D1: a dependency context's version.** The generated context omits `version`, and every reference Proscenium generates to it uses `workspace:*`. A gem author's range for another gem's context is rewritten the same way, but only when the other gem is a runtime dependency in the referencing gem's gemspec and participates ([References between gems](#references-between-gems)). Bundler has already selected the gem version, so a JS-side version adds nothing and would be a second pin that can drift. Rejected: requiring authors to maintain `version` (rejects hue today, adds a drifting pin), and copying the Gemfile.lock version (Ruby prerelease syntax breaks pnpm 10 and 11). Evidence: [Version probes](#version-probes-3-october-2026).
 - **Context metadata is committed**, not ignored, so native commands are safe to use directly ([Fresh-checkout probes](#fresh-checkout-probes-3-october-2026)).
 - **Support rule:** owner-maintained release lines only, narrowed in v1 to the lines the pilot apps run plus a CI floor ([Compatibility](#compatibility)).
-- **v1 is a time-boxed pnpm and Bun pilot**, with a kill criterion. npm and Yarn are unsupported; each would be a later adapter with its own evidence.
+- **v1 is a pnpm and Bun pilot** with a kill criterion and no time box. npm and Yarn are unsupported; each would be a later adapter with its own evidence.
 - **Four commands:** `install`, `install --frozen`, `inspect` and `gem check`. Everything else is deferred until a user needs it.
 - **Dependency URLs stay real-path.** A manager-independent URL scheme is separate work.
 - **Participation is opt-in**, by the gem author's gemspec metadata or the app's `proscenium.json`, because Rails' own gems ship manifests.
@@ -932,6 +932,7 @@ Landscape. Layer 1: Rails gems either dual-publish their JS to npm (turbo-rails/
 | 81 | Gate | CLI language: Ruby, not Go (overrides taste rows 30/53/76/79) | User override (D7) | — | CLI computes nothing after UC2 + pass 3; second Ruby boot measured ~0.3 s | Go CLI |
 | 82 | Eng pass 4 | Drop `--project` (Bundler.root); lock fd held by manager child; Windows shim/console qualification; unbundled child env; replace "any locked spec missing"; installed-CLI clean-process gate; `gem check` without a bundle | Mechanical | P1/P5 | Codex pass 4, each cited line verified | Leave |
 | 83 | Eng pass 4 | Cut `gemOverrides.<gem>.name` from v1 instead of extending cross-gem validation to overridden names | Taste | P5 | No known gem needs it; removes the bypass instead of guarding it | Keep `name`, validate the full name map |
+| 84 | Post-gate | Stage A has no time box; it ends on evidence (reverses the time box in UC1) | User decision | — | Maintainer's call after approval; the kill criterion and NO-GO rules stand | One-to-two-week time box recorded on #154 |
 
 #### CEO 0I Temporal interrogation
 
@@ -1681,3 +1682,7 @@ The user approved the plan as reviewed (D8). All three revise cycles were used (
 #### Body fold (T2), 2026-10-04
 
 Every accepted requirement above (24 CEO, 21 DX, 65 Eng, including the D7 Ruby CLI override) is folded into the body, and the trailing accepted-requirements list is gone from it; the `autoplan-accepted` blocks above stay as history. The CLI sections are rewritten for the Ruby CLI. The conformance matrix gains a Gate column (the pilot GO subset is every row gated A) and rows C49-C55; C38 is marked deferred. `bin/check-154-plan` is the Stage A entry gate: it fails on review-pipeline labels, superseded text and npm outside the unsupported-manager error, and requires one conformance table with a Gate column. Judgments the fold made where the accepted text left a gap: `proscenium.json` loses its `bridge.*` keys (the context directory is owned and fixed), `.proscenium/state.json` is dropped (no reader once engine-read state and transactional recovery left v1), C47's app-side report is dropped for the same traversal reason as the gem-side scan, the pre-adoption notice names opted-in gems, a context for an installed gem that withdrew participation is stale, and platform-variant comparison runs only where variant sources are cached.
+
+#### No time box, 2026-10-04
+
+After the fold the maintainer removed the Stage A time box (row 84). Stage A ends on evidence, not a date: the kill criterion and the NO-GO rules are unchanged, minus their deadline, and the entry gate is `bin/check-154-plan` alone. The rest of UC1 stands.
