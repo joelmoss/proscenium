@@ -28,6 +28,18 @@ describe 'an adopted app' do
     assert_includes app, REACT
   end
 
+  # C01: gems that do not participate get no context and are served in place, as before. A
+  # self-contained one works alone; one that imports an undeclared package gets the app's copy.
+  it 'serves gems that do not participate in place, with the app\'s packages' do
+    gems = %w[stage_a_assets stage_a_app_dependent].map { "node_modules/@rubygems/#{it}/index.js" }
+    (assets, dependent), = Adopted.run("[#{gems.map { build(it) }.join(', ')}]")
+
+    assert_includes assets, '/node_modules/@rubygems/stage_a_assets/util.js'
+    assert_includes dependent, '/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js'
+    assert_equal ['stage_a_widget_a'],
+                 Dir.children(File.join(Adopted::ROOT, '.proscenium/packages'))
+  end
+
   # C34
   it 'refuses to build while an install is in progress' do
     Adopted.with_file('.proscenium/installing', '1') do

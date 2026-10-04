@@ -8,4 +8,9 @@ source 'https://rubygems.org'
 gem 'proscenium', path: '../..'
 gem 'rails', '8.1.3.1'
 
-gem 'stage_a_widget_a', path: '../../test/package_manager/stage_a/gems/stage_a_widget_a'
+gems = '../../test/package_manager/stage_a/gems'
+gem 'stage_a_widget_a', path: "#{gems}/stage_a_widget_a"
+
+# Gems that do not participate (C01): one self-contained, one relying on the app's packages.
+gem 'stage_a_app_dependent', path: "#{gems}/stage_a_app_dependent"
+gem 'stage_a_assets', path: "#{gems}/stage_a_assets"
