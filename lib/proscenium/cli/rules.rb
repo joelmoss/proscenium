@@ -42,6 +42,23 @@ module Proscenium
         problems
       end
 
+      # Larger than any real package.json, small enough to read without a second thought.
+      MANIFEST_LIMIT = 1024 * 1024
+
+      # Why the package.json at `path`, in a gem rooted at `gem_root`, cannot be read safely, or
+      # nil (C29): it must be a regular file, inside the gem once links are followed, and no larger
+      # than MANIFEST_LIMIT. A FIFO or device would block or never end, and a link out of the gem
+      # would read a file the gem does not ship.
+      def manifest_file_problem(path, gem_root)
+        return 'it is not a regular file' unless File.file?(path)
+
+        real = File.realpath(path)
+        return 'it links outside the gem' unless real.start_with?("#{File.realpath(gem_root)}/")
+        return 'it is larger than 1 MB' if File.size(real) > MANIFEST_LIMIT
+
+        nil
+      end
+
       # Why `spec` for dependency `name` is refused, or nil. A gem-to-gem reference
       # (`@rubygems/<other>`) is checked against the bundle at install time, not here.
       def spec_problem(gem, name, spec)

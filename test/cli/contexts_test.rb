@@ -68,6 +68,24 @@ describe Proscenium::CLI::Contexts do
     assert_nil context(contexts(ui), 'ui')['peerDependencies']
   end
 
+  # C29: install reads a gem's package.json only if it is a regular file inside the gem.
+  it 'refuses a package.json that links outside the gem' do
+    ui = spec('ui', {})
+    outside = File.join(@dir, 'outside.json')
+    File.write(outside, '{}')
+    File.delete(File.join(ui.full_gem_path, 'package.json'))
+    begin
+      File.symlink(outside, File.join(ui.full_gem_path, 'package.json'))
+    rescue NotImplementedError, Errno::EPERM, Errno::EACCES
+      skip 'symlinks need privileges here'
+    end
+
+    result = contexts(ui)
+
+    assert_equal ['PSM-E-MANIFEST'], codes(result)
+    assert_equal 'it links outside the gem', result.problems.first.last[:cause]
+  end
+
   # C26: a gem cannot reach outside itself through file: or link:, contained or not.
   it "refuses a gem's file: and link: references, with the escape" do
     ui = spec('ui', { 'dependencies' => { 'inside' => 'file:./vendor/inside',

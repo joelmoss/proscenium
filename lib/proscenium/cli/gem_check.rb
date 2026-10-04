@@ -22,8 +22,8 @@ module Proscenium
       end
 
       def call
-        spec, files, manifest_text = @path.end_with?('.gem') ? read_archive : read_source
-        problems = check(spec, files, manifest_text)
+        spec, files, manifest_text, cause = @path.end_with?('.gem') ? read_archive : read_source
+        problems = check(spec, files, manifest_text, cause)
         problems.each { |code, args| @reporter.error(Error.new(code, **args), phase: 'gem-check') }
         if problems.empty?
           @reporter.info("#{spec.name} #{spec.version} meets the Proscenium gem contract.",
@@ -36,7 +36,8 @@ module Proscenium
 
       private
 
-      def check(spec, files, manifest_text)
+      # `cause` is why the manifest could not be read safely, if it could not (C29).
+      def check(spec, files, manifest_text, cause = nil)
         gem = spec.name
         unless spec.metadata['proscenium.dependencies'] == 'true'
           return [['PSM-E-NOT-OPTED-IN', { gem: }]]
@@ -46,6 +47,7 @@ module Proscenium
         return [['PSM-E-FRONTEND-ROOT', { gem:, root: }]] unless root
 
         manifest_path = root.empty? ? 'package.json' : File.join(root, 'package.json')
+        return [['PSM-E-MANIFEST', { gem:, path: manifest_path, cause: }]] if cause
         unless manifest_text
           return [['PSM-E-MANIFEST',
                    { gem:, path: manifest_path, cause: 'it is missing' }]]
@@ -99,27 +101,42 @@ module Proscenium
         root = frontend_root(spec) || ''
         manifest = File.join(@path, root, 'package.json')
         @source = @path
-        [spec, spec.files, File.exist?(manifest) ? File.read(manifest) : nil]
+        return [spec, spec.files, nil, nil] unless File.exist?(manifest)
+
+        cause = Rules.manifest_file_problem(manifest, @path)
+        [spec, spec.files, cause ? nil : File.read(manifest), cause]
       end
 
       # A built gem: the specification and package.json from the archive, without unpacking the
-      # frontend files.
+      # frontend files. Nothing is extracted, so no entry name can write anywhere, and the
+      # manifest entry is read only if it is a regular file within the size limit (C29).
       def read_archive
         package = Gem::Package.new(@path)
         spec = package.spec
         root = frontend_root(spec) || ''
         wanted = root.empty? ? 'package.json' : File.join(root, 'package.json')
-        manifest = nil
+        manifest = cause = nil
         File.open(@path, 'rb') do |io|
           Gem::Package::TarReader.new(io).each do |entry|
             next unless entry.full_name == 'data.tar.gz'
 
             Zlib::GzipReader.wrap(entry) do |gz|
-              Gem::Package::TarReader.new(gz).each { manifest = it.read if it.full_name == wanted }
+              Gem::Package::TarReader.new(gz).each do |file|
+                next unless file.full_name == wanted
+
+                manifest, cause = archived_manifest(file)
+              end
             end
           end
         end
-        [spec, spec.files, manifest]
+        [spec, spec.files, manifest, cause]
+      end
+
+      def archived_manifest(entry)
+        return [nil, 'it is not a regular file'] unless entry.file?
+        return [nil, 'it is larger than 1 MB'] if entry.header.size > Rules::MANIFEST_LIMIT
+
+        [entry.read, nil]
       end
 
       def source_root(root) = @source && File.join(@source, root)

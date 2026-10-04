@@ -146,6 +146,55 @@ describe Proscenium::CLI::GemCheck do
     end
   end
 
+  # C29: a package.json read safely or not at all.
+  describe 'an unsafe manifest' do
+    def manifest_message(target)
+      _, events = events(target)
+      events.find { it['code'] == 'PSM-E-MANIFEST' }&.fetch('message')
+    end
+
+    def link(target, path)
+      File.symlink(target, path)
+    rescue NotImplementedError, Errno::EPERM, Errno::EACCES
+      skip 'symlinks need privileges here'
+    end
+
+    it 'refuses one that links outside the gem' do
+      dir = gem_dir
+      outside = File.join(Dir.mktmpdir('outside').tap { @dirs << it }, 'package.json')
+      File.write(outside, '{}')
+      link(outside, File.join(dir, 'package.json'))
+
+      assert_includes manifest_message(dir), 'it links outside the gem'
+    end
+
+    it 'refuses a FIFO without blocking on it' do
+      skip 'no FIFOs on Windows' if Gem.win_platform?
+      dir = gem_dir
+      File.mkfifo(File.join(dir, 'package.json'))
+
+      assert_includes manifest_message(dir), 'it is not a regular file'
+    end
+
+    it 'refuses one larger than 1 MB' do
+      dir = gem_dir(manifest: { 'description' => 'x' * (1024 * 1024) })
+
+      assert_includes manifest_message(dir), 'it is larger than 1 MB'
+    end
+
+    it 'refuses a built gem whose package.json is a link entry' do
+      dir = gem_dir(files: %w[package.json index.js])
+      File.write(File.join(dir, 'real.json'), '{}')
+      link('real.json', File.join(dir, 'package.json'))
+      spec = Dir.chdir(dir) { Gem::Specification.load(File.join(dir, 'example.gemspec')) }
+      file = Gem::DefaultUserInteraction.use_ui(Gem::SilentUI.new) do
+        Dir.chdir(dir) { Gem::Package.build(spec) }
+      end
+
+      assert_includes manifest_message(File.join(dir, file)), 'it is not a regular file'
+    end
+  end
+
   it 'needs exactly one gemspec' do
     Dir.mktmpdir do |dir|
       status, _, err = cli('gem', 'check', dir)

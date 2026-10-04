@@ -52,7 +52,7 @@ module Proscenium
                                                 root: spec.metadata['proscenium.frontend_root'])
         end
 
-        manifest = read_manifest(gem, manifest_root) or return
+        manifest = read_manifest(gem, manifest_root, spec.full_gem_path) or return
         fatal = Rules.check(gem, manifest, root: manifest_root)
         react, fatal = fatal.partition { it.first == 'PSM-E-REACT' }
         @warnings.concat(react)
@@ -65,10 +65,13 @@ module Proscenium
                                      git_and_url: git_and_url(context))
       end
 
-      def read_manifest(gem, manifest_root)
+      def read_manifest(gem, manifest_root, gem_root)
         path = File.join(manifest_root, 'package.json')
         unless File.exist?(path)
           return problem('PSM-E-MANIFEST', gem:, path: 'package.json', cause: 'it is missing')
+        end
+        if (cause = Rules.manifest_file_problem(path, gem_root))
+          return problem('PSM-E-MANIFEST', gem:, path: 'package.json', cause:)
         end
 
         manifest = JSON.parse(File.read(path))
