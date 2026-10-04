@@ -34,7 +34,7 @@ describe 'dependency spec kinds' do
 
   # An app bundling only the fixture gem, installed as an archive, with a native workspace package
   # `packages/native` declaring the same dependencies. `source` is the gem's source directory.
-  def app(manager, source = SOURCE)
+  def app(manager, source = SOURCE, linker: 'isolated')
     app = File.join(@dir, 'app')
     cache = File.join(app, 'vendor', 'cache')
     FileUtils.mkdir_p(cache)
@@ -53,7 +53,7 @@ describe 'dependency spec kinds' do
     if manager == 'bun'
       package['workspaces'] = ['packages/*']
       package['trustedDependencies'] = []
-      File.write(File.join(app, 'bunfig.toml'), "[install]\nlinker = \"isolated\"\n")
+      File.write(File.join(app, 'bunfig.toml'), "[install]\nlinker = \"#{linker}\"\n")
     else
       line = Proscenium::CLI::Manager::CAPABILITIES.dig('managers', 'pnpm', 'lines', 0, 'ci')
       package['packageManager'] = "pnpm@#{line}"
@@ -97,6 +97,25 @@ describe 'dependency spec kinds' do
   # A tarball the registry answers 404 for, so fetching it fails at once: a network error would
   # be retried for over a minute.
   UNFETCHABLE = 'https://registry.npmjs.org/left-pad/-/left-pad-0.0.0-absent.tgz'
+
+  # C47: the app importing a package only a gem declares. Recorded per linker, not reported: a
+  # package reaches the app's own node_modules only under Bun's hoisted linker.
+  { 'pnpm' => [nil, false], 'bun isolated' => ['isolated', false],
+    'bun hoisted' => ['hoisted', true] }.each do |label, (linker, reachable)|
+    it "records whether a gem-only package reaches the app on #{label}" do
+      manager = label.split.first
+      app = linker ? app(manager, linker:) : app(manager)
+      FileUtils.rm_rf(File.join(app, 'packages')) # no native package declaring it too
+      json = JSON.parse(File.read(File.join(app, 'package.json')))
+      json['workspaces'] = json['workspaces'] - ['packages/*'] if json['workspaces']
+      File.write(File.join(app, 'package.json'), JSON.generate(json))
+      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages: []\n") if manager == 'pnpm'
+      _, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      assert_equal reachable, File.exist?(File.join(app, 'node_modules', 'clsx', 'package.json'))
+    end
+  end
 
   %w[pnpm bun].each do |manager|
     # C14: an optional dependency that cannot be fetched is left out, natively and from the
