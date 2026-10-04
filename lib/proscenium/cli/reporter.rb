@@ -27,6 +27,9 @@ module Proscenium
         end
       end
 
+      # One JSON document on stdout, for a command whose output is a report (`inspect --json`).
+      def document(hash) = @out.puts(JSON.generate(hash))
+
       # A problem that does not stop the command.
       def warning(error, phase: nil)
         if @json

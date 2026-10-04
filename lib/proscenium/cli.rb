@@ -5,6 +5,7 @@ require_relative 'cli/error'
 require_relative 'cli/reporter'
 require_relative 'cli/gem_check'
 require_relative 'cli/install'
+require_relative 'cli/inspect'
 
 autoload :OptionParser, 'optparse'
 
@@ -58,6 +59,8 @@ module Proscenium
         reporter.info(USAGE, event: 'help')
       when 'install'
         return Install.new(project_root, reporter, **install_options(args.drop(1))).call
+      when 'inspect'
+        return Inspect.new(project_root, reporter, gem: args[1]).call
       when 'gem'
         unless args[1] == 'check'
           raise Error.new('PSM-E-USAGE', detail: 'Did you mean `proscenium gem check`?')

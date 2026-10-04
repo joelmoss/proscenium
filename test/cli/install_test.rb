@@ -87,6 +87,24 @@ describe 'proscenium install' do
 
         assert_predicate status, :success?, err
         assert_includes out, "Everything is up to date for #{GEMS.size} gems."
+
+        out, err, status = proscenium(dir, 'inspect', '--json')
+        report = JSON.parse(out)
+
+        assert_predicate status, :success?, err
+        assert_equal manager, report.dig('manager', 'name')
+        assert_equal(GEMS, report['gems'].map { it['gem'] })
+        assert_equal ['current'], report['gems'].map { it['status'] }.uniq
+        hue = report['gems'].find { it['gem'] == 'stage_a_hue_shape' }
+
+        assert_match %r{\Ahttps?://|/stage_a_hue_shape}, hue['source']
+        assert_equal ['escape-string-regexp@github:sindresorhus/escape-string-regexp#ba9a447'],
+                     hue['gitAndUrl']
+
+        File.write(context(dir, 'gem_npm'), '{}')
+        out, = proscenium(dir, 'inspect', 'gem_npm')
+
+        assert_includes out, 'gem_npm 1.0.0: context stale'
       end
 
       it 'fails --frozen on a hand edit, an orphan or a missing registration, before the manager' do
