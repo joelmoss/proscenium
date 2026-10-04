@@ -14,6 +14,9 @@ importers:
       react:
         specifier: 18.3.1
         version: 18.3.1
+      sibling:
+        specifier: workspace:*
+        version: link:packages/sibling
 
   .proscenium/packages/stage_a_widget_a:
     dependencies:
@@ -32,6 +35,8 @@ importers:
       react:
         specifier: ^18.3.1
         version: 18.3.1
+
+  packages/sibling: {}
 
 packages:
 

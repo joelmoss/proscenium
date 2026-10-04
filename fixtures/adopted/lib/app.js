@@ -1,4 +1,5 @@
 import React from 'react'
 import ms from 'ms'
+import sibling from 'sibling'
 
-export { React, ms }
+export { React, ms, sibling }

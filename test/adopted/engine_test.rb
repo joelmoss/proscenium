@@ -28,6 +28,13 @@ describe 'an adopted app' do
     assert_includes app, REACT
   end
 
+  # The app's own pnpm workspace sibling keeps its link path, not its real one under packages/.
+  it "keeps the URL of the app's own workspace package" do
+    app, = Adopted.run(build('lib/app.js'))
+
+    assert_includes app, '"/node_modules/sibling/index.js"'
+  end
+
   # C01: gems that do not participate get no context and are served in place, as before. A
   # self-contained one works alone; one that imports an undeclared package gets the app's copy.
   it 'serves gems that do not participate in place, with the app\'s packages' do
