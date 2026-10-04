@@ -413,6 +413,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							if result.Path == "" {
 								return result, utils.ContextMiss(mappedGem, originalPath)
 							}
+							utils.DebugContextRoute(cfg, mappedGem, originalPath, result.Path)
 						} else {
 							// 1
 							ok := resolveWithEsbuild(resolveArgs, &result)

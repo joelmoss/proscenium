@@ -200,6 +200,8 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 			return returnResolve("", "", fmt.Errorf("%q from gem %q resolved outside the app root", filePath, mappedGem), cfg)
 		}
 
+		utils.DebugContextRoute(cfg, mappedGem, filePath, absPath)
+
 		return returnResolve(urlPath, absPath, nil, cfg)
 	}
 

@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"joelmoss/proscenium/internal/debug"
 	"joelmoss/proscenium/internal/types"
 	"path/filepath"
 	"strings"
@@ -27,6 +28,12 @@ func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir strin
 	contextDir, ok = cfg.DependencyContexts[ref.Name]
 
 	return ref.Name, contextDir, ok
+}
+
+// Logs, with cfg.Debug, a bare import resolved from a gem's context: which gem, what it imported and
+// where that went.
+func DebugContextRoute(cfg *types.ConfigT, gem string, specifier string, resolved string) {
+	debug.Debug(cfg.Debug, "DependencyContext:routed", map[string]string{"gem": gem, "specifier": specifier, "path": resolved})
 }
 
 // A bare import from a mapped gem that its context cannot resolve. An error, never an external:

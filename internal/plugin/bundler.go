@@ -348,6 +348,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 								return result, nil
 							}
+
+							if mappedGem != "" {
+								utils.DebugContextRoute(cfg, mappedGem, args.Path, result.Path)
+							}
 						}
 					}
 
