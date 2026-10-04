@@ -35,6 +35,9 @@ describe 'proscenium install' do
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
+  # Each lock's recorded integrity for ms 2.1.3, up to the hash itself.
+  TAMPER = { 'pnpm' => /(ms@2\.1\.3:\n\s+resolution: \{integrity: )sha512-[^}]+/,
+             'bun' => /("ms@2\.1\.3", "", \{\}, ")sha512-[^"]+/ }.freeze
   BUNDLE = InstallFixture::DIR
 
   before do
@@ -216,6 +219,31 @@ describe 'proscenium install' do
         end
 
         assert_equal %w[2.1.2 2.1.2], versions
+      end
+
+      # C30: the manager's own integrity check still guards every package a context installs. A
+      # lock whose recorded hash for ms no longer matches the package fails a frozen install.
+      it 'fails a frozen install whose lock no longer matches a package (exit 6)' do
+        dir = app(manager)
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        lock = File.join(dir, manager == 'pnpm' ? 'pnpm-lock.yaml' : 'bun.lock')
+        text = File.read(lock)
+        tampered = text.sub(TAMPER.fetch(manager)) { "#{Regexp.last_match(1)}sha512-AAAA" }
+
+        refute_equal text, tampered, 'the lock had no integrity for ms to tamper with'
+        File.write(lock, tampered)
+        FileUtils.rm_rf(Dir[File.join(dir, '{,.proscenium/packages/*/}node_modules')])
+        # A cold cache, so the package is fetched and checked. Measured: Bun with a warm cache
+        # reuses a cached package without checking it against the lock, natively too.
+        cache = Dir.mktmpdir('cold')
+        cold = { 'BUN_INSTALL_CACHE_DIR' => cache }
+        _, err, status = proscenium(dir, 'install', '--frozen', manager:, env: cold)
+
+        assert_equal 6, status.exitstatus, err
+      ensure
+        FileUtils.rm_rf(cache) if cache
       end
 
       # C32: a deploy without the development group trusts that gem's committed context, leaves
