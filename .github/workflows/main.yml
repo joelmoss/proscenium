@@ -207,6 +207,55 @@ jobs:
       - run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/
         shell: bash
 
+  # #154's C48: the first run as a new user meets it, from `rails new -j bun` on. Generates an app
+  # and installs its gems from the network, so it runs on its own.
+  first-run:
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      RAILS_ENV: test
+      GOWORK: off
+      FIRST_RUN: 1
+    steps:
+      - name: Windows checkout needs symlinks and long paths
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+          git config --global core.autocrlf false
+
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          bundler-cache: true
+
+      - name: Bun version from the capability table
+        id: caps
+        shell: bash
+        run: echo "bun=$(jq -r '.managers.bun.lines[0].ci' lib/proscenium/cli/capabilities.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ steps.caps.outputs.bun }}
+
+      - if: runner.os != 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os == 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
+      - run: bin/test -v test/first_run_test.rb
+        shell: bash
+
   bun-test:
     strategy:
       fail-fast: false
