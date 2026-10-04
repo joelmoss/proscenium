@@ -35,6 +35,8 @@ describe 'proscenium install' do
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
+  # C40: loose until CI measures every host, then tightened to the slowest plus headroom.
+  OVERHEAD_BUDGET_MS = 3000
   # Each lock's recorded integrity for ms 2.1.3, up to the hash itself.
   TAMPER = { 'pnpm' => /(ms@2\.1\.3:\n\s+resolution: \{integrity: )sha512-[^}]+/,
              'bun' => /("ms@2\.1\.3", "", \{\}, ")sha512-[^"]+/ }.freeze
@@ -262,6 +264,30 @@ describe 'proscenium install' do
         assert_equal native ? 0 : 6, status.exitstatus, err
       ensure
         FileUtils.rm_rf(cache) if cache
+      end
+
+      # C40: what Proscenium adds to a native install, split by phase, and no frontend file
+      # copied into a context. Printed on every host; the budget is the calibrated ceiling on
+      # Proscenium's own share of a warm, no-op frozen install (everything but the manager's run).
+      it "keeps its own share of a frozen install within #{OVERHEAD_BUDGET_MS} ms" do
+        dir = app(manager)
+        proscenium(dir, 'install', manager:)
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        out, err, status = proscenium(dir, 'install', '--frozen', '--json', manager:)
+        wall = ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+
+        assert_predicate status, :success?, err
+        timings = out.lines.map { JSON.parse(it) }.find { it['event'] == 'frozen' }
+                     .dig('details', 'timings')
+        overhead = wall - timings.fetch('manager')
+        warn "C40 #{RUBY_PLATFORM} #{manager}: wall #{wall} ms, Proscenium #{overhead} ms, " \
+             "phases #{timings}"
+
+        assert_operator overhead, :<=, OVERHEAD_BUDGET_MS
+        copied = Dir.glob('*/**/*', base: File.join(dir, '.proscenium/packages'))
+                    .reject { it.include?('/node_modules') || File.basename(it) == 'package.json' }
+
+        assert_empty copied, 'a context holds only its package.json'
       end
 
       # C32: a deploy without the development group trusts that gem's committed context, leaves

@@ -3,6 +3,9 @@
 
 # Run as `bundle exec proscenium`. Loads the CLI alone: never `proscenium` itself, Rails, FFI or
 # the engine library (see lib/proscenium/cli.rb).
+# When the CLI started loading, for the timings install reports (C40).
+PROSCENIUM_STARTED = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
 require 'proscenium/cli'
 
 exit Proscenium::CLI.start(ARGV)

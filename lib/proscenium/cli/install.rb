@@ -28,9 +28,15 @@ module Proscenium
       end
 
       def call
-        @manager = Manager.select(@root, requested: @options[:manager])
-        @manager.check_version!(experimental: @options[:experimental], frozen: frozen?)
-        @manager.check_project!
+        @timings = {}
+        if defined?(PROSCENIUM_STARTED)
+          @timings[:load] = ms(Process.clock_gettime(Process::CLOCK_MONOTONIC) - PROSCENIUM_STARTED)
+        end
+        timed(:manager_check) do
+          @manager = Manager.select(@root, requested: @options[:manager])
+          @manager.check_version!(experimental: @options[:experimental], frozen: frozen?)
+          @manager.check_project!
+        end
         if (warning = @manager.end_of_life_warning)
           @reporter.warning(warning, phase: 'manager')
         end
@@ -60,11 +66,24 @@ module Proscenium
 
       def frozen? = @options[:frozen]
 
+      # Milliseconds each phase took, reported with the result so an install's cost can be split
+      # between Proscenium and the manager (C40).
+      def timed(phase)
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        yield
+      ensure
+        @timings[phase] = ms(Process.clock_gettime(Process::CLOCK_MONOTONIC) - started)
+      end
+
+      def ms(seconds) = (seconds * 1000).round
+
       def read_bundle
         overrides = BundledGems.overrides(@root)
-        specs = BundledGems.installed_specs
+        specs = timed(:bundle) { BundledGems.installed_specs }
         @excluded = BundledGems.excluded_names(specs)
-        @contexts = Contexts.new(@root, BundledGems.participating(specs, overrides:))
+        @contexts = timed(:projection) do
+          Contexts.new(@root, BundledGems.participating(specs, overrides:))
+        end
         @committed = Contexts.committed(@root)
         check_owned_directory
         report_problems
@@ -153,10 +172,10 @@ module Proscenium
           raise Error.new('PSM-E-DRIFT', count: drift.size, list:)
         end
 
-        run_manager
-        Verify.new(@root, @manager, @contexts.contexts.keys).call
+        timed(:manager) { run_manager }
+        timed(:verify) { Verify.new(@root, @manager, @contexts.contexts.keys).call }
         lines = ["Everything is up to date for #{@contexts.contexts.size} gems.", *kept]
-        @reporter.info(lines.join("\n"), event: 'frozen')
+        @reporter.info(lines.join("\n"), event: 'frozen', timings: @timings)
       end
 
       # A line for each committed context kept for a gem that is not installed.
@@ -192,8 +211,8 @@ module Proscenium
           @reporter.info('Finishing an interrupted install.', event: 'recover') if lock.interrupted?
           lock.mark!
           @written = register + write_contexts + remove_orphans
-          run_manager(lock)
-          Verify.new(@root, @manager, @contexts.contexts.keys).call
+          timed(:manager) { run_manager(lock) }
+          timed(:verify) { Verify.new(@root, @manager, @contexts.contexts.keys).call }
           lock.unmark!
         end
         summarize
@@ -284,7 +303,8 @@ module Proscenium
         commit = @written + [lockfile]
         lines << "Commit: #{commit.uniq.join(', ')}"
         @reporter.info(lines.join("\n"), event: 'installed', manager: @manager.name,
-                                         gems: contexts.map(&:gem), commit: commit.uniq)
+                                         gems: contexts.map(&:gem), commit: commit.uniq,
+                                         timings: @timings)
       end
     end
   end
