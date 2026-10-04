@@ -152,7 +152,7 @@ describe 'project lock and runner' do
     # The console calls the harness and the Ctrl-C helper make, through ffi, which Proscenium
     # already depends on: fiddle stopped being a default gem in Ruby 4.0, so a bundle cannot load
     # it there.
-    KERNEL32 = <<~RUBY.freeze
+    KERNEL32 = <<~RUBY
       require 'ffi'
       module Kernel32
         extend FFI::Library

@@ -56,8 +56,7 @@ describe 'dependency spec kinds' do
       package['trustedDependencies'] = []
       File.write(File.join(app, 'bunfig.toml'), "[install]\nlinker = \"#{linker}\"\n")
     else
-      line = Proscenium::CLI::Manager::CAPABILITIES.dig('managers', 'pnpm', 'lines', 0, 'ci')
-      package['packageManager'] = "pnpm@#{line}"
+      package['packageManager'] = "pnpm@#{CLIHelper.pnpm_version}"
       File.write(File.join(app, 'pnpm-workspace.yaml'), "packages:\n  - packages/*\n")
     end
     File.write(File.join(app, 'package.json'), JSON.pretty_generate(package))

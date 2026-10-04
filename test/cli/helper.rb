@@ -9,6 +9,14 @@ require 'stringio'
 require 'proscenium/cli'
 
 module CLIHelper
+  # The pnpm an end-to-end fixture app pins in packageManager: the capability table's CI floor,
+  # or PROSCENIUM_PNPM, which the nightly canary sets to a line's newest patch.
+  def self.pnpm_version
+    ENV.fetch('PROSCENIUM_PNPM') do
+      Proscenium::CLI::Manager::CAPABILITIES.dig('managers', 'pnpm', 'lines', 0, 'ci')
+    end
+  end
+
   # Runs the CLI in process and returns its exit status, stdout and stderr.
   def cli(*argv)
     out = StringIO.new
