@@ -18,6 +18,22 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 
+	// The keys Ruby's Proscenium::ContextMap sends (#154): a missed rename would leave the map empty
+	// and every gem silently resolving from the app's packages.
+	t.Run("parses the dependency context map", func(t *testing.T) {
+		cfg, err := types.NewConfig([]byte(`{"DependencyContexts": {"hue": "/app/.proscenium/packages/hue"},
+			"AppLocalPackages": ["pnpm-link"]}`))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if cfg.DependencyContexts["hue"] != "/app/.proscenium/packages/hue" {
+			t.Errorf("expected the context for hue, got %+v", cfg.DependencyContexts)
+		}
+		if len(cfg.AppLocalPackages) != 1 || cfg.AppLocalPackages[0] != "pnpm-link" {
+			t.Errorf("expected AppLocalPackages [pnpm-link], got %v", cfg.AppLocalPackages)
+		}
+	})
+
 	t.Run("parses provided fields", func(t *testing.T) {
 		data, _ := json.Marshal(map[string]any{
 			"RootPath":    "/some/path",

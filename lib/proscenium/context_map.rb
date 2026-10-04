@@ -1,0 +1,62 @@
+# frozen_string_literal: true
+
+require 'json'
+require_relative 'bundled_gems'
+
+module Proscenium
+  # What the engine passes Go about gem dependency contexts (#154): which gems resolve their bare
+  # imports from `.proscenium/packages/<gem>/`, and which of the app's own packages keep their link
+  # paths. Built from committed files and Bundler only. Like BundledGems, it loads nothing the
+  # `proscenium` CLI may not.
+  module ContextMap
+    CONTEXTS = File.join('.proscenium', 'packages')
+    REGISTRATION = '.proscenium/packages/*'
+    LOCAL_SPECS = %w[link: file: workspace: portal:].freeze
+
+    module_function
+
+    # The config keys Go reads, for the app at `root`. Read once per process and root.
+    def config(root)
+      @config ||= {}
+      @config[root] ||= { DependencyContexts: contexts(root),
+                          AppLocalPackages: local_packages(root) }.freeze
+    end
+
+    # Whether the app at `root` adopted gem dependency contexts: pnpm's workspace file registers
+    # them, or package.json does in a Bun app. Yarn and npm apps never have.
+    def adopted?(root)
+      registers?(root, 'pnpm-workspace.yaml') ||
+        (File.exist?(File.join(root, 'bun.lock')) && registers?(root, 'package.json'))
+    end
+
+    def registers?(root, file)
+      path = File.join(root, file)
+      File.exist?(path) && File.read(path).include?(REGISTRATION)
+    end
+
+    # Gem name => absolute context directory for each participating gem, when the app at `root`
+    # adopted dependency contexts; empty before. A gem whose context is missing is mapped all the
+    # same: its imports then fail by name rather than fall back to the app's packages.
+    def contexts(root, specs = BundledGems.installed_specs)
+      return {} unless adopted?(root)
+
+      BundledGems.participating(specs, overrides: BundledGems.overrides(root)).keys.to_h do |gem|
+        [gem, File.join(root, CONTEXTS, gem)]
+      end
+    end
+
+    # The names of the app's own `link:`, `file:` and workspace dependencies. They keep their link
+    # paths once dependency contexts make other packages real-path.
+    def local_packages(root)
+      path = File.join(root, 'package.json')
+      return [] unless File.exist?(path)
+
+      package = JSON.parse(File.read(path))
+      %w[dependencies devDependencies optionalDependencies].flat_map do |field|
+        (package[field] || {}).select { |_, spec| spec.to_s.start_with?(*LOCAL_SPECS) }.keys
+      end.uniq.sort
+    rescue JSON::ParserError
+      []
+    end
+  end
+end

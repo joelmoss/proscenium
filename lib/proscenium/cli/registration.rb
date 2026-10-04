@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
+require_relative '../context_map'
 
 module Proscenium
   module CLI
@@ -9,7 +10,7 @@ module Proscenium
     # file's other settings, order and comments survive; each is computed without writing, so
     # `install` can print it as a diff first.
     module Registration
-      PATTERN = '.proscenium/packages/*'
+      PATTERN = ContextMap::REGISTRATION
       IGNORES = ['.proscenium/*', '!.proscenium/packages/',
                  '.proscenium/packages/*/node_modules/'].freeze
 

@@ -208,8 +208,9 @@ module Proscenium
     # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
     # any it does not know.
     def initialize(root: nil, **overrides)
+      root = (root || Rails.root).to_s
       config_hash = {
-        RootPath: (root || Rails.root).to_s,
+        RootPath: root,
         OutputDir: "public#{Proscenium.config.output_dir}",
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
@@ -220,7 +221,8 @@ module Proscenium
         Aliases: Proscenium.config.aliases,
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
-        Debug: Proscenium.config.debug
+        Debug: Proscenium.config.debug,
+        **Proscenium::ContextMap.config(root)
       }.merge(overrides)
 
       @request_config = self.class.request_config_pointer(config_hash)

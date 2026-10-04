@@ -37,6 +37,7 @@ module Proscenium
   autoload :Importer
   autoload :Resolver
   autoload :BundledGems
+  autoload :ContextMap
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)
