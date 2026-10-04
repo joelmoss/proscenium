@@ -56,10 +56,12 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
                              'dependencies' => { name => spec }))
     package = { 'name' => 'app', 'private' => true }
     if manager == 'pnpm'
-      # A Git package is allowed by its full specifier, as pnpm's own error message says.
-      allow = approve ? "onlyBuiltDependencies:\n  - \"#{name}@#{spec}\"\n" : ''
-      File.write(File.join(app, 'pnpm-workspace.yaml'),
-                 "packages:\n  - .proscenium/packages/*\n#{allow}")
+      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages:\n  - .proscenium/packages/*\n")
+      # No side-effects cache, so one install's build cannot stand in for the next one's. The
+      # control approves with pnpm 10's allow-all switch: how one Git package is named in
+      # onlyBuiltDependencies changed between 10.33 and 10.34.
+      allow = approve ? "dangerously-allow-all-builds=true\n" : ''
+      File.write(File.join(app, '.npmrc'), "side-effects-cache=false\n#{allow}")
     else
       package['workspaces'] = ['.proscenium/packages/*']
       package['trustedDependencies'] = approve ? [name] : []
@@ -72,6 +74,8 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
   end
 
   # The markers a package's scripts wrote.
+  def pnpm_major = Open3.capture2('pnpm', '--version').first.to_i
+
   def ran(name) = Dir.exist?(markers) ? Dir.children(markers).grep(/\A#{name}-/).sort : []
 
   it 'runs no prepare, install or postinstall script on pnpm, and fails the install on prepare' do
@@ -90,7 +94,9 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
     assert_empty ran('pnpm-prepare')
     assert_empty ran('pnpm-install')
 
-    # The control: once the app approves the package, its scripts do run.
+    # The control: once the app approves the package, its scripts do run. pnpm 11 and later
+    # approve differently; CI pins pnpm 10.
+    skip 'the approval control needs pnpm 10' unless pnpm_major == 10
     install('pnpm', 'pnpm-install', without, approve: true)
 
     assert_equal %w[pnpm-install-install pnpm-install-postinstall], ran('pnpm-install')
