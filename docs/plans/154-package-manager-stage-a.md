@@ -318,3 +318,21 @@ context referenced from the app and not, with the same result.
 - **The real apps barely exercise this.** london and platform serve React outside npm in bundled
   builds, platform's overrides pin it for every package, and codaset has no React.
 
+
+## Git dependency scripts (C55, 4 October 2026)
+
+A context depending on a Git package whose `prepare`, `install` and `postinstall` scripts write
+marker files, served from a local bare repository over `git+file://`.
+
+| Manager | With `prepare` | `install` and `postinstall` only | Scripts run |
+|---|---|---|---|
+| pnpm 10.33.1, 10.34.4 | install fails: `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED` | exit 0, "Ignored build scripts" | none |
+| pnpm 11.28.4, 12.9.1 | install fails (prepare refused) | install fails: `ERR_PNPM_IGNORED_BUILDS` | none |
+| Bun 1.4.0, 1.4.2 (empty `trustedDependencies`) | exit 0, nothing reported | exit 0, nothing reported | none |
+
+No line runs a gem-introduced Git dependency's scripts without approval, so C55's Stage A part
+passes. Two consequences for Stage B: on pnpm a Git dependency that needs `prepare` stops the
+install until the app allows it by its full specifier (`<name>@git+…#<sha>` in
+`onlyBuiltDependencies`), so the CLI's error should name the gem that introduced it; and Bun skips
+the scripts silently, so the CLI should list them itself. `git_scripts_test.rb` checks this in CI,
+with the app's approval as the control that the scripts would otherwise run.
