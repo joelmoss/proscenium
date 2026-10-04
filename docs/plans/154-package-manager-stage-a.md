@@ -141,6 +141,37 @@ why it runs only with `STAGE_A=1`.
 - Whether london, platform or codaset nest a Rails app in an enclosing JS workspace, and the hosts
   each develops and deploys on.
 
+## platform on pnpm (4 October 2026)
+
+The london leg repeated for platform, which also uses hue (77 entries: platform precompiles one
+fewer hue file), with `leg.rb` and a local CONFIG for platform's settings.
+
+| | |
+|---|---|
+| pnpm | 10.34.4, selected by platform's `packageManager` field |
+| platform | e9754d69b |
+| hue | the same checkout as london (7400c7a9), through `BUNDLE_LOCAL__HUE` |
+
+| Cell | Bundled, matching base | Unbundled, matching base |
+|---|---|---|
+| unref, seam off | 68 of 77 | 77 of 77 |
+| unref, seam on | 76 of 77 | 73 of 77 |
+| ref, seam off | 77 of 77 | 77 of 77 |
+| ref, seam on | 76 of 77 | 73 of 77 |
+
+- **Same shape as london.** With the seam, every bundled entry but the test file matches, with or
+  without an app edge; without the seam an unreferenced context loses modules, and an app edge
+  alone works with today's engine.
+- **platform already has a pnpm-workspace.yaml**, holding a `minimumReleaseAge` policy and
+  comments. Registration has to splice the context pattern into it as text, as the plan says;
+  `context.rb` does, and the install ran under that age gate.
+- **An app override decides React, for the context too (C16).** hue declares
+  `react: ^18.3.1` as a plain dependency, but platform's package.json overrides React for every
+  package, and pnpm links the context to the app's override version. The three unbundled
+  differences are exactly that: base resolved React from hue's checkout `node_modules`, the seam
+  from the app's overridden copy, so unbundled hue now shares the app's React where base did not.
+  Bundled, React is an external in platform as in london.
+
 ## codaset on Bun (4 October 2026)
 
 **Question.** Can proscenium-ui get its dependencies from a context on Bun, what does registering
@@ -259,3 +290,31 @@ bun.lock, bunfig.toml and the context byte-identical. The harness runs codaset's
 - Bun 1.4.0, the plan's floor; only 1.4.2 ran, on Node 26.
 - codaset's unbundled pages in a browser (C51's other half).
 - The peer probe (C12) on Bun.
+
+## Peers (C12, 4 October 2026)
+
+`ruby test/package_manager/stage_a/peers.rb OUT`, with `PNPM` and `BUN` naming the manager
+command. A synthetic app pins `react` 18.2.0, the latest 18.x being 18.3.1; one context declares
+`react: ^18.0.0` as a peer. Each cell installs, bumps the app to 18.3.1 and installs again, and on
+pnpm then runs `pnpm dedupe`; each time it checks, with Node's `require.resolve` from the app root
+and from the context, whether both reach one real React file. Every cell was run with the
+context referenced from the app and not, with the same result.
+
+| Manager | Setting | At the 18.2.0 pin | After the bump | After `pnpm dedupe` |
+|---|---|---|---|---|
+| pnpm 10.33.1, 10.34.4 | default (`auto-install-peers=true`) | shared | **split**: context stays on 18.2.0 | shared |
+| pnpm 10.33.1, 10.34.4 | `auto-install-peers=false` | shared | shared | shared |
+| pnpm 10.33.1, 10.34.4 | `resolve-peers-from-workspace-root=false` | shared | **split** | shared |
+| pnpm 11.28.4, 12.9.1 | all three | shared | shared | shared |
+| Bun 1.4.0, 1.4.2 | hoisted, isolated | shared | shared | n/a |
+
+- **C12 is not NO-GO.** The non-latest pin is shared everywhere. The only split is pnpm 10 after
+  the app bumps its React, with default settings, which is the review probe's finding repeated on
+  both lines the apps use. A native setting prevents it (`auto-install-peers=false`), a native
+  command repairs it (`pnpm dedupe`), and pnpm 11 and 12 do not split at all.
+- **What the CLI does about the split is a Stage B decision:** the plan's peer-sharing check
+  (exit 5 naming the package) catches it; whether `install` should also run `pnpm dedupe` on
+  pnpm 10, or tell the user to, is open.
+- **The real apps barely exercise this.** london and platform serve React outside npm in bundled
+  builds, platform's overrides pin it for every package, and codaset has no React.
+
