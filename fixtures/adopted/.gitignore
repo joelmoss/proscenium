@@ -7,3 +7,4 @@
 .proscenium/*
 !.proscenium/packages/
 .proscenium/packages/*/node_modules/
+/vendor/cache/

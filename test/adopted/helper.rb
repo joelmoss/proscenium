@@ -4,6 +4,7 @@ require_relative '../cli/helper'
 require 'json'
 require 'open3'
 require 'rbconfig'
+require_relative '../package_manager/stage_a/bundle'
 
 # fixtures/adopted, an app that has adopted gem dependency contexts (#154, Stage C), driven as a
 # subprocess: its own Gemfile sets Bundler.root, which the engine reads contexts from, and this
@@ -24,9 +25,15 @@ module Adopted
   end
 
   # Installs the fixture's gems and runs a frozen native install, once per process: a fresh
-  # checkout of an adopted app needs nothing else (C45).
+  # checkout of an adopted app needs nothing else (C45). stage_a_widget_b is an archive gem,
+  # built into vendor/cache first, as a registry would serve it.
   def setup!
     @setup ||= begin
+      cache = File.join(ROOT, 'vendor', 'cache')
+      unless File.exist?(File.join(cache, 'stage_a_widget_b-1.0.0.gem'))
+        FileUtils.mkdir_p(cache)
+        StageA::Bundle.build(File.join(StageA::Bundle::GEMS, 'stage_a_widget_b'), cache)
+      end
       sh('bundle', 'install', '--local', '--quiet')
       sh('pnpm', 'install', '--frozen-lockfile')
       true

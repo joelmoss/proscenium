@@ -36,8 +36,22 @@ describe 'an adopted app' do
 
     assert_includes assets, '/node_modules/@rubygems/stage_a_assets/util.js'
     assert_includes dependent, '/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js'
-    assert_equal ['stage_a_widget_a'],
-                 Dir.children(File.join(Adopted::ROOT, '.proscenium/packages'))
+    assert_equal %w[stage_a_widget_a stage_a_widget_b],
+                 Dir.children(File.join(Adopted::ROOT, '.proscenium/packages')).sort
+  end
+
+  # C03: an archive gem, installed outside the app like any registry gem, keeps the same URL as a
+  # path gem, and its dependencies come from its context.
+  it 'serves an installed archive gem at its usual URL, from its installed copy' do
+    (root, url, code), = Adopted.run(
+      "gem = 'stage_a_widget_b'; root = Proscenium::BundledGems.paths[gem]; " \
+      "[root, Proscenium::Resolver.resolve(File.join(root, 'index.js')), " \
+      "#{build('node_modules/@rubygems/stage_a_widget_b/index.js')}]"
+    )
+
+    refute root.start_with?(File.expand_path('../..', __dir__)), 'installed, not the source tree'
+    assert_equal '/node_modules/@rubygems/stage_a_widget_b/index.js', url
+    assert_includes code, '/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js'
   end
 
   # C34
@@ -73,7 +87,7 @@ describe 'an adopted app' do
       widget, log = Adopted.run(build(WIDGET))
 
       refute_includes widget, 'ms@2.0.0'
-      assert_includes log, 'stage_a_widget_a opt in to installing their JavaScript dependencies'
+      assert_includes log, 'stage_a_widget_a, stage_a_widget_b opt in to installing their JavaScript'
     end
   end
 end
