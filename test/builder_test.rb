@@ -31,6 +31,45 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
     end
   end
 
+  # PROSCENIUM_STALE_CONTEXT=warn, for an incident: stale contexts are logged once, not raised.
+  describe 'with stale contexts' do
+    before do
+      Proscenium::StaleContexts.singleton_class.alias_method(:real_message, :message)
+      Proscenium::StaleContexts.define_singleton_method(:message) { |*| 'contexts are stale' }
+    end
+
+    after do
+      Proscenium::StaleContexts.singleton_class.alias_method(:message, :real_message)
+      ENV.delete('PROSCENIUM_STALE_CONTEXT')
+    end
+
+    it 'refuses to build' do
+      error = assert_raises(Proscenium::Builder::BuildError) do
+        subject.build_to_string('lib/foo.js')
+      end
+
+      assert_includes error.message, 'contexts are stale'
+    end
+
+    it 'logs once and builds with PROSCENIUM_STALE_CONTEXT=warn' do
+      ENV['PROSCENIUM_STALE_CONTEXT'] = 'warn'
+      logged = []
+      logger = Rails.logger
+      Rails.logger = Logger.new(nil).tap do |l|
+        l.define_singleton_method(:warn) do |m|
+          logged << m
+        end
+      end
+      subject.instance_variable_set(:@warned, nil)
+
+      2.times { subject.build_to_string('lib/foo.js') }
+
+      assert_equal ['[Proscenium] contexts are stale'], logged
+    ensure
+      Rails.logger = logger
+    end
+  end
+
   describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
       result = subject.build_to_string('lib/env/env.js')
