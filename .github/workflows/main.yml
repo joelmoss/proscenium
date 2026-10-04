@@ -145,16 +145,28 @@ jobs:
       - run: bin/test
         shell: bash
 
-  # The CI halves of #154's Stage A legs: the fixture gems get their dependencies from
-  # hand-written contexts through pnpm (london's line) and Bun. One host; it reaches npm and
-  # GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
+  # #154's end-to-end suites against real managers: the Stage A legs, `proscenium install` and the
+  # adopted app. Stage D qualification runs them on every host the gem ships for. They reach npm
+  # and GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
   stage-a:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     env:
       RAILS_ENV: test
       GOWORK: off
       STAGE_A: 1
     steps:
+      # See the note in go-test: the fixture symlinks do not survive a default Windows checkout.
+      - name: Windows checkout needs symlinks and long paths
+        if: runner.os == 'Windows'
+        run: |
+          git config --global core.symlinks true
+          git config --global core.longpaths true
+          git config --global core.autocrlf false
+
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
@@ -184,8 +196,12 @@ jobs:
         with:
           bun-version: ${{ steps.caps.outputs.bun }}
 
-      - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os != 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
+      - if: runner.os == 'Windows'
+        run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
       - run: bin/test test/package_manager/stage_a/ test/cli/install_test.rb test/adopted/
+        shell: bash
 
   bun-test:
     strategy:
