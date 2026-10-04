@@ -35,8 +35,9 @@ describe 'proscenium install' do
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
-  # C40: loose until CI measures every host, then tightened to the slowest plus headroom.
-  OVERHEAD_BUDGET_MS = 3000
+  # C40: Proscenium's own share of a warm no-op frozen install, measured on CI 2026-10-04: Linux
+  # pnpm 741 ms / Bun 245, macOS 846 / 281, Windows 1385 / 609. The slowest plus headroom.
+  OVERHEAD_BUDGET_MS = 2000
   # Each lock's recorded integrity for ms 2.1.3, up to the hash itself.
   TAMPER = { 'pnpm' => /(ms@2\.1\.3:\n\s+resolution: \{integrity: )sha512-[^}]+/,
              'bun' => /("ms@2\.1\.3", "", \{\}, ")sha512-[^"]+/ }.freeze
