@@ -131,6 +131,21 @@ describe Proscenium::CLI::Manager do
       end
     end
 
+    # C53: on Windows pnpm and Bun install as `.cmd` shims, which only PATHEXT names.
+    it 'finds a .cmd shim through PATHEXT' do
+      path = ENV.fetch('PATH', nil)
+      pathext = ENV.fetch('PATHEXT', nil)
+      write('bin/pnpm.cmd', "@echo off\r\n")
+      File.chmod(0o755, File.join(@dir, 'bin/pnpm.cmd'))
+      ENV['PATH'] = File.join(@dir, 'bin')
+      ENV['PATHEXT'] = '.COM;.EXE;.BAT;.CMD'
+
+      assert_equal File.join(@dir, 'bin', 'pnpm.cmd'), M.which('pnpm')
+    ensure
+      ENV['PATH'] = path
+      ENV['PATHEXT'] = pathext
+    end
+
     it 'says when the manager is not installed' do
       path = ENV.fetch('PATH', nil)
       ENV['PATH'] = @dir

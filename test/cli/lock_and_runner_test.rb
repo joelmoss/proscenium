@@ -103,4 +103,92 @@ describe 'project lock and runner' do
     assert_equal 'PSM-E-INTERRUPTED', manager.value.code
     Lock.new(@root).synchronize('after') { pass }
   end
+
+  # C53 on Windows, qualified on windows-latest rather than assumed from POSIX behaviour.
+  describe 'on Windows' do
+    before { skip 'Windows only' unless Gem.win_platform? }
+
+    LIB = File.expand_path('../../lib', __dir__)
+
+    # An install as the CLI runs one: it takes the project lock and runs a manager that records
+    # its pid in `started`, then sleeps. A Proscenium error becomes its exit status.
+    HARNESS = <<~RUBY
+      require 'rbconfig'
+      require 'proscenium/cli/error'
+      require 'proscenium/cli/project_lock'
+      require 'proscenium/cli/runner'
+      root, started = ARGV
+      begin
+        Proscenium::CLI::ProjectLock.new(root).synchronize('harness') do |lock|
+          code = "File.write(\#{started.dump}, Process.pid.to_s); sleep 30"
+          Proscenium::CLI::Runner.run(RbConfig.ruby, ['-e', code], root:, lock_io: lock.io)
+        end
+      rescue Proscenium::CLI::Error => e
+        warn e.code
+        exit e.exit_status
+      end
+    RUBY
+
+    def install(**)
+      @started = File.join(@root, 'started')
+      @log = File.join(@root, 'harness.log')
+      pid = Process.spawn(RbConfig.ruby, '-I', LIB, '-e', HARNESS, @root, @started, err: @log, **)
+      deadline = Time.now + 30
+      sleep 0.05 until (File.exist?(@started) && !File.empty?(@started)) || Time.now > deadline
+      [pid, File.read(@started).to_i]
+    end
+
+    def alive?(pid)
+      Process.kill(0, pid)
+      true
+    rescue Errno::ESRCH, Errno::EPERM
+      false
+    end
+
+    def exited?(pid, seconds = 10)
+      deadline = Time.now + seconds
+      sleep 0.05 while alive?(pid) && Time.now < deadline
+      !alive?(pid)
+    end
+
+    # pnpm and Bun are `.cmd` shims, which cmd.exe runs, re-parsing every argument.
+    it 'passes the arguments install builds through a .cmd shim intact' do
+      shim = File.join(@root, 'manager.cmd')
+      File.write(shim, "@echo off\r\n\"%SHIM_RUBY%\" -e " \
+                       "\"File.write(ARGV.shift, ARGV.join(10.chr))\" \"%~dp0args.txt\" %*\r\n")
+      ENV['SHIM_RUBY'] = RbConfig.ruby
+      args = ['install', '--frozen-lockfile', '--prod', '--offline',
+              '--filter=!@rubygems/gem_npm', '--store-dir=C:\\a b\\store']
+
+      Runner.run(shim, args, root: @root)
+
+      assert_equal args, File.read(File.join(@root, 'args.txt')).split("\n")
+    ensure
+      ENV.delete('SHIM_RUBY')
+    end
+
+    it 'stops the manager on Ctrl-C and reports the install interrupted (exit 8)' do
+      pid, manager = install(new_pgroup: true)
+      Process.kill(:INT, pid)
+      _, status = Process.wait2(pid)
+
+      assert_equal 8, status.exitstatus, File.read(@log)
+      assert exited?(manager), 'the manager outlived the interrupted install'
+    end
+
+    # C35: a manager that outlives a killed install keeps the project locked until it exits.
+    it 'keeps the lock while a manager outlives a killed install' do
+      pid, manager = install
+      Process.kill(:KILL, pid)
+      Process.wait(pid)
+
+      busy = assert_raises(Proscenium::CLI::Error) { Lock.new(@root).synchronize('retry') { flunk } }
+
+      assert_equal 'PSM-E-BUSY', busy.code
+    ensure
+      Process.kill(:KILL, manager) if manager && alive?(manager)
+      exited?(manager) if manager
+      Lock.new(@root).synchronize('after') { pass } if manager
+    end
+  end
 end
