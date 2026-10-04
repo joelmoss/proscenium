@@ -116,12 +116,14 @@ externals (the script's header gives the format); the apps' configuration stays 
 repository. It writes only under the output directory, which it refuses to delete unless it made
 it. The CI half of the london leg is `hue_shape_test.rb`: the same check for `stage_a_hue_shape`,
 through `Proscenium::Builder`, run by the `stage-a` CI job and locally with
-`STAGE_A=1 bin/test test/package_manager/stage_a/`. Both write contexts with `context.rb`. The
+`STAGE_A=1 bin/test test/package_manager/stage_a/`. The codaset leg's CI half is `bun_test.rb`:
+where Bun's hoisted and isolated linkers put the widgets' conflicting `ms` copies, what each widget
+then builds against, and that an explicit `trustedDependencies` blocks a gem-introduced package
+Bun trusts by default. They write contexts with `context.rb`. The
 verdicts are in `docs/plans/154-package-manager-stage-a.md`.
 
 ## Not yet built
 
-- codaset on Bun (step 3).
 - The contexts for these fixtures, the hermetic registry and committed tarballs, and
   proscenium-ui at a pinned revision.
 - The browser identity probe and the `Builder`/daemon wiring above (step 4).
