@@ -46,7 +46,8 @@ describe Proscenium::CLI::Error do
     'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
     'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
     'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' },
-    'PSM-E-OWNED-DIR' => { entries: 'mine' }
+    'PSM-E-OWNED-DIR' => { entries: 'mine' },
+    'PSM-W-END-OF-LIFE' => { manager: 'pnpm', version: '11.28.4', eol: '2027-04-30' }
   }.freeze
 
   def render(error, json:)
@@ -76,9 +77,11 @@ describe Proscenium::CLI::Error do
     end
   end
 
-  it 'maps every code to a documented exit status' do
+  it 'maps every error to a failing exit status, and every warning to success' do
     Proscenium::CLI::Error::CATALOG.each do |code, (status, *)|
-      assert_includes 1..8, Proscenium::CLI::Error::EXIT.fetch(status), code
+      expected = code.start_with?('PSM-W-') ? 0..0 : 1..8
+
+      assert_includes expected, Proscenium::CLI::Error::EXIT.fetch(status), code
     end
   end
 end

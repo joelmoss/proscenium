@@ -29,10 +29,30 @@ module Proscenium
         @manager = Manager.select(@root, requested: @options[:manager])
         @manager.check_version!(experimental: @options[:experimental], frozen: frozen?)
         @manager.check_project!
+        if (warning = @manager.end_of_life_warning)
+          @reporter.warning(warning, phase: 'manager')
+        end
         read_bundle
         frozen? ? check_frozen : install
         0
       end
+
+      # The gems whose contexts declare a package the manager's failure output names, as
+      # [gem, package] pairs: an age-gate refusal or a failed fetch names only the package.
+      def self.blame(contexts, output)
+        return [] unless output.match?(/ERR_|error:/i)
+
+        contexts.flat_map do |gem, json|
+          context = JSON.parse(json)
+          Rules::DEPENDENCY_FIELDS.flat_map { (context[it] || {}).keys }
+                                  .reject { it.start_with?('@rubygems/') }
+                                  .select { output.match?(named(it)) }
+                                  .map { [gem, it] }
+        end
+      end
+
+      # `name` as a whole package name, not a part of another.
+      def self.named(name) = %r{(?<![\w@/.-])#{Regexp.escape(name)}(?![\w/-])}
 
       private
 
@@ -175,6 +195,17 @@ module Proscenium
 
       def run_manager(lock_io = nil)
         Runner.run(@manager.executable, manager_args, root: @root, lock_io:, manager: @manager.name)
+      rescue Error => e
+        raise unless e.code == 'PSM-E-NATIVE'
+
+        blamed = self.class.blame(@contexts.contexts.transform_values(&:json), e.output.to_s)
+        raise if blamed.empty?
+
+        involved = blamed.map { |gem, package| "#{package}, which #{gem} brings in" }.join('; ')
+        error = Error.new('PSM-E-NATIVE', command: "#{@manager.name} #{manager_args.join(' ')}",
+                                          status: e.details[:exitStatus], details: e.details,
+                                          escape: "It involves #{involved}.")
+        raise error
       end
 
       def manager_args

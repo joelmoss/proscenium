@@ -125,3 +125,23 @@ describe Proscenium::CLI::Verify do
     end
   end
 end
+
+describe 'Proscenium::CLI::Install.blame' do
+  CONTEXTS = {
+    'widget' => '{"dependencies": {"left-pad": "^1.3.0", "ms": "^2.1.3"}}',
+    'other' => '{"dependencies": {"clsx": "^2"}, ' \
+               '"peerDependencies": {"@rubygems/widget": "workspace:*"}}'
+  }.freeze
+
+  it "names the gem that brought in the package a manager's failure names" do
+    output = ' ERR_PNPM_NO_MATURE_MATCHING_VERSION  Version 1.3.0 (released today) of ' \
+             'left-pad does not meet the minimumReleaseAge constraint'
+
+    assert_equal [%w[widget left-pad]], Proscenium::CLI::Install.blame(CONTEXTS, output)
+  end
+
+  it 'names nothing for output without an error, or a name inside another' do
+    assert_empty Proscenium::CLI::Install.blame(CONTEXTS, 'Progress: resolved ms, done')
+    assert_empty Proscenium::CLI::Install.blame(CONTEXTS, 'ERR_PNPM_X  mslib failed')
+  end
+end

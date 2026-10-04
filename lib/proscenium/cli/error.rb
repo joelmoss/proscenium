@@ -175,6 +175,11 @@ module Proscenium
           :input, '.proscenium/packages/ holds packages Proscenium did not generate: %<entries>s.',
           'Move them out: that directory is Proscenium\'s, and every entry in it is a gem context.'
         ],
+        'PSM-W-END-OF-LIFE' => [
+          :success, '%<manager>s %<version>s reaches end of life on %<eol>s, and a later ' \
+                    'Proscenium release may stop supporting it.',
+          'Plan the move to a newer %<manager>s line; the upgrade guide gives the order.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \
@@ -183,6 +188,8 @@ module Proscenium
       }.freeze
 
       attr_reader :code, :fix, :details
+      # What the package manager printed, for a native failure: not shown, only searched.
+      attr_accessor :output
 
       # `escape`, when given, is the consumer's way around a gem author's problem, appended to the
       # fix.

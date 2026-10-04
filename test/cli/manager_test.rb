@@ -104,6 +104,16 @@ describe Proscenium::CLI::Manager do
       end
     end
 
+    it 'warns within six months of a line reaching end of life' do
+      with_manager('pnpm', '11.28.4') do |manager|
+        manager.check_version!
+
+        assert_nil manager.end_of_life_warning(today: Date.new(2026, 10, 4))
+        assert_equal 'PSM-W-END-OF-LIFE',
+                     manager.end_of_life_warning(today: Date.new(2026, 12, 1)).code
+      end
+    end
+
     it 'refuses pnpm 10, which is not supported' do
       with_manager('pnpm', '10.34.4') do |manager|
         assert_equal('PSM-E-MANAGER-VERSION', code { manager.check_version! })

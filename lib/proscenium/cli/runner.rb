@@ -18,16 +18,38 @@ module Proscenium
       # project lock to hand down), `out` and `err` (default: stderr, so stdout stays the CLI's
       # summary), and `manager` (its name in errors). Raises PSM-E-INTERRUPTED if a signal stopped
       # it, PSM-E-NATIVE if it failed.
+      # Its output is also kept, the last TAIL bytes of it, so a failure can say which gem it
+      # involves; the error carries it as `output`.
       def run(executable, args, root:, **opts)
-        spawn = { chdir: root, out: opts.fetch(:out, $stderr), err: opts.fetch(:err, $stderr),
-                  in: :close }
+        reader, writer = IO.pipe
+        spawn = { chdir: root, out: writer, err: writer, in: :close }
         spawn[opts[:lock_io]] = opts[:lock_io] if opts[:lock_io]
         pid = Bundler.with_unbundled_env { Process.spawn(ENV.to_h, executable, *args, **spawn) }
+        writer.close
+        output = relay(reader, opts.fetch(:out, $stderr))
         previous = forward_signals(pid)
         _, status = Process.wait2(pid)
-        check(status, opts.fetch(:manager) { File.basename(executable) }, args)
+        check(status, opts.fetch(:manager) { File.basename(executable) }, args, output.value)
       ensure
         previous&.each { |signal, handler| Signal.trap(signal, handler) }
+        reader&.close unless reader&.closed?
+      end
+
+      TAIL = 64 * 1024
+
+      # Copies the manager's output to `destination` as it arrives, keeping its tail.
+      def relay(reader, destination)
+        Thread.new do
+          kept = +''
+          loop do
+            chunk = reader.readpartial(4096)
+            destination.write(chunk)
+            kept << chunk
+            kept = kept.byteslice(-TAIL, TAIL) if kept.bytesize > TAIL
+          end
+        rescue IOError # EOFError included: the manager closed its output
+          kept
+        end
       end
 
       # INT and TERM reach the child, and the CLI waits for it rather than leaving it orphaned.
@@ -42,16 +64,18 @@ module Proscenium
         end
       end
 
-      def check(status, manager, args)
+      def check(status, manager, args, output)
         return status if status.success?
 
         command = [manager, *args].join(' ')
-        if status.signaled?
-          raise Error.new('PSM-E-INTERRUPTED', command:, details: { signal: status.termsig })
-        end
-
-        raise Error.new('PSM-E-NATIVE', command:, status: status.exitstatus,
-                                        details: { exitStatus: status.exitstatus })
+        error = if status.signaled?
+                  Error.new('PSM-E-INTERRUPTED', command:, details: { signal: status.termsig })
+                else
+                  Error.new('PSM-E-NATIVE', command:, status: status.exitstatus,
+                                            details: { exitStatus: status.exitstatus })
+                end
+        error.output = output
+        raise error
       end
     end
   end

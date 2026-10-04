@@ -3,6 +3,7 @@
 require 'json'
 require 'open3'
 require 'bundler'
+require 'date'
 
 module Proscenium
   module CLI
@@ -85,6 +86,15 @@ module Proscenium
         CAPABILITIES.dig('managers', @name, 'lines').find do |line|
           Gem::Requirement.new(*line['range'].split(',').map(&:strip)).satisfied_by?(version)
         end
+      end
+
+      # A warning when the installed line's owner stops maintaining it within six months: the
+      # next Proscenium release may no longer support it.
+      def end_of_life_warning(today: Date.today)
+        eol = line && line['eol']
+        return nil unless eol && Date.parse(eol) - today <= 183
+
+        Error.new('PSM-W-END-OF-LIFE', manager: @name, version: @version, eol:)
       end
 
       def supported_ranges
