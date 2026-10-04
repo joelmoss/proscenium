@@ -33,21 +33,22 @@ describe 'dependency spec kinds' do
   end
 
   # An app bundling only the fixture gem, installed as an archive, with a native workspace package
-  # `packages/native` declaring the same dependencies.
-  def app(manager)
+  # `packages/native` declaring the same dependencies. `source` is the gem's source directory.
+  def app(manager, source = SOURCE)
     app = File.join(@dir, 'app')
     cache = File.join(app, 'vendor', 'cache')
     FileUtils.mkdir_p(cache)
-    StageA::Bundle.build(SOURCE, cache)
-    File.write(File.join(app, 'Gemfile'), "source 'https://rubygems.org'\ngem '#{GEM}'\n")
+    StageA::Bundle.build(source, cache)
+    name = File.basename(source)
+    File.write(File.join(app, 'Gemfile'), "source 'https://rubygems.org'\ngem '#{name}'\n")
     StageA::Bundle.bundle(app, @dir, 'install', '--local')
 
+    manifest = JSON.parse(File.read(File.join(source, 'package.json')))
     native = File.join(app, 'packages', 'native')
     FileUtils.mkdir_p(native)
+    declared = manifest.slice('dependencies', 'optionalDependencies')
     File.write(File.join(native, 'package.json'),
-               JSON.generate('name' => 'native', 'private' => true,
-                             'dependencies' => MANIFEST['dependencies'],
-                             'optionalDependencies' => MANIFEST['optionalDependencies']))
+               JSON.generate({ 'name' => 'native', 'private' => true }.merge(declared)))
     package = { 'name' => 'app', 'private' => true }
     if manager == 'bun'
       package['workspaces'] = ['packages/*']
@@ -75,7 +76,49 @@ describe 'dependency spec kinds' do
     end
   end
 
+  # A gem source written for one case: `manifest` is its package.json.
+  def gem_source(name, manifest)
+    source = File.join(@dir, 'sources', name)
+    FileUtils.mkdir_p(source)
+    File.write(File.join(source, "#{name}.gemspec"), <<~RUBY)
+      Gem::Specification.new do |spec|
+        spec.name = '#{name}'
+        spec.version = '1.0.0'
+        spec.summary = 'C14 fixture'
+        spec.authors = ['Joel Moss']
+        spec.files = %w[package.json]
+        spec.metadata['proscenium.dependencies'] = 'true'
+      end
+    RUBY
+    File.write(File.join(source, 'package.json'), JSON.generate(manifest))
+    source
+  end
+
+  # A tarball the registry answers 404 for, so fetching it fails at once: a network error would
+  # be retried for over a minute.
+  UNFETCHABLE = 'https://registry.npmjs.org/left-pad/-/left-pad-0.0.0-absent.tgz'
+
   %w[pnpm bun].each do |manager|
+    # C14: an optional dependency that cannot be fetched is left out, natively and from the
+    # context alike, and the same dependency, required, still fails the install, naming the gem.
+    it "skips an unfetchable optional dependency and fails on a required one, on #{manager}" do
+      app = app(manager, gem_source('stage_d_optional', 'optionalDependencies' =>
+                                                        { 'left-pad' => UNFETCHABLE }))
+      _, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      refute_path_exists File.join(app,
+                                   '.proscenium/packages/stage_d_optional/node_modules/left-pad')
+
+      FileUtils.rm_rf(Dir.children(@dir).map { File.join(@dir, it) })
+      app = app(manager, gem_source('stage_d_required', 'dependencies' =>
+                                                        { 'left-pad' => UNFETCHABLE }))
+      _, err, status = install(app, manager)
+
+      assert_equal 6, status.exitstatus, err
+      assert_includes err, 'PSM-E-NATIVE'
+    end
+
     it "installs each spec kind from the context as natively, on #{manager}" do
       app = app(manager)
       _, err, status = install(app, manager)
