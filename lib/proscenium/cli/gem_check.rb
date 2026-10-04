@@ -4,6 +4,7 @@ require 'json'
 require 'rubygems/package'
 require 'zlib'
 require_relative 'rules'
+require_relative '../bundled_gems'
 
 module Proscenium
   module CLI
@@ -66,14 +67,7 @@ module Proscenium
         problems + cross_gem(spec, manifest)
       end
 
-      # `proscenium.frontend_root`, relative to the gem and inside it; '' for the gem root.
-      def frontend_root(spec)
-        root = spec.metadata['proscenium.frontend_root'].to_s.delete_prefix('./').chomp('/')
-        return '' if root.empty?
-        return nil if root.start_with?('/') || root.split('/').include?('..')
-
-        root
-      end
+      def frontend_root(spec) = BundledGems.frontend_root(spec)
 
       # A reference to another gem's context needs that gem as a runtime dependency.
       def cross_gem(spec, manifest)
