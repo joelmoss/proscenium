@@ -6,6 +6,7 @@ require 'open3'
 require 'rbconfig'
 require 'tmpdir'
 require_relative '../package_manager/stage_a/bundle'
+require_relative 'private_registry'
 
 # C10 (#154): every kind of dependency spec a gem may declare (a range, a prerelease, a dist-tag,
 # an npm: alias, a GitHub reference and a tarball URL) installs from the gem's context exactly as
@@ -118,6 +119,33 @@ describe 'dependency spec kinds' do
   end
 
   %w[pnpm bun].each do |manager|
+    # C31: a gem depends on a package from a private registry. The app authenticates in its own
+    # .npmrc, the manager uses that for the context too, the token appears in nothing Proscenium
+    # writes or prints, and no request asks the registry for a gem.
+    it "installs a private package with the app's own credentials, on #{manager}" do
+      registry = PrivateRegistry.new
+      app = app(manager, gem_source('stage_d_private', 'dependencies' =>
+                                                       { PrivateRegistry::PACKAGE => '1.0.0' }))
+      File.write(File.join(app, '.npmrc'), registry.npmrc)
+      out, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      context = File.join(app, '.proscenium/packages/stage_d_private')
+
+      assert_path_exists File.join(context, 'node_modules/@private/pkg/package.json')
+      requests = registry.logged
+
+      refute_empty requests
+      assert_empty requests.reject { |_, authed| authed }, 'every request carried the token'
+      assert_empty requests.select { |path, _| path.include?('rubygems') }, 'no gem was requested'
+      written = [out, err, File.read(File.join(context, 'package.json')),
+                 *Dir[File.join(app, '{pnpm-lock.yaml,bun.lock}')].map { File.read(it) }]
+
+      assert(written.none? { it.include?(PrivateRegistry::TOKEN) }, 'the token leaked')
+    ensure
+      registry&.stop
+    end
+
     # C14: an optional dependency that cannot be fetched is left out, natively and from the
     # context alike, and the same dependency, required, still fails the install, naming the gem.
     it "skips an unfetchable optional dependency and fails on a required one, on #{manager}" do
