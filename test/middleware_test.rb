@@ -34,6 +34,31 @@ class Proscenium::MiddlewareTest < ActiveSupport::TestCase
     end
   end
 
+  # #154: a copy a linker nested under a gem's dependency context is served like node_modules.
+  describe 'a package nested under a dependency context' do
+    before do
+      @dir = Rails.root.join('.proscenium')
+      FileUtils.mkdir_p(@dir.join('packages/widget/node_modules/ms'))
+      File.write(@dir.join('packages/widget/node_modules/ms/index.js'), 'export default "ms"')
+      File.write(@dir.join('packages/widget/package.json'), '{}')
+    end
+
+    after { FileUtils.rm_rf(@dir) }
+
+    it 'serves it, and not the context itself or Proscenium state' do
+      get '/.proscenium/packages/widget/node_modules/ms/index.js'
+
+      assert_equal 200, response.status
+      assert_includes response.body, '"ms"'
+
+      %w[/.proscenium/packages/widget/package.json /.proscenium/lock].each do |path|
+        get path
+
+        assert_equal 404, response.status
+      end
+    end
+  end
+
   it 'raises on compilation error' do
     assert_raises Proscenium::Builder::BuildError do
       get '/lib/includes_error.js'
