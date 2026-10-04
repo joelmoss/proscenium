@@ -27,6 +27,7 @@ describe 'proscenium install' do
   LIB = File.expand_path('../../lib', __dir__)
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
+  WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
   BUNDLE = InstallFixture::DIR
 
   before do
@@ -139,6 +140,51 @@ describe 'proscenium install' do
 
           assert_predicate status, :success?, err
           assert_empty Dir.children(elsewhere)
+        end
+      end
+
+      # C11: two gems pin conflicting versions of one package. Each context keeps its own; nothing
+      # flattens them to one.
+      it 'keeps conflicting versions of one package in each gem\'s own context' do
+        dir = app(manager)
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        versions = WIDGETS.to_h do |gem|
+          manifest = File.join(dir, '.proscenium/packages', gem, 'node_modules/ms/package.json')
+          [gem, JSON.parse(File.read(manifest))['version']]
+        end
+
+        assert_equal({ 'stage_a_widget_a' => '2.0.0', 'stage_a_widget_b' => '2.1.3' }, versions)
+      end
+
+      # C28: the gems are installed read-only, as a shared or system install is, and an install
+      # writes nothing into them: no file added, removed or changed.
+      it 'writes nothing into the installed gems' do
+        gems = File.join(BUNDLE, 'bundle')
+        snapshot = lambda do
+          Dir.glob('**/*', File::FNM_DOTMATCH, base: gems).sort.to_h do |path|
+            stat = File.lstat(File.join(gems, path))
+            [path, [stat.size, stat.mtime.to_f]]
+          end
+        end
+        before = snapshot.call
+        dir = app(manager)
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        assert_equal before, snapshot.call
+
+        # The positive control: a write into a gem root is one the snapshot sees.
+        gem_dir = Dir.glob(File.join(gems, '**/gems/stage_a_widget_a-*')).first
+        File.chmod(0o755, gem_dir)
+        File.write(File.join(gem_dir, 'control'), '')
+
+        refute_equal before, snapshot.call
+      ensure
+        if gem_dir
+          File.delete(File.join(gem_dir, 'control'))
+          File.chmod(0o555, gem_dir)
         end
       end
 
