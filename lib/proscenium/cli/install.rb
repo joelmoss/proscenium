@@ -171,7 +171,7 @@ module Proscenium
           @reporter.info('Finishing an interrupted install.', event: 'recover') if lock.interrupted?
           lock.mark!
           @written = register + write_contexts + remove_orphans
-          run_manager(lock.io)
+          run_manager(lock)
           Verify.new(@root, @manager, @contexts.contexts.keys).call
           lock.unmark!
         end
@@ -208,8 +208,10 @@ module Proscenium
         end
       end
 
-      def run_manager(lock_io = nil)
-        Runner.run(@manager.executable, manager_args, root: @root, lock_io:, manager: @manager.name)
+      def run_manager(lock = nil)
+        Runner.run(@manager.executable, manager_args, root: @root, lock_io: lock&.io,
+                                                      on_spawn: lock&.method(:manager_started),
+                                                      manager: @manager.name)
       rescue Error => e
         raise unless e.code == 'PSM-E-NATIVE'
 
@@ -221,6 +223,8 @@ module Proscenium
                                           status: e.details[:exitStatus], details: e.details,
                                           escape: "It involves #{involved}.")
         raise error
+      ensure
+        lock&.manager_finished
       end
 
       def manager_args

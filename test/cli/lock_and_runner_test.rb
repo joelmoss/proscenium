@@ -45,6 +45,29 @@ describe 'project lock and runner' do
     probe.join
   end
 
+  # On Windows a killed install releases the lock while its manager runs on, so the manager's pid
+  # is recorded too, and an install that finds it alive is busy (C35, C53).
+  it 'is busy while a manager a stopped install started is still running' do
+    manager = Process.spawn(RbConfig.ruby, '-e', 'sleep 30')
+    lock = Lock.new(@root)
+    lock.synchronize('install') { lock.manager_started(manager) }
+
+    busy = assert_raises(Proscenium::CLI::Error) { Lock.new(@root).synchronize('retry') { flunk } }
+
+    assert_equal 'PSM-E-BUSY', busy.code
+    assert_includes busy.message, "the package manager (pid #{manager})"
+
+    Process.kill(:KILL, manager)
+    Process.wait(manager)
+    manager = nil
+    Lock.new(@root).synchronize('after') { pass }
+  ensure
+    if manager
+      Process.kill(:KILL, manager)
+      Process.wait(manager)
+    end
+  end
+
   it 'leaves the install marker until it is removed' do
     lock = Lock.new(@root)
     lock.synchronize('install') { lock.mark! }
@@ -121,7 +144,10 @@ describe 'project lock and runner' do
       begin
         Proscenium::CLI::ProjectLock.new(root).synchronize('harness') do |lock|
           code = "File.write(\#{started.dump}, Process.pid.to_s); sleep 30"
-          Proscenium::CLI::Runner.run(RbConfig.ruby, ['-e', code], root:, lock_io: lock.io)
+          Proscenium::CLI::Runner.run(RbConfig.ruby, ['-e', code], root:, lock_io: lock.io,
+                                      on_spawn: lock.method(:manager_started))
+        ensure
+          lock&.manager_finished
         end
       rescue Proscenium::CLI::Error => e
         warn e.code
@@ -154,22 +180,28 @@ describe 'project lock and runner' do
     # pnpm and Bun are `.cmd` shims, which cmd.exe runs, re-parsing every argument.
     it 'passes the arguments install builds through a .cmd shim intact' do
       shim = File.join(@root, 'manager.cmd')
-      File.write(shim, "@echo off\r\n\"%SHIM_RUBY%\" -e " \
+      # The runner gives the manager the environment from before Bundler, so the shim names Ruby
+      # itself rather than reading it from a variable the test sets.
+      File.write(shim, "@echo off\r\n\"#{RbConfig.ruby.tr('/', '\\')}\" -e " \
                        "\"File.write(ARGV.shift, ARGV.join(10.chr))\" \"%~dp0args.txt\" %*\r\n")
-      ENV['SHIM_RUBY'] = RbConfig.ruby
       args = ['install', '--frozen-lockfile', '--prod', '--offline',
               '--filter=!@rubygems/gem_npm', '--store-dir=C:\\a b\\store']
 
       Runner.run(shim, args, root: @root)
 
       assert_equal args, File.read(File.join(@root, 'args.txt')).split("\n")
-    ensure
-      ENV.delete('SHIM_RUBY')
     end
 
+    # A console's Ctrl-C reaches every process attached to it. CTRL_BREAK to the install's own
+    # process group is the nearest a test can send: Windows ignores CTRL_C in a new group.
     it 'stops the manager on Ctrl-C and reports the install interrupted (exit 8)' do
+      require 'fiddle'
+      kernel32 = Fiddle.dlopen('kernel32')
+      generate = Fiddle::Function.new(kernel32['GenerateConsoleCtrlEvent'],
+                                      [Fiddle::TYPE_INT, Fiddle::TYPE_INT], Fiddle::TYPE_INT)
       pid, manager = install(new_pgroup: true)
-      Process.kill(:INT, pid)
+
+      refute_equal 0, generate.call(1, pid), "GenerateConsoleCtrlEvent: #{Fiddle.win32_last_error}"
       _, status = Process.wait2(pid)
 
       assert_equal 8, status.exitstatus, File.read(@log)

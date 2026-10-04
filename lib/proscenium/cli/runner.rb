@@ -15,9 +15,9 @@ module Proscenium
       module_function
 
       # Runs `executable` with `args` in `root` and returns when it exits. Options: `lock_io` (the
-      # project lock to hand down), `out` and `err` (default: stderr, so stdout stays the CLI's
-      # summary), and `manager` (its name in errors). Raises PSM-E-INTERRUPTED if a signal stopped
-      # it, PSM-E-NATIVE if it failed.
+      # project lock to hand down), `on_spawn` (called with the manager's pid), `out` and `err`
+      # (default: stderr, so stdout stays the CLI's summary), and `manager` (its name in errors).
+      # Raises PSM-E-INTERRUPTED if a signal stopped it, PSM-E-NATIVE if it failed.
       # Its output is also kept, the last TAIL bytes of it, so a failure can say which gem it
       # involves; the error carries it as `output`.
       def run(executable, args, root:, **opts)
@@ -28,10 +28,13 @@ module Proscenium
         spawn[opts[:lock_io]] = opts[:lock_io] if opts[:lock_io] && !Gem.win_platform?
         pid = Bundler.with_unbundled_env { Process.spawn(ENV.to_h, executable, *args, **spawn) }
         writer.close
+        opts[:on_spawn]&.call(pid)
         output = relay(reader, opts.fetch(:out, $stderr))
-        previous = forward_signals(pid)
+        interrupted = []
+        previous = forward_signals(pid, interrupted)
         _, status = Process.wait2(pid)
-        check(status, opts.fetch(:manager) { File.basename(executable) }, args, output.value)
+        check(status, opts.fetch(:manager) { File.basename(executable) }, args, output.value,
+              interrupted.first)
       ensure
         previous&.each { |signal, handler| Signal.trap(signal, handler) }
         reader&.close unless reader&.closed?
@@ -54,11 +57,15 @@ module Proscenium
         end
       end
 
-      # INT and TERM reach the child, and the CLI waits for it rather than leaving it orphaned.
-      def forward_signals(pid)
-        SIGNALS.to_h do |signal|
+      # INT and TERM reach the child, and the CLI waits for it rather than leaving it orphaned. On
+      # Windows the console already delivers Ctrl-C and Ctrl-Break to the manager, and
+      # Process.kill cannot send them, so there the CLI only notes the interruption and waits.
+      def forward_signals(pid, interrupted)
+        signals = Gem.win_platform? ? SIGNALS + (%w[BREAK] & Signal.list.keys) : SIGNALS
+        signals.to_h do |signal|
           handler = Signal.trap(signal) do
-            Process.kill(signal, pid)
+            interrupted << signal
+            Process.kill(signal, pid) unless Gem.win_platform?
           rescue Errno::ESRCH
             nil
           end
@@ -66,12 +73,15 @@ module Proscenium
         end
       end
 
-      def check(status, manager, args, output)
+      # A manager that failed after the CLI was interrupted was interrupted too: on Windows it exits
+      # with a status, not a signal.
+      def check(status, manager, args, output, interrupted = nil)
         return status if status.success?
 
         command = [manager, *args].join(' ')
-        error = if status.signaled?
-                  Error.new('PSM-E-INTERRUPTED', command:, details: { signal: status.termsig })
+        error = if status.signaled? || interrupted
+                  Error.new('PSM-E-INTERRUPTED', command:,
+                                                 details: { signal: status.termsig || interrupted })
                 else
                   Error.new('PSM-E-NATIVE', command:, status: status.exitstatus,
                                             details: { exitStatus: status.exitstatus })

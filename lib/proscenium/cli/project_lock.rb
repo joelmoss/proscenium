@@ -14,6 +14,10 @@ module Proscenium
     #
     # The holder's name goes in `.proscenium/holder`, not in the lock file: Windows locks are
     # mandatory, so a second install could not read a locked file to say who holds it.
+    #
+    # Ruby on Windows cannot hand the manager the lock's descriptor, so there a killed CLI releases
+    # the lock while its manager runs on. The manager's pid goes in `.proscenium/manager` while it
+    # runs, and an install that finds that process alive is refused as if the lock were held.
     class ProjectLock
       DIR = '.proscenium'
 
@@ -26,13 +30,15 @@ module Proscenium
       def lock_path = File.join(@dir, 'lock')
       def marker_path = File.join(@dir, 'installing')
       def holder_path = File.join(@dir, 'holder')
+      def manager_path = File.join(@dir, 'manager')
 
       # Takes the lock for the block, or raises PSM-E-BUSY naming the install that holds it.
       def synchronize(command)
         FileUtils.mkdir_p(@dir)
         @io = File.open(lock_path, File::RDWR | File::CREAT, 0o644)
-        unless acquired?
+        unless acquired? && !(manager = running_manager)
           holder = File.exist?(holder_path) ? File.read(holder_path).strip : ''
+          holder = "the package manager (pid #{manager}) of a stopped #{holder}" if manager
           @io.close
           raise Error.new('PSM-E-BUSY', holder: holder.empty? ? 'another install' : holder)
         end
@@ -53,6 +59,27 @@ module Proscenium
         end
         false
       end
+
+      # The pid of a manager an earlier install started that is still running, or nil.
+      # ponytail: a reused pid reads as busy until that process exits; a process start time would
+      # tell them apart.
+      def running_manager
+        return unless File.exist?(manager_path)
+
+        pid = File.read(manager_path).to_i
+        return unless pid.positive?
+
+        Process.kill(0, pid)
+        pid
+      rescue Errno::ESRCH
+        nil
+      rescue Errno::EPERM
+        pid
+      end
+
+      def manager_started(pid) = File.write(manager_path, "#{pid}\n")
+
+      def manager_finished = FileUtils.rm_f(manager_path)
 
       # Whether an earlier install was interrupted before it finished.
       def interrupted? = File.exist?(marker_path)
