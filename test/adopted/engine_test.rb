@@ -56,7 +56,8 @@ describe 'an adopted app' do
       "#{build('node_modules/@rubygems/stage_a_widget_b/index.js')}]"
     )
 
-    refute root.start_with?(File.expand_path('../..', __dir__)), 'installed, not the source tree'
+    refute root.start_with?(StageA::Bundle::GEMS), 'installed, not its source'
+    assert_equal 'stage_a_widget_b-1.0.0', File.basename(root)
     assert_equal '/node_modules/@rubygems/stage_a_widget_b/index.js', url
     assert_includes code, '/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js'
   end
