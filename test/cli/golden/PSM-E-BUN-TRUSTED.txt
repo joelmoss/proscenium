@@ -1,0 +1,2 @@
+PSM-E-BUN-TRUSTED: package.json has no trustedDependencies, so Bun would run install scripts of packages gems introduce, from its default list.
+Add `"trustedDependencies": []` to package.json, listing any packages whose scripts the app already relies on.

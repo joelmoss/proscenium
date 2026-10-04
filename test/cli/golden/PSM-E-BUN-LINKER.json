@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-BUN-LINKER","message":"bunfig.toml does not set Bun's linker, so registering gem contexts could switch it.","fix":"Add `[install]` and `linker = \"hoisted\"` (or \"isolated\", whichever the app uses today) to bunfig.toml."}

@@ -1,0 +1,2 @@
+PSM-E-BUN-LOCKB: This project has only a binary bun.lockb, which Proscenium cannot read.
+Run `bun install --save-text-lockfile` to write bun.lock, and commit it.

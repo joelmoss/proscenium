@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-MANAGER-CONFLICT","message":"The project names more than one package manager: pnpm and bun.","fix":"Keep one: remove the other lockfile, or make packageManager match the lockfile. --manager chooses only when nothing else says."}

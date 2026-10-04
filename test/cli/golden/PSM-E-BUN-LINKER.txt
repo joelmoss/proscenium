@@ -1,0 +1,2 @@
+PSM-E-BUN-LINKER: bunfig.toml does not set Bun's linker, so registering gem contexts could switch it.
+Add `[install]` and `linker = "hoisted"` (or "isolated", whichever the app uses today) to bunfig.toml.

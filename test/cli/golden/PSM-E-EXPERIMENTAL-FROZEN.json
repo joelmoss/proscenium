@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-EXPERIMENTAL-FROZEN","message":"--experimental-manager-version cannot be used with --frozen.","fix":"Use a supported manager version in CI, where --frozen runs."}

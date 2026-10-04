@@ -1,0 +1,2 @@
+PSM-E-MANAGER-VERSION: pnpm 9.15.0 is not a version Proscenium supports.
+Use a supported pnpm (>= 10.33.0, < 11; >= 11.0.0, < 12). --experimental-manager-version allows another for development only.

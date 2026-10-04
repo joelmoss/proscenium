@@ -1,0 +1,2 @@
+PSM-E-UNSUPPORTED-MANAGER: This project uses yarn, which Proscenium does not support for gems' JavaScript dependencies.
+Switch the app to pnpm or Bun, or keep installing gems' JavaScript dependencies yourself, as today.

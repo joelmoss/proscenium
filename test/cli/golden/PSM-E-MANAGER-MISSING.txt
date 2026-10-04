@@ -1,0 +1,2 @@
+PSM-E-MANAGER-MISSING: pnpm is not installed, or not on PATH.
+Install pnpm the way this project expects (Corepack, mise, Volta or its installer), then try again.

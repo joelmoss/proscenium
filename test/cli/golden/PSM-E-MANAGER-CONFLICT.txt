@@ -1,0 +1,2 @@
+PSM-E-MANAGER-CONFLICT: The project names more than one package manager: pnpm and bun.
+Keep one: remove the other lockfile, or make packageManager match the lockfile. --manager chooses only when nothing else says.

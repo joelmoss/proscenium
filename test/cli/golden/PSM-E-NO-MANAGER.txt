@@ -1,0 +1,2 @@
+PSM-E-NO-MANAGER: No package manager is set: no packageManager field, pnpm-lock.yaml or bun.lock.
+Pass --manager pnpm or --manager bun, or add a packageManager field to package.json.

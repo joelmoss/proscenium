@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-BUN-TRUSTED","message":"package.json has no trustedDependencies, so Bun would run install scripts of packages gems introduce, from its default list.","fix":"Add `\"trustedDependencies\": []` to package.json, listing any packages whose scripts the app already relies on."}

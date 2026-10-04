@@ -167,13 +167,22 @@ jobs:
         with:
           bundler-cache: true
 
+      # The versions come from the CLI's capability table, the one source of truth for what
+      # Proscenium supports: the first line of each manager is the floor CI runs.
+      - name: Manager versions from the capability table
+        id: caps
+        run: |
+          caps=lib/proscenium/cli/capabilities.json
+          echo "pnpm=$(jq -r '.managers.pnpm.lines[0].ci' "$caps")" >> "$GITHUB_OUTPUT"
+          echo "bun=$(jq -r '.managers.bun.lines[0].ci' "$caps")" >> "$GITHUB_OUTPUT"
+
       - uses: pnpm/action-setup@v6
         with:
-          version: 10.33.1
+          version: ${{ steps.caps.outputs.pnpm }}
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: ${{ steps.caps.outputs.bun }}
 
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
       - run: bin/test test/package_manager/stage_a/

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-BUN-LOCKB","message":"This project has only a binary bun.lockb, which Proscenium cannot read.","fix":"Run `bun install --save-text-lockfile` to write bun.lock, and commit it."}

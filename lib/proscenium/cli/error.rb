@@ -68,6 +68,56 @@ module Proscenium
                   'not depend on %<other>s.',
           "Add `spec.add_dependency '%<other>s'` to the gemspec, or remove the reference."
         ],
+        'PSM-E-NO-MANAGER' => [
+          :input, 'No package manager is set: no packageManager field, pnpm-lock.yaml or bun.lock.',
+          'Pass --manager pnpm or --manager bun, or add a packageManager field to package.json.'
+        ],
+        'PSM-E-MANAGER-CONFLICT' => [
+          :input, 'The project names more than one package manager: %<signals>s.',
+          'Keep one: remove the other lockfile, or make packageManager match the lockfile. ' \
+          '--manager chooses only when nothing else says.'
+        ],
+        'PSM-E-UNSUPPORTED-MANAGER' => [
+          :unsupported, 'This project uses %<manager>s, which Proscenium does not support for ' \
+                        "gems' JavaScript dependencies.",
+          'Switch the app to pnpm or Bun, or keep installing gems\' JavaScript dependencies ' \
+          'yourself, as today.'
+        ],
+        'PSM-E-BUN-LOCKB' => [
+          :unsupported, 'This project has only a binary bun.lockb, which Proscenium cannot read.',
+          'Run `bun install --save-text-lockfile` to write bun.lock, and commit it.'
+        ],
+        'PSM-E-MANAGER-MISSING' => [
+          :unsupported, '%<manager>s is not installed, or not on PATH.',
+          'Install %<manager>s the way this project expects (Corepack, mise, Volta or its ' \
+          'installer), then try again.'
+        ],
+        'PSM-E-MANAGER-VERSION' => [
+          :unsupported, '%<manager>s %<version>s is not a version Proscenium supports.',
+          'Use a supported %<manager>s (%<supported>s). --experimental-manager-version allows ' \
+          'another for development only.'
+        ],
+        'PSM-E-EXPERIMENTAL-FROZEN' => [
+          :unsupported, '--experimental-manager-version cannot be used with --frozen.',
+          'Use a supported manager version in CI, where --frozen runs.'
+        ],
+        'PSM-E-BUN-LINKER' => [
+          :unsupported, "bunfig.toml does not set Bun's linker, so registering gem contexts " \
+                        'could switch it.',
+          'Add `[install]` and `linker = "hoisted"` (or "isolated", whichever the app uses ' \
+          'today) to bunfig.toml.'
+        ],
+        'PSM-E-BUN-TRUSTED' => [
+          :unsupported, 'package.json has no trustedDependencies, so Bun would run install ' \
+                        'scripts of packages gems introduce, from its default list.',
+          'Add `"trustedDependencies": []` to package.json, listing any packages whose scripts ' \
+          'the app already relies on.'
+        ],
+        'PSM-E-NESTED-WORKSPACE' => [
+          :unsupported, 'This app is inside the JavaScript workspace at %<enclosing>s, which ' \
+                        'Proscenium does not support.',
+          'Install gems\' JavaScript dependencies yourself in that workspace, as today.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \

@@ -16,6 +16,7 @@ describe 'CLI load isolation' do
     script = <<~RUBY
       #{preamble}
       require 'proscenium/cli'
+      require 'proscenium/cli/manager'
       Proscenium::CLI.start(#{argv.inspect}, out: StringIO.new, err: StringIO.new)
       puts #{FORBIDDEN.inspect}.select { |name| Object.const_defined?(name) }
     RUBY

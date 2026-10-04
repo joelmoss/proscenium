@@ -1,0 +1,2 @@
+PSM-E-NESTED-WORKSPACE: This app is inside the JavaScript workspace at /src/monorepo, which Proscenium does not support.
+Install gems' JavaScript dependencies yourself in that workspace, as today.

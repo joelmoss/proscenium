@@ -1,0 +1,164 @@
+# frozen_string_literal: true
+
+require 'json'
+require 'open3'
+require 'bundler'
+
+module Proscenium
+  module CLI
+    # Which package manager a project uses, whether Proscenium supports it, and whether the project
+    # is set up to register contexts with it (#154). Nothing here writes: every refusal happens
+    # before `install` changes a file.
+    class Manager
+      CAPABILITIES = JSON.parse(File.read(File.expand_path('capabilities.json', __dir__)))
+      SUPPORTED = %w[pnpm bun].freeze
+      LOCKFILES = { 'pnpm-lock.yaml' => 'pnpm', 'bun.lock' => 'bun', 'yarn.lock' => 'yarn',
+                    'package-lock.json' => 'npm', 'npm-shrinkwrap.json' => 'npm' }.freeze
+      LINKERS = %w[hoisted isolated].freeze
+
+      attr_reader :name, :version, :executable, :root
+
+      # Selects the manager for the project at `root`: `requested` (from --manager), else the root
+      # package.json's `packageManager`, else exactly one recognized lockfile.
+      def self.select(root, requested: nil)
+        requested ||= from_package_manager(root)
+        lockfiles = LOCKFILES.select { |file, _| File.exist?(File.join(root, file)) }.values.uniq
+        lockfiles << 'yarn' if File.exist?(File.join(root, '.yarnrc.yml'))
+        lockfiles.uniq!
+
+        name = requested || lockfiles.first
+        if !requested && lockfiles.size > 1
+          raise Error.new('PSM-E-MANAGER-CONFLICT', signals: lockfiles.join(' and '))
+        end
+        if requested && lockfiles.any? && !lockfiles.include?(requested)
+          raise Error.new('PSM-E-MANAGER-CONFLICT',
+                          signals: ([requested] + lockfiles).join(' and '))
+        end
+        raise Error, 'PSM-E-BUN-LOCKB' if !name && File.exist?(File.join(root, 'bun.lockb'))
+        raise Error, 'PSM-E-NO-MANAGER' unless name
+        raise Error.new('PSM-E-UNSUPPORTED-MANAGER', manager: name) unless SUPPORTED.include?(name)
+
+        new(name, root)
+      end
+
+      # The manager named by package.json's `packageManager` (`pnpm@10.33.1+sha512...`), or nil.
+      def self.from_package_manager(root)
+        path = File.join(root, 'package.json')
+        return nil unless File.exist?(path)
+
+        field = JSON.parse(File.read(path))['packageManager']
+        field.is_a?(String) ? field.split('@').first : nil
+      rescue JSON::ParserError
+        nil
+      end
+
+      def initialize(name, root)
+        @name = name
+        @root = root
+      end
+
+      # Checks the installed manager's version against the capability table. An unqualified
+      # version is refused unless `experimental`, which `frozen` never allows.
+      def check_version!(experimental: false, frozen: false)
+        @executable = self.class.which(@name) or raise Error.new('PSM-E-MANAGER-MISSING',
+                                                                 manager: @name)
+        out, status = Bundler.with_unbundled_env do
+          Open3.capture2e(@executable, '--version', chdir: @root)
+        end
+        raise Error.new('PSM-E-MANAGER-MISSING', manager: @name) unless status.success?
+
+        @version = out.strip
+        return self if line
+
+        raise Error, 'PSM-E-EXPERIMENTAL-FROZEN' if experimental && frozen
+        unless experimental
+          raise Error.new('PSM-E-MANAGER-VERSION', manager: @name, version: @version,
+                                                   supported: supported_ranges)
+        end
+
+        self
+      end
+
+      # The capability table's line for the installed version, or nil.
+      def line
+        version = Gem::Version.new(@version.to_s[/\A\d+(?:\.\d+)*/] || '0')
+        CAPABILITIES.dig('managers', @name, 'lines').find do |line|
+          Gem::Requirement.new(*line['range'].split(',').map(&:strip)).satisfied_by?(version)
+        end
+      end
+
+      def supported_ranges
+        CAPABILITIES.dig('managers', @name, 'lines').map { it['range'] }.join('; ')
+      end
+
+      # Bun registers contexts only in a project that has chosen its linker and its trusted
+      # dependencies explicitly: without them, registering a workspace can switch the app to
+      # another linker, and Bun's default trusted list would run scripts of packages a gem
+      # introduces.
+      def check_project!
+        check_not_nested!
+        return self unless @name == 'bun'
+
+        raise Error, 'PSM-E-BUN-LINKER' unless LINKERS.include?(bun_linker)
+
+        package = File.join(@root, 'package.json')
+        trusted = File.exist?(package) && JSON.parse(File.read(package))['trustedDependencies']
+        raise Error, 'PSM-E-BUN-TRUSTED' unless trusted.is_a?(Array)
+
+        self
+      end
+
+      # The `linker` set in bunfig.toml's `[install]` table, or nil.
+      def bun_linker
+        path = File.join(@root, 'bunfig.toml')
+        return nil unless File.exist?(path)
+
+        table = nil
+        File.foreach(path) do |raw|
+          line = raw.sub(/#.*/, '').strip
+          next if line.empty?
+
+          if (header = line[/\A\[([^\]]+)\]\z/, 1])
+            table = header.strip
+          elsif table == 'install' && (value = line[/\Alinker\s*=\s*["']([^"']*)["']\z/, 1])
+            return value
+          end
+        end
+        nil
+      end
+
+      # A Rails app inside an enclosing JS workspace is out of v1: its contexts would belong to
+      # the enclosing workspace's install, not the app's.
+      def check_not_nested!
+        dir = File.dirname(File.expand_path(@root))
+        until dir == File.dirname(dir)
+          if File.exist?(File.join(dir,
+                                   'pnpm-workspace.yaml')) || workspaces?(File.join(dir,
+                                                                                    'package.json'))
+            raise Error.new('PSM-E-NESTED-WORKSPACE', enclosing: dir)
+          end
+
+          dir = File.dirname(dir)
+        end
+      end
+
+      def workspaces?(path)
+        File.exist?(path) && JSON.parse(File.read(path)).key?('workspaces')
+      rescue JSON::ParserError
+        false
+      end
+
+      # An executable on PATH, honoring PATHEXT on Windows (so `pnpm.cmd` is found), or nil.
+      def self.which(command)
+        exts = ENV['PATHEXT'] ? ENV['PATHEXT'].split(';').map(&:downcase) : ['']
+        ENV.fetch('PATH', '').split(File::PATH_SEPARATOR).each do |dir|
+          exts.each do |ext|
+            path = File.join(dir, "#{command}#{ext}")
+            return path if File.file?(path) && File.executable?(path)
+          end
+        end
+        nil
+      end
+    end
+  end
+end

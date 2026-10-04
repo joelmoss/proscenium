@@ -1,0 +1,2 @@
+PSM-E-EXPERIMENTAL-FROZEN: --experimental-manager-version cannot be used with --frozen.
+Use a supported manager version in CI, where --frozen runs.

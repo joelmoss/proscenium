@@ -22,7 +22,18 @@ describe Proscenium::CLI::Error do
     'PSM-E-SPEC' => { gem: 'widget', name: 'x', spec: 'file:../x' },
     'PSM-E-ALIAS' => { gem: 'widget', name: 'x', spec: 'npm:@rubygems/other@*' },
     'PSM-E-REACT' => { gem: 'widget', packages: 'react and react-dom' },
-    'PSM-E-CROSS-GEM' => { gem: 'widget', other: 'other' }
+    'PSM-E-CROSS-GEM' => { gem: 'widget', other: 'other' },
+    'PSM-E-NO-MANAGER' => {},
+    'PSM-E-MANAGER-CONFLICT' => { signals: 'pnpm and bun' },
+    'PSM-E-UNSUPPORTED-MANAGER' => { manager: 'yarn' },
+    'PSM-E-BUN-LOCKB' => {},
+    'PSM-E-MANAGER-MISSING' => { manager: 'pnpm' },
+    'PSM-E-MANAGER-VERSION' => { manager: 'pnpm', version: '9.15.0',
+                                 supported: '>= 10.33.0, < 11; >= 11.0.0, < 12' },
+    'PSM-E-EXPERIMENTAL-FROZEN' => {},
+    'PSM-E-BUN-LINKER' => {},
+    'PSM-E-BUN-TRUSTED' => {},
+    'PSM-E-NESTED-WORKSPACE' => { enclosing: '/src/monorepo' }
   }.freeze
 
   def render(error, json:)
