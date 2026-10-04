@@ -378,3 +378,25 @@ gems, reports it:
 
 A changed revision that leaves the dependencies alone needs no install, so a receipt would only
 add a file to keep in step. The locked source identity the CLI needs is in Gemfile.lock.
+
+## Browser identity (4 October 2026)
+
+`PLAYWRIGHT=<node_modules/playwright> ruby test/package_manager/stage_a/identity.rb OUT`. An app
+on pnpm 10.34.4 declares preact 10.26.9; a gem takes preact as a peer through its context. Each
+page's modules are built unbundled through `Proscenium::Builder` with the seam on, following every
+import as the middleware would serve it, and loaded in Playwright's Chromium (1.63.0).
+
+| Page | How the app imports preact | preact URLs | `Component` from app and gem identical |
+|---|---|---|---|
+| page | `preact` | one, the store's real path | **yes** |
+| control | by its link path, `/node_modules/preact/...` | two | no |
+
+So two link paths to one file load as one module once the engine resolves real paths, and as two
+when they are left as links, which is the control. This is the unbundled half of the identity
+requirement; the bundled half is the Go seam specs and the CI tests.
+
+The probe uses preact, not React, for a reason worth recording: npm's React is CommonJS, and an
+unbundled page cannot load it at all ("Dynamic require of .../react.development.js is not
+supported"), with or without the bridge. That is why london and platform serve an ESM React of
+their own, and why one React instance there is a matter of their configuration rather than of
+pnpm. An app that unbundles React from npm is not a case v1 has to serve.

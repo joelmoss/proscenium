@@ -121,7 +121,8 @@ where Bun's hoisted and isolated linkers put the widgets' conflicting `ms` copie
 then builds against, and that an explicit `trustedDependencies` blocks a gem-introduced package
 Bun trusts by default. `git_scripts_test.rb` checks that neither manager runs a gem-introduced
 Git dependency's scripts without approval, `drift_test.rb` shows a frozen check needs no
-descriptor receipt, and `peers.rb` is the C12 peer probe. They write
+descriptor receipt, `peers.rb` is the C12 peer probe, and `identity.rb` loads an unbundled page in
+Chromium to show one shared package is one module. They write
 contexts with `context.rb`. The
 verdicts are in `docs/plans/154-package-manager-stage-a.md`.
 
@@ -129,4 +130,5 @@ verdicts are in `docs/plans/154-package-manager-stage-a.md`.
 
 - The contexts for these fixtures, the hermetic registry and committed tarballs, and
   proscenium-ui at a pinned revision.
-- The browser identity probe and the `Builder`/daemon wiring above (step 4).
+- The `Builder`/daemon wiring above: the probes pass the seam's map to `Proscenium::Builder`
+  directly, so no running app needed it.
