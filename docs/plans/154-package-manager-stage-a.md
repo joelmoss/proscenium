@@ -5,6 +5,47 @@ Each leg records its commands, tool versions, revisions and verdicts. Legs that 
 maintainer's private checkouts (london, hue) record no source or manifest contents, only what is
 needed to repeat the run.
 
+## Summary
+
+**Recommendation: GO for pnpm and for Bun**, pending the maintainer's sign-off on #154. Neither
+adapter hit the kill criterion, and every Gate A row that Stage A could measure passed.
+
+| | pnpm | Bun |
+|---|---|---|
+| Lines measured | 10.33.1, 10.34.4, 11.28.4, 12.9.1 | 1.4.0, 1.4.2 |
+| A gem's dependencies through a context (C04, C46) | london and platform: every hue entry that today's install builds still builds the same, but one test file | codaset: every proscenium-ui entry whose imports its manifest declares |
+| No app edge needed | yes | yes |
+| One instance of a shared peer (C12, C13) | yes; pnpm 10 splits after an app bump with default settings, which `pnpm dedupe` repairs | yes |
+| Repeated frozen installs byte-identical (C08) | yes | yes |
+| Version-less context, `workspace:*`, no registry (C42) | yes | yes |
+| Plain dependencies instead of peers (C43) | recorded; the app's overrides decide | recorded |
+| Git dependency scripts unapproved (C55, part) | none run; `prepare` fails the install | none run, silently |
+| Registration (C51) | spliced into an existing pnpm-workspace.yaml | needs an explicit linker and `trustedDependencies`; codaset's 139 tests pass |
+
+Settled here: no descriptor receipt; no app edge to a context; registration splices into existing
+files; Bun requires an explicit linker (else it switches codaset to the isolated store) and an
+explicit `trustedDependencies` (else a gem can introduce a default-trusted package whose script
+runs); a production install can skip an excluded gem's context with a negative filter; the
+qualification hosts are macOS arm64 and Linux x86_64 and aarch64, since no app runs on Windows;
+and the frozen check compares whole regenerated contexts, so a hand edit that leaves the hash alone
+is still caught.
+
+For Stage B and C to take on:
+
+- **pnpm 10's peer split.** The CLI's peer-sharing check catches it; whether `install` also runs
+  `pnpm dedupe` on pnpm 10 is a design choice.
+- **Errors that name the gem.** pnpm fails an install for a Git dependency needing `prepare`, and
+  its message names only the package; Bun skips such scripts without a word.
+- **Serving nested copies.** Under Bun's hoisted linker a conflicting copy is a real directory
+  under `.proscenium/packages/<gem>/node_modules/`, which the serving allow-list must cover.
+- **proscenium-ui's manifest** imports `react`, `clsx` and `trix` without declaring them, and must
+  before it opts in.
+
+Not done in Stage A: the hermetic registry and committed tarballs (the CI tests reach npm and
+GitHub), proscenium-ui at a pinned revision in CI, the app legs on Bun 1.4.0 (only the peer probe
+and Git script check ran there), and codaset's pages in a browser. The london leg, the CI tests and
+the peer probe were repeated on Node 22.22.2 with the same results as on Node 26.
+
 ## london on pnpm (4 October 2026)
 
 **Question.** Can a hand-written context give hue its JavaScript dependencies through pnpm, with
