@@ -1,6 +1,7 @@
 package proscenium_test
 
 import (
+	"fmt"
 	b "joelmoss/proscenium/internal/builder"
 	r "joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/utils"
@@ -186,6 +187,45 @@ var _ = Describe("Gem dependency contexts", func() {
 		Expect(ok).To(BeTrue(), code)
 		Expect(code).To(ContainSubstring("padding: 6px"))
 		Expect(code).NotTo(ContainSubstring("padding: 7px"))
+	})
+
+	// C20 to C23: only a gem's external package lookup changes. Everything resolved inside the gem
+	// - relative and self-referencing imports, CSS and CSS modules, fonts, SVG, dynamic imports,
+	// source maps - builds the same with the map as without it, bundled or not.
+	Describe("a gem's own files", func() {
+		BeforeEach(func() {
+			dir := "vendor/" + gem + "/"
+			write(dir+"package.json", `{"name":"@rubygems/`+gem+`","exports":{".":"./index.js","./feature":"./helper.js"}}`)
+			write(dir+"helper.js", "export default 'helper'\n")
+			write(dir+"relative.js", "export { default } from './helper.js'\n")
+			write(dir+"self.js", "export { default } from '@rubygems/"+gem+"/helper.js'\n")
+			write(dir+"lazy.js", "export const load = () => import('./helper.js')\n")
+			write(dir+"local.module.css", ".local { color: green; }\n")
+			write(dir+"module.js", "import styles from './local.module.css'\nexport default styles.local\n")
+			write(dir+"font.woff", "not a real font")
+			write(dir+"icon.svg", `<svg xmlns="http://www.w3.org/2000/svg"></svg>`)
+			write(dir+"assets.css", "@font-face { font-family: f; src: url('./font.woff'); }\n"+
+				".icon { background: url('./icon.svg'); }\n@import './local.module.css';\n")
+		})
+
+		for _, entry := range []string{"relative.js", "self.js", "lazy.js", "module.js", "assets.css"} {
+			for _, bundle := range []bool{true, false} {
+				It(fmt.Sprintf("builds %s the same with the map (bundle: %v)", entry, bundle), func() {
+					path := "node_modules/@rubygems/" + gem + "/" + entry
+					testConfig.Bundle = bundle
+
+					okWith, with := build(path)
+					contexts := testConfig.DependencyContexts
+					testConfig.DependencyContexts = nil
+					okWithout, without := build(path)
+					testConfig.DependencyContexts = contexts
+
+					Expect(okWith).To(BeTrue(), with)
+					Expect(okWithout).To(BeTrue(), without)
+					Expect(with).To(Equal(without))
+				})
+			}
+		}
 	})
 
 	It("resolves from the context outside a build", func() {
