@@ -91,6 +91,18 @@ describe 'an adopted app' do
     assert_includes Adopted.sh('bun', 'test', 'test/js/'), '1 pass'
   end
 
+  # C54: on a Heroku-style platform the Node buildpack may run before the Ruby one. The contexts
+  # are committed, so the native frozen install needs no gems, and once both have run, the
+  # documented check passes. Setup ran them Ruby first; this runs Node first.
+  it 'installs with Node before Ruby, then passes `proscenium install --frozen`' do
+    FileUtils.rm_rf(Dir[File.join(Adopted::ROOT, '{,.proscenium/packages/*/}node_modules')])
+    Adopted.sh('pnpm', 'install', '--frozen-lockfile')
+    Adopted.sh('bundle', 'install', '--local', '--quiet')
+
+    assert_includes Adopted.sh('bundle', 'exec', 'proscenium', 'install', '--frozen'),
+                    'Everything is up to date'
+  end
+
   # C34
   it 'refuses to build while an install is in progress' do
     Adopted.with_file('.proscenium/installing', '1') do
