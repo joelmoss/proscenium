@@ -45,6 +45,22 @@ module Proscenium
       end
     end
 
+    INSTALLING = File.join('.proscenium', 'installing')
+    LOCK = File.join('.proscenium', 'lock')
+    INSTALLING_MESSAGE = '`bundle exec proscenium install` is running, or stopped before it ' \
+                         'finished. Wait for it, or run it again.'
+
+    # Whether an install is under way in the app at `root`, or stopped before it finished: its
+    # marker is there, or another process holds the project lock. The engine refuses to build or
+    # resolve meanwhile (C34). The probe takes a shared lock, so it never stops an install
+    # starting; the CLI retries a lock it finds taken for a moment. About 16 µs.
+    def installing?(root)
+      return true if File.exist?(File.join(root, INSTALLING))
+
+      lock = File.join(root, LOCK)
+      File.exist?(lock) && File.open(lock, File::RDONLY) { !it.flock(File::LOCK_SH | File::LOCK_NB) }
+    end
+
     UNSUPPORTED = { 'yarn.lock' => 'Yarn', 'package-lock.json' => 'npm',
                     'npm-shrinkwrap.json' => 'npm' }.freeze
 

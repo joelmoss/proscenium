@@ -27,6 +27,24 @@ describe 'project lock and runner' do
     Lock.new(@root).synchronize('again') { pass }
   end
 
+  # A running Rails app probes the lock with a shared lock (ContextMap.installing?). That must
+  # not read as another install.
+  it 'waits out a probe of the lock rather than reporting busy' do
+    FileUtils.mkdir_p(File.join(@root, '.proscenium'))
+    held = Queue.new
+    probe = Thread.new do
+      File.open(File.join(@root, '.proscenium/lock'), File::RDONLY | File::CREAT) do |io|
+        io.flock(File::LOCK_SH)
+        held << true
+        sleep 0.2
+      end
+    end
+    held.pop
+
+    Lock.new(@root).synchronize('install') { pass }
+    probe.join
+  end
+
   it 'leaves the install marker until it is removed' do
     lock = Lock.new(@root)
     lock.synchronize('install') { lock.mark! }

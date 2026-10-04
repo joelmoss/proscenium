@@ -250,6 +250,7 @@ module Proscenium
       #   absPath - the real file on disk, for the runtime's own resolver
       def op_resolve(request)
         path = request.fetch('path')
+        refuse_while_installing!
 
         # `Resolver.resolved` is a plain class-level Hash with no synchronisation, so concurrent
         # resolves would race on it. Resolution is cheap and memoised, so serialising it costs
@@ -283,6 +284,7 @@ module Proscenium
         # and then stripped by the plugin.
         sourcemap = request.fetch('sourcemap', true) ? true : false
 
+        refuse_while_installing!
         cached(path, sourcemap) do
           code = serve_or_build(path, sourcemap: sourcemap)
 
@@ -499,6 +501,14 @@ module Proscenium
       # constant and pinned the first render for the life of the daemon. That is invisible in a
       # one-shot run and wrong in a watching one - a suite passing against bytes the app no longer
       # produces. A route render is cheap next to a build, so it happens each time instead.
+      # Before the cache, so an earlier result is not handed out while an install changes what it
+      # resolved against (C24).
+      def refuse_while_installing!
+        return unless Proscenium::ContextMap.installing?(Rails.root.to_s)
+
+        raise Proscenium::ContextMap::INSTALLING_MESSAGE
+      end
+
       def cached(path, *extra)
         mtime = mtime_of(path)
         return yield if mtime.nil?

@@ -45,6 +45,27 @@ describe Proscenium::ContextMap do
     assert CM.adopted?(@root)
   end
 
+  describe 'installing?' do
+    before { FileUtils.mkdir_p(File.join(@root, '.proscenium')) }
+
+    it 'is true while the marker is there' do
+      refute CM.installing?(@root)
+      write('.proscenium/installing', '1')
+
+      assert CM.installing?(@root)
+    end
+
+    it 'is true while another holds the project lock, and never takes it from them' do
+      File.open(File.join(@root, '.proscenium/lock'), File::RDWR | File::CREAT) do |io|
+        io.flock(File::LOCK_EX)
+
+        assert CM.installing?(@root)
+      end
+
+      refute CM.installing?(@root)
+    end
+  end
+
   describe 'adoption notice' do
     it 'names the opted-in gems and the command, before adoption' do
       assert_equal 'hue opt in to installing their JavaScript dependencies through Proscenium. ' \

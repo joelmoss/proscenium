@@ -31,7 +31,7 @@ module Proscenium
       def synchronize(command)
         FileUtils.mkdir_p(@dir)
         @io = File.open(lock_path, File::RDWR | File::CREAT, 0o644)
-        unless @io.flock(File::LOCK_EX | File::LOCK_NB)
+        unless acquired?
           holder = File.exist?(holder_path) ? File.read(holder_path).strip : ''
           @io.close
           raise Error.new('PSM-E-BUSY', holder: holder.empty? ? 'another install' : holder)
@@ -41,6 +41,17 @@ module Proscenium
         yield self
       ensure
         @io&.close unless @io&.closed?
+      end
+
+      # The lock, retried for a second: a running Rails app probes it with a shared lock for a few
+      # microseconds at a time, and that must not read as another install.
+      def acquired?
+        20.times do
+          return true if @io.flock(File::LOCK_EX | File::LOCK_NB)
+
+          sleep 0.05
+        end
+        false
       end
 
       # Whether an earlier install was interrupted before it finished.

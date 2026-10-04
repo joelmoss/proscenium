@@ -9,6 +9,27 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   let(:subject) { Proscenium::Builder }
 
+  # C34: an install under way, or one that stopped before finishing, stops every call into Go.
+  describe 'while an install is in progress' do
+    before do
+      @root = Dir.mktmpdir('installing')
+      FileUtils.mkdir_p(File.join(@root, '.proscenium'))
+      File.write(File.join(@root, '.proscenium/installing'), '1')
+    end
+
+    after { FileUtils.rm_rf(@root) }
+
+    it 'refuses to build, resolve or compile, naming the command' do
+      [-> { subject.build_to_string('lib/foo.js', root: @root) },
+       -> { subject.resolve('react', root: @root) },
+       -> { subject.compile(root: @root) }].each do |call|
+        error = assert_raises(Proscenium::Error, &call)
+
+        assert_includes error.message, 'bundle exec proscenium install'
+      end
+    end
+  end
+
   describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
       result = subject.build_to_string('lib/env/env.js')

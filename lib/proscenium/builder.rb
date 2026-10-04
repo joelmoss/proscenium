@@ -208,7 +208,7 @@ module Proscenium
     # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
     # any it does not know.
     def initialize(root: nil, **overrides)
-      root = (root || Rails.root).to_s
+      @root = root = (root || Rails.root).to_s
       config_hash = {
         RootPath: root,
         OutputDir: "public#{Proscenium.config.output_dir}",
@@ -254,6 +254,8 @@ module Proscenium
     end
 
     def build_to_string(path)
+      raise BuildError.new(path, ContextMap::INSTALLING_MESSAGE) if installing?
+
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
         raw = Request.build_to_string(path, @request_config)
         result = { success: raw[:success], response: read_and_free(raw[:response]),
@@ -266,6 +268,8 @@ module Proscenium
     end
 
     def resolve(path)
+      raise ResolveError.new(path, ContextMap::INSTALLING_MESSAGE) if installing?
+
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
         raw = Request.resolve(path, @request_config)
         success = raw[:success]
@@ -280,6 +284,8 @@ module Proscenium
 
     # Returns true, or raises CompileError with esbuild's messages.
     def compile
+      raise CompileError, ContextMap::INSTALLING_MESSAGE if installing?
+
       raw = Request.compile(@request_config)
       messages = read_and_free(raw[:messages])
 
@@ -289,6 +295,8 @@ module Proscenium
     end
 
     private
+
+    def installing? = ContextMap.installing?(@root)
 
     # The Go side allocates each of these strings with C.CString, which the Go runtime cannot
     # see or collect - it must be freed from this side once we're done reading it.
