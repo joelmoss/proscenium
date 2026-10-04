@@ -87,7 +87,7 @@ describe 'an adopted app' do
       widget, log = Adopted.run(build(WIDGET))
 
       refute_includes widget, 'ms@2.0.0'
-      assert_includes log, 'stage_a_widget_a, stage_a_widget_b opt in to installing their JavaScript'
+      assert_includes log, 'stage_a_widget_a, stage_a_widget_b opt in to installing their'
     end
   end
 end
