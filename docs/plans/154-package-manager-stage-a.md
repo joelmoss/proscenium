@@ -140,3 +140,122 @@ why it runs only with `STAGE_A=1`.
 - The drift cases that decide whether a descriptor receipt is needed.
 - Whether london, platform or codaset nest a Rails app in an enclosing JS workspace, and the hosts
   each develops and deploys on.
+
+## codaset on Bun (4 October 2026)
+
+**Question.** Can proscenium-ui get its dependencies from a context on Bun, what does registering
+a context do to codaset's install, and do codaset's pages and `bun test` harness survive it (C51)?
+
+**Verdict: GO for this leg, with one author fix needed in proscenium-ui and the gaps below.**
+Registration needs the explicit linker the plan requires: without one, Bun 1.4.2 switches codaset
+from its hoisted `node_modules` to the isolated store. With `linker = "hoisted"` and an empty
+`trustedDependencies`, codaset's layout is unchanged and its 139 `bun test` tests pass. With the
+seam on, every proscenium-ui entry whose imports its manifest declares builds as it does today;
+the eleven that do not are files importing packages proscenium-ui never declared.
+
+### Setup
+
+| | |
+|---|---|
+| Command | `ruby test/package_manager/stage_a/leg.rb CODASET PROSCENIUM_UI CONFIG OUT` (CONFIG names proscenium-ui and Bun) |
+| Host | macOS 27.0.1 (26A434), arm64 |
+| Bun | 1.4.2 |
+| Node | 26.10.0 |
+| Ruby | 4.0.3 (codaset's), to read its bundle and run its harness |
+| codaset | eb36cb5 |
+| proscenium-ui | checkout at fc6640a, which Gemfile.lock also records; codaset's package.json takes it from the hosted registry at `^0.2.1` |
+
+Cells, as for london, with Bun's registration (`workspaces` in package.json): **base** (frozen,
+as today), **reg** (registered, no linker setting, to see what Bun picks), **unref-hoisted** and
+**unref-isolated** (linker set, empty `trustedDependencies`, no app edge) and **ref-hoisted**
+(plus `"@rubygems/proscenium-ui": "workspace:*"`). The entries are proscenium-ui's own JS and CSS
+(40).
+
+### Install layout
+
+| Cell | Store | Root `node_modules` entries | Context `node_modules` |
+|---|---|---|---|
+| base | none (hoisted) | 18 | n/a |
+| reg, no linker | `.bun` (isolated) | 6 | links into the store |
+| unref-hoisted, ref-hoisted | none (hoisted) | 18 | none: dependencies hoisted to the root |
+| unref-isolated | `.bun` | 6 | links into the store |
+
+- **Registration switches the linker unless one is set (settles the plan's requirement on
+  1.4.2).** In a codaset worktree with its existing hoisted tree, registering with no linker
+  setting moved the old tree to `node_modules/.old_modules-<hash>` and installed the isolated
+  store. With `linker = "hoisted"` the layout stayed exactly as before: 18 root entries, no store,
+  nothing moved aside.
+- **Hoisted puts context-only dependencies at the root**, and Bun links
+  `node_modules/@rubygems/proscenium-ui` to the context even with no app edge. Both mean today's
+  engine already finds proscenium-ui's dependencies under hoisted (40 of 40 match base with the
+  seam off), and that the app can import a package only a gem declares (C47).
+- **Hoisted nests conflicting copies under the context.** A synthetic app on `ms` 2.1.3 with two
+  contexts, one on `ms` 2.0.0: Bun put 2.0.0 as a real directory at
+  `.proscenium/packages/<gem>/node_modules/ms`, kept 2.1.3 at the root for the other, and hoisted
+  a context-only package to the root, where the app could resolve it. Under isolated all three are
+  links into the store and the app cannot resolve the context-only package. So under hoisted the
+  serving allow-list must cover `.proscenium/packages/<gem>/node_modules/`, as the plan's Identity
+  and URLs section anticipated.
+
+### Results
+
+| Cell | Bundled, matching base | Unbundled, matching base |
+|---|---|---|
+| unref-hoisted, seam off | 40 of 40 | 40 of 40 |
+| unref-hoisted, seam on | 29 of 40 | 28 of 40 |
+| unref-isolated, seam off | 37 of 40 | 39 of 40 |
+| unref-isolated, seam on | 29 of 40 | 28 of 40 |
+| ref-hoisted, seam off | 40 of 40 | 40 of 40 |
+| ref-hoisted, seam on | 29 of 40 | 28 of 40 |
+
+- **The eleven seam failures are proscenium-ui's manifest, not the bridge.** Eleven form-field
+  files import `react`, `clsx` or `trix`, none of which proscenium-ui's package.json declares. The
+  seam fails each with `gem "proscenium-ui": could not resolve "<package>" from its dependency
+  context`. Today nothing provides them either: base leaves the imports external and the browser
+  would fail. codaset does not use those components. proscenium-ui should declare them, React as a
+  peer, before it opts in.
+- **The twelfth unbundled difference is the local checkout.** One entry's `@floating-ui/dom`
+  resolves in base to the copy in proscenium-ui's own checkout `node_modules` (1.7.6) and with the
+  seam to the context's (1.8.0). An installed gem has no such directory.
+- **Isolated without the seam is the control.** Three bundled entries lose modules, because
+  today's engine cannot see dependencies that live only under the context.
+- **The seam's results do not depend on the linker or an app edge.**
+
+### Scripts and `trustedDependencies`
+
+Bun 1.4.2 trusts 367 packages by default (`bun pm default-trusted`). Measured with
+`simple-git-hooks`, which is on that list and whose postinstall writes a Git hook:
+
+| Where the package comes from | `trustedDependencies` absent | `trustedDependencies: []` |
+|---|---|---|
+| the app's own dependency | script ran | blocked, reported |
+| a gem's context | script ran | blocked, reported |
+
+So an explicit array replaces the default list, and without one a gem can introduce a package
+whose install script runs unapproved. That settles the plan's requirement for an explicit
+`trustedDependencies` on Bun. (`esbuild`, also on the list, is special-cased: with no array Bun
+reports "ignoring esbuild lifecycle scripts"; with `[]` it is blocked like any other.)
+
+### CI half: `bun_test.rb`
+
+Run by the `stage-a` CI job (Bun 1.4.2) and locally with `STAGE_A=1`. From the fixture gems, under
+both linkers: the nested and linked `ms` copies above, each widget bundling its own `ms` and the
+app's single React, the unbundled URL of the nested copy, and the `trustedDependencies` result for
+a gem-introduced `simple-git-hooks`. With the seam disabled in Go, the isolated bundle and the
+nested-copy URL checks fail. Under hoisted, today's engine already reaches the nested copy, through
+the `node_modules/@rubygems/<gem>` link Bun creates for every workspace.
+
+### codaset's harness (C51)
+
+In a worktree of codaset: `bun test` with codaset's Ruby passed 139 of 139 tests in 12 files
+before registration, after registering with no linker (the isolated switch), and after
+registering with `linker = "hoisted"` and `trustedDependencies: []`. In the last state, a frozen
+install after deleting `node_modules`, and a second frozen install, exit 0 and leave package.json,
+bun.lock, bunfig.toml and the context byte-identical. The harness runs codaset's own Proscenium
+(0.25.3), so this shows registration does not disturb it; it does not exercise the seam.
+
+### Not covered by this leg yet
+
+- Bun 1.4.0, the plan's floor; only 1.4.2 ran, on Node 26.
+- codaset's unbundled pages in a browser (C51's other half).
+- The peer probe (C12) on Bun.
