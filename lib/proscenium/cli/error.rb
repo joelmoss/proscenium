@@ -178,6 +178,12 @@ module Proscenium
           :input, "%<count>s of the app's own packages take a gem context's name:\n%<list>s",
           'Remove the dependency, as Gemfile.lock pins the gem now, or rename the package.'
         ],
+        'PSM-E-PLATFORM-VARIANT' => [
+          :unsupported, 'Platform variants of %<variants>s declare different JavaScript ' \
+                        'dependencies or participation than the variant installed here.',
+          'Make every platform variant of the gem ship the same package.json dependencies and ' \
+          'proscenium.dependencies setting; the lock can hold only one set.'
+        ],
         'PSM-E-UNC-SHIM' => [
           :unsupported, '%<manager>s is a .cmd shim, and cmd.exe cannot run in %<root>s, a ' \
                         'UNC path: it would run the manager in C:\\Windows instead.',

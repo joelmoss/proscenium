@@ -8,6 +8,7 @@ require_relative 'collisions'
 require_relative 'contexts'
 require_relative 'diff'
 require_relative 'manager'
+require_relative 'platform_variants'
 require_relative 'project_lock'
 require_relative 'registration'
 require_relative 'runner'
@@ -67,6 +68,7 @@ module Proscenium
         @committed = Contexts.committed(@root)
         check_owned_directory
         report_problems
+        check_platform_variants(specs)
         check_collisions
       rescue BundledGems::ConfigError => e
         raise Error.new('PSM-E-CONFIG', detail: e.message)
@@ -110,6 +112,14 @@ module Proscenium
         end
         links = owned.select { File.symlink?(File.join(@root, it)) }
         raise Error.new('PSM-E-OWNED-LINK', paths: links.join(', ')) if links.any?
+      end
+
+      def check_platform_variants(specs)
+        found = PlatformVariants.differences(Bundler.app_cache.to_s, specs)
+        return if found.empty?
+
+        raise Error.new('PSM-E-PLATFORM-VARIANT',
+                        variants: found.map { |gem, file| "#{gem} (#{file})" }.join(', '))
       end
 
       def check_collisions

@@ -3,6 +3,7 @@
 require 'json'
 require 'rubygems/package'
 require 'zlib'
+require_relative 'gem_archive'
 require_relative 'rules'
 require_relative '../bundled_gems'
 
@@ -107,36 +108,10 @@ module Proscenium
         [spec, spec.files, cause ? nil : File.read(manifest), cause]
       end
 
-      # A built gem: the specification and package.json from the archive, without unpacking the
-      # frontend files. Nothing is extracted, so no entry name can write anywhere, and the
-      # manifest entry is read only if it is a regular file within the size limit (C29).
+      # A built gem, read from its archive (GemArchive).
       def read_archive
-        package = Gem::Package.new(@path)
-        spec = package.spec
-        root = frontend_root(spec) || ''
-        wanted = root.empty? ? 'package.json' : File.join(root, 'package.json')
-        manifest = cause = nil
-        File.open(@path, 'rb') do |io|
-          Gem::Package::TarReader.new(io).each do |entry|
-            next unless entry.full_name == 'data.tar.gz'
-
-            Zlib::GzipReader.wrap(entry) do |gz|
-              Gem::Package::TarReader.new(gz).each do |file|
-                next unless file.full_name == wanted
-
-                manifest, cause = archived_manifest(file)
-              end
-            end
-          end
-        end
+        spec, manifest, cause = GemArchive.read(@path)
         [spec, spec.files, manifest, cause]
-      end
-
-      def archived_manifest(entry)
-        return [nil, 'it is not a regular file'] unless entry.file?
-        return [nil, 'it is larger than 1 MB'] if entry.header.size > Rules::MANIFEST_LIMIT
-
-        [entry.read, nil]
       end
 
       def source_root(root) = @source && File.join(@source, root)
