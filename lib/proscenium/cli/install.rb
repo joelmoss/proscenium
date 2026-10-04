@@ -134,8 +134,13 @@ module Proscenium
 
         run_manager
         Verify.new(@root, @manager, @contexts.contexts.keys).call
-        @reporter.info("Everything is up to date for #{@contexts.contexts.size} gems.",
-                       event: 'frozen')
+        lines = ["Everything is up to date for #{@contexts.contexts.size} gems.", *kept]
+        @reporter.info(lines.join("\n"), event: 'frozen')
+      end
+
+      # A line for each committed context kept for a gem that is not installed.
+      def kept
+        (@excluded & @committed.keys).map { "  #{it}: not installed, its committed context kept" }
       end
 
       def describe_change(context)
@@ -250,9 +255,7 @@ module Proscenium
         if introduced.any?
           lines << "Git and URL dependencies gems introduced: #{introduced.join(', ')}"
         end
-        (@excluded & @committed.keys).each do |gem|
-          lines << "  #{gem}: not installed, its committed context kept"
-        end
+        lines.concat(kept)
         commit = @written + [lockfile]
         lines << "Commit: #{commit.uniq.join(', ')}"
         @reporter.info(lines.join("\n"), event: 'installed', manager: @manager.name,

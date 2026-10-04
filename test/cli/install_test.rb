@@ -52,10 +52,11 @@ describe 'proscenium install' do
     dir
   end
 
-  def proscenium(dir, *args, manager: nil)
+  def proscenium(dir, *args, manager: nil, env: {})
     args += ['--manager', manager] if manager
     Bundler.with_unbundled_env do
-      Open3.capture3(StageA::Bundle.env(BUNDLE), RbConfig.ruby, '-I', LIB, EXE, *args, chdir: dir)
+      Open3.capture3(StageA::Bundle.env(BUNDLE).merge(env), RbConfig.ruby, '-I', LIB, EXE, *args,
+                     chdir: dir)
     end
   end
 
@@ -134,6 +135,23 @@ describe 'proscenium install' do
           assert_predicate status, :success?, err
           assert_empty Dir.children(elsewhere)
         end
+      end
+
+      # C32: a deploy without the development group trusts that gem's committed context, leaves
+      # its dependencies out and needs no network.
+      it 'installs for production without an excluded group, offline' do
+        dir = app(manager)
+        proscenium(dir, 'install', manager:)
+        FileUtils.rm_rf(Dir[File.join(dir, '{,.proscenium/packages/*/}node_modules')])
+        out, err, status = proscenium(dir, 'install', '--frozen', '--production', '--offline',
+                                      manager:, env: { 'BUNDLE_WITHOUT' => 'development' })
+
+        assert_predicate status, :success?, err
+        assert_includes out, "Everything is up to date for #{GEMS.size - 1} gems."
+        assert_includes out, 'gem_npm: not installed, its committed context kept'
+        assert_path_exists context(dir, 'gem_npm')
+        assert_path_exists File.join(dir, 'node_modules')
+        refute_path_exists File.join(dir, '.proscenium/packages/gem_npm/node_modules/string-length')
       end
 
       it 'fails --frozen on a hand edit, an orphan or a missing registration, before the manager' do

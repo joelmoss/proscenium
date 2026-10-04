@@ -80,8 +80,11 @@ module StageA
       <<~GEMFILE
         source 'https://rubygems.org'
 
-        #{(ARCHIVES + ['gem_npm']).map { |name| "gem '#{name}'" }.join("\n")}
+        #{ARCHIVES.map { |name| "gem '#{name}'" }.join("\n")}
         gem '#{GIT}', git: '#{repo}'
+
+        # A group a production install leaves out (C32).
+        gem 'gem_npm', group: :development
       GEMFILE
     end
 
