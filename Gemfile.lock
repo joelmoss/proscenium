@@ -171,6 +171,7 @@ GEM
     ffi (1.17.4-arm64-darwin)
     ffi (1.17.4-x64-mingw-ucrt)
     ffi (1.17.4-x86_64-linux-gnu)
+    fiddle (1.1.8)
     globalid (1.4.0)
       activesupport (>= 6.1)
     i18n (1.15.2)
@@ -358,6 +359,7 @@ DEPENDENCIES
   capybara
   debug
   fakefs
+  fiddle
   gem1!
   gem2!
   gem3!
