@@ -76,6 +76,12 @@ describe 'an adopted app' do
     FileUtils.rm_rf(File.join(Adopted::ROOT, 'public'))
   end
 
+  # C24: `bun test` builds through the same daemon, so the gem's imports come from its context
+  # there too (fixtures/adopted/test/js/widget.test.js).
+  it "resolves a gem's imports from its context under bun test" do
+    assert_includes Adopted.sh('bun', 'test', 'test/js/'), '1 pass'
+  end
+
   # C34
   it 'refuses to build while an install is in progress' do
     Adopted.with_file('.proscenium/installing', '1') do
