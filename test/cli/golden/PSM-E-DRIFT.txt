@@ -1,0 +1,4 @@
+PSM-E-DRIFT: 2 thing(s) differ from what the bundle calls for:
+  - widget: its context is out of date
+  - pnpm-lock.yaml is missing
+Run `bundle exec proscenium install` and commit what it lists.

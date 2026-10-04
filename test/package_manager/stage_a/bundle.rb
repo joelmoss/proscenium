@@ -85,15 +85,17 @@ module StageA
       GEMFILE
     end
 
-    def bundle(app, dir, *args)
-      env = {
-        'BUNDLE_GEMFILE' => File.join(app, 'Gemfile'),
+    # The environment that selects the fixture app's bundle, installed under `dir`.
+    def env(dir)
+      { 'BUNDLE_GEMFILE' => File.join(dir, 'app', 'Gemfile'),
         'BUNDLE_PATH' => File.join(dir, 'bundle'),
         'BUNDLE_APP_CONFIG' => File.join(dir, '.bundle'),
-        'BUNDLE_DISABLE_SHARED_GEMS' => 'true'
-      }
+        'BUNDLE_DISABLE_SHARED_GEMS' => 'true' }
+    end
+
+    def bundle(app, dir, *args)
       out, status = Bundler.with_unbundled_env do
-        Open3.capture2e(env, 'bundle', *args, chdir: app)
+        Open3.capture2e(env(dir), 'bundle', *args, chdir: app)
       end
       raise "bundle #{args.join(' ')} failed:\n#{out}" unless status.success?
 

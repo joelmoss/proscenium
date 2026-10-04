@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-PEER-SPLIT","message":"widget and the app resolve react to different copies, so the page would load it twice.","fix":"Make the app and widget agree on react. On pnpm 10, `pnpm dedupe` usually repairs this after an upgrade; `auto-install-peers=false` in .npmrc prevents it."}

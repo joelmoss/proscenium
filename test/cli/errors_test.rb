@@ -37,7 +37,15 @@ describe Proscenium::CLI::Error do
     'PSM-E-REGISTRATION' => { file: 'package.json' },
     'PSM-E-BUSY' => { holder: 'proscenium install (pid 4242)' },
     'PSM-E-NATIVE' => { command: 'pnpm install', status: 1 },
-    'PSM-E-INTERRUPTED' => { command: 'pnpm install' }
+    'PSM-E-INTERRUPTED' => { command: 'pnpm install' },
+    'PSM-E-CROSS-GEM-TARGET' => { gem: 'widget', other: 'other' },
+    'PSM-E-CONFIG' => { detail: 'proscenium.json must have "schema": 1' },
+    'PSM-E-PROBLEMS' => { count: 2 },
+    'PSM-E-DRIFT' => { count: 2, list: "  - widget: its context is out of date\n  " \
+                                       '- pnpm-lock.yaml is missing' },
+    'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
+    'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
+    'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' }
   }.freeze
 
   def render(error, json:)

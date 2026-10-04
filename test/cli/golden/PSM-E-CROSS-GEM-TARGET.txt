@@ -1,0 +1,2 @@
+PSM-E-CROSS-GEM-TARGET: widget's package.json references @rubygems/other, which does not take part in JavaScript dependency installation.
+Opt other in: its author sets proscenium.dependencies, or the app adds `"gemOverrides": {"other": {"participate": true}}` to proscenium.json.

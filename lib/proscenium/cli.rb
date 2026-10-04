@@ -4,6 +4,9 @@ require_relative 'version'
 require_relative 'cli/error'
 require_relative 'cli/reporter'
 require_relative 'cli/gem_check'
+require_relative 'cli/install'
+
+autoload :OptionParser, 'optparse'
 
 module Proscenium
   # The `proscenium` command (#154): installs participating gems' JavaScript dependencies through
@@ -53,6 +56,8 @@ module Proscenium
         reporter.info(Proscenium::VERSION, event: 'version', version: Proscenium::VERSION)
       when '--help', '-h', nil
         reporter.info(USAGE, event: 'help')
+      when 'install'
+        return Install.new(project_root, reporter, **install_options(args.drop(1))).call
       when 'gem'
         unless args[1] == 'check'
           raise Error.new('PSM-E-USAGE', detail: 'Did you mean `proscenium gem check`?')
@@ -64,6 +69,29 @@ module Proscenium
       end
 
       0
+    end
+
+    # The active bundle's root: subdirectories and BUNDLE_GEMFILE both resolve to the app the
+    # bundle belongs to, so contexts are never written into another app.
+    def project_root = Bundler.root.to_s
+
+    def install_options(args)
+      options = { js_args: [] }
+      OptionParser.new do |parser|
+        parser.on('--frozen') { options[:frozen] = true }
+        parser.on('--production') { options[:production] = true }
+        parser.on('--offline') { options[:offline] = true }
+        parser.on('--manager NAME') { options[:manager] = it }
+        parser.on('--experimental-manager-version') { options[:experimental] = true }
+        parser.on('--js-arg ARG') { options[:js_args] << it }
+      end.parse!(args.dup)
+      if options[:js_args].any? && (options[:frozen] || options[:offline])
+        raise Error.new('PSM-E-USAGE', detail: '--js-arg cannot be used with --frozen or --offline')
+      end
+
+      options
+    rescue OptionParser::ParseError => e
+      raise Error.new('PSM-E-USAGE', detail: e.message)
     end
   end
 end

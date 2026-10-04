@@ -27,6 +27,17 @@ module Proscenium
         end
       end
 
+      # A problem that does not stop the command.
+      def warning(error, phase: nil)
+        if @json
+          emit(event: 'warning', phase:, status: 'warning', code: error.code,
+               message: error.message, fix: error.fix, details: error.details)
+        else
+          @err.puts "warning #{error.code}: #{error.message}"
+          @err.puts error.fix
+        end
+      end
+
       def error(error, phase: nil, manager: nil)
         if @json
           emit(event: 'error', phase:, status: 'error', code: error.code, message: error.message,

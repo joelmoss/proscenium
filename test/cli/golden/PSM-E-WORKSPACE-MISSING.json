@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-WORKSPACE-MISSING","message":"bun did not install the contexts for widget.","fix":"Check the registration in pnpm-workspace.yaml or package.json names \".proscenium/packages/*\", then run `bundle exec proscenium install` again."}

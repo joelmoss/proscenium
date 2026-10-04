@@ -1,0 +1,2 @@
+PSM-E-CONFIG: proscenium.json must have "schema": 1.
+Fix proscenium.json; its documented keys are schema, gemOverrides, rubyGroups and platforms.

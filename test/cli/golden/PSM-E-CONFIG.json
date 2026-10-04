@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-CONFIG","message":"proscenium.json must have \"schema\": 1.","fix":"Fix proscenium.json; its documented keys are schema, gemOverrides, rubyGroups and platforms."}

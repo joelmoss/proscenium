@@ -185,7 +185,7 @@ jobs:
           bun-version: ${{ steps.caps.outputs.bun }}
 
       - run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go
-      - run: bin/test test/package_manager/stage_a/
+      - run: bin/test test/package_manager/stage_a/ test/cli/install_test.rb
 
   bun-test:
     strategy:

@@ -75,7 +75,7 @@ describe 'project lock and runner' do
       rescue Proscenium::CLI::Error => e
         e
       end
-      sleep 0.05 until File.exist?(pid) && !File.read(pid).empty?
+      sleep 0.05 until File.exist?(pid) && !File.empty?(pid)
     end
 
     # The CLI's own descriptor is closed: only the running manager holds the lock now.

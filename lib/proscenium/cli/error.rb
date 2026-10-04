@@ -136,6 +136,41 @@ module Proscenium
           :interrupted, '`%<command>s` was interrupted before it finished.',
           'Run `bundle exec proscenium install` again to finish the install.'
         ],
+        'PSM-E-CROSS-GEM-TARGET' => [
+          :input, "%<gem>s's package.json references @rubygems/%<other>s, which does not take " \
+                  'part in JavaScript dependency installation.',
+          'Opt %<other>s in: its author sets proscenium.dependencies, or the app adds ' \
+          '`"gemOverrides": {"%<other>s": {"participate": true}}` to proscenium.json.'
+        ],
+        'PSM-E-CONFIG' => [
+          :input, '%<detail>s.',
+          'Fix proscenium.json; its documented keys are schema, gemOverrides, rubyGroups and ' \
+          'platforms.'
+        ],
+        'PSM-E-PROBLEMS' => [
+          :input, '%<count>s problem(s) above stop the install. Nothing was changed.',
+          'Fix each one as it says, then run `bundle exec proscenium install` again.'
+        ],
+        'PSM-E-DRIFT' => [
+          :drift, "%<count>s thing(s) differ from what the bundle calls for:\n%<list>s",
+          'Run `bundle exec proscenium install` and commit what it lists.'
+        ],
+        'PSM-E-REGISTRY-TARBALL' => [
+          :integrity, 'The lockfile resolves %<packages>s from a registry, not from the gem.',
+          'Remove the registry or GitHub dependency on it from package.json, then run ' \
+          '`bundle exec proscenium install`.'
+        ],
+        'PSM-E-WORKSPACE-MISSING' => [
+          :integrity, '%<manager>s did not install the contexts for %<gems>s.',
+          'Check the registration in pnpm-workspace.yaml or package.json names ' \
+          '".proscenium/packages/*", then run `bundle exec proscenium install` again.'
+        ],
+        'PSM-E-PEER-SPLIT' => [
+          :integrity, '%<gem>s and the app resolve %<package>s to different copies, so the ' \
+                      'page would load it twice.',
+          'Make the app and %<gem>s agree on %<package>s. On pnpm 10, `pnpm dedupe` usually ' \
+          'repairs this after an upgrade; `auto-install-peers=false` in .npmrc prevents it.'
+        ],
         'PSM-E-INTERNAL' => [
           :internal, 'Unexpected error: %<detail>s',
           'This is a bug in Proscenium. Please report it at ' \
@@ -145,11 +180,13 @@ module Proscenium
 
       attr_reader :code, :fix, :details
 
-      def initialize(code, details: {}, **args)
+      # `escape`, when given, is the consumer's way around a gem author's problem, appended to the
+      # fix.
+      def initialize(code, details: {}, escape: nil, **args)
         @code = code
         status, message, fix = CATALOG.fetch(code)
         @status = status
-        @fix = format(fix, **args)
+        @fix = [format(fix, **args), escape].compact.join(' ')
         @details = details
         super(format(message, **args))
       end
