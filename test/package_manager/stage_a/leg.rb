@@ -99,6 +99,30 @@ def layout(dir)
   }
 end
 
+# Adds the context pattern to the app's workspaces, keeping any it has, in either of the forms
+# package.json allows (an array, or an object with `packages`).
+def register_bun(app)
+  pattern = '.proscenium/packages/*'
+  workspaces = app['workspaces'] ||= []
+  list = workspaces.is_a?(Hash) ? (workspaces['packages'] ||= []) : workspaces
+  list << pattern unless list.include?(pattern)
+end
+
+# Sets `linker` in bunfig.toml's `[install]` table, adding the table only if there is none: a
+# second `[install]` would make the file invalid TOML.
+def set_linker(path, linker)
+  lines = File.exist?(path) ? File.readlines(path) : []
+  lines.reject! { it.match?(/\A\s*linker\s*=/) }
+  table = lines.index { it.strip == '[install]' }
+  if table
+    lines.insert(table + 1, "linker = \"#{linker}\"\n")
+  else
+    lines << "\n" unless lines.empty?
+    lines.push("[install]\n", "linker = \"#{linker}\"\n")
+  end
+  File.write(path, lines.join)
+end
+
 layouts = {}
 (['base'] + CELLS.keys).each do |cell|
   dir = "#{out}/#{cell}"
@@ -115,12 +139,9 @@ layouts = {}
     app['dependencies'].delete("@rubygems/#{GEM}")
     app['dependencies']["@rubygems/#{GEM}"] = 'workspace:*' if edge
     if MANAGER == 'bun'
-      app['workspaces'] = ['.proscenium/packages/*']
+      register_bun(app)
       app['trustedDependencies'] ||= [] if linker
-      if linker
-        bunfig = File.read("#{dir}/bunfig.toml")
-        File.write("#{dir}/bunfig.toml", "#{bunfig}\n[install]\nlinker = \"#{linker}\"\n")
-      end
+      set_linker("#{dir}/bunfig.toml", linker) if linker
     else
       StageA::Context.register_pnpm(dir)
     end
