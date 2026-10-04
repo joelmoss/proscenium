@@ -275,11 +275,17 @@ jobs:
           $vars['LOCALAPPDATA'] = "$userHome\AppData\Local"
           $vars['TEMP'] = "$userHome\AppData\Local\Temp"
           $vars['TMP'] = "$userHome\AppData\Local\Temp"
+          $vars['TMPDIR'] = "$userHome\AppData\Local\Temp"
           $lines = @('@echo off', 'chcp 65001 >nul')
           $lines += $vars.GetEnumerator() | ForEach-Object { "set `"$($_.Key)=$($_.Value)`"" }
           $lines += @(
-            'whoami',
-            'whoami /groups | findstr /C:"S-1-5-32-544" && (echo still an administrator & exit /b 98)',
+            # The runner's global Git settings are its own user's; this user needs them too.
+            'git config --global core.symlinks true',
+            'git config --global core.longpaths true',
+            'git config --global core.autocrlf false',
+            # System32's whoami: MSYS's, earlier on PATH, takes no /groups.
+            "$env:SystemRoot\System32\whoami.exe /groups",
+            "$env:SystemRoot\System32\whoami.exe /groups | findstr /C:`"S-1-5-32-544`" && (echo still an administrator & exit /b 98)",
             "mklink $work\probe-link $work\launch.cmd >nul 2>&1 && (echo can create symbolic links & exit /b 99)",
             'echo no administrator group, no symbolic link privilege',
             "cd /d `"$env:GITHUB_WORKSPACE`"",
