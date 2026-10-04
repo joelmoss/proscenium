@@ -152,6 +152,23 @@ describe 'proscenium install' do
     end
   end
 
+  # C34: a failed or interrupted install leaves the marker the engine refuses to build behind, and
+  # running install again recovers.
+  it 'leaves the install marker when the manager fails, and recovers on the next install' do
+    dir = app('pnpm')
+    _, err, status = proscenium(dir, 'install', '--js-arg', '--no-such-flag-for-pnpm')
+
+    assert_equal 6, status.exitstatus, err
+    assert_includes err, 'PSM-E-NATIVE'
+    assert_path_exists File.join(dir, '.proscenium/installing')
+
+    out, err, status = proscenium(dir, 'install')
+
+    assert_predicate status, :success?, err
+    assert_includes out, 'Finishing an interrupted install.'
+    refute_path_exists File.join(dir, '.proscenium/installing')
+  end
+
   it 'refuses Bun without an explicit linker, changing nothing' do
     dir = app('bun')
     File.delete(File.join(dir, 'bunfig.toml'))
