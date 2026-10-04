@@ -10,17 +10,20 @@ require_relative '../package_manager/stage_a/bundle'
 # The fixture bundle, installed once for every class in this file: nested `describe`s are classes
 # of their own, so a class-level memo would install it again for each.
 #
-# C27: the fixture lives under a directory whose name has a space and a non-ASCII character, and
-# is 120 characters longer than it needs to be, so every install here runs from such a path, on
-# every host. On Windows that takes the managers' deepest paths past the old 260-character limit.
+# C27: the app's directory name has a space and a non-ASCII character and is 120 characters
+# longer than it needs to be, so every install here runs from such a path, on every host. On
+# Windows that takes the managers' deepest paths past the old 260-character limit. (Not the
+# mktmpdir prefix: Dir::Tmpname strips everything but [-.,0-9A-Za-z_~] from it.) The bundle path
+# beside it stays short, since Bundler's own Git cache is not Proscenium's to qualify.
 module InstallFixture
-  DIR = Dir.mktmpdir("cli install ü #{'long-path-' * 12}")
+  DIR = Dir.mktmpdir('cli_install')
+  APP = "app ü #{'long-path-' * 12}".freeze
   Minitest.after_run do
     StageA::Bundle.writable!(DIR)
     FileUtils.rm_rf(DIR)
   end
 
-  def self.roots = @roots ||= StageA::Bundle.install(DIR)
+  def self.roots = @roots ||= StageA::Bundle.install(DIR, app: APP)
 end
 
 # `proscenium install` and `install --frozen`, end to end: the Stage A fixture gems, genuinely
@@ -41,7 +44,7 @@ describe 'proscenium install' do
 
   # A fresh copy of the fixture app for `manager`, ready for its first install.
   def app(manager)
-    dir = File.join(BUNDLE, 'app')
+    dir = File.join(BUNDLE, InstallFixture::APP)
     %w[.proscenium node_modules package.json pnpm-workspace.yaml pnpm-lock.yaml bun.lock yarn.lock
        bunfig.toml .gitignore].each { FileUtils.rm_rf(File.join(dir, it)) }
     package = { 'name' => 'app', 'private' => true,
@@ -60,8 +63,8 @@ describe 'proscenium install' do
   def proscenium(dir, *args, manager: nil, env: {})
     args += ['--manager', manager] if manager
     Bundler.with_unbundled_env do
-      Open3.capture3(StageA::Bundle.env(BUNDLE).merge(env), RbConfig.ruby, '-I', LIB, EXE, *args,
-                     chdir: dir)
+      bundle_env = StageA::Bundle.env(BUNDLE, app: InstallFixture::APP).merge(env)
+      Open3.capture3(bundle_env, RbConfig.ruby, '-I', LIB, EXE, *args, chdir: dir)
     end
   end
 

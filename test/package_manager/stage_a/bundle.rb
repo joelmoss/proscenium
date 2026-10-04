@@ -24,9 +24,11 @@ module StageA
 
     module_function
 
-    # Installs every fixture gem under `dir` and returns `{ name => installed root }`.
-    def install(dir)
-      app = File.join(dir, 'app')
+    # Installs every fixture gem under `dir` and returns `{ name => installed root }`. The app is
+    # `dir/<app>`, `app` by default; the bundle path stays short beside it.
+    def install(dir, app: 'app')
+      name = app
+      app = File.join(dir, name)
       cache = File.join(app, 'vendor', 'cache')
       FileUtils.mkdir_p(cache)
 
@@ -38,10 +40,9 @@ module StageA
 
       File.write(File.join(app, 'Gemfile'), gemfile(git_repo(dir)))
 
-      bundle(app, dir, 'install', '--local')
-      roots = bundle(app, dir, 'list', '--paths').lines(chomp: true)
-                                                 .to_h { |path| [gem_name(path), path] }
-                                                 .except('bundler')
+      bundle(app, dir, 'install', '--local', app: name)
+      listed = bundle(app, dir, 'list', '--paths', app: name).lines(chomp: true)
+      roots = listed.to_h { |path| [gem_name(path), path] }.except('bundler')
 
       # Read-only, as a shared or system gem install is. Bundler reinstalls nothing into it.
       FileUtils.chmod_R('a-w', File.join(dir, 'bundle'))
@@ -89,16 +90,16 @@ module StageA
     end
 
     # The environment that selects the fixture app's bundle, installed under `dir`.
-    def env(dir)
-      { 'BUNDLE_GEMFILE' => File.join(dir, 'app', 'Gemfile'),
+    def env(dir, app: 'app')
+      { 'BUNDLE_GEMFILE' => File.join(dir, app, 'Gemfile'),
         'BUNDLE_PATH' => File.join(dir, 'bundle'),
         'BUNDLE_APP_CONFIG' => File.join(dir, '.bundle'),
         'BUNDLE_DISABLE_SHARED_GEMS' => 'true' }
     end
 
-    def bundle(app, dir, *args)
+    def bundle(app_dir, dir, *args, app: 'app')
       out, status = Bundler.with_unbundled_env do
-        Open3.capture2e(env(dir), 'bundle', *args, chdir: app)
+        Open3.capture2e(env(dir, app:), 'bundle', *args, chdir: app_dir)
       end
       raise "bundle #{args.join(' ')} failed:\n#{out}" unless status.success?
 
