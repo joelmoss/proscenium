@@ -12,11 +12,11 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// The Stage A resolver seam for #154 (test/package_manager/stage_a/README.md), against a pnpm-shaped
+// Gem dependency contexts (#154), as Stage A proved them, against a pnpm-shaped
 // tree written here rather than installed: the app has stage-a-dep 7.0.0, the gem's context has
 // 6.0.0, and both link React to one store copy. The gem lives inside the app tree, so walking up
-// from it reaches the app's node_modules first - the case the seam has to get right (C49).
-var _ = Describe("Stage A resolver seam", func() {
+// from it reaches the app's node_modules first - the case the lookup has to get right (C49).
+var _ = Describe("Gem dependency contexts", func() {
 	const gem = "stage_a_widget_a"
 	const reactBody = "react 18.3.1 module body"
 	const reactURL = `"/node_modules/.pnpm/react@18.3.1/node_modules/react/index.js"`
@@ -70,6 +70,9 @@ var _ = Describe("Stage A resolver seam", func() {
 		write("node_modules/stage-a-dep/style.module.css", ".appStyle { color: blue; }\n")
 		write(".proscenium/packages/"+gem+"/node_modules/stage-a-dep/style.module.css", ".gemStyle { color: red; }\n")
 		write("vendor/"+gem+"/styles.js", "export { default } from 'stage-a-dep/style.module.css'\n")
+		write("node_modules/stage-a-dep/mixin.css", "@define-mixin pad { padding: 7px; }\n")
+		write(".proscenium/packages/"+gem+"/node_modules/stage-a-dep/mixin.css", "@define-mixin pad { padding: 6px; }\n")
+		write("vendor/"+gem+"/mixins.css", ".box { @mixin pad from url(\"stage-a-dep/mixin.css\"); }\n")
 		write("vendor/"+gem+"/with_ext.js", "export { default } from 'stage-a-dep/index.js'\n")
 		write("vendor/"+gem+"/undeclared.js", "export { default } from 'only-app-has'\n")
 		write("vendor/"+gem+"/miss.js", "export { default } from 'nobody-has'\n")
@@ -174,6 +177,15 @@ var _ = Describe("Stage A resolver seam", func() {
 
 			Expect(code).To(ContainSubstring(`"/.proscenium/packages/` + gem + `/node_modules/outside-dep/index.js"`))
 		})
+	})
+
+	// The plan's other resolve path: a CSS mixin looked up through resolver.Resolve.
+	It("takes a gem's CSS mixin from its context", func() {
+		ok, code := build("node_modules/@rubygems/" + gem + "/mixins.css")
+
+		Expect(ok).To(BeTrue(), code)
+		Expect(code).To(ContainSubstring("padding: 6px"))
+		Expect(code).NotTo(ContainSubstring("padding: 7px"))
 	})
 
 	It("resolves from the context outside a build", func() {

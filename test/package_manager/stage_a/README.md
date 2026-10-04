@@ -13,7 +13,7 @@ Stage B and C replace it.
 | `gems/` | Sources of the synthetic fixture gems |
 | `bundle.rb` | `StageA::Bundle.install(dir)`: builds the archive gems, installs every fixture gem with Bundler into `dir/bundle`, makes it read-only, and returns `{ name => installed root }` |
 | `bundle_test.rb` | What each installed gem ships, and that its root is read-only |
-| `../../stage_a_seam_test.go` | The resolver seam against a pnpm-shaped tree |
+| `../../dependency_context_test.go` | The resolver seam against a pnpm-shaped tree |
 
 ## Fixture gems
 
@@ -69,7 +69,7 @@ mapped gem:
   replaced by its real path (`utils.ContextRealPath`), so the app and a gem reach a shared React
   at one URL when unbundling. Bundled builds get this from esbuild already.
 
-Each of those has a spec in `test/stage_a_seam_test.go`, and each spec was checked to fail with
+Each of those has a spec in `test/dependency_context_test.go`, and each spec was checked to fail with
 its part of the seam removed.
 
 Known limit: the real-path rule compares against `RootPath` as text, so the root must itself be
