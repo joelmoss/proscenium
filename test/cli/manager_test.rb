@@ -164,26 +164,38 @@ describe Proscenium::CLI::Manager do
       ENV['PATHEXT'] = pathext
     end
 
-    # pnpm 12 writes pnpm-lock.yaml on any command in a project that pins it, `--version` included,
-    # so the pinned version is read from package.json, and the manager is not run.
-    it 'reads a pinned version without running the manager' do
+    # A fake pnpm on PATH that leaves a marker when run, for the duration of the block.
+    def with_fake_pnpm
       path = ENV.fetch('PATH', nil)
       write('bin/pnpm', "#!/bin/sh\ntouch \"#{@dir}/ran\"\necho 11.0.0\n")
       write('bin/pnpm.cmd', "@echo off\r\necho 11.0.0\r\n") # found on Windows, never run
       File.chmod(0o755, File.join(@dir, 'bin/pnpm'))
       ENV['PATH'] = File.join(@dir, 'bin')
-      write('package.json', '{"packageManager": "pnpm@12.9.1+sha512.abc"}')
-
-      assert_equal '12.9.1', M.new('pnpm', @dir).check_version!.version
-      refute_path_exists File.join(@dir, 'ran')
-      skip 'the fake manager is a shell script' if Gem.win_platform?
-
-      write('package.json', '{}') # unpinned: then the manager is asked
-
-      assert_equal '11.0.0', M.new('pnpm', @dir).check_version!.version
-      assert_path_exists File.join(@dir, 'ran')
+      yield
     ensure
       ENV['PATH'] = path
+    end
+
+    # pnpm 12 writes pnpm-lock.yaml on any command in a project that pins it, `--version` included,
+    # so the pinned version is read from package.json, and the manager is not run.
+    it 'reads a pinned version without running the manager' do
+      write('package.json', '{"packageManager": "pnpm@12.9.1+sha512.abc"}')
+      with_fake_pnpm do
+        assert_equal '12.9.1', M.new('pnpm', @dir).check_version!.version
+      end
+
+      refute_path_exists File.join(@dir, 'ran')
+    end
+
+    it 'asks the manager when nothing pins it' do
+      skip 'the fake manager is a shell script' if Gem.win_platform?
+
+      write('package.json', '{}')
+      with_fake_pnpm do
+        assert_equal '11.0.0', M.new('pnpm', @dir).check_version!.version
+      end
+
+      assert_path_exists File.join(@dir, 'ran')
     end
 
     # The first run of a pinned pnpm prints that it is downloading it, before the version.
