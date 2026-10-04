@@ -134,14 +134,16 @@ describe 'project lock and runner' do
     LIB = File.expand_path('../../lib', __dir__)
 
     # An install as the CLI runs one: it takes the project lock and runs a manager that records
-    # its pid in `started`, then sleeps. A Proscenium error becomes its exit status.
+    # its pid in `started`, then sleeps. It writes its own pid to `harness_pid`, and its exit
+    # status, which a Proscenium error decides, to `result` when given one.
     HARNESS = <<~RUBY
       require 'rbconfig'
       require 'proscenium/cli/error'
       require 'proscenium/cli/project_lock'
       require 'proscenium/cli/runner'
-      root, started = ARGV
-      begin
+      root, started, result = ARGV
+      File.write(File.join(root, 'harness_pid'), Process.pid.to_s)
+      status = begin
         Proscenium::CLI::ProjectLock.new(root).synchronize('harness') do |lock|
           code = "File.write(\#{started.dump}, Process.pid.to_s); sleep 30"
           Proscenium::CLI::Runner.run(RbConfig.ruby, ['-e', code], root:, lock_io: lock.io,
@@ -149,10 +151,27 @@ describe 'project lock and runner' do
         ensure
           lock&.manager_finished
         end
+        0
       rescue Proscenium::CLI::Error => e
         warn e.code
-        exit e.exit_status
+        e.exit_status
       end
+      File.write(result, status.to_s) if result
+      exit status
+    RUBY
+
+    # Sends Ctrl-C to every process on the console of the process ARGV[0], as pressing it there
+    # does: it attaches to that console, ignores the event itself, and generates CTRL_C_EVENT.
+    CTRL_C = <<~RUBY
+      require 'fiddle'
+      kernel32 = Fiddle.dlopen('kernel32')
+      call = lambda do |name, types, *args|
+        Fiddle::Function.new(kernel32[name], types, Fiddle::TYPE_INT).call(*args)
+      end
+      call.('FreeConsole', [])
+      abort "AttachConsole: \#{Fiddle.win32_last_error}" if call.('AttachConsole', [Fiddle::TYPE_INT], ARGV[0].to_i).zero?
+      call.('SetConsoleCtrlHandler', [Fiddle::TYPE_VOIDP, Fiddle::TYPE_INT], nil, 1)
+      abort "GenerateConsoleCtrlEvent: \#{Fiddle.win32_last_error}" if call.('GenerateConsoleCtrlEvent', [Fiddle::TYPE_INT, Fiddle::TYPE_INT], 0, 0).zero?
     RUBY
 
     def install(**)
@@ -192,20 +211,30 @@ describe 'project lock and runner' do
       assert_equal args, File.read(File.join(@root, 'args.txt')).split("\n")
     end
 
-    # A console's Ctrl-C reaches every process attached to it. CTRL_BREAK to the install's own
-    # process group is the nearest a test can send: Windows ignores CTRL_C in a new group.
+    # Ctrl-C reaches every process on the console, the CLI and its manager alike, so the install
+    # runs in a console of its own (`start`), and the test presses Ctrl-C there. Ctrl-Break is no
+    # stand-in: Ruby has no SIGBREAK, so it ends the CLI before any trap runs.
     it 'stops the manager on Ctrl-C and reports the install interrupted (exit 8)' do
-      require 'fiddle'
-      kernel32 = Fiddle.dlopen('kernel32')
-      generate = Fiddle::Function.new(kernel32['GenerateConsoleCtrlEvent'],
-                                      [Fiddle::TYPE_INT, Fiddle::TYPE_INT], Fiddle::TYPE_INT)
-      pid, manager = install(new_pgroup: true)
+      started = File.join(@root, 'started')
+      result = File.join(@root, 'result')
+      File.write(File.join(@root, 'harness.rb'), HARNESS)
+      args = [RbConfig.ruby, '-I', LIB, File.join(@root, 'harness.rb'), @root, started, result]
+      File.write(File.join(@root, 'launch.cmd'),
+                 "start \"\" /min #{args.map { "\"#{it.tr('/', '\\')}\"" }.join(' ')}\r\n")
+      system(File.join(@root, 'launch.cmd'), exception: true)
+      deadline = Time.now + 30
+      sleep 0.05 until (File.exist?(started) && !File.empty?(started)) || Time.now > deadline
+      harness = File.read(File.join(@root, 'harness_pid')).to_i
+      manager = File.read(started).to_i
 
-      refute_equal 0, generate.call(1, pid), "GenerateConsoleCtrlEvent: #{Fiddle.win32_last_error}"
-      _, status = Process.wait2(pid)
+      system(RbConfig.ruby, '-e', CTRL_C, harness.to_s, exception: true)
+      deadline = Time.now + 30
+      sleep 0.05 until File.exist?(result) || Time.now > deadline
 
-      assert_equal 8, status.exitstatus, File.read(@log)
+      assert_equal '8', File.exist?(result) && File.read(result), 'the install did not report'
       assert exited?(manager), 'the manager outlived the interrupted install'
+    ensure
+      [harness, manager].each { Process.kill(:KILL, it) if it && alive?(it) }
     end
 
     # C35: a manager that outlives a killed install keeps the project locked until it exits.

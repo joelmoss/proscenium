@@ -58,11 +58,12 @@ module Proscenium
       end
 
       # INT and TERM reach the child, and the CLI waits for it rather than leaving it orphaned. On
-      # Windows the console already delivers Ctrl-C and Ctrl-Break to the manager, and
-      # Process.kill cannot send them, so there the CLI only notes the interruption and waits.
+      # Windows the console already delivers Ctrl-C to the manager, and Process.kill cannot send
+      # it, so there the CLI only notes the interruption and waits. Ctrl-Break ends the CLI
+      # outright: Ruby has no SIGBREAK to trap. The marker and the manager's pid record then
+      # keep the next install and the engine safe, as after any killed install.
       def forward_signals(pid, interrupted)
-        signals = Gem.win_platform? ? SIGNALS + (%w[BREAK] & Signal.list.keys) : SIGNALS
-        signals.to_h do |signal|
+        SIGNALS.to_h do |signal|
           handler = Signal.trap(signal) do
             interrupted << signal
             Process.kill(signal, pid) unless Gem.win_platform?
