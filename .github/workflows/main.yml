@@ -2,7 +2,22 @@ name: main
 on:
   push:
     branches: [master]
+    # A change to docs alone runs nothing. The app guide is the exception: test/proxy_rule_test.rb
+    # runs its nginx rule through real nginx. The last matching pattern wins.
+    paths:
+      - '**'
+      - '!**.md'
+      - '!docs/**'
+      - '!LICENSE.txt'
+      - 'docs/guides/gem_javascript_dependencies.md'
   pull_request:
+    # As for push.
+    paths:
+      - '**'
+      - '!**.md'
+      - '!docs/**'
+      - '!LICENSE.txt'
+      - 'docs/guides/gem_javascript_dependencies.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
