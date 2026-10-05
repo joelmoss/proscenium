@@ -7,6 +7,7 @@ require 'rbconfig'
 require 'tmpdir'
 require_relative '../package_manager/stage_a/bundle'
 require_relative 'private_registry'
+require_relative 'logging_proxy'
 
 # C10 (#154): every kind of dependency spec a gem may declare (a range, a prerelease, a dist-tag,
 # an npm: alias, a GitHub reference and a tarball URL) installs from the gem's context exactly as
@@ -69,11 +70,27 @@ describe 'dependency spec kinds' do
     JSON.parse(File.read(File.join(context, 'node_modules', name, 'package.json')))['version']
   end
 
-  def install(app, manager)
+  def install(app, manager, env: {})
     Bundler.with_unbundled_env do
-      Open3.capture3(StageA::Bundle.env(@dir), RbConfig.ruby, '-I', SPEC_KINDS_LIB,
+      Open3.capture3(StageA::Bundle.env(@dir).merge(env), RbConfig.ruby, '-I', SPEC_KINDS_LIB,
                      SPEC_KINDS_EXE, 'install', '--manager', manager, chdir: app)
     end
+  end
+
+  # An app whose gem declares `name`, from `registry`, under `field`, and which approves that
+  # package's build, so its scripts run.
+  def approved_app(manager, registry, name, field)
+    app = app(manager, gem_source('stage_d_build', field => { name => '1.0.0' }))
+    File.write(File.join(app, '.npmrc'), registry.npmrc)
+    if manager == 'pnpm'
+      File.write(File.join(app, 'pnpm-workspace.yaml'), "allowBuilds:\n  '#{name}': true\n",
+                 mode: 'a')
+    else
+      package = JSON.parse(File.read(File.join(app, 'package.json')))
+      File.write(File.join(app, 'package.json'),
+                 JSON.generate(package.merge('trustedDependencies' => [name])))
+    end
+    app
   end
 
   # A gem source written for one case: `manifest` is its package.json.
@@ -97,6 +114,10 @@ describe 'dependency spec kinds' do
   # A tarball the registry answers 404 for, so fetching it fails at once: a network error would
   # be retried for over a minute.
   UNFETCHABLE = 'https://registry.npmjs.org/left-pad/-/left-pad-0.0.0-absent.tgz'
+  # How an app's environment names its proxy, in both spellings managers read (C31).
+  PROXY_VARIABLES = %w[HTTP_PROXY HTTPS_PROXY http_proxy https_proxy].freeze
+  # Where C14's failing build lands: the gem's context, and the native package declaring the same.
+  BUILD_DIRS = %w[.proscenium/packages/stage_d_build packages/native].freeze
 
   # C47: the app importing a package only a gem declares. Recorded per linker, not reported: a
   # package reaches the app's own node_modules only under Bun's hoisted linker.
@@ -145,6 +166,28 @@ describe 'dependency spec kinds' do
       registry&.stop
     end
 
+    # C31: the same, behind the proxy the app's environment names. The manager reaches the
+    # registry through it, still with the app's credentials.
+    it "installs a private package through a proxy, on #{manager}" do
+      registry = PrivateRegistry.new
+      proxy = LoggingProxy.new
+      app = app(manager, gem_source('stage_d_proxied', 'dependencies' =>
+                                                       { PrivateRegistry::PACKAGE => '1.0.0' }))
+      File.write(File.join(app, '.npmrc'), registry.npmrc)
+      env = PROXY_VARIABLES.to_h { [it, proxy.url] }
+      out, err, status = install(app, manager, env: env.merge('NO_PROXY' => '', 'no_proxy' => ''))
+
+      assert_predicate status, :success?, err
+      assert_path_exists File.join(app, '.proscenium/packages/stage_d_proxied/node_modules',
+                                   PrivateRegistry::PACKAGE, 'package.json')
+      assert(proxy.logged.any? { it.include?("127.0.0.1:#{registry.port}") },
+             'the registry was reached through the proxy')
+      refute_includes out + err, PrivateRegistry::TOKEN
+    ensure
+      registry&.stop
+      proxy&.stop
+    end
+
     # C14: an optional dependency that cannot be fetched is left out, natively and from the
     # context alike, and the same dependency, required, still fails the install, naming the gem.
     it "skips an unfetchable optional dependency and fails on a required one, on #{manager}" do
@@ -163,6 +206,32 @@ describe 'dependency spec kinds' do
 
       assert_equal 6, status.exitstatus, err
       assert_includes err, 'PSM-E-NATIVE'
+    end
+
+    # C14: an optional dependency whose build fails, once the app has approved that build, is
+    # treated in the context as natively; the same dependency, required, fails the install.
+    it "treats an optional dependency whose build fails as natively, on #{manager}" do
+      broken = '@private/broken'
+      registry = PrivateRegistry.new(broken => { 'scripts' => { 'postinstall' => 'exit 1' } })
+      app = approved_app(manager, registry, broken, 'optionalDependencies')
+      _, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      present = BUILD_DIRS.map do |dir|
+        File.exist?(File.join(app, dir, 'node_modules', broken, 'package.json'))
+      end
+
+      assert_equal present.first, present.last, 'the context and the native package differ'
+
+      FileUtils.rm_rf(Dir.children(@dir).map { File.join(@dir, it) })
+      app = approved_app(manager, registry, broken, 'dependencies')
+      _, err, status = install(app, manager)
+
+      assert_equal 6, status.exitstatus, err
+      assert_includes err, 'PSM-E-NATIVE'
+      assert_includes err, 'postinstall', 'the failure is the build, which the approval let run'
+    ensure
+      registry&.stop
     end
 
     it "installs each spec kind from the context as natively, on #{manager}" do

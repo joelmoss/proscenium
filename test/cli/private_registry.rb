@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'base64'
+require 'uri'
 require 'digest'
 require 'json'
 require 'rubygems/package'
@@ -8,20 +9,21 @@ require 'socket'
 require 'stringio'
 require 'zlib'
 
-# A private registry for one scoped package, for C31 (#154): it answers only requests that carry
-# its token, and logs every request, so a test can show the manager authenticated with the app's
-# own .npmrc and that nothing asked it for a gem.
+# A private registry for scoped packages, for C31 (#154): it answers only requests that carry its
+# token, and logs every request, so a test can show the manager authenticated with the app's own
+# .npmrc and that nothing asked it for a gem. Each package is version 1.0.0; `packages` maps its
+# name to extra package.json fields, such as scripts (C14).
 class PrivateRegistry
   TOKEN = 'proscenium-test-token-c31'
   PACKAGE = '@private/pkg'
 
   attr_reader :requests, :port
 
-  def initialize
+  def initialize(packages = { PACKAGE => {} })
     @server = TCPServer.new('127.0.0.1', 0)
     @port = @server.addr[1]
     @requests = Queue.new
-    @tarball = tarball
+    @tarballs = packages.to_h { |name, fields| [name, tarball(name, fields)] }
     @thread = Thread.new { loop { serve(@server.accept) } }
   end
 
@@ -65,30 +67,32 @@ class PrivateRegistry
   def respond(path, authed)
     return ['401 Unauthorized', 'application/json', '{}'] unless authed
 
-    if path.end_with?('.tgz')
-      ['200 OK', 'application/octet-stream', @tarball]
-    elsif path.include?('private')
-      ['200 OK', 'application/json', JSON.generate(packument)]
-    else
+    name = URI.decode_www_form_component(path.delete_prefix('/')).sub(%r{/-/.*}, '')
+    tarball = @tarballs[name]
+    if tarball.nil?
       ['404 Not Found', 'application/json', '{}']
+    elsif path.end_with?('.tgz')
+      ['200 OK', 'application/octet-stream', tarball]
+    else
+      ['200 OK', 'application/json', JSON.generate(packument(name, tarball))]
     end
   end
 
-  def packument
-    integrity = "sha512-#{Base64.strict_encode64(Digest::SHA512.digest(@tarball))}"
-    version = { 'name' => PACKAGE, 'version' => '1.0.0',
-                'dist' => { 'tarball' => "#{url}@private/pkg/-/pkg-1.0.0.tgz",
+  def packument(name, tarball)
+    integrity = "sha512-#{Base64.strict_encode64(Digest::SHA512.digest(tarball))}"
+    version = { 'name' => name, 'version' => '1.0.0',
+                'dist' => { 'tarball' => "#{url}#{name}/-/#{name.split('/').last}-1.0.0.tgz",
                             'integrity' => integrity } }
-    { 'name' => PACKAGE, 'dist-tags' => { 'latest' => '1.0.0' },
-      'versions' => { '1.0.0' => version } }
+    { 'name' => name, 'dist-tags' => { 'latest' => '1.0.0' }, 'versions' => { '1.0.0' => version } }
   end
 
-  def tarball
+  def tarball(name, fields)
+    manifest = { 'name' => name, 'version' => '1.0.0' }.merge(fields)
     tar = StringIO.new(+'')
     Gem::Package::TarWriter.new(tar) do |writer|
-      { 'package/package.json' => JSON.generate('name' => PACKAGE, 'version' => '1.0.0'),
-        'package/index.js' => "module.exports = 'private'\n" }.each do |name, body|
-        writer.add_file(name, 0o644) { it.write(body) }
+      { 'package/package.json' => JSON.generate(manifest),
+        'package/index.js' => "module.exports = 'private'\n" }.each do |file, body|
+        writer.add_file(file, 0o644) { it.write(body) }
       end
     end
     gz = StringIO.new(+'')
