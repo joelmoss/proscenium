@@ -23,7 +23,8 @@ class PrivateRegistry
     @server = TCPServer.new('127.0.0.1', 0)
     @port = @server.addr[1]
     @requests = Queue.new
-    @tarballs = packages.to_h { |name, fields| [name, tarball(name, fields)] }
+    @manifests = packages.to_h { |name, fields| [name, manifest(name, fields)] }
+    @tarballs = @manifests.transform_values { tarball(it) }
     @thread = Thread.new { loop { serve(@server.accept) } }
   end
 
@@ -78,16 +79,19 @@ class PrivateRegistry
     end
   end
 
+  def manifest(name, fields) = { 'name' => name, 'version' => '1.0.0' }.merge(fields)
+
+  # As a public registry's: each version carries its package.json, so a manager sees os, cpu
+  # and scripts before it fetches the tarball.
   def packument(name, tarball)
     integrity = "sha512-#{Base64.strict_encode64(Digest::SHA512.digest(tarball))}"
-    version = { 'name' => name, 'version' => '1.0.0',
-                'dist' => { 'tarball' => "#{url}#{name}/-/#{name.split('/').last}-1.0.0.tgz",
-                            'integrity' => integrity } }
+    dist = { 'tarball' => "#{url}#{name}/-/#{name.split('/').last}-1.0.0.tgz",
+             'integrity' => integrity }
+    version = @manifests.fetch(name).merge('dist' => dist)
     { 'name' => name, 'dist-tags' => { 'latest' => '1.0.0' }, 'versions' => { '1.0.0' => version } }
   end
 
-  def tarball(name, fields)
-    manifest = { 'name' => name, 'version' => '1.0.0' }.merge(fields)
+  def tarball(manifest)
     tar = StringIO.new(+'')
     Gem::Package::TarWriter.new(tar) do |writer|
       { 'package/package.json' => JSON.generate(manifest),

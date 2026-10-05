@@ -1,0 +1,20 @@
+{
+  "lockfileVersion": 2,
+  "configVersion": 1,
+  "workspaces": {
+    "": {
+      "name": "app",
+    },
+    ".proscenium/packages/stage_d_lock": {
+      "name": "@rubygems/stage_d_lock",
+      "optionalDependencies": {
+        "fsevents": "2.3.3",
+      },
+    },
+  },
+  "packages": {
+    "@rubygems/stage_d_lock": ["@rubygems/stage_d_lock@workspace:.proscenium/packages/stage_d_lock"],
+
+    "fsevents": ["fsevents@2.3.3", "", { "os": "darwin" }, "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw=="],
+  }
+}

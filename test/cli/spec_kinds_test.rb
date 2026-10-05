@@ -64,16 +64,25 @@ describe 'dependency spec kinds' do
     app
   end
 
+  # Drops the native workspace package app() writes, for a case about the gem's context alone.
+  def without_native(app, manager)
+    FileUtils.rm_rf(File.join(app, 'packages'))
+    json = JSON.parse(File.read(File.join(app, 'package.json')))
+    json['workspaces'] = json['workspaces'] - ['packages/*'] if json['workspaces']
+    File.write(File.join(app, 'package.json'), JSON.generate(json))
+    File.write(File.join(app, 'pnpm-workspace.yaml'), "packages: []\n") if manager == 'pnpm'
+  end
+
   def darwin? = RbConfig::CONFIG['host_os'].include?('darwin')
 
   def version(context, name)
     JSON.parse(File.read(File.join(context, 'node_modules', name, 'package.json')))['version']
   end
 
-  def install(app, manager, env: {})
+  def install(app, manager, *, env: {})
     Bundler.with_unbundled_env do
       Open3.capture3(StageA::Bundle.env(@dir).merge(env), RbConfig.ruby, '-I', SPEC_KINDS_LIB,
-                     SPEC_KINDS_EXE, 'install', '--manager', manager, chdir: app)
+                     SPEC_KINDS_EXE, 'install', '--manager', manager, *, chdir: app)
     end
   end
 
@@ -114,6 +123,12 @@ describe 'dependency spec kinds' do
   # A tarball the registry answers 404 for, so fetching it fails at once: a network error would
   # be retried for over a minute.
   UNFETCHABLE = 'https://registry.npmjs.org/left-pad/-/left-pad-0.0.0-absent.tgz'
+  # A package that runs only on AIX, so on no host this runs on (C15).
+  OTHER_OS = '@private/aix-only'
+  # Where C15's other-OS package lands: the gem's context, and the native package beside it.
+  OS_DIRS = %w[.proscenium/packages/stage_d_os packages/native].freeze
+  # The locks C15 installs frozen, written on macOS.
+  LOCKS = File.expand_path('fixtures/c15', __dir__)
   # How an app's environment names its proxy, in both spellings managers read (C31).
   PROXY_VARIABLES = %w[HTTP_PROXY HTTPS_PROXY http_proxy https_proxy].freeze
   # Where C14's failing build lands: the gem's context, and the native package declaring the same.
@@ -126,11 +141,7 @@ describe 'dependency spec kinds' do
     it "records whether a gem-only package reaches the app on #{label}" do
       manager = label.split.first
       app = linker ? app(manager, linker:) : app(manager)
-      FileUtils.rm_rf(File.join(app, 'packages')) # no native package declaring it too
-      json = JSON.parse(File.read(File.join(app, 'package.json')))
-      json['workspaces'] = json['workspaces'] - ['packages/*'] if json['workspaces']
-      File.write(File.join(app, 'package.json'), JSON.generate(json))
-      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages: []\n") if manager == 'pnpm'
+      without_native(app, manager) # no native package declaring it too
       _, err, status = install(app, manager)
 
       assert_predicate status, :success?, err
@@ -232,6 +243,72 @@ describe 'dependency spec kinds' do
       assert_includes err, 'postinstall', 'the failure is the build, which the approval let run'
     ensure
       registry&.stop
+    end
+
+    # C15: a package for another OS, as a gem's required dependency. Natively neither manager
+    # refuses it: pnpm installs it anyway, Bun leaves it out. The context does the same as the
+    # native package beside it. pnpm diagnoses it only under the app's engineStrict, and then
+    # names the gem's context.
+    it "treats a gem's dependency for another OS as natively, on #{manager}" do
+      registry = PrivateRegistry.new(OTHER_OS => { 'os' => ['aix'] })
+      app = app(manager, gem_source('stage_d_os', 'dependencies' => { OTHER_OS => '1.0.0' }))
+      File.write(File.join(app, '.npmrc'), registry.npmrc)
+      _, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      present = OS_DIRS.map do |dir|
+        File.exist?(File.join(app, dir, 'node_modules', OTHER_OS, 'package.json'))
+      end
+
+      assert_equal [manager == 'pnpm'] * 2, present
+      next unless manager == 'pnpm'
+
+      without_native(app, manager)
+      File.write(File.join(app, 'pnpm-workspace.yaml'), "engineStrict: true\n", mode: 'a')
+      _, err, status = install(app, manager)
+
+      assert_equal 6, status.exitstatus, err
+      assert_includes err, 'ERR_PNPM_UNSUPPORTED_PLATFORM'
+      assert_includes err, 'stage_d_os'
+    ensure
+      registry&.stop
+    end
+
+    # C15: a lock made on another host. The committed lock was written on macOS, where fsevents
+    # is installed; every host installs from it frozen, leaves it byte for byte, and gets fsevents
+    # only where it runs. C15_RECORD=1 rewrites the committed lock from this host.
+    it "installs frozen from a lock made on macOS, on #{manager}" do
+      app = app(manager,
+                gem_source('stage_d_lock', 'optionalDependencies' => { 'fsevents' => '2.3.3' }))
+      without_native(app, manager)
+      _, err, status = install(app, manager)
+
+      assert_predicate status, :success?, err
+      name = manager == 'pnpm' ? 'pnpm-lock.yaml' : 'bun.lock'
+      fixture = File.join(LOCKS,
+                          manager == 'pnpm' ? "pnpm-#{CLIHelper.pnpm_version.to_i}.yaml" : name)
+      if ENV['C15_RECORD']
+        FileUtils.mkdir_p(LOCKS)
+        FileUtils.cp(File.join(app, name), fixture)
+        skip "recorded #{fixture}"
+      end
+      # pnpm 12 locks its own version too, so its lock holds only for the pnpm it was made with:
+      # the CI floor, not the canary's newest patch.
+      made_with = File.read(fixture)[/packageManagerDependencies:\s+pnpm:\s+specifier: (\S+)/, 1]
+      if made_with && made_with != CLIHelper.pnpm_version
+        skip "the lock was made with pnpm #{made_with}"
+      end
+      FileUtils.cp(fixture, File.join(app, name))
+      FileUtils.rm_rf(Dir[File.join(app, '{,.proscenium/packages/*/}node_modules')])
+      _, err, status = install(app, manager, '--frozen')
+
+      assert_predicate status, :success?, err
+      assert_equal File.read(fixture), File.read(File.join(app, name)),
+                   'the frozen install changed the lock'
+      fsevents = File.join(app,
+                           '.proscenium/packages/stage_d_lock/node_modules/fsevents/package.json')
+
+      assert_equal darwin?, File.exist?(fsevents)
     end
 
     it "installs each spec kind from the context as natively, on #{manager}" do
