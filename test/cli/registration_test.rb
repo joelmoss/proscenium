@@ -613,16 +613,28 @@ describe Proscenium::CLI::Registration do
     end
 
     # Every spelling Bun 1.4.2 reads (probed): node-linker's pnpm and npm, and install-strategy,
-    # which node-linker overrides wherever it sits in the file.
+    # which node-linker overrides wherever it sits in the file. Each runs against both fallbacks,
+    # an empty root (hoisted) and Bun's isolated store, so no spelling passes by matching the
+    # fallback instead of being read.
     it "reads each of .npmrc's linker spellings" do
-      { "node-linker=pnpm\n" => 'isolated', "node-linker=npm\n" => 'hoisted',
-        "install-strategy=linked\n" => 'isolated', "install-strategy=nested\n" => 'hoisted',
-        "node-linker=hoisted\ninstall-strategy=linked\n" => 'hoisted',
-        "install-strategy=hoisted\nnode-linker=isolated\n" => 'isolated',
-        "node-linker = \"isolated\"\n" => 'isolated' }.each do |npmrc, expected|
-        write('.npmrc', npmrc)
+      spellings = { "node-linker=pnpm\n" => 'isolated', "node-linker=npm\n" => 'hoisted',
+                    "install-strategy=linked\n" => 'isolated',
+                    "install-strategy=nested\n" => 'hoisted',
+                    "install-strategy=hoisted\n" => 'hoisted',
+                    "node-linker=hoisted\ninstall-strategy=linked\n" => 'hoisted',
+                    "install-strategy=hoisted\nnode-linker=isolated\n" => 'isolated',
+                    "node-linker = \"isolated\"\n" => 'isolated' }
 
-        assert_equal expected, linker, npmrc
+      [nil, 'node_modules/.bun'].zip(%w[hoisted isolated]).each do |store, fallback|
+        FileUtils.mkdir_p(File.join(@root, store)) if store
+        FileUtils.rm_f(File.join(@root, '.npmrc'))
+
+        assert_equal fallback, linker, 'the fallback with no .npmrc'
+        spellings.each do |npmrc, expected|
+          write('.npmrc', npmrc)
+
+          assert_equal expected, linker, "#{npmrc} over a #{fallback} fallback"
+        end
       end
     end
 
