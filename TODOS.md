@@ -140,12 +140,12 @@ seven hygiene deletions and seven bug leads, and re-checked the status of every 
 **`docs/AUDIT.md` is the record.** Its Progress table carries what is done, which commit did it,
 and every correction implementation produced along the way. Read its preamble before starting
 anything: the 2026-10-01 "Final priorities and dependencies" was the queue (its last GitHub
-issue, #99, is fixed on `fix/99-importer-resolved-key`), and the
+issue, #99, is fixed in `2e1e0357` and closed), and the
 2026-09-08 "AUDIT-THE-AUDIT — pass 4" still adjudicates that audit's findings, rejecting three,
 demoting five and reversing one dependency chain. Do not copy any of that here - two copies drift.
 
 **Next:** none from the audit. #99 (`F-IMPORTER-1`/`-2`), the last audit finding open as a
-GitHub issue, is fixed on `fix/99-importer-resolved-key` and closes when it merges. On
+GitHub issue, is fixed in `2e1e0357` and closed 2026-10-03. On
 2026-10-03 the others still open were reviewed for real-world impact and closed as not planned:
 #92, #93, #97, #101, #102 (`F-GOUTILS-1` steps 2 and 3, including the alias consolidation and
 gem-root containment that used to be written up here), #104 and #105. `docs/AUDIT.md`'s Progress
@@ -324,18 +324,20 @@ Under about 10%, delete this item.
 
 **What:** Ship a Bundler plugin that hooks `Bundler::Plugin::Events::GEM_AFTER_INSTALL_ALL` and
 regenerates `.proscenium/packages/<gem>/package.json` after every `bundle install`, so a Gemfile
-change never leaves contexts stale even when nobody runs `bin/proscenium install`.
+change never leaves contexts stale even when nobody runs `proscenium install`.
 
 **Why:** The plan's orchestrator exists largely to keep contexts in step with Gemfile.lock. A
 Bundler hook does that at the moment the Ruby graph changes, with no wrapper command.
 
 **Context:** Deferred by the 2026-10-03 /autoplan CEO review of `docs/plans/154-package-manager.md`,
 behind the open question of whether an orchestrator is needed at all (the CLI became Ruby, running under `bundle exec`, at the 2026-10-04 gate). Plugins need a `plugin`
-line in the app's Gemfile, which is a manifest edit the plan has to own. Revisit after Stage A.
+line in the app's Gemfile, which is a manifest edit the plan has to own. Stage A went GO
+(2026-10-04) with `install` as the only orchestrator, so this is now a choice on evidence: add it
+if the migrated apps keep shipping stale contexts.
 
 **Effort:** M (human) / S (CC)
 **Priority:** P3
-**Depends on:** #154 Stage A result and the orchestrator decision
+**Depends on:** #154 v1 in use by the migrated apps
 
 ### A build that starts just before an install can read a half-written tree
 
@@ -432,7 +434,7 @@ Builds on `inspect`'s existing per-gem projection.
 
 **Effort:** L (human) / M (CC)
 **Priority:** P3
-**Depends on:** #154 pilot GO on pnpm and Bun; a real npm user
+**Depends on:** a real npm user (the pnpm and Bun pilot went GO on 2026-10-04)
 
 ### Deferred package manager commands
 
