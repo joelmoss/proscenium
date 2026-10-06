@@ -52,3 +52,10 @@ for run in 1 2 3 4 5; do
   case "$out" in *"could not pin"*) echo "run $run: the library was not pinned" >&2; exit 1 ;; esac
   echo "run $run: loaded, called into Go, exited cleanly"
 done
+
+# The CLI ships in every gem as plain Ruby, and must run without Rails, which is not installed
+# here (C37): loading the engine would fail with a LoadError rather than pass unnoticed.
+exe=$(ruby -e 'print File.join(Gem::Specification.find_by_name("proscenium").full_gem_path, "exe", "proscenium")')
+cli=$(ruby -I "$lib" "$exe" --version)
+[ "$cli" = "$version" ] || { echo "proscenium --version printed '$cli', expected '$version'" >&2; exit 1; }
+echo "proscenium --version: $cli"
