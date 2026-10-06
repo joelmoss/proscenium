@@ -21,6 +21,10 @@ module Proscenium
         raise ArgumentError, '`path` must be an absolute file system or URL path'
       end
 
+      # A new mapping generation forgets cached resolutions (#154): polled here too, so a path
+      # resolved before an install does not keep its old URL when no Builder is made after it.
+      generation
+
       # Caches the manifest key, not its value, so a manifest loaded or reset later is still
       # honoured. Every string is frozen: the URL path is handed back to callers, and in the
       # Rails.root branch it is the key itself, so mutating it would redirect later lookups.
@@ -43,6 +47,18 @@ module Proscenium
       end
     end
     private_class_method :entry_for
+
+    # The mapping generation builds and resolutions use now (#154). Development and test start a
+    # new one when the files the context map is built from change, and forget resolved paths with
+    # it; production keeps one for the process. Here rather than on Builder, which loads the Go
+    # library when first referenced, so resolving a path never needs it.
+    def self.generation
+      return 0 if Rails.env.production?
+
+      number, changed = MappingGeneration.refresh(ContextMap.project_root)
+      reset if changed
+      number
+    end
 
     def self.reset
       self.resolved = {}

@@ -250,6 +250,7 @@ module Proscenium
       #   absPath - the real file on disk, for the runtime's own resolver
       def op_resolve(request)
         path = request.fetch('path')
+        refuse_while_installing!
 
         # `Resolver.resolved` is a plain class-level Hash with no synchronisation, so concurrent
         # resolves would race on it. Resolution is cheap and memoised, so serialising it costs
@@ -283,6 +284,7 @@ module Proscenium
         # and then stripped by the plugin.
         sourcemap = request.fetch('sourcemap', true) ? true : false
 
+        refuse_while_installing!
         cached(path, sourcemap) do
           code = serve_or_build(path, sourcemap: sourcemap)
 
@@ -480,6 +482,13 @@ module Proscenium
         content
       end
 
+      # Before the cache, so an earlier result is not handed out while an install changes what it
+      # resolved against, or while contexts are stale (C24).
+      def refuse_while_installing!
+        reason = Proscenium::Builder.refusal
+        raise reason if reason
+      end
+
       # Each module variant - its path and whether it carries a source map - holds the mtime of its
       # source file, so an edit is picked up between runs of a watching runner.
       #
@@ -506,7 +515,7 @@ module Proscenium
         # One bucket per module variant. A new mtime replaces the bucket, lock and all, which is
         # what keeps a long `--watch` session at one entry per module - and holds for a build that
         # raised, which leaves its bucket without a value rather than a lock outside the cache.
-        key = [path, *extra]
+        key = [path, Proscenium::Builder.generation, *extra]
         bucket = @cache_mutex.synchronize do
           current = @cache[key]
           next current if current && current[:mtime] == mtime
