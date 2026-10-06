@@ -337,6 +337,77 @@ line in the app's Gemfile, which is a manifest edit the plan has to own. Revisit
 **Priority:** P3
 **Depends on:** #154 Stage A result and the orchestrator decision
 
+### A build that starts just before an install can read a half-written tree
+
+**What:** `ContextMap.installing?` holds its shared lock on `.proscenium/lock` only for the probe,
+so a build or resolve that passes the probe an instant before `proscenium install` takes the lock
+runs while the install rewrites contexts and `node_modules`.
+
+**Why:** That one build can come from a half-installed tree. The next build sees the marker and
+refuses, so it corrects itself, but the refusal is not airtight.
+
+**Context:** Raised by Codex on #168 and left by decision: holding the shared lock through every
+build would make each install wait on whatever is building, and the CLI waits only about a
+second before PSM-E-BUSY, so installs beside a busy dev server would fail (C34: the probe "never
+stops an install starting"). A fix that keeps C34 would have the build check the marker or the
+lock's generation again after it finishes, and retry or refuse.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P4
+**Depends on:** nothing
+
+### One URL for an app's own package that a gem also peers on
+
+**What:** An app's `link:`, `file:` or workspace package keeps its `/node_modules/<name>/` URL
+(`AppLocalPackages`), while a participating gem that declares the same package as a peer reaches
+it through its context and gets its real path's URL.
+
+**Why:** Unbundled, the browser loads that package twice, so its singleton state splits.
+`Verify#check_peers` passes the setup, because both links have the same real path.
+
+**Context:** Raised by Codex on #168. It needs a choice about which URL wins: keep the app's link
+URL for the gem too (map the gem-side resolution back to the app's link when its real path is an
+app-local package's), or drop the exemption for a package a gem shares.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P3
+
+### Serve gem contexts from a bundle root outside the Rails app
+
+**What:** Contexts live at `Bundler.root`. When that is outside `Rails.root`, as in a monorepo whose
+Gemfile sits above the Rails app, nothing under them has a URL: `internal/resolver/resolve.go`
+refuses a gem dependency as resolved outside the app root, and unbundled pages cannot load one.
+
+**Why:** Bundled builds would work, but resolution and unbundled serving do not, so for now the
+engine refuses an adopted app laid out this way (`Builder.outside_rails_root`), with a message
+naming both directories (#168, Codex review).
+
+**Context:** Support means a second served root: `UrlPathFromFsPath` and the middleware's
+allow-list taking the bundle root's `.proscenium/packages/` and its store, with the same
+containment rules as `node_modules`.
+
+**Effort:** M (human) / S (CC)
+**Priority:** P3
+
+### Serve unbundled packages from a store outside the app root
+
+**What:** With pnpm's global virtual store, or any layout whose real files sit outside the app
+root, an unbundled package's own imports resolve to real paths with no URL, and come out as
+absolute file system paths (`/private/var/.../scheduler/index.js`) the browser cannot load.
+
+**Why:** It predates #154: probed with no gem contexts at all, an unbundled `react-dom` from such a
+store imports `scheduler` by its file system path. Only the shared-peer case is handled today:
+`ContextRealPath` gives a context's link the app's link URL when both reach the same file outside
+the root (#168), so a gem and the app still load React once.
+
+**Context:** Supporting it means serving through the links rather than the real paths for anything
+under an external store, and resolving a package's dependencies from its link spelling. Until
+then, an app that unbundles packages needs its store inside the app root.
+
+**Effort:** M (human) / S (CC)
+**Priority:** P3
+**Depends on:** nothing
+
 ### `proscenium inspect --why <js-package>`
 
 **What:** Name which gem contexts (and the app) declare a given JS package, with each declared range.
@@ -367,7 +438,7 @@ Builds on `inspect`'s existing per-gem projection.
 
 **What:** Decide, one by one, whether to add `init`, `sync`, `lock`, `update`, `add`/`remove`, `migrate`, `clean`, a committed `bin/proscenium` launcher with version handoff, transactional journals and the 100-gem performance gate.
 
-**Why:** v1 ships only `install`, `install --frozen`, `inspect` and `gem check` (UC2, 2026-10-04). Each deferred piece is another contract with native tools; add one only when a user hits the need.
+**Why:** v1 ships only `install`, `install --frozen`, `inspect` (also `doctor`) and `gem check` (UC2, 2026-10-04). Each deferred piece is another contract with native tools; add one only when a user hits the need.
 
 **Context:** The original contracts were folded out of the plan body on 2026-10-04; they survive in the plan's git history (before that fold) and in its Review record. The three app migrations use a written recipe instead of `migrate`.
 
@@ -389,7 +460,7 @@ Builds on `inspect`'s existing per-gem projection.
 
 ### Context name override for gems with invalid npm names
 
-**What:** Let `proscenium.json` rename a gem's dependency context (`gemOverrides.<gem>.name`) so a gem whose name is not a valid npm package name, such as one with uppercase letters, can participate.
+**What:** Let the app's package.json rename a gem's dependency context (`proscenium.gemOverrides.<gem>.name`) so a gem whose name is not a valid npm package name, such as one with uppercase letters, can participate.
 
 **Why:** v1 gives such a gem a participation error instead. The override was cut in the 2026-10-04 /autoplan Eng pass because no known gem needs it and a renamed context would sit outside the `@rubygems/*` alias and lock-scan protections.
 

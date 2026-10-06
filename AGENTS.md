@@ -31,6 +31,15 @@ The project is a hybrid Ruby gem + Go shared library:
 - `main.go` - C-exported functions (`build_to_string`, `resolve`, `compile`, `free_cstr`, `reset_config`) called from Ruby
 - `internal/builder/` - esbuild configuration and build orchestration
 - `internal/plugin/` - Custom esbuild plugins (CSS modules, SVG, i18n, RJS, etc.)
+- `exe/proscenium` and `lib/proscenium/cli/` - The `proscenium` CLI for gem dependency contexts
+  (#154): `install`, `install --frozen`, `inspect` (also `doctor`) and `gem check`. Every error
+  is a code in `cli/error.rb`'s catalog, pinned by a golden in `test/cli/golden/`
+  (`GOLDEN=update bin/test test/cli/errors_test.rb` rewrites them); `cli/reporter.rb` lays out
+  and colours human output, and `--json` keeps a stable event shape. The supported pnpm and Bun
+  lines are `cli/capabilities.json`
+- `lib/proscenium/context_map.rb`, `stale_contexts.rb`, `mapping_generation.rb` - The engine side
+  of #154: which gems map to a committed context under `.proscenium/packages/`, the refusal to
+  build while one is stale, and the development-time check for files that changed
 - `lib/proscenium/runtime/` - The `bun test` harness: a `rails runner` daemon (`server.rb`) over a Unix socket, plus the Bun plugin (`bun.js`) and its bootstrap (`bootstrap.js`)
 
 ### Backlog and audits
@@ -122,6 +131,7 @@ golangci-lint run
 - JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`
 - `bun test` runs the app's real modules through a Rails daemon, so it needs the Go library compiled first, same as the Ruby tests
 - A dummy Rails app for integration testing is at `fixtures/dummy/`
+- `fixtures/adopted/` is a second Rails app, one that has adopted gem dependency contexts (#154): its own Gemfile, pnpm 11 lock and committed `.proscenium/packages/`. `test/adopted/` drives it as a subprocess, because the engine reads contexts at `Bundler.root`; it runs with `STAGE_A=1`. After changing its Gemfile, keep every gem at the version the repo's Gemfile.lock has, so CI installs it with `--local`
 - Dummy app uses pnpm as its package manager
 - Multi-Rails version testing uses Appraisals: `gemfiles/rails_7.2.gemfile`, `gemfiles/rails_8.gemfile` (Rails 8.0) and `gemfiles/rails_8.1.gemfile`
 
