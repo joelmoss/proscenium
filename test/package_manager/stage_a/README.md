@@ -105,8 +105,8 @@ of an app's JS configuration and the local checkout of the gem its bundle points
 Bun:
 
 ```sh
-ruby test/package_manager/stage_a/leg.rb ~/dev/clients/harleytherapy/london \
-  ~/dev/clients/harleytherapy/hue CONFIG tmp/stage_a_london
+ruby test/package_manager/stage_a/leg.rb ~/dev/clients/example-org/london \
+  ~/dev/clients/example-org/hue CONFIG tmp/stage_a_london
 ruby test/package_manager/stage_a/leg.rb ~/dev/codaset ~/dev/proscenium-ui CONFIG \
   tmp/stage_a_codaset
 ```

@@ -455,7 +455,7 @@ describe Proscenium::CLI::Registration do
 
     it 'names a dependency on a gem that is not its context, as a pin from before adopting' do
       write('package.json', JSON.generate(
-                              'dependencies' => { '@rubygems/hue' => 'github:harleytherapy/hue#1',
+                              'dependencies' => { '@rubygems/hue' => 'github:example-org/hue#1',
                                                   '@rubygems/other' => '1.0.0', 'react' => '18' },
                               'devDependencies' => { '@rubygems/widget' => 'workspace:*' },
                               'optionalDependencies' => {
@@ -463,7 +463,7 @@ describe Proscenium::CLI::Registration do
                               }
                             ))
 
-      assert_equal ['package.json dependencies has @rubygems/hue as "github:harleytherapy/hue#1"'],
+      assert_equal ['package.json dependencies has @rubygems/hue as "github:example-org/hue#1"'],
                    Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
     end
 
