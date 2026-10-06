@@ -13,7 +13,7 @@ Stage B and C replace it.
 | `gems/` | Sources of the synthetic fixture gems |
 | `bundle.rb` | `StageA::Bundle.install(dir)`: builds the archive gems, installs every fixture gem with Bundler into `dir/bundle`, makes it read-only, and returns `{ name => installed root }` |
 | `bundle_test.rb` | What each installed gem ships, and that its root is read-only |
-| `../../stage_a_seam_test.go` | The resolver seam against a pnpm-shaped tree |
+| `../../dependency_context_test.go` | The resolver seam against a pnpm-shaped tree |
 
 ## Fixture gems
 
@@ -51,7 +51,7 @@ the fixture copies hue's shape without copying its manifest.
 
 ## The resolver seam
 
-`ConfigT.StageAContexts` (Go) maps a gem name to the absolute path of its hand-written context,
+`ConfigT.DependencyContexts` (Go) maps a gem name to the absolute path of its hand-written context,
 `.proscenium/packages/<gem>/`. It does nothing unless set, and only Stage A sets it. For a
 mapped gem:
 
@@ -66,10 +66,10 @@ mapped gem:
 - A package nothing provides is an error naming the gem and the package, never a browser
   external.
 - While the seam is on, a resolved path under `node_modules/` or `.proscenium/packages/` is
-  replaced by its real path (`utils.StageARealPath`), so the app and a gem reach a shared React
+  replaced by its real path (`utils.ContextRealPath`), so the app and a gem reach a shared React
   at one URL when unbundling. Bundled builds get this from esbuild already.
 
-Each of those has a spec in `test/stage_a_seam_test.go`, and each spec was checked to fail with
+Each of those has a spec in `test/dependency_context_test.go`, and each spec was checked to fail with
 its part of the seam removed.
 
 Known limit: the real-path rule compares against `RootPath` as text, so the root must itself be
@@ -78,7 +78,7 @@ specs evaluate the root first.
 
 **Getting the map into a running app (decided, built in step 4).** `Proscenium::Builder.new`
 merges keyword overrides straight into the Go config, so Ruby-level probes pass
-`StageAContexts:` directly. The browser identity probe needs the middleware's builder, which
+`DependencyContexts:` directly. The browser identity probe needs the middleware's builder, which
 takes no overrides: step 4 adds one line to `Builder#initialize` passing
 `Proscenium.config.stage_a_contexts` (nil, so absent, unless a probe app sets it in an
 initializer), and the same key to the Bun daemon's handshake in `runtime/server.rb`.

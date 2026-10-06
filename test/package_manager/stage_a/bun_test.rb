@@ -55,7 +55,7 @@ class StageA::BunTest < ActiveSupport::TestCase
     app = self.class.app(linker)
     contexts = WIDGETS.to_h { [it, File.join(app, '.proscenium/packages', it)] }
     overrides = { RubyGems: self.class.roots, Bundle: bundle, Aliases: {}, External: [],
-                  Precompile: [], StageAContexts: contexts }
+                  Precompile: [], DependencyContexts: contexts }
     entry = "node_modules/@rubygems/#{gem}/index.js"
     Proscenium::Builder.build_to_string(entry, root: app, **overrides)[:response]
   end

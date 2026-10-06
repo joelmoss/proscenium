@@ -24,9 +24,11 @@ module StageA
 
     module_function
 
-    # Installs every fixture gem under `dir` and returns `{ name => installed root }`.
-    def install(dir)
-      app = File.join(dir, 'app')
+    # Installs every fixture gem under `dir` and returns `{ name => installed root }`. The app is
+    # `dir/<app>`, `app` by default; the bundle path stays short beside it.
+    def install(dir, app: 'app')
+      name = app
+      app = File.join(dir, name)
       cache = File.join(app, 'vendor', 'cache')
       FileUtils.mkdir_p(cache)
 
@@ -38,10 +40,9 @@ module StageA
 
       File.write(File.join(app, 'Gemfile'), gemfile(git_repo(dir)))
 
-      bundle(app, dir, 'install', '--local')
-      roots = bundle(app, dir, 'list', '--paths').lines(chomp: true)
-                                                 .to_h { |path| [gem_name(path), path] }
-                                                 .except('bundler')
+      bundle(app, dir, 'install', '--local', app: name)
+      listed = bundle(app, dir, 'list', '--paths', app: name).lines(chomp: true)
+      roots = listed.to_h { |path| [gem_name(path), path] }.except('bundler')
 
       # Read-only, as a shared or system gem install is. Bundler reinstalls nothing into it.
       FileUtils.chmod_R('a-w', File.join(dir, 'bundle'))
@@ -55,13 +56,20 @@ module StageA
       FileUtils.chmod_R('u+w', bundle) if File.exist?(bundle)
     end
 
+    # Every build of a fixture gem is byte-identical: RubyGems stamps the archive with
+    # SOURCE_DATE_EPOCH, and otherwise with today, so a lock's checksum of it held for a day.
+    EPOCH = '1767225600' # 2026-01-01
+
     def build(source, cache)
       spec = Gem::Specification.load(Dir[File.join(source, '*.gemspec')].first)
       yield spec if block_given?
 
+      epoch = ENV.fetch('SOURCE_DATE_EPOCH', nil)
+      ENV['SOURCE_DATE_EPOCH'] = EPOCH
       file = Gem::DefaultUserInteraction.use_ui(Gem::SilentUI.new) do
         Dir.chdir(source) { Gem::Package.build(spec) }
       end
+      ENV['SOURCE_DATE_EPOCH'] = epoch
       FileUtils.mv(File.join(source, file), cache)
     end
 
@@ -80,20 +88,25 @@ module StageA
       <<~GEMFILE
         source 'https://rubygems.org'
 
-        #{(ARCHIVES + ['gem_npm']).map { |name| "gem '#{name}'" }.join("\n")}
+        #{ARCHIVES.map { |name| "gem '#{name}'" }.join("\n")}
         gem '#{GIT}', git: '#{repo}'
+
+        # A group a production install leaves out (C32).
+        gem 'gem_npm', group: :development
       GEMFILE
     end
 
-    def bundle(app, dir, *args)
-      env = {
-        'BUNDLE_GEMFILE' => File.join(app, 'Gemfile'),
+    # The environment that selects the fixture app's bundle, installed under `dir`.
+    def env(dir, app: 'app')
+      { 'BUNDLE_GEMFILE' => File.join(dir, app, 'Gemfile'),
         'BUNDLE_PATH' => File.join(dir, 'bundle'),
         'BUNDLE_APP_CONFIG' => File.join(dir, '.bundle'),
-        'BUNDLE_DISABLE_SHARED_GEMS' => 'true'
-      }
+        'BUNDLE_DISABLE_SHARED_GEMS' => 'true' }
+    end
+
+    def bundle(app_dir, dir, *args, app: 'app')
       out, status = Bundler.with_unbundled_env do
-        Open3.capture2e(env, 'bundle', *args, chdir: app)
+        Open3.capture2e(env(dir, app:), 'bundle', *args, chdir: app_dir)
       end
       raise "bundle #{args.join(' ')} failed:\n#{out}" unless status.success?
 
