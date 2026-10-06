@@ -1,0 +1,29 @@
+{
+  "schema": 1,
+  "comment": "The pnpm and Bun lines Proscenium supports (#154). The source of truth: the CLI checks manager versions against it, and CI pins the versions it lists. `ci` is the exact version CI runs; `eol` is when the line's owner stops maintaining it. pnpm 10 is not supported (decided 4 October 2026): it leaves a context on an older copy of a shared peer after the app upgrades it, and 11 and 12 do not. pnpm 11 starts at 11.11.0: earlier 11.x let a package spoofing an approved name in its manifest run its build scripts (GHSA-5wx6-mg75-v57r, fixed in 11.5.3) and a tarball's manifest name write outside node_modules (GHSA-vq4v-j7r6-jq4m, fixed in 11.11.0).",
+  "managers": {
+    "pnpm": {
+      "lines": [
+        {
+          "range": ">= 11.11.0, < 12",
+          "ci": "11.28.4",
+          "eol": "2027-04-30"
+        },
+        {
+          "range": ">= 12.0.0, < 13",
+          "ci": "12.9.1",
+          "eol": null
+        }
+      ]
+    },
+    "bun": {
+      "lines": [
+        {
+          "range": ">= 1.4.0, < 1.5",
+          "ci": "1.4.2",
+          "eol": null
+        }
+      ]
+    }
+  }
+}
