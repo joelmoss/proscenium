@@ -422,7 +422,7 @@ Builds on `inspect`'s existing per-gem projection.
 **Priority:** P4
 **Depends on:** #154 `proscenium inspect`
 
-### npm adapter for the package manager bridge
+### npm adapter for RubyGem NPM dependencies
 
 **What:** Add npm (10.9.x, 11.x, 12.x lines) as a qualified adapter: its `*` local-link rule, hoisted layout, nested copies under contexts, `npm ci` frozen path and conformance rows.
 

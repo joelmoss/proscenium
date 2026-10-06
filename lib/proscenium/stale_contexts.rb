@@ -94,7 +94,7 @@ module Proscenium
       return EDITED if edited
       return if committed == JSON.parse(context.json)
 
-      'its JavaScript dependencies changed since its dependency context was written'
+      'its NPM dependencies changed since its dependency context was written'
     rescue JSON::ParserError
       'its dependency context is not valid JSON'
     end

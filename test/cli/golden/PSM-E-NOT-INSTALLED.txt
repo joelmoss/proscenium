@@ -1,4 +1,4 @@
-Error: Your JavaScript dependencies aren't installed: there is no node_modules directory.
+Error: Your NPM dependencies aren't installed: there is no node_modules directory.
 
 To fix: Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on a fresh checkout or in CI.
 (PSM-E-NOT-INSTALLED)

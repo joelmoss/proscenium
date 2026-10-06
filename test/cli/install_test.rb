@@ -125,7 +125,7 @@ describe 'proscenium install' do
         assert_includes out, '+  - .proscenium/packages/*' if manager == 'pnpm'
         assert_includes out, '".proscenium/packages/*"' if manager == 'bun'
         assert_includes out,
-                        "Installed JavaScript dependencies for #{GEMS.size} gems with #{manager}"
+                        "Installed NPM dependencies for #{GEMS.size} gems with #{manager}"
         GEMS.each { assert_path_exists context(dir, it) }
         refute_path_exists File.join(dir, '.proscenium/packages/stage_a_assets')
         refute_path_exists File.join(dir, '.proscenium/installing')

@@ -13,7 +13,7 @@ module Proscenium
     # writes.
     class Contexts
       DIR = File.join('.proscenium', 'packages')
-      ESCAPE = "Or, to install %<gem>s's JavaScript dependencies yourself, opt it out with " \
+      ESCAPE = "Or, to install %<gem>s's NPM dependencies yourself, opt it out with " \
                '`"proscenium": {"gemOverrides": {"%<gem>s": {"participate": false}}}` in ' \
                "package.json, then add the packages it needs to your app's own dependencies."
 

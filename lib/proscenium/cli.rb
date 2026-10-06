@@ -21,12 +21,12 @@ module Proscenium
     USAGE = <<~TEXT
       Usage: bundle exec proscenium <command> [options]
 
-      Installs the JavaScript dependencies of the gems in your bundle that opt in.
+      Installs the NPM dependencies of the gems in your bundle that opt in.
 
       Commands:
-        install            Install your gems' JavaScript dependencies
+        install            Install your gems' NPM dependencies
         install --frozen   Check everything is up to date, without changing anything you commit
-        inspect [gem]      Show which gems install JavaScript dependencies, and any problems
+        inspect [gem]      Show which gems install NPM dependencies, and any problems
         doctor [gem]       The same as inspect
         gem check [path]   For gem authors: check a gem's package.json and gemspec
 

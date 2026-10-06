@@ -1,10 +1,10 @@
-# Shipping JavaScript dependencies in a gem
+# Shipping NPM dependencies in a gem
 
 Your gem ships frontend code that imports npm packages. Declare them in a package.json at the root
 of the gem, opt in, and an app using Proscenium installs them for your gem with its own package
 manager: run `bundle exec proscenium install`, and your gem's imports resolve. Your files are served
 from where Bundler installed the gem; nothing is copied. The app's side is in
-[JavaScript dependencies from gems](gem_javascript_dependencies.md).
+[RubyGem NPM dependencies](rubygem_npm_dependencies.md).
 
 ## Checklist
 
@@ -14,7 +14,7 @@ your gem's directory, or pass it the directory or a built `.gem`, before every r
 
 ```
 $ proscenium gem check
-some_ui_gem 1.0.0 passes every check: Proscenium can install its JavaScript dependencies.
+some_ui_gem 1.0.0 passes every check: Proscenium can install its NPM dependencies.
 ```
 
 It needs no bundle and exits 0 when the gem passes. Each problem it finds is printed with its fix:

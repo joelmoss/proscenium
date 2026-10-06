@@ -9,7 +9,7 @@ on:
       - '!**.md'
       - '!docs/**'
       - '!LICENSE.txt'
-      - 'docs/guides/gem_javascript_dependencies.md'
+      - 'docs/guides/rubygem_npm_dependencies.md'
   pull_request:
     # As for push.
     paths:
@@ -17,7 +17,7 @@ on:
       - '!**.md'
       - '!docs/**'
       - '!LICENSE.txt'
-      - 'docs/guides/gem_javascript_dependencies.md'
+      - 'docs/guides/rubygem_npm_dependencies.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

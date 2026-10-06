@@ -248,7 +248,7 @@ module Proscenium
                 elsif committed['projectionSha256'] == current['projectionSha256']
                   'its dependency context was edited by hand'
                 else
-                  'its JavaScript dependencies changed since its dependency context was written'
+                  'its NPM dependencies changed since its dependency context was written'
                 end
         "#{context.gem}: #{cause}\n#{diff}"
       rescue JSON::ParserError
@@ -351,7 +351,7 @@ module Proscenium
 
       def summarize
         contexts = @contexts.contexts.values
-        headline = "Installed JavaScript dependencies for #{count(contexts.size, 'gem')} with " \
+        headline = "Installed NPM dependencies for #{count(contexts.size, 'gem')} with " \
                    "#{@manager.name} #{@manager.version}."
         width = contexts.map { it.gem.size }.max.to_i
         lines = [@reporter.paint(headline, :bold, :green)]

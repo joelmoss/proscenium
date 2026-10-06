@@ -1,1 +1,1 @@
-{"schema":1,"event":"error","status":"error","code":"PSM-E-NOT-INSTALLED","message":"Your JavaScript dependencies aren't installed: there is no node_modules directory.","fix":"Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on a fresh checkout or in CI."}
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NOT-INSTALLED","message":"Your NPM dependencies aren't installed: there is no node_modules directory.","fix":"Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on a fresh checkout or in CI."}

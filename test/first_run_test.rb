@@ -64,7 +64,7 @@ describe 'the first run' do
     out = sh!(:install, 'bundle', 'exec', 'proscenium', 'install', chdir: app)
 
     assert_includes out, '+linker = "hoisted"'
-    assert_includes out, 'Installed JavaScript dependencies for 1 gem with bun'
+    assert_includes out, 'Installed NPM dependencies for 1 gem with bun'
 
     build = 'puts Proscenium::Builder.build_to_string(' \
             '"node_modules/@rubygems/stage_a_widget_a/index.js", Bundle: false)[:response]'

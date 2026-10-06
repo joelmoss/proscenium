@@ -1,4 +1,4 @@
-# JavaScript dependencies from gems
+# RubyGem NPM dependencies
 
 Some gems ship frontend code that imports npm packages, and declare those packages in a
 package.json of their own. Proscenium installs them with your app's package manager, pnpm or Bun,
@@ -15,7 +15,7 @@ Writing such a gem? See the [gem author guide](gem_author.md).
    bundle add some_ui_gem
    ```
 
-2. Install its JavaScript dependencies:
+2. Install its NPM dependencies:
 
    ```sh
    bundle exec proscenium install
@@ -71,7 +71,7 @@ dependencies:
 
 Done in 956ms using pnpm v11.28.4
 
-Installed JavaScript dependencies for 1 gem with pnpm 11.28.4.
+Installed NPM dependencies for 1 gem with pnpm 11.28.4.
   stage_a_widget_a  2 dependencies
 
 Commit these files:
@@ -154,7 +154,7 @@ before. `bundle exec proscenium inspect` lists every gem that ships one and says
 $ bundle exec proscenium inspect
 Package manager: pnpm (isolated linker)
 
-Gems whose JavaScript dependencies Proscenium installs (1):
+Gems whose NPM dependencies Proscenium installs (1):
   stage_a_widget_a 1.0.0: up to date
     from: locally installed gems
     uses: dependencies, peerDependencies
@@ -211,7 +211,7 @@ whose patterns leave the app out does not count, as Bun then installs the app on
 |---|---|
 | `bundle exec proscenium install` | Write the contexts and run your package manager's install. |
 | `bundle exec proscenium install --frozen` | Check everything is up to date and install from the lockfile, changing nothing you commit. Fails, before running the manager, if a context is missing, stale or edited by hand. While another install runs in the project it exits 7 rather than run alongside it, and the engine refuses builds until it finishes. |
-| `bundle exec proscenium inspect [gem]` | Show which gems install JavaScript dependencies, and anything stopping them working. Exits 4 when it finds a problem. `doctor` is the same command. |
+| `bundle exec proscenium inspect [gem]` | Show which gems install NPM dependencies, and anything stopping them working. Exits 4 when it finds a problem. `doctor` is the same command. |
 | `bundle exec proscenium gem check [path]` | For gem authors: check a gem's package.json and gemspec. |
 
 `install` also takes `--production` (leave out development dependencies, and trust the committed
@@ -312,7 +312,7 @@ changes nothing, and lists every problem it finds, each with what to do about it
 $ bundle exec proscenium inspect
 ...
 
-Problem: Your JavaScript dependencies aren't installed: there is no node_modules directory.
+Problem: Your NPM dependencies aren't installed: there is no node_modules directory.
 To fix: Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on a fresh checkout or in CI.
 ```
 
@@ -328,7 +328,7 @@ It checks:
 - everything the engine would refuse to build for (below), such as React split into two copies.
 
 It exits 0 when it finds nothing, and 4 when it finds a problem, so a script can run it. An app
-none of whose gems install JavaScript dependencies has nothing to check. With `--json` it prints
+none of whose gems install NPM dependencies has nothing to check. With `--json` it prints
 one document; each entry in `problems` has the error's `code`, `message` and `fix`.
 
 ## When the engine refuses to build

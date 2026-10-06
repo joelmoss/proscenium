@@ -166,7 +166,7 @@ module Proscenium
       gems = BundledGems.participating(specs, overrides: BundledGems.overrides(root)).keys
       return if gems.empty?
 
-      opted = "#{gems.join(', ')} opt in to installing their JavaScript dependencies " \
+      opted = "#{gems.join(', ')} opt in to installing their NPM dependencies " \
               'through Proscenium'
       manager = UNSUPPORTED.find { |file, _| File.exist?(File.join(root, file)) }&.last
       if manager

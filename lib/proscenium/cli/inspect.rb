@@ -52,7 +52,7 @@ module Proscenium
         specs = BundledGems.installed_specs
         participating = BundledGems.participating(specs, overrides:)
         if @only && !participating.key?(@only)
-          raise Error.new('PSM-E-USAGE', detail: "#{@only} doesn't install JavaScript " \
+          raise Error.new('PSM-E-USAGE', detail: "#{@only} doesn't install NPM " \
                                                  'dependencies through Proscenium')
         end
 
@@ -232,9 +232,9 @@ module Proscenium
       end
 
       def gem_lines(gems)
-        return ['No gems install JavaScript dependencies through Proscenium.'] if gems.empty?
+        return ['No gems install NPM dependencies through Proscenium.'] if gems.empty?
 
-        lines = [bold("Gems whose JavaScript dependencies Proscenium installs (#{gems.size}):")]
+        lines = [bold("Gems whose NPM dependencies Proscenium installs (#{gems.size}):")]
         gems.each do |gem|
           status, colour = STATUS.fetch(gem['status'])
           lines << "  #{gem['gem']} #{gem['version']}: #{@reporter.paint(status, colour)}"

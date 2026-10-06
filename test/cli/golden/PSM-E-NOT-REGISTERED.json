@@ -1,1 +1,1 @@
-{"schema":1,"event":"error","status":"error","code":"PSM-E-NOT-REGISTERED","message":"pnpm-workspace.yaml doesn't list .proscenium/packages/*, so pnpm won't install your gems' JavaScript dependencies.","fix":"Run `bundle exec proscenium install`, then commit pnpm-workspace.yaml."}
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NOT-REGISTERED","message":"pnpm-workspace.yaml doesn't list .proscenium/packages/*, so pnpm won't install your gems' NPM dependencies.","fix":"Run `bundle exec proscenium install`, then commit pnpm-workspace.yaml."}

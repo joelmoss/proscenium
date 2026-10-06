@@ -21,7 +21,7 @@ module Proscenium
           'or a built .gem file.'
         ],
         'PSM-E-NOT-OPTED-IN' => [
-          :input, '%<gem>s has not opted in to having Proscenium install its JavaScript ' \
+          :input, '%<gem>s has not opted in to having Proscenium install its NPM ' \
                   'dependencies.',
           "Add `spec.metadata['proscenium.dependencies'] = 'true'` to its gemspec."
         ],
@@ -95,8 +95,8 @@ module Proscenium
         ],
         'PSM-E-UNSUPPORTED-MANAGER' => [
           :unsupported, 'This app uses %<manager>s, but Proscenium can only install ' \
-                        "gems' JavaScript dependencies with pnpm or Bun.",
-          "Switch the app to pnpm or Bun, or keep adding gems' JavaScript dependencies to " \
+                        "gems' NPM dependencies with pnpm or Bun.",
+          "Switch the app to pnpm or Bun, or keep adding gems' NPM dependencies to " \
           'package.json yourself.'
         ],
         'PSM-E-BUN-LOCKB' => [
@@ -127,7 +127,7 @@ module Proscenium
         'PSM-E-NESTED-WORKSPACE' => [
           :unsupported, 'This app is inside the JavaScript workspace at %<enclosing>s, and ' \
                         "Proscenium doesn't support that yet.",
-          "Keep adding gems' JavaScript dependencies to that workspace yourself, as you do today."
+          "Keep adding gems' NPM dependencies to that workspace yourself, as you do today."
         ],
         'PSM-E-REGISTRATION' => [
           :input, "Proscenium couldn't add the gem dependency contexts to %<file>s without " \
@@ -158,7 +158,7 @@ module Proscenium
         ],
         'PSM-E-CROSS-GEM-TARGET' => [
           :input, "%<gem>s's package.json uses @rubygems/%<other>s, but %<other>s hasn't " \
-                  'opted in to having Proscenium install its JavaScript dependencies.',
+                  'opted in to having Proscenium install its NPM dependencies.',
           'Opt %<other>s in: its author adds proscenium.dependencies to its gemspec, or you add ' \
           '`"proscenium": {"gemOverrides": {"%<other>s": {"participate": true}}}` to your ' \
           'package.json.'
@@ -179,7 +179,7 @@ module Proscenium
         ],
         'PSM-E-NOT-REGISTERED' => [
           :drift, "%<file>s doesn't list .proscenium/packages/*, so %<manager>s won't install " \
-                  "your gems' JavaScript dependencies.",
+                  "your gems' NPM dependencies.",
           'Run `bundle exec proscenium install`, then commit %<file>s.'
         ],
         'PSM-E-GITIGNORE' => [
@@ -192,7 +192,7 @@ module Proscenium
           'Run `bundle exec proscenium install`, then commit %<lockfile>s.'
         ],
         'PSM-E-NOT-INSTALLED' => [
-          :drift, "Your JavaScript dependencies aren't installed: there is no node_modules " \
+          :drift, "Your NPM dependencies aren't installed: there is no node_modules " \
                   'directory.',
           'Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on ' \
           'a fresh checkout or in CI.'
@@ -236,7 +236,7 @@ module Proscenium
         ],
         'PSM-E-PLATFORM-VARIANT' => [
           :unsupported, 'The platform-specific builds of %<variants>s differ from the one ' \
-                        'installed here in their JavaScript dependencies or whether they opt ' \
+                        'installed here in their NPM dependencies or whether they opt ' \
                         "in, or don't pass `proscenium gem check`.",
           'Make every platform build of the gem ship the same package.json dependencies and ' \
           'proscenium.dependencies setting, each passing `proscenium gem check`. Your lockfile ' \

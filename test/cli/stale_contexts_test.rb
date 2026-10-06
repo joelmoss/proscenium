@@ -50,7 +50,7 @@ describe Proscenium::StaleContexts do
   it 'finds a gem whose dependencies changed, and ignores reformatting its context' do
     write('gems/hue/package.json', '{"dependencies": {"ms": "^3.0.0"}}')
 
-    assert_equal ['hue: its JavaScript dependencies changed since its dependency context was ' \
+    assert_equal ['hue: its NPM dependencies changed since its dependency context was ' \
                   'written'],
                  problems
 

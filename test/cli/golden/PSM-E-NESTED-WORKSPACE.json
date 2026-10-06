@@ -1,1 +1,1 @@
-{"schema":1,"event":"error","status":"error","code":"PSM-E-NESTED-WORKSPACE","message":"This app is inside the JavaScript workspace at /src/monorepo, and Proscenium doesn't support that yet.","fix":"Keep adding gems' JavaScript dependencies to that workspace yourself, as you do today."}
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NESTED-WORKSPACE","message":"This app is inside the JavaScript workspace at /src/monorepo, and Proscenium doesn't support that yet.","fix":"Keep adding gems' NPM dependencies to that workspace yourself, as you do today."}

@@ -124,7 +124,7 @@ describe 'an adopted app' do
     Adopted.with_file(path, stale) do
       message, log = Adopted.run(refusal('lib/app.js'))
 
-      expected = 'stage_a_widget_a: its JavaScript dependencies changed since its dependency ' \
+      expected = 'stage_a_widget_a: its NPM dependencies changed since its dependency ' \
                  'context was written'
 
       assert_includes message, expected

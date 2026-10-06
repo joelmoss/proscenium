@@ -178,7 +178,7 @@ describe Proscenium::ContextMap do
 
   describe 'adoption notice' do
     it 'names the opted-in gems and the command, before adoption' do
-      assert_equal 'hue opt in to installing their JavaScript dependencies through Proscenium. ' \
+      assert_equal 'hue opt in to installing their NPM dependencies through Proscenium. ' \
                    'Run `bundle exec proscenium install` to install them.',
                    CM.adoption_notice(@root, specs)
     end

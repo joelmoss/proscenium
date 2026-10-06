@@ -44,7 +44,8 @@ module Proscenium
         end
       end
 
-      # Whether the app has adopted the bridge: its committed registration names the contexts.
+      # Whether the app has adopted RubyGem NPM dependencies: its committed registration names the
+      # contexts.
       def registered?(root, manager)
         ContextMap.registers?(root, manager == 'bun' ? 'package.json' : 'pnpm-workspace.yaml')
       end

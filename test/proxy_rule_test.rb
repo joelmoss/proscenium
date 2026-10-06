@@ -14,7 +14,7 @@ require 'tmpdir'
 # Needs nginx on PATH. The stage-a job installs it on Linux, and there the test fails rather than
 # skips.
 describe 'the documented proxy rule' do
-  GUIDE = File.expand_path('../docs/guides/gem_javascript_dependencies.md', __dir__)
+  GUIDE = File.expand_path('../docs/guides/rubygem_npm_dependencies.md', __dir__)
   ALLOWED = %w[/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js
                /node_modules/.bun/ms@2.1.3/node_modules/ms/index.js
                /.proscenium/packages/widget/node_modules/ms/index.js].freeze

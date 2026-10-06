@@ -32,7 +32,7 @@ module Proscenium
         problems.each { |code, args| @reporter.error(Error.new(code, **args), phase: 'gem-check') }
         if problems.empty?
           message = "#{spec.name} #{spec.version} passes every check: Proscenium can install " \
-                    'its JavaScript dependencies.'
+                    'its NPM dependencies.'
           @reporter.info(@reporter.paint(message, :bold, :green),
                          event: 'gem-check', gem: spec.name)
           return 0
