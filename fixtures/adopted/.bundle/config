@@ -1,0 +1,4 @@
+---
+# The proscenium path gem is ../.., which holds this app: caching it would copy vendor/cache into
+# itself without end.
+BUNDLE_CACHE_ALL: "false"
