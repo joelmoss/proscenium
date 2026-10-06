@@ -42,10 +42,14 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					// Stage A seam: a mapped gem's bare asset resolves from its context.
+					// Dependency contexts: a mapped gem's bare asset resolves from its context.
 					resolveDir := args.ResolveDir
-					if _, contextDir, ok := utils.StageAContext(stageAImporter(args), cfg); ok {
+					fallbackDir := ""
+					if _, contextDir, ok := utils.GemContext(contextImporter(args), cfg); ok {
 						resolveDir = contextDir
+						fallbackDir = contextDir
+					} else if len(cfg.DependencyContexts) > 0 {
+						fallbackDir = root
 					}
 
 					// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
@@ -60,11 +64,17 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 						return true
 					}
+					found := filepath.ToSlash(r.Path)
 					if len(r.Errors) > 0 || r.Path == "" {
-						return false
+						// A file the package's `exports` leaves out, as resolution falls back below.
+						file, ok := nodeModulesFile(fallbackDir, result.Path)
+						if fallbackDir == "" || !ok {
+							return false
+						}
+						found = file
 					}
 
-					absPath = utils.StageARealPath(filepath.ToSlash(r.Path), cfg)
+					absPath = utils.ContextRealPath(found, cfg)
 				}
 
 				result.Path = absPath
@@ -295,8 +305,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					var isBare string
 					var hasExt bool
 
-					// Stage A seam: set when the import comes from a gem the seam maps to a context.
-					stageAGem, stageAContext, stageAMapped := utils.StageAContext(stageAImporter(args), cfg)
+					// Set when the import comes from a gem mapped to a dependency context.
+					mappedGem, mappedContext, mapped := utils.GemContext(contextImporter(args), cfg)
 
 					if utils.IsBareModule(result.Path) {
 						if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
@@ -351,7 +361,9 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						goto FINISH
 					}
 
-					if isBare != "" && hasExt && !stageAMapped {
+					// With dependency contexts the app's imports resolve to real paths, as a gem's do, or the
+					// browser would load a package both share as two modules; so this shortcut is skipped.
+					if isBare != "" && hasExt && !mapped && len(cfg.DependencyContexts) == 0 {
 						// Bare module with extension, so there is no need to resolve it if we prefix the path
 						// with "/node_modules/".
 						result.Path = "/node_modules/" + result.Path
@@ -403,16 +415,20 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							return result, fmt.Errorf("no gem root attached to %s: its loader dropped the plugin data", args.Path)
 						}
 
-						if stageAMapped && isBare != "" {
-							// Stage A seam: the gem's context replaces the whole chain below, including step 1,
+						if mapped && isBare != "" {
+							// Dependency contexts: the gem's context replaces the whole chain below, including step 1,
 							// whose walk-up from an in-tree gem would reach the app's node_modules first.
-							resolveArgs.ResolveDir = stageAContext
+							resolveArgs.ResolveDir = mappedContext
 							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
 								return result, nil
 							}
-							if result.Path == "" {
-								return result, utils.StageAMiss(stageAGem, originalPath)
+							if result.Path == "" && hasExt {
+								fileUnderNodeModules(mappedContext, originalPath, &result)
 							}
+							if result.Path == "" {
+								return result, utils.ContextMiss(mappedGem, originalPath)
+							}
+							utils.DebugContextRoute(cfg, mappedGem, originalPath, result.Path)
 						} else {
 							// 1
 							ok := resolveWithEsbuild(resolveArgs, &result)
@@ -441,10 +457,15 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 									return result, nil
 								}
 							}
+
+							// The app's import skipped the shortcut above, so it gets the same fallback.
+							if result.Path == "" && isBare != "" && hasExt && len(cfg.DependencyContexts) > 0 {
+								fileUnderNodeModules(root, originalPath, &result)
+							}
 						}
 
 						if isBare != "" && result.Path != "" {
-							result.Path = utils.StageARealPath(result.Path, cfg)
+							result.Path = utils.ContextRealPath(result.Path, cfg)
 						}
 					}
 
@@ -505,9 +526,32 @@ func assetFsPath(p string, args esbuild.OnResolveArgs, root string) (string, boo
 	return "", false
 }
 
-// The file system path the Stage A seam looks a bare import's gem up by. A rubygems-namespaced
+// A bare import naming a file that esbuild could not resolve - typically one a package's
+// `exports` leaves out, such as `react/cjs/react.development.js` - is that file under `dir`'s
+// node_modules when it is there, as the shortcut for an import with an extension always served
+// it. Never a path outside that node_modules.
+func fileUnderNodeModules(dir string, specifier string, result *esbuild.OnResolveResult) {
+	if file, ok := nodeModulesFile(dir, specifier); ok {
+		result.Path = file
+		result.Errors = nil
+	}
+}
+
+// The regular file `specifier` names under `dir`'s node_modules, never outside it.
+func nodeModulesFile(dir string, specifier string) (string, bool) {
+	base := utils.JoinFsPath(dir, "node_modules")
+	file := utils.JoinFsPath(base, specifier)
+	if !strings.HasPrefix(file, base+"/") {
+		return "", false
+	}
+	info, err := os.Stat(file)
+
+	return file, err == nil && info.Mode().IsRegular()
+}
+
+// The file system path a bare import's gem is looked up by. A rubygems-namespaced
 // importer is a virtual `@rubygems/` path; its loader attaches the gem root instead.
-func stageAImporter(args esbuild.OnResolveArgs) string {
+func contextImporter(args esbuild.OnResolveArgs) string {
 	if args.Namespace == "rubygems" {
 		return types.PluginDataOf(args.PluginData).GemPath
 	}

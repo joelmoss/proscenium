@@ -77,10 +77,14 @@ type ConfigT struct {
 	InternalTesting      bool
 	UseDevCSSModuleNames bool
 
-	// The Stage A resolver seam for #154, set only by test/package_manager/stage_a: gem name to the
-	// absolute path of its hand-written dependency context. A bare import from a mapped gem
-	// resolves from the context alone. Stage C replaces it with the real context map.
-	StageAContexts map[string]string
+	// Gem dependency contexts (#154): a participating gem's name to the absolute path of its
+	// context, `.proscenium/packages/<gem>`. A bare import from a mapped gem resolves from the
+	// context alone. Empty until the app adopts them.
+	DependencyContexts map[string]string
+
+	// The names of the app's own `link:`, `file:` and workspace dependencies, from its package.json.
+	// They keep their link paths when dependency contexts make other packages real-path.
+	AppLocalPackages []string
 }
 
 type PluginData = struct {
