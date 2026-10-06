@@ -146,7 +146,7 @@ module Proscenium
       # is a contract violation, and is shown as the message rather than replaced by a parse error
       # that hides it.
       def self.parse_json(json)
-        parsed = JSON.parse(json, strict: true)
+        parsed = JSON.parse(json)
         parsed if parsed.is_a?(Hash)
       rescue JSON::ParserError, TypeError
         nil
@@ -195,6 +195,48 @@ module Proscenium
       new(root:, **overrides).compile
     end
 
+    # Why no build may run now, or nil (#154): an install is under way or stopped before it
+    # finished, or the committed gem dependency contexts are stale. With
+    # PROSCENIUM_STALE_CONTEXT=warn, for an incident, stale contexts are logged once instead.
+    def self.refusal(root = Rails.root)
+      project = ContextMap.project_root
+      return ContextMap::INSTALLING_MESSAGE if ContextMap.installing?(project)
+
+      outside = outside_rails_root(project, root) and return outside
+
+      stale = StaleContexts.message(project, generation) or return
+      return stale unless ENV['PROSCENIUM_STALE_CONTEXT'] == 'warn'
+
+      @warned ||= Set.new
+      Rails.logger.warn("[Proscenium] #{stale}") if @warned.add?(stale)
+      nil
+    end
+
+    # Why an adopted app's contexts cannot be served from `root`, the root builds run in (the Rails
+    # app's), or nil (#154). They live at the bundle's root, beside the Gemfile; one outside `root`
+    # has no URL the engine serves, so such a layout is refused plainly, not left to fail
+    # mid-page. Only compares paths unless they differ.
+    def self.outside_rails_root(project, root = Rails.root)
+      return if within?(project, root) || !ContextMap.adopted?(project)
+
+      "Gem dependency contexts are under #{project}, outside the Rails app at #{root}, " \
+        'which Proscenium cannot serve yet. Keep the Gemfile in the Rails root to use them.'
+    end
+
+    # Whether `path` is `root` or under it, as spelled or, through a link such as a Capistrano
+    # `current`, as resolved.
+    def self.within?(path, root)
+      under?(path, root) || under?(File.realpath(path), File.realpath(root))
+    rescue SystemCallError
+      false
+    end
+
+    def self.under?(path, root) = "#{path}/".start_with?("#{root}/")
+    private_class_method :within?, :under?
+
+    # The mapping generation builds use now (#154). See Resolver.generation.
+    def self.generation = Resolver.generation
+
     # Resets nothing any more - Go keeps no config between calls. Kept because it is the one call
     # into Go that needs no Rails app, which is how bin/verify-installed-gem and the packaging test
     # prove the library loads, and benchmarks/bridge.rb times it as the bare cost of an FFI call.
@@ -208,8 +250,25 @@ module Proscenium
     # - than the app's own configuration. Keys must match `types.ConfigT`; Go silently ignores
     # any it does not know.
     def initialize(root: nil, **overrides)
+      @root = root
+      @overrides = overrides
+      @generation = self.class.generation
+      @request_config = configure(@generation)
+    end
+
+    # The config pointer for the current mapping generation: a Builder kept past an install, or
+    # made just before one finished, sends Go the context map builds now use, not the one it was
+    # made with (#154).
+    def request_config
+      generation = self.class.generation
+      @request_config = configure(@generation = generation) if generation != @generation
+      @request_config
+    end
+    private :request_config
+
+    def configure(generation)
       config_hash = {
-        RootPath: (root || Rails.root).to_s,
+        RootPath: (@root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
         GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
@@ -220,11 +279,13 @@ module Proscenium
         Aliases: Proscenium.config.aliases,
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
-        Debug: Proscenium.config.debug
-      }.merge(overrides)
+        Debug: Proscenium.config.debug,
+        **ContextMap.config(ContextMap.project_root, generation)
+      }.merge(@overrides)
 
-      @request_config = self.class.request_config_pointer(config_hash)
+      self.class.request_config_pointer(config_hash)
     end
+    private :configure
 
     class << self
       # Building the config JSON and copying it into an FFI::MemoryPointer is the only real cost
@@ -252,8 +313,12 @@ module Proscenium
     end
 
     def build_to_string(path)
+      if (reason = self.class.refusal(@root || Rails.root))
+        raise BuildError.new(path, reason)
+      end
+
       ActiveSupport::Notifications.instrument('build.proscenium', identifier: path) do
-        raw = Request.build_to_string(path, @request_config)
+        raw = Request.build_to_string(path, request_config)
         result = { success: raw[:success], response: read_and_free(raw[:response]),
                    content_hash: read_and_free(raw[:content_hash]) }
 
@@ -264,8 +329,12 @@ module Proscenium
     end
 
     def resolve(path)
+      if (reason = self.class.refusal(@root || Rails.root))
+        raise ResolveError.new(path, reason)
+      end
+
       ActiveSupport::Notifications.instrument('resolve.proscenium', identifier: path) do
-        raw = Request.resolve(path, @request_config)
+        raw = Request.resolve(path, request_config)
         success = raw[:success]
         url_path = read_and_free(raw[:url_path])
         abs_path = read_and_free(raw[:abs_path])
@@ -278,7 +347,11 @@ module Proscenium
 
     # Returns true, or raises CompileError with esbuild's messages.
     def compile
-      raw = Request.compile(@request_config)
+      if (reason = self.class.refusal(@root || Rails.root))
+        raise CompileError, reason
+      end
+
+      raw = Request.compile(request_config)
       messages = read_and_free(raw[:messages])
 
       raise CompileError, messages unless raw[:success]

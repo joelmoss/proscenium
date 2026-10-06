@@ -9,6 +9,116 @@ class Proscenium::BuilderTest < ActiveSupport::TestCase
 
   let(:subject) { Proscenium::Builder }
 
+  # Contexts live at the bundle's root; one outside the Rails app has no URL the engine can serve,
+  # so an adopted app laid out that way is refused plainly rather than failing mid-page (#154).
+  it 'refuses an adopted app whose bundle root is outside the Rails root' do
+    project = File.realpath(Dir.mktmpdir('bundle-root'))
+    File.write(File.join(project, 'pnpm-workspace.yaml'), "packages:\n  - .proscenium/packages/*\n")
+    real = Proscenium::ContextMap.method(:project_root)
+    Proscenium::ContextMap.define_singleton_method(:project_root) { project }
+
+    assert_match(/outside the Rails app/, subject.refusal)
+    File.delete(File.join(project, 'pnpm-workspace.yaml'))
+
+    refute_match(/outside the Rails app/, subject.refusal.to_s)
+  ensure
+    Proscenium::ContextMap.define_singleton_method(:project_root, real)
+    FileUtils.rm_rf(project)
+  end
+
+  # A bundle root reached through a link to the Rails root, as a Capistrano `current` is, is the
+  # Rails root.
+  it 'accepts a bundle root that is the Rails root through a link' do
+    link = File.join(Dir.mktmpdir('current'), 'current')
+    File.symlink(Rails.root.to_s, link)
+    adopted = Proscenium::ContextMap.method(:adopted?)
+    Proscenium::ContextMap.define_singleton_method(:adopted?) { |_root| true }
+
+    assert_nil subject.send(:outside_rails_root, link)
+    assert_match(/outside the Rails app/, subject.send(:outside_rails_root, File.dirname(link)))
+  ensure
+    Proscenium::ContextMap.define_singleton_method(:adopted?, adopted)
+    FileUtils.rm_rf(File.dirname(link))
+  end
+
+  # A Builder made before the mapping generation moved sends Go the new context map, not the one
+  # it was made with (#154).
+  it 'takes the current context map when the generation moved after it was made' do
+    builder = subject.new
+    generation = subject.method(:generation)
+    config = Proscenium::ContextMap.method(:config)
+    subject.define_singleton_method(:generation) { 99 }
+    Proscenium::ContextMap.define_singleton_method(:config) do |*|
+      { DependencyContexts: { 'moved' => '/moved' }, AppLocalPackages: [] }
+    end
+
+    assert_includes builder.send(:request_config).read_string, '"moved"'
+  ensure
+    subject.define_singleton_method(:generation, generation)
+    Proscenium::ContextMap.define_singleton_method(:config, config)
+  end
+
+  # C34: an install under way, or one that stopped before finishing, stops every call into Go.
+  describe 'while an install is in progress' do
+    before do
+      Proscenium::ContextMap.singleton_class.alias_method(:real_installing?, :installing?)
+      Proscenium::ContextMap.define_singleton_method(:installing?) { |_root| true }
+    end
+
+    after do
+      Proscenium::ContextMap.singleton_class.alias_method(:installing?, :real_installing?)
+    end
+
+    it 'refuses to build, resolve or compile, naming the command' do
+      [-> { subject.build_to_string('lib/foo.js') },
+       -> { subject.resolve('react') },
+       -> { subject.compile }].each do |call|
+        error = assert_raises(Proscenium::Error, &call)
+
+        assert_includes error.message, 'bundle exec proscenium install'
+      end
+    end
+  end
+
+  # PROSCENIUM_STALE_CONTEXT=warn, for an incident: stale contexts are logged once, not raised.
+  describe 'with stale contexts' do
+    before do
+      Proscenium::StaleContexts.singleton_class.alias_method(:real_message, :message)
+      Proscenium::StaleContexts.define_singleton_method(:message) { |*| 'contexts are stale' }
+    end
+
+    after do
+      Proscenium::StaleContexts.singleton_class.alias_method(:message, :real_message)
+      ENV.delete('PROSCENIUM_STALE_CONTEXT')
+    end
+
+    it 'refuses to build' do
+      error = assert_raises(Proscenium::Builder::BuildError) do
+        subject.build_to_string('lib/foo.js')
+      end
+
+      assert_includes error.message, 'contexts are stale'
+    end
+
+    it 'logs once and builds with PROSCENIUM_STALE_CONTEXT=warn' do
+      ENV['PROSCENIUM_STALE_CONTEXT'] = 'warn'
+      logged = []
+      logger = Rails.logger
+      Rails.logger = Logger.new(nil).tap do |l|
+        l.define_singleton_method(:warn) do |m|
+          logged << m
+        end
+      end
+      subject.instance_variable_set(:@warned, nil)
+
+      2.times { subject.build_to_string('lib/foo.js') }
+
+      assert_equal ['[Proscenium] contexts are stale'], logged
+    ensure
+      Rails.logger = logger
+    end
+  end
+
   describe '.build_to_string' do
     it 'replaces NODE_ENV and RAILS_ENV' do
       result = subject.build_to_string('lib/env/env.js')

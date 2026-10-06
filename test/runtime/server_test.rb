@@ -71,6 +71,27 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
     end
   end
 
+  # C24: while `proscenium install` runs, the daemon answers nothing, not even from its cache.
+  describe 'while an install is in progress' do
+    before do
+      request('build', path: '/lib/import_absolute_module.js') # warm the cache
+      Proscenium::ContextMap.singleton_class.alias_method(:real_installing?, :installing?)
+      Proscenium::ContextMap.define_singleton_method(:installing?) { |_root| true }
+    end
+
+    after do
+      Proscenium::ContextMap.singleton_class.alias_method(:installing?, :real_installing?)
+    end
+
+    it 'refuses builds, cached or not, and resolves' do
+      [request('build', path: '/lib/import_absolute_module.js'),
+       request('resolve', path: '/lib/foo.js')].each do |reply|
+        refute reply[:ok]
+        assert_includes reply[:error], 'bundle exec proscenium install'
+      end
+    end
+  end
+
   describe 'build' do
     # Parity: an app module is whatever the app serves, byte for byte. Nothing about how it is
     # built is decided by the daemon.

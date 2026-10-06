@@ -15,7 +15,9 @@ module Proscenium
 
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
-  ALLOWED_DIRECTORIES = 'app,lib,config,node_modules'
+  # A gem dependency context's own node_modules holds the copy of a package the linker nested
+  # there, when the gem pins a version the app's does not satisfy (#154).
+  ALLOWED_DIRECTORIES = 'app,lib,config,node_modules,.proscenium/packages/*/node_modules'
   VENDOR_PATH_GLOB = '/vendor/**.{js,css}'
   APP_PATH_GLOB = "/{#{ALLOWED_DIRECTORIES}}/**.{#{FILE_EXTENSIONS.join(',')}}".freeze
   GEMS_PATH_GLOB = "/node_modules/@rubygems/**.{#{FILE_EXTENSIONS.join(',')}}".freeze
@@ -37,6 +39,9 @@ module Proscenium
   autoload :Importer
   autoload :Resolver
   autoload :BundledGems
+  autoload :ContextMap
+  autoload :StaleContexts
+  autoload :MappingGeneration
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)

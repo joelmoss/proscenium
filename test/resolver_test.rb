@@ -21,6 +21,32 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
   end
 
   describe '.resolve' do
+    # A cached resolution goes when the mapping generation moves (#154), even with no Builder made
+    # since: after an install, a path resolved before it must not keep its old URL.
+    it 'forgets a cached resolution when the mapping generation moves' do
+      path = Rails.root.join('app/views/generation.js').to_s
+      subject.resolved[path] = %w[stale stale stale].freeze
+      generation = Proscenium::MappingGeneration.method(:refresh)
+      Proscenium::MappingGeneration.define_singleton_method(:refresh) { |*| [1, true] }
+
+      assert_equal '/app/views/generation.js', subject.resolve(path)
+    ensure
+      Proscenium::MappingGeneration.define_singleton_method(:refresh, generation)
+      subject.reset
+    end
+
+    # Resolving loads no Go library: Builder dlopens it when first referenced, which a path
+    # resolved in Ruby, or a test on a fake file system, must not need.
+    it 'polls the generation without touching Builder' do
+      generation = Proscenium::Builder.method(:generation)
+      Proscenium::Builder.define_singleton_method(:generation) { raise 'Builder was used' }
+
+      assert_equal '/app/views/user.js', subject.resolve(Rails.root.join('app/views/user.js').to_s)
+    ensure
+      Proscenium::Builder.define_singleton_method(:generation, generation)
+      subject.reset
+    end
+
     it 'raises on non-absolute path' do
       error = assert_raises ArgumentError do
         subject.resolve('./foo')
