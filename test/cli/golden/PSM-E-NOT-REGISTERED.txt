@@ -1,0 +1,5 @@
+Error: pnpm-workspace.yaml doesn't list .proscenium/packages/*, so pnpm won't install your gems' JavaScript dependencies.
+
+To fix: Run `bundle exec proscenium install`, then commit pnpm-workspace.yaml.
+(PSM-E-NOT-REGISTERED)
+

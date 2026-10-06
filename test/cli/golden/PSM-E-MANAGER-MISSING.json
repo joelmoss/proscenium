@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-MANAGER-MISSING","message":"pnpm isn't installed, or isn't on your PATH.","fix":"Install pnpm the way this project normally does (Corepack, mise, Volta or its own installer), then try again."}

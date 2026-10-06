@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-BUSY","message":"proscenium install (pid 4242) is already running in this project.","fix":"Wait for it to finish, then run your command again. If nothing is actually installing, delete .proscenium/manager, which an earlier run left behind."}

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-GEMSPEC","message":"Expected one gemspec in /src/widget, but found 0.","fix":"Run `proscenium gem check` from the gem's own directory, or pass it that directory or a built .gem file."}

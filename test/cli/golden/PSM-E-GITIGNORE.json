@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-GITIGNORE","message":".gitignore is missing some of Proscenium's lines, or a later rule hides the dependency contexts you need to commit.","fix":"Run `bundle exec proscenium install` to add them, then commit .gitignore."}

@@ -1,0 +1,5 @@
+Error: This app only has bun.lockb, Bun's older binary lockfile, which Proscenium can't read.
+
+To fix: Run `bun install --save-text-lockfile` to write bun.lock, then commit it.
+(PSM-E-BUN-LOCKB)
+

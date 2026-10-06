@@ -1,0 +1,5 @@
+Error: widget's package.json uses @rubygems/other, but its gemspec doesn't depend on the other gem.
+
+To fix: Add `spec.add_dependency 'other'` to the gemspec, or stop using @rubygems/other.
+(PSM-E-CROSS-GEM)
+

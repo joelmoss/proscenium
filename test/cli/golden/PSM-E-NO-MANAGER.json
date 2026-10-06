@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NO-MANAGER","message":"Proscenium can't tell which package manager this app uses: there is no packageManager field in package.json, and no pnpm-lock.yaml or bun.lock.","fix":"Run again with --manager pnpm or --manager bun, or add a packageManager field to package.json."}

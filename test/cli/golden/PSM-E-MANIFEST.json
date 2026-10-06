@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-MANIFEST","message":"widget's package.json can't be used, because it is missing.","fix":"Ship a valid package.json there: a JSON object whose dependency fields map package names to version strings."}

@@ -1,0 +1,5 @@
+Error: This app is inside the JavaScript workspace at /src/monorepo, and Proscenium doesn't support that yet.
+
+To fix: Keep adding gems' JavaScript dependencies to that workspace yourself, as you do today.
+(PSM-E-NESTED-WORKSPACE)
+

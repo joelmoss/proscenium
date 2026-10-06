@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-BUN-LINKER","message":"bunfig.toml doesn't say which linker Bun uses (hoisted or isolated), and adding gem dependency contexts could make Bun switch linkers.","fix":"Add `linker = \"hoisted\"` (or \"isolated\", whichever your app uses today) to the `[install]` table in bunfig.toml, creating the table if there is none."}

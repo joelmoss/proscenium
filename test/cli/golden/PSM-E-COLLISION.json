@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-COLLISION","message":"Some of your app's dependencies use a name a gem's dependency context needs:\n  - package.json dependencies has @rubygems/hue as \"github:harleytherapy/hue#22e6604\"","fix":"Remove each one, since Gemfile.lock provides the gem now, or rename the package."}

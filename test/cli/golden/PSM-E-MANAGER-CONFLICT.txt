@@ -1,0 +1,5 @@
+Error: This app points to more than one package manager: pnpm and bun.
+
+To fix: Keep just one: delete the other lockfile, or make packageManager in package.json match the lockfile. (--manager only decides when nothing else does.)
+(PSM-E-MANAGER-CONFLICT)
+

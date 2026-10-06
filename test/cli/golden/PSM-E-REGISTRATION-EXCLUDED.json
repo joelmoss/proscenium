@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-REGISTRATION-EXCLUDED","message":"pnpm-workspace.yaml excludes .proscenium/packages/ with a \"!\" pattern, so your package manager would never install the gem dependency contexts.","fix":"Remove that pattern from pnpm-workspace.yaml, then run `bundle exec proscenium install` again."}

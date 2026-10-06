@@ -1,0 +1,5 @@
+Error: Proscenium couldn't add the gem dependency contexts to package.json without rewriting the file.
+
+To fix: Check that package.json is valid (package.json must be strict JSON, with no comments or trailing commas). Then add ".proscenium/packages/*" yourself, to `packages` in pnpm-workspace.yaml or `workspaces` in package.json, and run `bundle exec proscenium install` again.
+(PSM-E-REGISTRATION)
+

@@ -1,0 +1,5 @@
+Error: .proscenium/packages/ contains things Proscenium didn't create: mine.
+
+To fix: Move them somewhere else. Proscenium manages that directory, and treats everything in it as a gem dependency context.
+(PSM-E-OWNED-DIR)
+

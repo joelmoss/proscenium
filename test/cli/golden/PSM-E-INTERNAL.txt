@@ -1,0 +1,5 @@
+Error: Something went wrong inside Proscenium: ArgumentError: boom
+
+To fix: This is a bug in Proscenium. Please report it at https://github.com/joelmoss/proscenium/issues, including the output above.
+(PSM-E-INTERNAL)
+

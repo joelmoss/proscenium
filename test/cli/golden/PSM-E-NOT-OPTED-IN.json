@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NOT-OPTED-IN","message":"widget has not opted in to having Proscenium install its JavaScript dependencies.","fix":"Add `spec.metadata['proscenium.dependencies'] = 'true'` to its gemspec."}

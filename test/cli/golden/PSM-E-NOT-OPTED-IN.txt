@@ -1,0 +1,5 @@
+Error: widget has not opted in to having Proscenium install its JavaScript dependencies.
+
+To fix: Add `spec.metadata['proscenium.dependencies'] = 'true'` to its gemspec.
+(PSM-E-NOT-OPTED-IN)
+

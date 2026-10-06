@@ -1,0 +1,5 @@
+Error: The install stopped because of the problems above. Nothing was changed.
+
+To fix: Fix each one as it says, then run `bundle exec proscenium install` again.
+(PSM-E-PROBLEMS)
+

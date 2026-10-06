@@ -1,0 +1,5 @@
+Error: widget's gemspec doesn't list package.json in spec.files, so the built gem won't include it.
+
+To fix: Add package.json, and every frontend file the gem serves, to spec.files.
+(PSM-E-GEM-FILES)
+

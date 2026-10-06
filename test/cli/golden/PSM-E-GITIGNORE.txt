@@ -1,0 +1,5 @@
+Error: .gitignore is missing some of Proscenium's lines, or a later rule hides the dependency contexts you need to commit.
+
+To fix: Run `bundle exec proscenium install` to add them, then commit .gitignore.
+(PSM-E-GITIGNORE)
+

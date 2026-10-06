@@ -1,0 +1,5 @@
+Error: `bun pm default-trusted` didn't print Bun's default list of trusted packages, so Proscenium can't check whose install scripts Bun would run.
+
+To fix: Add `"trustedDependencies": []` to package.json, listing any packages whose install scripts your app needs, so Bun uses that list instead of its default.
+(PSM-E-BUN-DEFAULT-TRUSTED)
+

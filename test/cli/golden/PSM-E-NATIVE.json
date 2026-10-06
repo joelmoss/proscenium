@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-NATIVE","message":"`pnpm install` failed (exit status 1).","fix":"Its output is above. Fix what it reports, then run `bundle exec proscenium install` again. Proscenium hasn't changed your package manager or regenerated your lockfile."}

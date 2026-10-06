@@ -1,0 +1,5 @@
+Error: bun didn't install the dependency contexts for widget.
+
+To fix: Check that `packages` in pnpm-workspace.yaml, or `workspaces` in package.json, lists ".proscenium/packages/*", then run `bundle exec proscenium install` again.
+(PSM-E-WORKSPACE-MISSING)
+

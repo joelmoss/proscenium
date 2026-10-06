@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-WORKSPACES","message":"widget's package.json declares workspaces, which a gem's package.json can't do.","fix":"Remove \"workspaces\" from the gem's package.json."}

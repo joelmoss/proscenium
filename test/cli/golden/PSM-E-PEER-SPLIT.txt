@@ -1,0 +1,5 @@
+Error: widget and your app use different copies of react, so the page would load it twice.
+
+To fix: Change your app's react to a version within widget's peer range, then run `bundle exec proscenium install` again.
+(PSM-E-PEER-SPLIT)
+

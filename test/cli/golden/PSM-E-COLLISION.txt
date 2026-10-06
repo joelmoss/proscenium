@@ -1,0 +1,6 @@
+Error: Some of your app's dependencies use a name a gem's dependency context needs:
+  - package.json dependencies has @rubygems/hue as "github:harleytherapy/hue#22e6604"
+
+To fix: Remove each one, since Gemfile.lock provides the gem now, or rename the package.
+(PSM-E-COLLISION)
+

@@ -1,0 +1,5 @@
+Error: This app uses yarn, but Proscenium can only install gems' JavaScript dependencies with pnpm or Bun.
+
+To fix: Switch the app to pnpm or Bun, or keep adding gems' JavaScript dependencies to package.json yourself.
+(PSM-E-UNSUPPORTED-MANAGER)
+

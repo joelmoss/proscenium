@@ -1,0 +1,5 @@
+Error: widget aliases x to "npm:@rubygems/other@*", which is another gem's dependency context.
+
+To fix: Add the other gem to the gemspec's dependencies, and use @rubygems/<gem> directly.
+(PSM-E-ALIAS)
+
