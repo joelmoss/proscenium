@@ -1,0 +1,1 @@
+{"schema":1,"event":"warning","status":"warning","code":"PSM-W-END-OF-LIFE","message":"pnpm 11.28.4 reaches end of life on 2027-04-30, and a future Proscenium release may stop supporting it.","fix":"Plan an upgrade to a newer pnpm version; the upgrade guide explains the steps."}

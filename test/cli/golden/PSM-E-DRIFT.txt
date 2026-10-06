@@ -1,0 +1,7 @@
+Error: Some files are out of date with your bundle:
+  - widget: its context is out of date
+  - pnpm-lock.yaml is missing
+
+To fix: Run `bundle exec proscenium install`, then commit the files it lists.
+(PSM-E-DRIFT)
+

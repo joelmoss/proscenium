@@ -1,0 +1,5 @@
+Error: widget's package.json can't be used, because it is missing.
+
+To fix: Ship a valid package.json there: a JSON object whose dependency fields map package names to version strings.
+(PSM-E-MANIFEST)
+

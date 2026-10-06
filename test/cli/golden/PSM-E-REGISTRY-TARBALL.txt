@@ -1,0 +1,5 @@
+Error: The lockfile installs @rubygems/widget from a registry or Git, instead of from the gem itself.
+
+To fix: Remove the registry or GitHub dependency on it from your package.json, since Gemfile.lock provides the gem now, then run `bundle exec proscenium install`.
+(PSM-E-REGISTRY-TARBALL)
+

@@ -1,0 +1,5 @@
+Error: bunfig.toml doesn't say which linker Bun uses (hoisted or isolated), and adding gem dependency contexts could make Bun switch linkers.
+
+To fix: Add `linker = "hoisted"` (or "isolated", whichever your app uses today) to the `[install]` table in bunfig.toml, creating the table if there is none.
+(PSM-E-BUN-LINKER)
+

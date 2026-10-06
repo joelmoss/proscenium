@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-UNC-SHIM","message":"pnpm is installed as a .cmd script, and cmd.exe can't run in //server/share/app because it's a network (UNC) path: it would run in C:\\Windows instead.","fix":"Map a drive letter to the share (`net use Z: \\\\server\\share`) and run from that drive, or install pnpm as a native executable."}

@@ -1,0 +1,5 @@
+Error: --experimental-manager-version can't be combined with --frozen.
+
+To fix: Use a supported package manager version wherever --frozen runs, such as CI.
+(PSM-E-EXPERIMENTAL-FROZEN)
+

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-ALIAS","message":"widget aliases x to \"npm:@rubygems/other@*\", which is another gem's dependency context.","fix":"Add the other gem to the gemspec's dependencies, and use @rubygems/<gem> directly."}

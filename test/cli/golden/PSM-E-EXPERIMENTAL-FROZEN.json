@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-EXPERIMENTAL-FROZEN","message":"--experimental-manager-version can't be combined with --frozen.","fix":"Use a supported package manager version wherever --frozen runs, such as CI."}

@@ -1,0 +1,5 @@
+Error: `pnpm install` was stopped before it finished.
+
+To fix: Run `bundle exec proscenium install` again to finish.
+(PSM-E-INTERRUPTED)
+

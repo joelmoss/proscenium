@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-GEM-FILES","message":"widget's gemspec doesn't list package.json in spec.files, so the built gem won't include it.","fix":"Add package.json, and every frontend file the gem serves, to spec.files."}

@@ -1,0 +1,6 @@
+Error: Some gems install a package from Git, a URL or an alias to another package, under a name your package manager trusts to run install scripts, so that code's install script would run:
+  - hue: esbuild (github:evil/esbuild)
+
+To fix: Ask the gem's author to depend on the registry package instead, or opt the gem out with `"proscenium": {"gemOverrides": {"<gem>": {"participate": false}}}` in package.json. pnpm trusts the packages pnpm-workspace.yaml approves builds for; Bun trusts trustedDependencies in package.json, or its own default list without one.
+(PSM-E-TRUSTED-SOURCE)
+

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-DRIFT","message":"Some files are out of date with your bundle:\n  - widget: its context is out of date\n  - pnpm-lock.yaml is missing","fix":"Run `bundle exec proscenium install`, then commit the files it lists."}

@@ -1,0 +1,5 @@
+Error: widget's package.json declares workspaces, which a gem's package.json can't do.
+
+To fix: Remove "workspaces" from the gem's package.json.
+(PSM-E-WORKSPACES)
+

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-MANAGER-VERSION","message":"Proscenium doesn't support pnpm 9.15.0.","fix":"Use a supported version of pnpm (>= 11.11.0, < 12; >= 12.0.0, < 13). To experiment locally with another, add --experimental-manager-version."}

@@ -1,0 +1,5 @@
+Error: widget lists react and react-dom as dependencies, so it would get its own copy and the page would load two.
+
+To fix: List react and react-dom under peerDependencies instead, so the gem uses the app's copy.
+(PSM-E-REACT)
+

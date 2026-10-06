@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-OWNED-LINK","message":".proscenium/packages is a symbolic link, so installing would write outside your app.","fix":"Replace it with a real directory. Proscenium only writes inside .proscenium/."}

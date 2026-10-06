@@ -1,0 +1,5 @@
+Error: widget's package.json uses @rubygems/other, but other hasn't opted in to having Proscenium install its JavaScript dependencies.
+
+To fix: Opt other in: its author adds proscenium.dependencies to its gemspec, or you add `"proscenium": {"gemOverrides": {"other": {"participate": true}}}` to your package.json.
+(PSM-E-CROSS-GEM-TARGET)
+

@@ -1,0 +1,5 @@
+Error: widget's proscenium.frontend_root (../outside) points outside the gem.
+
+To fix: Set proscenium.frontend_root to a directory inside the gem, relative to the gem's root.
+(PSM-E-FRONTEND-ROOT)
+

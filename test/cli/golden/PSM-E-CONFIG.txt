@@ -1,0 +1,5 @@
+Error: Proscenium can't read its settings: "proscenium.gemOverrides" in package.json must be an object.
+
+To fix: Fix package.json. Proscenium reads one setting from it: `"proscenium": {"gemOverrides": {"<gem>": {"participate": true}}}`, with true or false for each gem.
+(PSM-E-CONFIG)
+

@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-HOOK","message":"widget needs build steps at install time (postinstall, binding.gyp), and Proscenium never runs them.","fix":"Ship the gem's assets already built, and remove those install-time hooks."}

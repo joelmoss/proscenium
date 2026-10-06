@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-MANAGER-CONFLICT","message":"This app points to more than one package manager: pnpm and bun.","fix":"Keep just one: delete the other lockfile, or make packageManager in package.json match the lockfile. (--manager only decides when nothing else does.)"}

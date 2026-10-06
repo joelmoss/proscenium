@@ -1,0 +1,5 @@
+Error: The platform-specific builds of widget (widget-1.0.0-x86_64-linux.gem) differ from the one installed here in their JavaScript dependencies or whether they opt in, or don't pass `proscenium gem check`.
+
+To fix: Make every platform build of the gem ship the same package.json dependencies and proscenium.dependencies setting, each passing `proscenium gem check`. Your lockfile can only hold one set.
+(PSM-E-PLATFORM-VARIANT)
+

@@ -1,0 +1,5 @@
+Error: Proscenium can't tell which package manager this app uses: there is no packageManager field in package.json, and no pnpm-lock.yaml or bun.lock.
+
+To fix: Run again with --manager pnpm or --manager bun, or add a packageManager field to package.json.
+(PSM-E-NO-MANAGER)
+

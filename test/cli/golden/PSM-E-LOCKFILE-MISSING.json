@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-LOCKFILE-MISSING","message":"pnpm-lock.yaml is missing.","fix":"Run `bundle exec proscenium install`, then commit pnpm-lock.yaml."}

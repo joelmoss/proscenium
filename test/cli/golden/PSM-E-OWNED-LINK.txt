@@ -1,0 +1,5 @@
+Error: .proscenium/packages is a symbolic link, so installing would write outside your app.
+
+To fix: Replace it with a real directory. Proscenium only writes inside .proscenium/.
+(PSM-E-OWNED-LINK)
+

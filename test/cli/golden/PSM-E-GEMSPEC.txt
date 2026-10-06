@@ -1,0 +1,5 @@
+Error: Expected one gemspec in /src/widget, but found 0.
+
+To fix: Run `proscenium gem check` from the gem's own directory, or pass it that directory or a built .gem file.
+(PSM-E-GEMSPEC)
+

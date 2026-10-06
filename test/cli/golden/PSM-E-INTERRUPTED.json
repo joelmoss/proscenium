@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-INTERRUPTED","message":"`pnpm install` was stopped before it finished.","fix":"Run `bundle exec proscenium install` again to finish."}

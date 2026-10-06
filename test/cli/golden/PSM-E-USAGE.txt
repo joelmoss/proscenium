@@ -1,0 +1,5 @@
+Error: Unknown command: frobnicate
+
+To fix: Run `bundle exec proscenium --help` to see the commands and their options.
+(PSM-E-USAGE)
+

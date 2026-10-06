@@ -1,0 +1,1 @@
+{"schema":1,"event":"error","status":"error","code":"PSM-E-USAGE","message":"Unknown command: frobnicate","fix":"Run `bundle exec proscenium --help` to see the commands and their options."}
