@@ -25,11 +25,14 @@
 
 - [Getting Started](#getting-started)
 - [Installation](#installation)
+  - [Supported platforms](#supported-platforms)
 - [Client-Side Code Anywhere](#client-side-code-anywhere)
 - [Side Loading](#side-loading)
-- [Importing](#importing-assets)
+- [Bundling](#bundling)
+  - [Import from NPM (`node_modules`)](#import-from-npm-node_modules)
   - [RubyGem NPM dependencies](#rubygem-npm-dependencies)
   - [Local Imports](#local-imports)
+  - [Unbundling](#unbundling)
 - [Source Maps](#source-maps)
 - [SVG](#svg)
 - [Environment Variables](#environment-variables)
@@ -52,7 +55,7 @@
 - [Testing your JavaScript](#testing-your-javascript)
 - [Resolution](#resolution)
 - [Aliases](#aliases)
-- [Pre-compilation](#precompilation)
+- [Pre-compilation](#pre-compilation)
 - [Puma `preload_app!` and Cluster Mode](#puma-preload_app-and-cluster-mode)
 - [Thanks](#thanks)
 - [Development](#development)
@@ -75,7 +78,10 @@ Add this line to your Rails application's Gemfile, and you're good to go:
 gem 'proscenium'
 ```
 
-Please note that Proscenium is designed solely for use with Rails.
+Please note that Proscenium is designed solely for use with Rails. It needs Ruby 3.4 or newer, and
+Rails 7.2 to 8.x.
+
+Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be transformed, bundled, and minified [in production] in real time.
 
 ### Supported platforms
 
@@ -134,8 +140,6 @@ The library builds and links against musl perfectly well; it just cannot be load
 Proscenium needs to load it. This is [golang/go#54805](https://github.com/golang/go/issues/54805),
 open since 2022, and the linker flag that resolves it has not shipped as of Go 1.27. Musl gems
 will follow when it does.
-
-Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be transformed, bundled, and minified [in production] in real time.
 
 ## Client-Side Code Anywhere
 
@@ -303,7 +307,7 @@ import(`./locale-${foo}.json`);
 import(`pkg/${foo}`);
 ```
 
-The way to work around non-analyzable imports is to mark the package containing this problematic code as [unbundled](#Unbundling) so that it's not included in the bundle. You will then need to ensure that a copy of the external package is available to your bundled code at run-time.
+The way to work around non-analyzable imports is to mark the package containing this problematic code as [unbundled](#unbundling) so that it's not included in the bundle. You will then need to ensure that a copy of the external package is available to your bundled code at run-time.
 
 ### Import from NPM (`node_modules`)
 
@@ -986,10 +990,16 @@ To run the Go tests:
 go test ./test ./internal/...
 ```
 
+To run the JavaScript tests, which need the Go library compiled first:
+
+```bash
+cd fixtures/dummy && bun test test/js/
+```
+
 ### Running Go benchmarks
 
 ```bash
-go test ./internal/builder -bench=. -run="^$" -count=10 -benchmem
+go test ./test -bench=. -run="^$" -count=10 -benchmem
 ```
 
 ## Contributing
