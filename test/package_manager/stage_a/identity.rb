@@ -75,7 +75,7 @@ end
 # Every module the page needs, built as the middleware would serve it.
 site = File.join(out, 'site')
 overrides = { RubyGems: roots, Bundle: false, Aliases: {}, External: [], Precompile: [],
-              StageAContexts: { GEM => context } }
+              DependencyContexts: { GEM => context } }
 queue = ['/app/page.js', '/app/control.js']
 built = {}
 until queue.empty?

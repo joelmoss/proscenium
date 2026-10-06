@@ -83,7 +83,7 @@ func main() {
 		Write:       &write,
 	}
 	if len(contexts) > 0 {
-		cfg.StageAContexts = contexts
+		cfg.DependencyContexts = contexts
 	}
 
 	check(os.MkdirAll(*out, 0o755))

@@ -53,7 +53,7 @@ class StageA::HueShapeTest < ActiveSupport::TestCase
   def build(seam:, bundle:)
     overrides = { RubyGems: self.class.setup_app[:roots], Bundle: bundle, Aliases: {},
                   External: [], Precompile: [] }
-    overrides[:StageAContexts] = { GEM => context } if seam
+    overrides[:DependencyContexts] = { GEM => context } if seam
     Proscenium::Builder.build_to_string(ENTRY, root: app, **overrides)[:response]
   end
 
