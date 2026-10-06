@@ -1,0 +1,375 @@
+# JavaScript dependencies from gems
+
+Some gems ship frontend code that imports npm packages, and declare those packages in a
+package.json of their own. Proscenium installs them with your app's package manager, pnpm or Bun,
+and resolves each gem's imports from them. The gem's own files stay where Bundler installed them;
+nothing is copied into your app.
+
+Writing such a gem? See the [gem author guide](gem_author.md).
+
+## Quickstart
+
+1. Add the gem with Bundler, as usual:
+
+   ```sh
+   bundle add some_ui_gem
+   ```
+
+2. Install its JavaScript dependencies:
+
+   ```sh
+   bundle exec proscenium install
+   ```
+
+3. Commit what it lists.
+
+That is all. Run `bundle exec proscenium install` again after every Gemfile change.
+
+### What the first run does
+
+It writes one small package.json for each gem that takes part, under `.proscenium/packages/<gem>/`.
+These are the gems' *dependency contexts*: each holds only the gem's dependencies, so your package
+manager installs them for that gem alone. To do that, the first run registers
+`.proscenium/packages/*` with your package manager and adds a few lines to `.gitignore`, printing
+both as a diff before it writes them. Then it runs your package manager's own install.
+
+A first run, on a pnpm app with one participating gem:
+
+```
+$ bundle exec proscenium install
+Updating pnpm-workspace.yaml:
+--- pnpm-workspace.yaml
++++ pnpm-workspace.yaml
+@@ -0,0 +1,2 @@
++packages:
++  - .proscenium/packages/*
+Updating .gitignore:
+--- .gitignore
++++ .gitignore
+@@ -0,0 +1,8 @@
++# Proscenium
++node_modules/
++!.proscenium/
++.proscenium/*
++!.proscenium/packages/
++!.proscenium/packages/*/
++!.proscenium/packages/*/package.json
++.proscenium/packages/*/node_modules/
+Running pnpm install...
+Scope: all 2 workspace projects
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +6
+++++++
+Packages are cloned from the content-addressable store to the virtual store.
+  Content-addressable store is at: ~/Library/pnpm/store/v11
+  Virtual store is at:             node_modules/.pnpm
+Progress: resolved 6, reused 6, downloaded 0, added 6, done
+
+dependencies:
++ react 18.3.1 (19.3.0 is available)
++ react-dom 18.3.1 (19.3.0 is available)
+
+Done in 956ms using pnpm v11.28.4
+
+Installed JavaScript dependencies for 1 gem with pnpm 11.28.4.
+  stage_a_widget_a  2 dependencies
+
+Commit these files:
+  pnpm-workspace.yaml
+  .gitignore
+  .proscenium/packages/stage_a_widget_a/package.json
+  pnpm-lock.yaml
+```
+
+If a rule already in `.gitignore` would hide the contexts, such as `.proscenium/` or `.*`, those
+lines go after it, and install adds them again whenever a later rule would hide them once more.
+
+The registration is added to your `packages` list as it is written, flow or block, quoted, indented
+or anchored. Install asks you to add `.proscenium/packages/*` yourself, changing nothing, when it
+cannot do so without rewriting the file: a list inherited through a YAML merge key (`<<:`), or an
+anchored list another key reuses. A `!` pattern there that excludes `.proscenium/packages/` is
+refused too, as your package manager would then never install the contexts.
+
+On Bun, the registration goes into `workspaces` in package.json instead. The first run also writes
+the linker your app uses today into bunfig.toml, in the same diff, because registering workspaces
+would otherwise switch it: the `node-linker` or `install-strategy` your project's `.npmrc` sets, or
+else the layout already in `node_modules`. Your own `~/.npmrc` and global `.bunfig.toml` are not
+read, as the line is committed for everyone; check it in the diff. If bunfig.toml sets the `install` table inline or with a dotted key
+(`install.cache = ...`) but no linker, install asks you to add the linker there yourself, as a
+second `[install]` table would make the file invalid.
+
+Bun decides whose install scripts run as it always does: the names in your package.json's
+`trustedDependencies`, or Bun's own default list of popular packages if you have none. That covers
+packages gems bring in too, so add `"trustedDependencies": []` if you want none of their scripts to
+run. Bun trusts a package by its name alone, so install refuses a gem that reaches a trusted name
+through Git, a URL or an npm alias to another package: its install script would run under that
+trust. The same goes for a name pnpm-workspace.yaml approves builds for, in `allowBuilds` or
+`onlyBuiltDependencies`, and for every name when it sets `dangerouslyAllowAllBuilds`.
+
+### What you commit
+
+The pull request for that first run:
+
+```
+ .gitignore                                         |  8 ++
+ .proscenium/packages/stage_a_widget_a/package.json | 15 +++++
+ pnpm-lock.yaml                                     | 73 ++++++++++++++++++++++
+ pnpm-workspace.yaml                                |  2 +
+```
+
+```diff
+--- /dev/null
++++ b/.proscenium/packages/stage_a_widget_a/package.json
+@@ -0,0 +1,15 @@
++{
++  "name": "@rubygems/stage_a_widget_a",
++  "private": true,
++  "description": "Generated by Proscenium from the stage_a_widget_a gem. Do not edit; run bundle exec proscenium install.",
++  "dependencies": {
++    "ms": "2.0.0"
++  },
++  "peerDependencies": {
++    "react": "^18.3.1"
++  },
++  "proscenium": {
++    "projection": "dependency-context-v1",
++    "projectionSha256": "ef3755ec4de4519b46a0ef016f36ef3fd1351c7503ff41b991b4cf75a0765ce1"
++  }
++}
+```
+
+Because the contexts are committed, a plain `pnpm install` or `bun install` on a fresh checkout
+installs every gem's dependencies too, with no Ruby involved.
+
+`.proscenium/packages/` is Proscenium's: every entry is a generated context. Install refuses,
+before writing anything, a folder or file there it did not generate, or a link, rather than
+remove it.
+
+### Which gems take part
+
+Only gems that opt in. A gem that ships a package.json without opting in keeps working exactly as
+before. `bundle exec proscenium inspect` lists every gem that ships one and says which take part:
+
+```
+$ bundle exec proscenium inspect
+Package manager: pnpm (isolated linker)
+
+Gems whose JavaScript dependencies Proscenium installs (1):
+  stage_a_widget_a 1.0.0: up to date
+    from: locally installed gems
+    uses: dependencies, peerDependencies
+
+No problems found.
+```
+
+To opt a gem in or out yourself, add a `proscenium` key to your app's package.json:
+
+```json
+{
+  "proscenium": {
+    "gemOverrides": { "some_ui_gem": { "participate": true } }
+  }
+}
+```
+
+`"participate": false` does the opposite: the gem's dependencies are no longer installed for it, so
+your app declares whatever the gem imports itself.
+
+Run `bundle exec proscenium install` after changing it, and commit package.json with what it lists.
+
+## Supported package managers
+
+pnpm 11 (from 11.11.0) and 12, and Bun 1.4. Each supported line is one its maintainers still support.
+Earlier pnpm 11 releases are refused for two security flaws a gem's dependencies could reach: a
+package that names itself after an approved one could run its build scripts
+([GHSA-5wx6-mg75-v57r](https://github.com/advisories/GHSA-5wx6-mg75-v57r)), and a tarball's
+package name could write files outside `node_modules`
+([GHSA-vq4v-j7r6-jq4m](https://github.com/advisories/GHSA-vq4v-j7r6-jq4m)).
+
+Yarn and npm projects get an error naming the manager before anything is written. A project whose `packageManager`
+names a version outside these lines gets an error too.
+
+Install takes the manager from `--manager`, then `packageManager`, then the one lockfile there is.
+Two managers' lockfiles side by side are an error whichever of them is named, and so is a Bun
+project with only the binary `bun.lockb`: run `bun install --save-text-lockfile` to write
+`bun.lock`. pnpm runs the version `packageManager` pins, so that is the version checked, unless
+`pmOnFail` is `warn` or `ignore` (in pnpm-workspace.yaml or `pnpm_config_pm_on_fail`), when pnpm
+runs whatever is installed and install asks it which version that is.
+
+A registration counts only where its manager installs: pnpm-workspace.yaml's for pnpm,
+package.json's for Bun. It needs that manager's lockfile, or no other manager's, and a
+`packageManager` that names that manager or none. A registration left over from a manager the app
+no longer uses does not switch the contexts on.
+
+An app inside a JavaScript workspace is not supported yet: one under a directory with a
+pnpm-workspace.yaml, or under a package.json whose `workspaces` patterns match it. A package.json
+whose patterns leave the app out does not count, as Bun then installs the app on its own.
+
+## Commands and options
+
+| Command | |
+|---|---|
+| `bundle exec proscenium install` | Write the contexts and run your package manager's install. |
+| `bundle exec proscenium install --frozen` | Check everything is up to date and install from the lockfile, changing nothing you commit. Fails, before running the manager, if a context is missing, stale or edited by hand. While another install runs in the project it exits 7 rather than run alongside it, and the engine refuses builds until it finishes. |
+| `bundle exec proscenium inspect [gem]` | Show which gems install JavaScript dependencies, and anything stopping them working. Exits 4 when it finds a problem. `doctor` is the same command. |
+| `bundle exec proscenium gem check [path]` | For gem authors: check a gem's package.json and gemspec. |
+
+`install` also takes `--production` (leave out development dependencies, and trust the committed
+context of a gem in a Bundler group you excluded), `--offline`, `--manager pnpm|bun` (for a project
+with no package.json yet) and `--js-arg ARG` (passed to the package manager). Every command takes
+`--json` for newline-delimited JSON events and `--quiet`.
+
+## In CI and deploys
+
+### CI
+
+`install --frozen` runs your package manager's frozen install, so it replaces that step:
+
+```yaml
+- uses: ruby/setup-ruby@v1
+  with:
+    bundler-cache: true
+- uses: pnpm/action-setup@v6
+- run: bundle exec proscenium install --frozen
+```
+
+### bin/setup
+
+After the Bundler step:
+
+```ruby
+system! "bin/bundle exec proscenium install"
+```
+
+### Docker and buildpacks
+
+The contexts are committed, so the native install needs nothing from Ruby, and can be its own
+cached layer ahead of the app's code:
+
+```dockerfile
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY .proscenium/packages .proscenium/packages
+RUN pnpm install --frozen-lockfile
+
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+COPY . .
+RUN bundle exec proscenium install --frozen && bin/rails assets:precompile
+```
+
+With `BUNDLE_WITHOUT` set, a participating gem only in an excluded group keeps its committed
+context, and `install --frozen` says so rather than calling it an orphan. Add `--production` to
+leave development dependencies out of the image.
+
+On a buildpack platform the native install runs from the committed contexts whichever buildpack
+goes first, and the Ruby buildpack's `assets:precompile` refuses a stale context, so a deploy with
+one fails rather than shipping it.
+
+Proscenium runs your package manager without a terminal. pnpm asks before replacing a
+`node_modules` that was installed with other options (switching to `--production`, or a new pnpm
+major), so in a directory that already has one, remove it first or set `CI=true`.
+
+### Before precompiling, and after deploying
+
+`assets:precompile` refuses to build while a context is stale (see below), so a deploy with an
+out-of-date context fails rather than shipping it. Restart after deploying: production reads the
+contexts once per process.
+
+### A proxy that denies dotfiles
+
+Unbundled pages load packages from their real paths: pnpm's store under `/node_modules/.pnpm/`,
+Bun's isolated store under `/node_modules/.bun/`, and a copy a linker nested under a context from
+`/.proscenium/packages/<gem>/node_modules/...`. A proxy rule that denies dotfile paths (nginx's
+common `location ~ /\.`) blocks all three. Allow those prefixes ahead of it, or bundle in
+production. For nginx, with `app` as your upstream:
+
+```nginx
+location ^~ /node_modules/.pnpm/ { proxy_pass http://app; }
+location ^~ /node_modules/.bun/ { proxy_pass http://app; }
+location ^~ /.proscenium/packages/ { proxy_pass http://app; }
+location ~ /\. { deny all; }
+```
+
+`^~` makes nginx take those prefixes without checking the regular expression.
+
+The contexts live at the bundle's root, beside the Gemfile, so that must be your Rails root (or a
+link to it, such as a Capistrano `current`). A Gemfile outside the Rails app, as in a monorepo with
+the Rails app in a subdirectory, is not supported yet: once the contexts are registered there, the
+engine refuses to build, saying so, since it cannot serve files outside the app.
+
+A package store outside the app, such as pnpm's global virtual store, has no URL either. A package
+both your app and a gem reach from it, such as React, is served from your app's own link, so it is
+still loaded once. A package's own imports from such a store do not load unbundled yet, with or
+without gems taking part; until they do, keep the store inside the app to unbundle packages.
+
+## When something is wrong
+
+Run `bundle exec proscenium inspect`, or `bundle exec proscenium doctor`, its other name. It
+changes nothing, and lists every problem it finds, each with what to do about it:
+
+```
+$ bundle exec proscenium inspect
+...
+
+Problem: Your JavaScript dependencies aren't installed: there is no node_modules directory.
+To fix: Run `bundle exec proscenium install`, or `bundle exec proscenium install --frozen` on a fresh checkout or in CI.
+```
+
+It checks:
+
+- that your package manager is installed, is a version Proscenium supports, and is the only one
+  the app points to;
+- that `pnpm-workspace.yaml` or package.json lists `.proscenium/packages/*`;
+- that `.gitignore` has Proscenium's lines, with no later rule hiding the contexts you commit;
+- that the lockfile exists, and installs every gem's context from the gem, not a registry;
+- that `node_modules` exists;
+- every gem's package.json, and each committed context against your bundle;
+- everything the engine would refuse to build for (below), such as React split into two copies.
+
+It exits 0 when it finds nothing, and 4 when it finds a problem, so a script can run it. An app
+none of whose gems install JavaScript dependencies has nothing to check. With `--json` it prints
+one document; each entry in `problems` has the error's `code`, `message` and `fix`.
+
+## When the engine refuses to build
+
+Once an app has adopted, the engine checks its contexts against the bundle. While any is stale it
+refuses every build, naming the gem and `bundle exec proscenium install`. A context is stale when a
+participating gem has none, its gem left Gemfile.lock or stopped participating, the gem's
+dependencies changed since it was written, it was written by another version of Proscenium, it was
+edited by hand or is not valid JSON, or a shared peer such as React split into two copies.
+Development logs this once at boot and shows it on the error page. For an incident,
+`PROSCENIUM_STALE_CONTEXT=warn` logs it instead of refusing.
+
+While `proscenium install` runs, or after one stopped before it finished, the engine refuses to
+build until the install completes. Running it again recovers.
+
+In development, finishing an install or editing a path gem's package.json takes effect within a
+second, without a restart. Adding or upgrading a gem still needs one, as it always has.
+
+## Import only what your app declares
+
+A gem's dependencies are the gem's. Under pnpm, and Bun's isolated linker, a package only a gem
+declares never reaches your app's own `node_modules`, so importing it from your code fails. Under
+Bun's hoisted linker it does reach it, so such an import works by accident, and breaks the day the
+gem drops that dependency. Add what your app imports to your own package.json.
+
+## Moving from `@rubygems/*` packages
+
+Before dependency contexts, an app got a gem's dependencies by depending on the gem itself as an npm
+package, `@rubygems/<gem>`, from a registry that served gems or as a `github:` pin of the gem's
+repository. That pins the gem twice, once in Gemfile.lock and once in your lockfile, and the two
+drift. To move over, remove each participating gem's `@rubygems/*` dependency from package.json,
+then run `bundle exec proscenium install`. While package.json still names one, `install` refuses,
+naming it, before it writes anything. Only a `workspace:` range or a `link:` to the gem's own
+`.proscenium/packages/<gem>` may name it; a `link:` to a vendored copy, or a workspace alias to
+another package, is refused the same way. Until you run it, the app builds as it does today, and logs a
+notice at boot saying what to run.
+
+## What has been tested
+
+CI runs every case above on Linux, macOS and Windows: pnpm 11 and 12, and Bun 1.4, on Ruby 3.4 and
+4.0. On Windows it also runs as a standard user with no symbolic link privilege. A nightly job runs
+each manager line's newest release. A committed Rails 8.1 app, `fixtures/adopted`, drives the
+engine end to end: builds, `assets:precompile`, the refusals and `bun test`. The full list, case by
+case, is the conformance matrix in [the plan](../plans/154-package-manager.md#conformance-test-matrix).

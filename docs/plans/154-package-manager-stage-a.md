@@ -32,8 +32,8 @@ is still caught.
 
 For Stage B and C to take on:
 
-- **pnpm 10's peer split.** The CLI's peer-sharing check catches it; whether `install` also runs
-  `pnpm dedupe` on pnpm 10 is a design choice.
+- **pnpm 10's peer split.** Settled in Stage B: pnpm 10 is not supported. The capability table
+  starts at pnpm 11, and london and platform move to it before adopting.
 - **Errors that name the gem.** pnpm fails an install for a Git dependency needing `prepare`, and
   its message names only the package; Bun skips such scripts without a word.
 - **Serving nested copies.** Under Bun's hoisted linker a conflicting copy is a real directory

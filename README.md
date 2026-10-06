@@ -28,6 +28,7 @@
 - [Client-Side Code Anywhere](#client-side-code-anywhere)
 - [Side Loading](#side-loading)
 - [Importing](#importing-assets)
+  - [JavaScript dependencies from gems](#javascript-dependencies-from-gems)
   - [Local Imports](#local-imports)
 - [Source Maps](#source-maps)
 - [SVG](#svg)
@@ -63,6 +64,8 @@ Getting started obviously depends on whether you are adding Proscenium to an exi
 - [Getting Started with a new Rails app](docs/guides/new_rails_app.md)
 - Getting Started with an existing Rails app
   - [Migrate from Sprockets](docs/guides/migrate_from_sprockets.md)
+- [JavaScript dependencies from gems](docs/guides/gem_javascript_dependencies.md)
+- [Shipping JavaScript dependencies in a gem](docs/guides/gem_author.md)
 
 ## Installation
 
@@ -317,6 +320,26 @@ npm install react
 ```js
 import React from "react";
 ```
+
+### JavaScript dependencies from gems
+
+A gem can ship frontend code that imports npm packages, declared in a package.json of its own. Add
+the gem with Bundler, then install its JavaScript dependencies with your app's package manager,
+pnpm or Bun:
+
+```bash
+bundle exec proscenium install
+```
+
+That writes a small package.json for each such gem under `.proscenium/packages/`, holding only the
+gem's dependencies, registers them with your package manager, and runs its install. Commit what it
+lists. The gem's own files stay where Bundler put them. Run it again after every Gemfile change, and
+in CI run `bundle exec proscenium install --frozen`, which changes nothing you commit and fails if
+anything is out of date. When something is not working, `bundle exec proscenium doctor` (also
+`inspect`) lists every problem it finds, each with its fix.
+
+See [JavaScript dependencies from gems](docs/guides/gem_javascript_dependencies.md) for the details,
+and the [gem author guide](docs/guides/gem_author.md) if you are writing such a gem.
 
 ### Local Imports
 
