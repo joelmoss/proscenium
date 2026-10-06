@@ -32,6 +32,7 @@ group :test do
   gem "minitest-spec-rails"
   gem "sqlite3"
   gem "tzinfo-data"
+  gem "fiddle"
 end
 
 gemspec path: "../"

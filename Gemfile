@@ -42,4 +42,9 @@ group :test do
   # it at install time instead of installing what the lockfile says. It is a data gem with no
   # extension, so carrying it everywhere costs a megabyte and nothing else.
   gem 'tzinfo-data'
+
+  # fakefs/safe loads irb, whose reline 0.7.0 requires fiddle on Windows without declaring it, and
+  # Ruby 4.0 no longer ships fiddle as a default gem. Not platform-gated, for tzinfo-data's reason.
+  # Remove once a reline release drops fiddle (its master already has).
+  gem 'fiddle'
 end
