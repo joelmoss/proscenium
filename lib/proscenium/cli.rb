@@ -20,6 +20,7 @@ module Proscenium
   module CLI
     USAGE = <<~TEXT
       Usage: bundle exec proscenium <command> [options]
+             bundle exec psm <command> [options]
 
       Installs the NPM dependencies of the gems in your bundle that opt in.
 

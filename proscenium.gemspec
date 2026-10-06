@@ -56,9 +56,10 @@ Gem::Specification.new do |spec|
   spec.platform = ENV['PROSCENIUM_PLATFORM'] if ENV['PROSCENIUM_PLATFORM']
   spec.require_paths = ['lib']
 
-  # `bundle exec proscenium` (#154): plain Ruby, so every gem, platform or plain, carries it.
+  # `bundle exec proscenium` (#154), and `psm` for short: plain Ruby, so every gem, platform or
+  # plain, carries both.
   spec.bindir = 'exe'
-  spec.executables = ['proscenium']
+  spec.executables = %w[proscenium psm]
 
   spec.add_dependency 'ffi', '~> 1.17.0'
   spec.add_dependency 'rails', ['>= 7.2.0', '< 9.0']

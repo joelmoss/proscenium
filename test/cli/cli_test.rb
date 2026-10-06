@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 require_relative 'helper'
+require 'open3'
+require 'rbconfig'
 
 describe Proscenium::CLI do
   include CLIHelper
@@ -24,6 +26,15 @@ describe Proscenium::CLI do
 
     assert_equal 0, status
     assert_includes out, 'Usage: bundle exec proscenium'
+  end
+
+  it 'answers to psm, as the same command' do
+    lib = File.expand_path('../../lib', __dir__)
+    out, status = Open3.capture2e(RbConfig.ruby, '-I', lib,
+                                  File.expand_path('../../exe/psm', __dir__), '--help')
+
+    assert_predicate status, :success?, out
+    assert_includes out, 'bundle exec psm <command>'
   end
 
   it 'prints the usage, with the install options, for --help after a command' do

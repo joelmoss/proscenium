@@ -10,7 +10,8 @@ from where Bundler installed the gem; nothing is copied. The app's side is in
 
 `proscenium gem check` checks every item below except the third, which it cannot see: an import
 your gem does not declare fails when an app builds it, naming your gem and the package. Run it in
-your gem's directory, or pass it the directory or a built `.gem`, before every release:
+your gem's directory, or pass it the directory or a built `.gem`, before every release
+(`psm gem check` is the same command, under its shorter name):
 
 ```
 $ proscenium gem check

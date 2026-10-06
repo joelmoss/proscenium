@@ -207,6 +207,9 @@ whose patterns leave the app out does not count, as Bun then installs the app on
 
 ## Commands and options
 
+Every command also runs as `psm`, a shorter name for `proscenium`: `bundle exec psm install` is
+`bundle exec proscenium install`.
+
 | Command | |
 |---|---|
 | `bundle exec proscenium install` | Write the contexts and run your package manager's install. |

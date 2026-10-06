@@ -1,0 +1,5 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# `bundle exec psm`: a shorter name for `bundle exec proscenium`, which it runs as is.
+load File.expand_path('proscenium', __dir__)

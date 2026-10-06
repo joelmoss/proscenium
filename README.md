@@ -336,7 +336,8 @@ gem's dependencies, registers them with your package manager, and runs its insta
 lists. The gem's own files stay where Bundler put them. Run it again after every Gemfile change, and
 in CI run `bundle exec proscenium install --frozen`, which changes nothing you commit and fails if
 anything is out of date. When something is not working, `bundle exec proscenium doctor` (also
-`inspect`) lists every problem it finds, each with its fix.
+`inspect`) lists every problem it finds, each with its fix. `psm` is a shorter name for the
+same command: `bundle exec psm install`.
 
 See [RubyGem NPM dependencies](docs/guides/rubygem_npm_dependencies.md) for the details,
 and the [gem author guide](docs/guides/gem_author.md) if you are writing such a gem.
