@@ -1,0 +1,19 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Run as `bundle exec proscenium`. Loads the CLI alone: never `proscenium` itself, Rails, FFI or
+# the engine library (see lib/proscenium/cli.rb).
+# When the CLI started loading, for the timings install reports (C40).
+PROSCENIUM_STARTED = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+# Every file the CLI reads (package.json, contexts, pnpm-workspace.yaml) is UTF-8, whatever the
+# locale: under LANG=C, as minimal Docker and CI images run, Ruby would read them as US-ASCII.
+# Ruby warns of the setting, which is meant for this process alone.
+verbose = $VERBOSE
+$VERBOSE = nil
+Encoding.default_external = Encoding::UTF_8
+$VERBOSE = verbose
+
+require 'proscenium/cli'
+
+exit Proscenium::CLI.start(ARGV)
