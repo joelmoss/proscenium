@@ -16,13 +16,17 @@ import (
 
 // The dependency context of the gem owning `fsPath`, when the map has that gem. `fsPath` is a
 // file in the gem, or its root.
+//
+// A file under `node_modules/` is a package's, never the gem's, even inside the gem's root: a gem
+// developed in its own repository is in its own bundle, so its root is the app root and holds the
+// app's node_modules. That package's bare imports resolve from where it was installed.
 func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir string, ok bool) {
 	if len(cfg.DependencyContexts) == 0 || fsPath == "" {
 		return "", "", false
 	}
 
 	ref, found := GemFromFsPath(fsPath, cfg)
-	if !found {
+	if !found || strings.Contains(ref.Suffix, "/node_modules/") {
 		return "", "", false
 	}
 

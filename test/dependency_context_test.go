@@ -400,4 +400,28 @@ var _ = Describe("Gem dependency contexts", func() {
 		Expect(urlPath).To(Equal("/node_modules/@rubygems/" + gem + "/with_ext.js"))
 		Expect(absPath).To(Equal(root + "/vendor/" + gem + "/with_ext.js"))
 	})
+
+	// A gem developed in its own repository is in its own bundle (`gemspec` in the Gemfile), so its
+	// root is the app root, and node_modules sits inside it. A package installed there is not the
+	// gem's code: its own bare imports resolve from where the package manager put them, beside it in
+	// the store, not from the gem's context, which declares only the gem's direct dependencies.
+	It("resolves a context package's own dependencies when the gem's root is the app root", func() {
+		pkg("node_modules/.pnpm/trans@1.0.0/node_modules/trans", "trans", "1.0.0", `export default "trans 1.0.0";`)
+		pkg("node_modules/.pnpm/owner@1.0.0/node_modules/owner", "owner", "1.0.0",
+			"export { default } from 'trans'\n")
+		link("../../trans@1.0.0/node_modules/trans", "node_modules/.pnpm/owner@1.0.0/node_modules/trans")
+		link(".pnpm/owner@1.0.0/node_modules/owner", "node_modules/owner")
+		link("../../../../node_modules/.pnpm/owner@1.0.0/node_modules/owner",
+			".proscenium/packages/"+gem+"/node_modules/owner")
+		write("lib/own.js", "export { default } from 'owner'\n")
+		testConfig.RubyGems = map[string]string{gem: root}
+
+		okWith, with := build("lib/own.js")
+		testConfig.DependencyContexts = nil
+		okWithout, without := build("lib/own.js")
+
+		Expect(okWithout).To(BeTrue(), without)
+		Expect(okWith).To(BeTrue(), with)
+		Expect(with).To(Equal(without))
+	})
 })
