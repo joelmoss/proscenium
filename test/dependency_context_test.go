@@ -504,6 +504,47 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(err).To(MatchError(`"trans" from "index.js" resolved outside the app root and every bundled gem`))
 		})
 
+		// Without contexts nothing else spells a real path back through the app root, so a root that
+		// is itself a link (a Capistrano-style `current`, or on Windows a short or differently cased
+		// spelling) must not turn the package directory's real path into one with no URL.
+		It("resolves the version installed beside it when the app root is a link and there is no map", func() {
+			current := root + "_current"
+			Expect(os.Symlink(root, current)).To(Succeed())
+			DeferCleanup(os.Remove, current)
+			testConfig.RootPath = current
+			testConfig.RubyGems = map[string]string{gem: current}
+			testConfig.DependencyContexts = nil
+
+			urlPath, absPath, err := r.Resolve("trans", current+"/"+owner+"/index.js", testConfig)
+
+			// Without the map it keeps owner's link to the store copy, under the root's own spelling.
+			Expect(err).NotTo(HaveOccurred())
+			Expect(urlPath).To(MatchRegexp(`\.pnpm/(trans|owner)@1\.0\.0/node_modules/trans/index\.js$`))
+			Expect(absPath).To(HavePrefix(current + "/node_modules/.pnpm/"))
+		})
+
+		// Resolving beside a package still walks up to the app's node_modules, so a peer only the
+		// app installed - React here - is found as before.
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("still reaches a peer only the app root holds (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+				peerful := "node_modules/.pnpm/peerful@1.0.0/node_modules/peerful"
+				pkg(peerful, "peerful", "1.0.0", "export { marker } from 'react'\n")
+				write("lib/peer.js", "export { marker } from 'peerful'\n")
+				link(".pnpm/peerful@1.0.0/node_modules/peerful", "node_modules/peerful")
+
+				ok, code := build("lib/peer.js")
+				_, absPath, err := r.Resolve("react", root+"/"+peerful+"/index.js", testConfig)
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring(reactBody))
+				Expect(err).NotTo(HaveOccurred())
+				Expect(absPath).To(HaveSuffix("/node_modules/react/index.js"))
+			})
+		}
+
 		// The rule is for packages under the app root. A gem installed elsewhere that ships a package
 		// in its own node_modules still hands that package the app's peers, which walking up from
 		// the gem never reaches.

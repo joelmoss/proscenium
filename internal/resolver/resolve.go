@@ -106,9 +106,11 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 	if mapped {
 		rootPath = mappedContext
 	} else if fromPackage {
+		// The package's real directory, where pnpm and Bun put its dependencies beside it, spelled
+		// through the app root so what resolves there has a URL with or without contexts.
 		rootPath = path.Dir(importer)
 		if real, err := filepath.EvalSymlinks(rootPath); err == nil {
-			rootPath = filepath.ToSlash(real)
+			rootPath = utils.SpellThroughRoot(filepath.ToSlash(real), cfg)
 		}
 	} else if isGem {
 		rootPath = gem.Root
