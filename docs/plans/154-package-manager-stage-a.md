@@ -2,7 +2,7 @@
 
 Evidence for the Stage A pilot of [the package manager plan](154-package-manager.md#stage-a-execution-contract).
 Each leg records its commands, tool versions, revisions and verdicts. Legs that run against the
-maintainer's private checkouts (london, hue) record no source or manifest contents, only what is
+maintainer's private checkouts (app-b, ui-gem) record no source or manifest contents, only what is
 needed to repeat the run.
 
 ## Summary
@@ -13,17 +13,17 @@ adapter hit the kill criterion, and every Gate A row that Stage A could measure 
 | | pnpm | Bun |
 |---|---|---|
 | Lines measured | 10.33.1, 10.34.4, 11.28.4, 12.9.1 | 1.4.0, 1.4.2 |
-| A gem's dependencies through a context (C04, C46) | london and platform: every hue entry that today's install builds still builds the same, but one test file | codaset: every proscenium-ui entry whose imports its manifest declares |
+| A gem's dependencies through a context (C04, C46) | app-b and app-a: every ui-gem entry that today's install builds still builds the same, but one test file | app-c: every proscenium-ui entry whose imports its manifest declares |
 | No app edge needed | yes | yes |
 | One instance of a shared peer (C12, C13) | yes; pnpm 10 splits after an app bump with default settings, which `pnpm dedupe` repairs | yes |
 | Repeated frozen installs byte-identical (C08) | yes | yes |
 | Version-less context, `workspace:*`, no registry (C42) | yes | yes |
 | Plain dependencies instead of peers (C43) | recorded; the app's overrides decide | recorded |
 | Git dependency scripts unapproved (C55, part) | none run; `prepare` fails the install | none run, silently |
-| Registration (C51) | spliced into an existing pnpm-workspace.yaml | needs an explicit linker and `trustedDependencies`; codaset's 139 tests pass |
+| Registration (C51) | spliced into an existing pnpm-workspace.yaml | needs an explicit linker and `trustedDependencies`; app-c's 139 tests pass |
 
 Settled here: no descriptor receipt; no app edge to a context; registration splices into existing
-files; Bun requires an explicit linker (else it switches codaset to the isolated store) and an
+files; Bun requires an explicit linker (else it switches app-c to the isolated store) and an
 explicit `trustedDependencies` (else a gem can introduce a default-trusted package whose script
 runs); a production install can skip an excluded gem's context with a negative filter; the
 qualification hosts are macOS arm64 and Linux x86_64 and aarch64, since no app runs on Windows;
@@ -33,7 +33,7 @@ is still caught.
 For Stage B and C to take on:
 
 - **pnpm 10's peer split.** Settled in Stage B: pnpm 10 is not supported. The capability table
-  starts at pnpm 11, and london and platform move to it before adopting.
+  starts at pnpm 11, and app-b and app-a move to it before adopting.
 - **Errors that name the gem.** pnpm fails an install for a Git dependency needing `prepare`, and
   its message names only the package; Bun skips such scripts without a word.
 - **Serving nested copies.** Under Bun's hoisted linker a conflicting copy is a real directory
@@ -43,18 +43,18 @@ For Stage B and C to take on:
 
 Not done in Stage A: the hermetic registry and committed tarballs (the CI tests reach npm and
 GitHub), proscenium-ui at a pinned revision in CI, the app legs on Bun 1.4.0 (only the peer probe
-and Git script check ran there), and codaset's pages in a browser. The london leg, the CI tests and
+and Git script check ran there), and app-c's pages in a browser. The app-b leg, the CI tests and
 the peer probe were repeated on Node 22.22.2 with the same results as on Node 26.
 
-## london on pnpm (4 October 2026)
+## app-b on pnpm (4 October 2026)
 
-**Question.** Can a hand-written context give hue its JavaScript dependencies through pnpm, with
-the Stage A resolver seam routing hue's bare imports, so that every hue entry london precompiles
+**Question.** Can a hand-written context give ui-gem its JavaScript dependencies through pnpm, with
+the Stage A resolver seam routing ui-gem's bare imports, so that every ui-gem entry app-b precompiles
 builds exactly as it does today?
 
-**Verdict: GO for this leg, with the gaps listed below.** With the seam on, 77 of london's 78 hue
+**Verdict: GO for this leg, with the gaps listed below.** With the seam on, 77 of app-b's 78 ui-gem
 entries build the same module graph as today, bundled and unbundled, whether or not the app
-references the context. The 78th is a test file london's precompile list picks up, which imports
+references the context. The 78th is a test file app-b's precompile list picks up, which imports
 a gem devDependency; the seam reports it as a named error where today's engine silently leaves a
 broken browser import.
 
@@ -62,34 +62,34 @@ broken browser import.
 
 | | |
 |---|---|
-| Command | `ruby test/package_manager/stage_a/leg.rb LONDON HUE CONFIG OUT` (CONFIG names hue and pnpm) |
+| Command | `ruby test/package_manager/stage_a/leg.rb APP GEM_ROOT CONFIG OUT` (CONFIG names ui-gem and pnpm) |
 | Host | macOS 27.0.1 (26A434), arm64 |
 | Node | 26.10.0 |
-| pnpm | 10.33.1, selected by london's `packageManager` field |
+| pnpm | 10.33.1, selected by app-b's `packageManager` field |
 | Go | 1.27.1, `GOWORK=off` |
-| Ruby | 3.4.11 (london's), to read its bundle |
+| Ruby | 3.4.11 (app-b's), to read its bundle |
 | Proscenium | branch `stage-a/154-scaffold`, the seam from 6db5a4e7 |
-| london | 8dc567de |
-| hue | checkout at 7400c7a9 |
+| app-b | 8dc567de |
+| ui-gem | checkout at 7400c7a9 |
 
-hue has three pins in london, all different: `BUNDLE_LOCAL__HUE` points Bundler at the checkout
+ui-gem has three pins in app-b, all different: `BUNDLE_LOCAL__HUE` points Bundler at the checkout
 (7400c7a9), Gemfile.lock records 7904fb90, and package.json's `github:` pin is 22e66043. That is
-the double-pin drift the plan exists to remove. The proof reads hue's files and manifest from the
-checkout, which is what london's bundle loads.
+the double-pin drift the plan exists to remove. The proof reads ui-gem's files and manifest from the
+checkout, which is what app-b's bundle loads.
 
-The script copies london's package.json, pnpm-lock.yaml and .npmrc, and the app files its
-aliases point at, into three directories, and never writes to london or hue. london's Proscenium
+The script copies app-b's package.json, pnpm-lock.yaml and .npmrc, and the app files its
+aliases point at, into three directories, and never writes to app-b or ui-gem. app-b's Proscenium
 settings (entry points, aliases, externals) come from a local CONFIG file, not the repository.
 
-- **base**: london as it is, `pnpm install --frozen-lockfile`.
+- **base**: app-b as it is, `pnpm install --frozen-lockfile`.
 - **unref**: the `github:` pin removed, `.proscenium/packages/*` registered in a new
-  pnpm-workspace.yaml, and `.proscenium/packages/hue/package.json` projected from hue's manifest
+  pnpm-workspace.yaml, and `.proscenium/packages/ui-gem/package.json` projected from ui-gem's manifest
   (dependency-context-v1 fields; the `projectionSha256` is provisional until Stage B defines the
   encoding). `pnpm install`.
-- **ref**: as unref, plus `"@rubygems/hue": "workspace:*"` in the app's dependencies.
+- **ref**: as unref, plus `"@rubygems/ui-gem": "workspace:*"` in the app's dependencies.
 
-It then builds every hue entry london precompiles (78)
-through `test/package_manager/stage_a/probe`, with london's aliases and externals, bundled and
+It then builds every ui-gem entry app-b precompiles (78)
+through `test/package_manager/stage_a/probe`, with app-b's aliases and externals, bundled and
 unbundled, with the seam on and off. Each build is compared with base: bundled by the modules
 esbuild includes, unbundled by the import URLs, both reduced to `package@version/path` so the
 three directories compare.
@@ -104,55 +104,55 @@ three directories compare.
 | ref, seam on | 77 of 78 | 77 of 78 |
 
 - **The seam works without an app edge.** unref and ref give the same results with the seam on,
-  so the plan's default of no app dependency on a context holds on pnpm 10.33.1 for hue.
+  so the plan's default of no app dependency on a context holds on pnpm 10.33.1 for ui-gem.
 - **The one failure is the intended error.** The entry that fails with the seam on is a test file
-  that london's precompile list picks up. It imports a
-  testing library that is one of hue's devDependencies, which the projection leaves out. The seam
-  fails the build with `gem "hue": could not resolve "<package>" from its dependency context`;
+  that app-b's precompile list picks up. It imports a
+  testing library that is one of ui-gem's devDependencies, which the projection leaves out. The seam
+  fails the build with `gem "ui-gem": could not resolve "<package>" from its dependency context`;
   base and the seam-off cells left the import external, so the browser would have failed instead.
-  London should not precompile test files.
+  app-b should not precompile test files.
 - **Without the seam, an unreferenced context is invisible to the engine.** Seven bundled entries
-  silently lose modules: hue's dependencies are under the context only, and today's engine falls
+  silently lose modules: ui-gem's dependencies are under the context only, and today's engine falls
   back to the app root, misses them and makes them externals. This is the positive control.
 - **An app edge alone already works with today's engine.** With `workspace:*`, pnpm links
-  `node_modules/@rubygems/hue` to the context, and the existing branch in
+  `node_modules/@rubygems/ui-gem` to the context, and the existing branch in
   `internal/plugin/bundler.go` that prefers `node_modules/@rubygems/<gem>` resolves from it: ref
   with the seam off matches base on every entry.
-- **The unbundled seam-off control proves nothing here.** hue's checkout has its own
+- **The unbundled seam-off control proves nothing here.** ui-gem's checkout has its own
   `node_modules` (it is a working checkout), and today's unbundled chain falls back to the gem
-  root, so it finds hue's own dependencies there. The CI half below, with `stage_a_hue_shape`
+  root, so it finds ui-gem's own dependencies there. The CI half below, with `stage_a_hue_shape`
   installed read-only and without a `node_modules`, is the real control.
 - **Frozen installs are stable (C08).** In unref and ref, two repeated
   `pnpm install --frozen-lockfile` runs and a frozen install after deleting every `node_modules`
   exit 0 and leave package.json, pnpm-lock.yaml, pnpm-workspace.yaml and the context
   byte-identical.
-- **The lock.** The bridge adds one importer, `.proscenium/packages/hue`, and drops the
+- **The lock.** The bridge adds one importer, `.proscenium/packages/ui-gem`, and drops the
   `github:` pin's package; no `@rubygems/*` entry resolves to a registry. pnpm reports the same
   ignored build scripts as base (two of the app's own dependencies).
 
 ### React
 
-london does not get React from npm: its Proscenium configuration makes React an external, and
+app-b does not get React from npm: its Proscenium configuration makes React an external, and
 the page supplies it. So:
 
 - **Bundled**, every cell keeps React external: zero React modules in any output, and across the
   77 entries that build, the same 56 bare `react` imports as base, all left for the page to
-  supply. One React instance, but because of london's configuration, not pnpm. This does not test C12 and is not counted as passing it.
-- **Unbundled** builds ignore `external`, so hue's `react` imports resolve to npm React 18.3.1,
-  in base and with the seam alike: hue's checkout copy in base, the pnpm store copy with the seam,
-  both 18.3.1, one copy across all hue entries. A page mixing these with the React london
-  supplies would load two. This is today's behaviour, unchanged by the bridge, and london builds
+  supply. One React instance, but because of app-b's configuration, not pnpm. This does not test C12 and is not counted as passing it.
+- **Unbundled** builds ignore `external`, so ui-gem's `react` imports resolve to npm React 18.3.1,
+  in base and with the seam alike: ui-gem's checkout copy in base, the pnpm store copy with the seam,
+  both 18.3.1, one copy across all ui-gem entries. A page mixing these with the React app-b
+  supplies would load two. This is today's behaviour, unchanged by the bridge, and app-b builds
   bundled.
-- **C43, native result on pnpm 10.33.1.** hue declares `react` and `react-dom` as plain
+- **C43, native result on pnpm 10.33.1.** ui-gem declares `react` and `react-dom` as plain
   dependencies. pnpm installs react 18.3.1 and react-dom 18.3.1 into the context
-  (`autoInstallPeers: true`, london's lock setting), as links into the store. The app declares no
+  (`autoInstallPeers: true`, app-b's lock setting), as links into the store. The app declares no
   React, so there is nothing to share and nothing to split.
 
 ### CI half: `stage_a_hue_shape`
 
 `test/package_manager/stage_a/hue_shape_test.rb`, run by the `stage-a` CI job (ubuntu-latest,
 pnpm 10.33.1) and locally with `STAGE_A=1 bin/test test/package_manager/stage_a/` (macOS 27.0.1,
-Node 26.10.0, pnpm 10.34.4). `stage_a_hue_shape` has hue's manifest shape and is installed by
+Node 26.10.0, pnpm 10.34.4). `stage_a_hue_shape` has ui-gem's manifest shape and is installed by
 Bundler as a Git source into a read-only bundle, so its root has no `node_modules`. The test
 writes its context into an app that declares nothing, registers it, runs `pnpm install`, and
 builds the gem's entry through `Proscenium::Builder` with and without the seam.
@@ -173,25 +173,25 @@ why it runs only with `STAGE_A=1`.
 
 ### Not covered by this leg yet
 
-- Node 22, the pnpm line platform uses and the CI floor; london ran 10.33.1 on Node 26 and the
+- Node 22, the pnpm line app-a uses and the CI floor; app-b ran 10.33.1 on Node 26 and the
   CI half runs 10.33.1 (CI) and 10.34.4 (locally).
 - The peer probe (C12): a non-latest in-range pin, and the `auto-install-peers=false` and
-  `resolve-peers-from-workspace-root=false` variants. london's externals take React out of the
-  question, so C12 needs platform or a fixture.
+  `resolve-peers-from-workspace-root=false` variants. app-b's externals take React out of the
+  question, so C12 needs app-a or a fixture.
 - The drift cases that decide whether a descriptor receipt is needed.
-- Whether london, platform or codaset nest a Rails app in an enclosing JS workspace, and the hosts
+- Whether app-b, app-a or app-c nest a Rails app in an enclosing JS workspace, and the hosts
   each develops and deploys on.
 
-## platform on pnpm (4 October 2026)
+## app-a on pnpm (4 October 2026)
 
-The london leg repeated for platform, which also uses hue (77 entries: platform precompiles one
-fewer hue file), with `leg.rb` and a local CONFIG for platform's settings.
+The app-b leg repeated for app-a, which also uses ui-gem (77 entries: app-a precompiles one
+fewer ui-gem file), with `leg.rb` and a local CONFIG for app-a's settings.
 
 | | |
 |---|---|
-| pnpm | 10.34.4, selected by platform's `packageManager` field |
-| platform | e9754d69b |
-| hue | the same checkout as london (7400c7a9), through `BUNDLE_LOCAL__HUE` |
+| pnpm | 10.34.4, selected by app-a's `packageManager` field |
+| app-a | e9754d69b |
+| ui-gem | the same checkout as app-b (7400c7a9), through `BUNDLE_LOCAL__HUE` |
 
 | Cell | Bundled, matching base | Unbundled, matching base |
 |---|---|---|
@@ -200,28 +200,28 @@ fewer hue file), with `leg.rb` and a local CONFIG for platform's settings.
 | ref, seam off | 77 of 77 | 77 of 77 |
 | ref, seam on | 76 of 77 | 73 of 77 |
 
-- **Same shape as london.** With the seam, every bundled entry but the test file matches, with or
+- **Same shape as app-b.** With the seam, every bundled entry but the test file matches, with or
   without an app edge; without the seam an unreferenced context loses modules, and an app edge
   alone works with today's engine.
-- **platform already has a pnpm-workspace.yaml**, holding a `minimumReleaseAge` policy and
+- **app-a already has a pnpm-workspace.yaml**, holding a `minimumReleaseAge` policy and
   comments. Registration has to splice the context pattern into it as text, as the plan says;
   `context.rb` does, and the install ran under that age gate.
-- **An app override decides React, for the context too (C16).** hue declares
-  `react: ^18.3.1` as a plain dependency, but platform's package.json overrides React for every
+- **An app override decides React, for the context too (C16).** ui-gem declares
+  `react: ^18.3.1` as a plain dependency, but app-a's package.json overrides React for every
   package, and pnpm links the context to the app's override version. The three unbundled
-  differences are exactly that: base resolved React from hue's checkout `node_modules`, the seam
-  from the app's overridden copy, so unbundled hue now shares the app's React where base did not.
-  Bundled, React is an external in platform as in london.
+  differences are exactly that: base resolved React from ui-gem's checkout `node_modules`, the seam
+  from the app's overridden copy, so unbundled ui-gem now shares the app's React where base did not.
+  Bundled, React is an external in app-a as in app-b.
 
-## codaset on Bun (4 October 2026)
+## app-c on Bun (4 October 2026)
 
 **Question.** Can proscenium-ui get its dependencies from a context on Bun, what does registering
-a context do to codaset's install, and do codaset's pages and `bun test` harness survive it (C51)?
+a context do to app-c's install, and do app-c's pages and `bun test` harness survive it (C51)?
 
 **Verdict: GO for this leg, with one author fix needed in proscenium-ui and the gaps below.**
-Registration needs the explicit linker the plan requires: without one, Bun 1.4.2 switches codaset
+Registration needs the explicit linker the plan requires: without one, Bun 1.4.2 switches app-c
 from its hoisted `node_modules` to the isolated store. With `linker = "hoisted"` and an empty
-`trustedDependencies`, codaset's layout is unchanged and its 139 `bun test` tests pass. With the
+`trustedDependencies`, app-c's layout is unchanged and its 139 `bun test` tests pass. With the
 seam on, every proscenium-ui entry whose imports its manifest declares builds as it does today;
 the eleven that do not are files importing packages proscenium-ui never declared.
 
@@ -229,15 +229,15 @@ the eleven that do not are files importing packages proscenium-ui never declared
 
 | | |
 |---|---|
-| Command | `ruby test/package_manager/stage_a/leg.rb CODASET PROSCENIUM_UI CONFIG OUT` (CONFIG names proscenium-ui and Bun) |
+| Command | `ruby test/package_manager/stage_a/leg.rb APP GEM_ROOT CONFIG OUT` (CONFIG names proscenium-ui and Bun) |
 | Host | macOS 27.0.1 (26A434), arm64 |
 | Bun | 1.4.2 |
 | Node | 26.10.0 |
-| Ruby | 4.0.3 (codaset's), to read its bundle and run its harness |
-| codaset | eb36cb5 |
-| proscenium-ui | checkout at fc6640a, which Gemfile.lock also records; codaset's package.json takes it from the hosted registry at `^0.2.1` |
+| Ruby | 4.0.3 (app-c's), to read its bundle and run its harness |
+| app-c | eb36cb5 |
+| proscenium-ui | checkout at fc6640a, which Gemfile.lock also records; app-c's package.json takes it from the hosted registry at `^0.2.1` |
 
-Cells, as for london, with Bun's registration (`workspaces` in package.json): **base** (frozen,
+Cells, as for app-b, with Bun's registration (`workspaces` in package.json): **base** (frozen,
 as today), **reg** (registered, no linker setting, to see what Bun picks), **unref-hoisted** and
 **unref-isolated** (linker set, empty `trustedDependencies`, no app edge) and **ref-hoisted**
 (plus `"@rubygems/proscenium-ui": "workspace:*"`). The entries are proscenium-ui's own JS and CSS
@@ -253,7 +253,7 @@ as today), **reg** (registered, no linker setting, to see what Bun picks), **unr
 | unref-isolated | `.bun` | 6 | links into the store |
 
 - **Registration switches the linker unless one is set (settles the plan's requirement on
-  1.4.2).** In a codaset worktree with its existing hoisted tree, registering with no linker
+  1.4.2).** In a app-c worktree with its existing hoisted tree, registering with no linker
   setting moved the old tree to `node_modules/.old_modules-<hash>` and installed the isolated
   store. With `linker = "hoisted"` the layout stayed exactly as before: 18 root entries, no store,
   nothing moved aside.
@@ -284,7 +284,7 @@ as today), **reg** (registered, no linker setting, to see what Bun picks), **unr
   files import `react`, `clsx` or `trix`, none of which proscenium-ui's package.json declares. The
   seam fails each with `gem "proscenium-ui": could not resolve "<package>" from its dependency
   context`. Today nothing provides them either: base leaves the imports external and the browser
-  would fail. codaset does not use those components. proscenium-ui should declare them, React as a
+  would fail. app-c does not use those components. proscenium-ui should declare them, React as a
   peer, before it opts in.
 - **The twelfth unbundled difference is the local checkout.** One entry's `@floating-ui/dom`
   resolves in base to the copy in proscenium-ui's own checkout `node_modules` (1.7.6) and with the
@@ -317,19 +317,19 @@ a gem-introduced `simple-git-hooks`. With the seam disabled in Go, the isolated 
 nested-copy URL checks fail. Under hoisted, today's engine already reaches the nested copy, through
 the `node_modules/@rubygems/<gem>` link Bun creates for every workspace.
 
-### codaset's harness (C51)
+### app-c's harness (C51)
 
-In a worktree of codaset: `bun test` with codaset's Ruby passed 139 of 139 tests in 12 files
+In a worktree of app-c: `bun test` with app-c's Ruby passed 139 of 139 tests in 12 files
 before registration, after registering with no linker (the isolated switch), and after
 registering with `linker = "hoisted"` and `trustedDependencies: []`. In the last state, a frozen
 install after deleting `node_modules`, and a second frozen install, exit 0 and leave package.json,
-bun.lock, bunfig.toml and the context byte-identical. The harness runs codaset's own Proscenium
+bun.lock, bunfig.toml and the context byte-identical. The harness runs app-c's own Proscenium
 (0.25.3), so this shows registration does not disturb it; it does not exercise the seam.
 
 ### Not covered by this leg yet
 
 - Bun 1.4.0, the plan's floor; only 1.4.2 ran, on Node 26.
-- codaset's unbundled pages in a browser (C51's other half).
+- app-c's unbundled pages in a browser (C51's other half).
 - The peer probe (C12) on Bun.
 
 ## Peers (C12, 4 October 2026)
@@ -356,8 +356,8 @@ context referenced from the app and not, with the same result.
 - **What the CLI does about the split is a Stage B decision:** the plan's peer-sharing check
   (exit 5 naming the package) catches it; whether `install` should also run `pnpm dedupe` on
   pnpm 10, or tell the user to, is open.
-- **The real apps barely exercise this.** london and platform serve React outside npm in bundled
-  builds, platform's overrides pin it for every package, and codaset has no React.
+- **The real apps barely exercise this.** app-b and app-a serve React outside npm in bundled
+  builds, app-a's overrides pin it for every package, and app-c has no React.
 
 
 ## Git dependency scripts (C55, 4 October 2026)
@@ -397,7 +397,7 @@ gem's JS dependencies are installed in production too, which is harmless but was
 
 ## The apps' layout and hosts (4 October 2026)
 
-None of london, platform or codaset sits inside an enclosing JS workspace: no directory above any
+None of app-b, app-a or app-c sits inside an enclosing JS workspace: no directory above any
 of them has a package.json or pnpm-workspace.yaml. All three are developed on macOS arm64, run CI
 on Ubuntu, and deploy as Linux containers built from `ruby:*-slim` images; their Gemfile.locks
 declare Linux x86_64 and aarch64 among their platforms. None runs on Windows. So the qualification
@@ -439,7 +439,7 @@ requirement; the bundled half is the Go seam specs and the CI tests.
 
 The probe uses preact, not React, for a reason worth recording: npm's React is CommonJS, and an
 unbundled page cannot load it at all ("Dynamic require of .../react.development.js is not
-supported"), with or without the bridge. That is why london and platform serve an ESM React of
+supported"), with or without the bridge. That is why app-b and app-a serve an ESM React of
 their own, and why one React instance there is a matter of their configuration rather than of
 pnpm. An app that unbundles React from npm is not a case v1 has to serve.
 
@@ -454,7 +454,7 @@ to make real. Proposed, for the maintainer to accept or change on #154:
 | B: Ruby CLI | `exe/proscenium` and four commands, manager selection and capability table, registration splices (pnpm YAML, Bun package.json and bunfig), project lock and install marker, manager runner, peer-sharing and lock checks, error codes with golden outputs, installed-CLI release check | 2-3 weeks / 3-5 days |
 | C: engine | the context map from `bundled_gems.rb` to Go in both config sites, the seam made real, real-path identity, serving nested copies under `.proscenium/packages/*/node_modules/`, adoption, staleness, install-in-progress refusal, mapping generations, the daemon | 2-3 weeks / 3-5 days |
 | D: qualification | release-gate rows on macOS arm64 and Linux x86_64 and aarch64, pnpm 10-12 and Bun 1.4, the hermetic registry, nightly canary, performance budgets | 1-2 weeks / 2-4 days |
-| E: migration and release | remove the registry, migrate codaset, platform and london, README section and the two guides | 1-2 weeks / 2-4 days |
+| E: migration and release | remove the registry, migrate app-c, app-a and app-b, README section and the two guides | 1-2 weeks / 2-4 days |
 | **Total** | | **6-10 weeks / 10-18 days** |
 
 The earlier 9-15 engineer-weeks included npm, Windows hosts and a compiled CLI, all now out of v1.

@@ -23,7 +23,7 @@ Stage B and C replace it.
 | `stage_a_widget_a` | archive | yes | React `^18.3.1` peer, ms 2.0.0 |
 | `stage_a_widget_b` | archive | yes | React `^18.3.1` peer, ms 2.1.3 |
 | `gem_npm` | archive | yes | The repository's `fixtures/dummy/vendor/gem_npm` (string-length `^6.0.0`) |
-| `stage_a_hue_shape` | Git | yes | hue's traits: package.json without `version`, `react` and `react-dom` as plain dependencies, a `github:` dependency, and package.json missing from `spec.files`. Its Ruby version is a prerelease (`0.5.3.pre1`). |
+| `stage_a_hue_shape` | Git | yes | ui-gem's traits: package.json without `version`, `react` and `react-dom` as plain dependencies, a `github:` dependency, and package.json missing from `spec.files`. Its Ruby version is a prerelease (`0.5.3.pre1`). |
 
 Archive gems are built with `Gem::Package.build` and installed with `bundle install --local` from
 the app's `vendor/cache`, so there is no gem index and no network. `stage_a_hue_shape` comes from a
@@ -46,8 +46,8 @@ Two readings of the plan, recorded here so they are not mistaken for accidents:
   as a participant.
 
 `stage_a_hue_shape`'s `github:` dependency is `sindresorhus/escape-string-regexp` at the v5.0.0
-commit: public, small, and with no install scripts. It is not one of hue's own dependencies, so
-the fixture copies hue's shape without copying its manifest.
+commit: public, small, and with no install scripts. It is not one of ui-gem's own dependencies, so
+the fixture copies ui-gem's shape without copying its manifest.
 
 ## The resolver seam
 
@@ -95,7 +95,7 @@ A `git+file://` dependency on a local bare repository, whose package has a `post
 
 So the hermetic fixtures can serve Git dependencies from a local bare repository on both
 supported lines. A `github:` specifier itself cannot be redirected there; step 2 decides whether
-the CI copy of `stage_a_hue_shape` uses `git+file://` and only the local hue leg keeps `github:`.
+the CI copy of `stage_a_hue_shape` uses `git+file://` and only the local ui-gem leg keeps `github:`.
 
 ## The app legs (steps 2 and 3)
 
@@ -105,18 +105,18 @@ of an app's JS configuration and the local checkout of the gem its bundle points
 Bun:
 
 ```sh
-ruby test/package_manager/stage_a/leg.rb ~/dev/clients/example-org/london \
-  ~/dev/clients/example-org/hue CONFIG tmp/stage_a_london
-ruby test/package_manager/stage_a/leg.rb ~/dev/codaset ~/dev/proscenium-ui CONFIG \
+ruby test/package_manager/stage_a/leg.rb ~/dev/clients/example-org/app-b \
+  ~/dev/clients/example-org/ui-gem CONFIG tmp/stage_a_london
+ruby test/package_manager/stage_a/leg.rb ~/dev/app-c ~/dev/proscenium-ui CONFIG \
   tmp/stage_a_codaset
 ```
 
 CONFIG is a local JSON file naming the gem, the manager, and the app's entry points, aliases and
 externals (the script's header gives the format); the apps' configuration stays out of this
 repository. It writes only under the output directory, which it refuses to delete unless it made
-it. The CI half of the london leg is `hue_shape_test.rb`: the same check for `stage_a_hue_shape`,
+it. The CI half of the app-b leg is `hue_shape_test.rb`: the same check for `stage_a_hue_shape`,
 through `Proscenium::Builder`, run by the `stage-a` CI job and locally with
-`STAGE_A=1 bin/test test/package_manager/stage_a/`. The codaset leg's CI half is `bun_test.rb`:
+`STAGE_A=1 bin/test test/package_manager/stage_a/`. The app-c leg's CI half is `bun_test.rb`:
 where Bun's hoisted and isolated linkers put the widgets' conflicting `ms` copies, what each widget
 then builds against, and that an explicit `trustedDependencies` blocks a gem-introduced package
 Bun trusts by default. `git_scripts_test.rb` checks that neither manager runs a gem-introduced

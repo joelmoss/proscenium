@@ -272,7 +272,7 @@ that script expects a platform and a library that loads.
 
 ### Skip the extension-finding `Resolve` in the Bundler plugin
 
-**What:** 58 of the distinct specifiers London's `appointment/create/component.jsx` sends to
+**What:** 58 of the distinct specifiers app-b's `appointment/create/component.jsx` sends to
 `build.Resolve` are relative or absolute paths with no extension, and the Bundler plugin calls
 `Resolve` for them only to find the extension before it applies aliases and gem URL mapping.
 Avoiding that call means doing that work in Proscenium, or letting esbuild resolve them and
@@ -287,7 +287,7 @@ process-wide directory cache validated by each directory's `ModKey` (mtime, with
 racy-timestamp gap). About -50% on the big builds, no better than the per-build cache, and it adds
 staleness risk across builds.
 
-**Next:** Profile one big London build post-cache and read off the time under those 58 `Resolve`
+**Next:** Profile one big app-b build post-cache and read off the time under those 58 `Resolve`
 calls. Under about 10% of the build, delete this item.
 
 **Effort:** M
@@ -311,7 +311,7 @@ entry point and per config, and Proscenium builds a different entry point per re
 memory cost of holding them is unknown. File-content invalidation is safe: `FSCache` stats on every
 read and re-reads when the `ModKey` differs, distrusting an mtime within 3 seconds of now.
 
-**Next:** Time an unchanged-entry `Rebuild()` against a fresh `Build()` on one big London entry.
+**Next:** Time an unchanged-entry `Rebuild()` against a fresh `Build()` on one big app-b entry.
 Under about 10%, delete this item.
 
 **Effort:** L
@@ -446,7 +446,7 @@ Builds on `inspect`'s existing per-gem projection.
 
 **Effort:** M per command (human) / S (CC)
 **Priority:** P4
-**Depends on:** #154 v1 in use by london, platform and codaset
+**Depends on:** #154 v1 in use by app-b, app-a and app-c
 
 ### Manager-independent dependency URLs
 
@@ -491,7 +491,7 @@ Released as `esbuild-internal` `v0.28.2-d551d879` (fork commit `d551d879`, tagge
 between rebuilds. Two tests in the fork's `pkg/api/api_resolve_cache_test.go` (`../esbuild`;
 `api/` in the generated `esbuild-internal`) pin both halves.
 
-`91b50057`'s message holds the measurements and the one behaviour change: the two largest London
+`91b50057`'s message holds the measurements and the one behaviour change: the two largest app-b
 builds went from 149.7ms to 63.2ms (-58%) and from 138.3ms to 67.0ms (-52%) with byte-identical
 output, allocations fell from about 1.16M to 0.76M, and a file a plugin creates part-way through a
 build is no longer seen by a later `Resolve` if its directory was already listed in that build. The
