@@ -13,8 +13,8 @@ they keep the `stage_a_` prefix; the proof's results are in
 | `bundle.rb` | `StageA::Bundle.install(dir)`: builds the archive gems, installs every fixture gem with Bundler into `dir/bundle`, makes it read-only, and returns `{ name => installed root }` |
 
 Used by `test/cli/install_test.rb`, `test/cli/spec_kinds_test.rb`, `test/cli/gem_check_test.rb`,
-`test/bun_layout_test.rb`, `test/adopted/`, `test/first_run_test.rb` and
-`test/context_wiring_test.rb`, and by `fixtures/adopted`'s Gemfile.
+`test/cli/load_isolation_test.rb`, `test/bun_layout_test.rb`, `test/adopted/`,
+`test/first_run_test.rb` and `test/context_wiring_test.rb`, and by `fixtures/adopted`'s Gemfile.
 
 ## Fixture gems
 
