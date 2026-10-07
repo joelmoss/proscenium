@@ -144,10 +144,12 @@ describe 'proscenium install' do
         refute JSON.parse(File.read(File.join(shaped, 'package.json'))).key?('version')
         lock = File.read(lockfile)
 
-        assert_includes lock, '.proscenium/packages/stage_a_hue_shape'
         if manager == 'pnpm'
           assert_includes lock, '  .proscenium/packages/stage_a_hue_shape:'
           refute_includes lock, '@rubygems/stage_a_hue_shape@'
+        else
+          assert_includes lock, '"@rubygems/stage_a_hue_shape@workspace:.proscenium/packages/' \
+                                'stage_a_hue_shape"'
         end
         SHAPED_DEPENDENCIES.each do |name|
           link = File.join(shaped, 'node_modules', name)
