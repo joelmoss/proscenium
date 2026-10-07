@@ -175,7 +175,9 @@ jobs:
       # different one - see the compile task in the Rakefile.
       # Pinned, not @latest: this tool produces the Linux binaries that end up inside published
       # gems, and @latest resolves to whatever is newest at run time. Same reasoning the test
-      # workflow already applies to bun and golangci-lint.
+      # workflow already applies to bun and golangci-lint. This pins only the CLI: the image it
+      # builds in, and so the Go version, is pinned by `-go go-1.27.1` in the Rakefile's compile
+      # task, which must move with go.mod's go line.
       - run: go install src.techknowlogick.com/xgo@v1.9.0
       # Emulation for any target whose architecture is not this runner's. Cheap when unused.
       - uses: docker/setup-qemu-action@v3
