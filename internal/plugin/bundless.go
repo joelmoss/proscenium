@@ -67,13 +67,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					found := filepath.ToSlash(r.Path)
 					if len(r.Errors) > 0 || r.Path == "" {
 						// A file the package's `exports` leaves out, as resolution falls back below.
-						file, ok := "", false
-						if importer := contextImporter(args); utils.IsAppPackageFile(importer, cfg) {
-							file, ok = packageNodeModulesFile(importer, result.Path)
-						} else if fallbackDir != "" {
-							file, ok = nodeModulesFile(fallbackDir, result.Path)
-						}
-						if !ok {
+						file, ok := nodeModulesFile(fallbackDir, result.Path)
+						if fallbackDir == "" || !ok {
 							return false
 						}
 						found = file
@@ -435,12 +430,6 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							}
 							utils.DebugContextRoute(cfg, mappedGem, originalPath, result.Path)
 						} else {
-							// A package the app installed stops at 1, whose lookup beside it already walks up to
-							// the app's node_modules: 2 and 3, and the app-root fallback below, would hand a miss
-							// a copy other than the one installed beside it (see utils.IsAppPackageFile).
-							importer := contextImporter(args)
-							inPackage := isBare != "" && utils.IsAppPackageFile(importer, cfg)
-
 							// 1
 							ok := resolveWithEsbuild(resolveArgs, &result)
 							if !ok {
@@ -448,7 +437,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							}
 
 							// 2
-							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" && !inPackage &&
+							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
 								resolveArgs.ResolveDir != gemPath {
 								resolveArgs.ResolveDir = gemPath
 								result.Path = originalPath
@@ -459,7 +448,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							}
 
 							// 3
-							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" && !inPackage &&
+							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
 								resolveArgs.ResolveDir != root {
 								resolveArgs.ResolveDir = root
 								result.Path = originalPath
@@ -470,12 +459,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							}
 
 							// The app's import skipped the shortcut above, so it gets the same fallback.
-							if result.Path == "" && inPackage && hasExt {
-								if file, ok := packageNodeModulesFile(importer, originalPath); ok {
-									result.Path = file
-									result.Errors = nil
-								}
-							} else if result.Path == "" && isBare != "" && hasExt && len(cfg.DependencyContexts) > 0 {
+							if result.Path == "" && isBare != "" && hasExt && len(cfg.DependencyContexts) > 0 {
 								fileUnderNodeModules(root, originalPath, &result)
 							}
 						}
@@ -563,29 +547,6 @@ func nodeModulesFile(dir string, specifier string) (string, bool) {
 	info, err := os.Stat(file)
 
 	return file, err == nil && info.Mode().IsRegular()
-}
-
-// The regular file `specifier` names, for a package's import, looked up as node resolution finds
-// the package: under the node_modules beside the importer's real directory, then each one above
-// it. A package the app installed takes the copy installed next to it before the app root's.
-func packageNodeModulesFile(importer string, specifier string) (string, bool) {
-	dir := filepath.Dir(importer)
-	if real, err := filepath.EvalSymlinks(dir); err == nil {
-		dir = real
-	}
-	dir = filepath.ToSlash(dir)
-
-	for {
-		if file, ok := nodeModulesFile(dir, specifier); ok {
-			return file, true
-		}
-
-		parent := filepath.ToSlash(filepath.Dir(dir))
-		if parent == dir {
-			return "", false
-		}
-		dir = parent
-	}
 }
 
 // The file system path a bare import's gem is looked up by. A rubygems-namespaced
