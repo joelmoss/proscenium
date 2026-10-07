@@ -163,7 +163,7 @@ jobs:
   # #154's end-to-end suites against real managers: the Stage A legs, `proscenium install` and the
   # adopted app. Stage D qualification runs them on every host the gem ships for. They reach npm
   # and GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
-  stage-a:
+  package-manager:
     # A hang must fail the run, not hold a runner for the default six hours. The Windows leg runs
     # the install suite twice, the second time as a standard user.
     timeout-minutes: 40

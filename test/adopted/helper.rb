@@ -11,7 +11,7 @@ require_relative '../package_manager/stage_a/bundle'
 # subprocess: its own Gemfile sets Bundler.root, which the engine reads contexts from, and this
 # suite's own bundle (or an Appraisal gemfile) would set it elsewhere.
 #
-# Runs only with STAGE_A=1: setting it up runs pnpm, as the stage-a CI job can.
+# Runs only with STAGE_A=1: setting it up runs pnpm, as the package-manager CI job can.
 module Adopted
   ROOT = File.expand_path('../../fixtures/adopted', __dir__)
 
