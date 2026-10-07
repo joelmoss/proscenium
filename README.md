@@ -343,6 +343,11 @@ anything is out of date. When something is not working, `bundle exec proscenium 
 `inspect`) lists every problem it finds, each with its fix. `psm` is a shorter name for the
 same command: `bundle exec psm install`.
 
+Its install covers your app's own packages too, so it replaces `pnpm install` or `bun install`
+everywhere you ran them, and `install --frozen` replaces a frozen install. It does not add, remove
+or upgrade packages: for your app's own dependencies, keep using `pnpm add`, `pnpm remove` and
+`pnpm update`, or `bun add`, `bun remove` and `bun update`.
+
 See [RubyGem NPM dependencies](docs/guides/rubygem_npm_dependencies.md) for the details,
 and the [gem author guide](docs/guides/gem_author.md) if you are writing such a gem.
 

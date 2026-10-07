@@ -25,6 +25,19 @@ Writing such a gem? See the [gem author guide](gem_author.md).
 
 That is all. Run `bundle exec proscenium install` again after every Gemfile change.
 
+### It replaces `pnpm install` and `bun install`
+
+Install ends by running your package manager's own install for the whole project, your app's own
+packages included. So run `bundle exec proscenium install` wherever you ran `pnpm install` or
+`bun install`, and `bundle exec proscenium install --frozen` wherever you ran a frozen install (see
+[In CI and deploys](#in-ci-and-deploys)).
+
+It does not add, remove or upgrade packages. For your app's own dependencies, keep using
+`pnpm add`, `pnpm remove` and `pnpm update`, or `bun add`, `bun remove` and `bun update` on Bun.
+
+A plain `pnpm install` or `bun install` still installs what is committed, but it does not update
+the contexts after a Gemfile change, and it does not check them.
+
 ### What the first run does
 
 It writes one small package.json for each gem that takes part, under `.proscenium/packages/<gem>/`.
@@ -260,6 +273,10 @@ RUN bundle install
 COPY . .
 RUN bundle exec proscenium install --frozen && bin/rails assets:precompile
 ```
+
+The first layer runs plain `pnpm install --frozen-lockfile` because `proscenium install` reads the
+installed gems, which do not exist before `bundle install`; the `install --frozen` on the last line
+still checks every context before precompiling.
 
 With `BUNDLE_WITHOUT` set, a participating gem only in an excluded group keeps its committed
 context, and `install --frozen` says so rather than calling it an orphan. Add `--production` to
