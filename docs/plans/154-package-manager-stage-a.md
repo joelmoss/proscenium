@@ -9,7 +9,7 @@ The proof's scripts and pilot-only tests were removed once Stages B to E shipped
 `probe/`, `context.rb`, `peers.rb`, `identity.rb`, `drift_test.rb`, `bundle_test.rb` and
 `hue_shape_test.rb`); `git show f0d7d447:test/package_manager/stage_a/<file>` recovers any of
 them. `git_scripts_test.rb` moved to `test/cli/`, `bun_test.rb` became `test/bun_layout_test.rb`
-on the shipped context projection, and the hue-shape checks moved into `test/cli/install_test.rb`.
+on the shipped context projection, and the ui-gem-shape checks moved into `test/cli/install_test.rb`.
 The fixture gems stay in `test/package_manager/stage_a/`. Paths below are as they were.
 
 ## Summary

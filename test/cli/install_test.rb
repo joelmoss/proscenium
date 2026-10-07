@@ -120,7 +120,7 @@ describe 'proscenium install' do
 
   %w[pnpm bun].each do |manager|
     describe manager do
-      it 'registers, writes every context, installs, and is then up to date' do
+      it 'installs every context, ui-gem\'s shape included, and is then up to date' do
         dir = app(manager)
         out, err, status = proscenium(dir, 'install', manager:)
 
@@ -142,9 +142,10 @@ describe 'proscenium install' do
         lockfile = File.join(dir, manager == 'bun' ? 'bun.lock' : 'pnpm-lock.yaml')
 
         refute JSON.parse(File.read(File.join(shaped, 'package.json'))).key?('version')
-        if manager == 'pnpm'
-          lock = File.read(lockfile)
+        lock = File.read(lockfile)
 
+        assert_includes lock, '.proscenium/packages/stage_a_hue_shape'
+        if manager == 'pnpm'
           assert_includes lock, '  .proscenium/packages/stage_a_hue_shape:'
           refute_includes lock, '@rubygems/stage_a_hue_shape@'
         end
