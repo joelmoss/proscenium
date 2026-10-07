@@ -29,12 +29,15 @@ end
 # `proscenium install` and `install --frozen`, end to end: the Stage A fixture gems, genuinely
 # installed by Bundler, an app on pnpm or Bun, and the real manager (#154, Gate B rows).
 #
-# Runs only with STAGE_A=1: it needs pnpm, Bun and the network. The stage-a CI job sets it.
+# Runs only with STAGE_A=1: it needs pnpm, Bun and the network. The package-manager CI job sets it.
 describe 'proscenium install' do
   LIB = File.expand_path('../../lib', __dir__)
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
+  # What stage_a_hue_shape's context must hold: React and react-dom as plain dependencies, and a
+  # `github:` one.
+  HUE_DEPENDENCIES = %w[react react-dom escape-string-regexp].freeze
   # C40: Proscenium's own share of an install. Calibrated on CI 2026-10-04 from the warm no-op
   # frozen install: Linux pnpm 741 ms / Bun 245, macOS 846 / 281, Windows 1385 / 609. The slowest
   # plus headroom. The cold and one-gem-changed installs are held to the same ceiling.
@@ -278,6 +281,43 @@ describe 'proscenium install' do
         end
 
         assert_equal({ 'stage_a_widget_a' => '2.0.0', 'stage_a_widget_b' => '2.1.3' }, versions)
+      end
+
+      # ui-gem's manifest shape, from stage_a_hue_shape: no `version`, React and react-dom as plain
+      # dependencies, and a `github:` dependency. Its context installs as a workspace, not from a
+      # registry (C42); its dependencies land in the context (C43); and repeat frozen installs
+      # leave every committed input byte for byte as it was (C08).
+      it 'installs a gem with ui-gem\'s manifest shape as a workspace, unchanged when frozen' do
+        dir = app(manager)
+        _, err, status = proscenium(dir, 'install', manager:)
+
+        assert_predicate status, :success?, err
+        hue = File.join(dir, '.proscenium/packages/stage_a_hue_shape')
+        lockfile = File.join(dir, manager == 'bun' ? 'bun.lock' : 'pnpm-lock.yaml')
+
+        refute JSON.parse(File.read(File.join(hue, 'package.json'))).key?('version')
+        if manager == 'pnpm'
+          lock = File.read(lockfile)
+
+          assert_includes lock, '  .proscenium/packages/stage_a_hue_shape:'
+          refute_includes lock, '@rubygems/stage_a_hue_shape@'
+        end
+        HUE_DEPENDENCIES.each do |name|
+          assert_path_exists File.join(hue, 'node_modules', name, 'package.json'),
+                             "#{name} is not in the context"
+        end
+
+        files = [File.join(dir, 'package.json'), lockfile,
+                 *Dir[File.join(dir, '.proscenium/packages/*/package.json')]]
+        files << File.join(dir, 'pnpm-workspace.yaml') if manager == 'pnpm'
+        before = files.to_h { [it, File.binread(it)] }
+        2.times do
+          _, err, status = proscenium(dir, 'install', '--frozen', manager:)
+
+          assert_predicate status, :success?, err
+        end
+
+        assert_equal(before, files.to_h { [it, File.binread(it)] })
       end
 
       # C28: the gems are installed read-only, as a shared or system install is, and an install
