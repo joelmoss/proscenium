@@ -4,6 +4,7 @@ require 'test_helper'
 require 'json'
 require 'open3'
 require 'tmpdir'
+require 'proscenium/dependency_context'
 require_relative 'package_manager/stage_a/bundle'
 
 # What Bun does with registered contexts, built through the engine (#154): the only test that

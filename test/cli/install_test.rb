@@ -141,6 +141,14 @@ describe 'proscenium install' do
         shaped = File.join(dir, '.proscenium/packages/stage_a_hue_shape')
         lockfile = File.join(dir, manager == 'bun' ? 'bun.lock' : 'pnpm-lock.yaml')
 
+        root = InstallFixture.roots.fetch('stage_a_hue_shape')
+        spec = Gem::Specification.load(File.join(root, 'stage_a_hue_shape.gemspec'))
+
+        # The fixture keeps ui-gem's traits: a Git source whose package.json is not in
+        # `spec.files`, and has no `version`; nor does the context generated from it.
+        assert_includes root, '/bundler/gems/'
+        refute_includes spec.files, 'package.json'
+        refute JSON.parse(File.read(File.join(root, 'package.json'))).key?('version')
         refute JSON.parse(File.read(File.join(shaped, 'package.json'))).key?('version')
         lock = File.read(lockfile)
 
