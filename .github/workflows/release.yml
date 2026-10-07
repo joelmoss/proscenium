@@ -171,8 +171,8 @@ jobs:
         run: |
           bundle config set --local path "$RUNNER_TEMP/bundle"
           bundle install --jobs 4
-      # xgo builds the glibc gems in a container. The musl gems build in a container too, but a
-      # different one - see the compile task in the Rakefile.
+      # xgo builds the glibc gems in a container. There are no musl gems - see the platform notes
+      # at the top of the Rakefile.
       # Pinned, not @latest: this tool produces the Linux binaries that end up inside published
       # gems, and @latest resolves to whatever is newest at run time. Same reasoning the test
       # workflow already applies to bun and golangci-lint. This pins only the CLI: the image it
