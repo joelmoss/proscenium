@@ -15,20 +15,54 @@ import (
 // app that has adopted them.
 
 // The dependency context of the gem owning `fsPath`, when the map has that gem. `fsPath` is a
-// file in the gem, or its root.
+// file in the gem, or its root. A package the app installed is not the gem's, even inside the
+// gem's root (see IsAppPackageFile).
 func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir string, ok bool) {
 	if len(cfg.DependencyContexts) == 0 || fsPath == "" {
 		return "", "", false
 	}
 
 	ref, found := GemFromFsPath(fsPath, cfg)
-	if !found {
+	if !found || IsAppPackageFile(fsPath, cfg) {
 		return "", "", false
 	}
 
 	contextDir, ok = cfg.DependencyContexts[ref.Name]
 
 	return ref.Name, contextDir, ok
+}
+
+// Whether `fsPath` is a file of a package installed under the app root: below a `node_modules/`
+// there, including a context's under `.proscenium/packages/`. That is every package the app
+// installed, and also, for a gem developed in its own repository (`gemspec` in the Gemfile), every
+// package under the gem's root, which is the app root. Their bare imports resolve beside them, as
+// node resolution does: under pnpm and Bun a package's own dependencies are installed next to its
+// real path, and walking up from there still reaches the app's node_modules for its peers.
+//
+// Only under the app root. A gem installed elsewhere that ships a package in its own node_modules
+// keeps the fallbacks that hand it the app's peers, which walking up from the gem never reaches.
+//
+// A package linked into node_modules from outside the app root (`link:`, a workspace, `npm
+// link`) is not one: unbundling preserves symlinks, so its files keep the link's spelling under
+// the app root, but its imports resolve from its real directory, which never reaches the app's
+// node_modules. It keeps the gem's lookups, as it did before.
+//
+// The root is normalised as UrlPathFromFsPath normalises it, and nothing is concatenated: this
+// runs for every import a build resolves. An unset root cleans to ".", which no absolute path
+// starts with. Only a path that passes that check pays for evaluating its links.
+func IsAppPackageFile(fsPath string, cfg *types.ConfigT) bool {
+	rel, ok := strings.CutPrefix(fsPath, strings.TrimSuffix(cleanFsPath(cfg.RootPath), "/"))
+	if !ok || !strings.HasPrefix(rel, "/") || !strings.Contains(rel, "/node_modules/") {
+		return false
+	}
+
+	real, err := filepath.EvalSymlinks(fsPath)
+	if err != nil {
+		return true
+	}
+	root := realRoot(cfg.RootPath)
+
+	return root == "" || strings.HasPrefix(filepath.ToSlash(real), root+"/")
 }
 
 // Logs, with cfg.Debug, a bare import resolved from a gem's context: which gem, what it imported and

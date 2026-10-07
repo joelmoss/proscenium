@@ -400,4 +400,164 @@ var _ = Describe("Gem dependency contexts", func() {
 		Expect(urlPath).To(Equal("/node_modules/@rubygems/" + gem + "/with_ext.js"))
 		Expect(absPath).To(Equal(root + "/vendor/" + gem + "/with_ext.js"))
 	})
+
+	// A gem developed in its own repository is in its own bundle (`gemspec` in the Gemfile), so its
+	// root is the app root, and node_modules sits inside it. A package installed there is not the
+	// gem's code: its own bare imports resolve from where the package manager put them, beside it in
+	// the store - not from the gem's context, which declares only the gem's direct dependencies, and
+	// not from the app root, which here holds a different version of the same package.
+	Describe("a package installed inside a gem whose root is the app root", func() {
+		const owner = "node_modules/.pnpm/owner@1.0.0/node_modules/owner"
+
+		BeforeEach(func() {
+			pkg("node_modules/.pnpm/trans@1.0.0/node_modules/trans", "trans", "1.0.0", `export default "trans 1.0.0";`)
+			pkg("node_modules/trans", "trans", "2.0.0", `export default "trans 2.0.0";`)
+			pkg(owner, "owner", "1.0.0", "export { default } from 'trans'\n")
+			link("../../trans@1.0.0/node_modules/trans", "node_modules/.pnpm/owner@1.0.0/node_modules/trans")
+			link(".pnpm/owner@1.0.0/node_modules/owner", "node_modules/owner")
+			link("../../../../node_modules/.pnpm/owner@1.0.0/node_modules/owner",
+				".proscenium/packages/"+gem+"/node_modules/owner")
+			write("lib/own.js", "export { default } from 'owner'\n")
+			testConfig.RubyGems = map[string]string{gem: root}
+		})
+
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("bundles the version installed beside it (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+
+				ok, code := build("lib/own.js")
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring("trans 1.0.0"))
+				Expect(code).NotTo(ContainSubstring("trans 2.0.0"))
+				Expect(code).NotTo(ContainSubstring(`from "trans"`))
+			})
+		}
+
+		// Requested by its gem URL, the package is loaded in the rubygems namespace, whose loaders hand
+		// its imports the file's real path. With the map, that path decides it is not the gem's. Without
+		// it this was never broken - bundless's first lookup, beside the file, answers - so that case is
+		// the control.
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("serves the version installed beside it by its gem URL (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+				testConfig.Bundle = false
+
+				ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/index.js")
+
+				// The map makes it the store copy's real path; without it, owner's link to that copy.
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(MatchRegexp(`\.pnpm/(trans|owner)@1\.0\.0/node_modules/trans/index\.js"`))
+				Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/index.js"`))
+			})
+		}
+
+		// Map only: without contexts, a bare import with an extension takes the shortcut that serves
+		// `/node_modules/<specifier>` unresolved, as it always has for an app without them.
+		It("imports the version's stylesheet by its gem URL", func() {
+			write("node_modules/.pnpm/trans@1.0.0/node_modules/trans/style.css", ".trans-one { color: red; }\n")
+			write("node_modules/trans/style.css", ".trans-two { color: blue; }\n")
+			write(owner+"/style.css", "@import 'trans/style.css';\n")
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/style.css")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(`.pnpm/trans@1.0.0/node_modules/trans/style.css"`))
+			Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/style.css"`))
+		})
+
+		// Resolving beside a package still walks up to the app's node_modules, so a peer only the
+		// app installed - React here - is found as before.
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("still reaches a peer only the app root holds (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+				peerful := "node_modules/.pnpm/peerful@1.0.0/node_modules/peerful"
+				pkg(peerful, "peerful", "1.0.0", "export { marker } from 'react'\n")
+				write("lib/peer.js", "export { marker } from 'peerful'\n")
+				link(".pnpm/peerful@1.0.0/node_modules/peerful", "node_modules/peerful")
+
+				ok, code := build("lib/peer.js")
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring(reactBody))
+			})
+		}
+
+		// A package linked into node_modules from outside the app root (`link:`, a workspace, `npm
+		// link`) keeps its link spelling when unbundling, which preserves symlinks, but resolves from
+		// its real directory, which never reaches the app's node_modules. It keeps the gem's lookups,
+		// as before, so a peer such as React still resolves.
+		It("still resolves a peer for a package linked in from outside the app root", func() {
+			linked := root + "_linked"
+			for file, body := range map[string]string{
+				"package.json": `{"name":"linked","version":"1.0.0","main":"index.js"}`,
+				"index.js":     "export { marker } from 'react'\n",
+			} {
+				Expect(os.MkdirAll(linked, 0o755)).To(Succeed())
+				Expect(os.WriteFile(linked+"/"+file, []byte(body), 0o644)).To(Succeed())
+			}
+			DeferCleanup(os.RemoveAll, linked)
+			link(linked, "node_modules/linked")
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/linked/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(`react/index.js"`))
+			Expect(code).NotTo(ContainSubstring(`from "react"`))
+		})
+
+		// The rule is for packages under the app root. A gem installed elsewhere that ships a package
+		// in its own node_modules still hands that package the app's peers, which walking up from
+		// the gem never reaches.
+		It("still gives a package shipped inside a gem outside the app root the app's peer", func() {
+			ext := root + "_ext"
+			for file, body := range map[string]string{
+				"index.js":                           "export { default } from './node_modules/peerless/index.js'\n",
+				"node_modules/peerless/package.json": `{"name":"peerless","version":"1.0.0","main":"index.js"}`,
+				"node_modules/peerless/index.js":     "export { default } from 'trans'\n",
+			} {
+				Expect(os.MkdirAll(filepath.Dir(ext+"/"+file), 0o755)).To(Succeed())
+				Expect(os.WriteFile(ext+"/"+file, []byte(body), 0o644)).To(Succeed())
+			}
+			DeferCleanup(os.RemoveAll, ext)
+			testConfig.RubyGems = map[string]string{gem: root, "ext": ext}
+			testConfig.DependencyContexts = nil
+
+			ok, code := build("node_modules/@rubygems/ext/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring("trans 2.0.0"))
+		})
+
+	})
+
+	DescribeTable("which files are packages the app installed",
+		func(rel string, rootSuffix string, expected bool) {
+			testConfig.RootPath = root + rootSuffix
+
+			Expect(utils.IsAppPackageFile(root+rel, testConfig)).To(Equal(expected))
+		},
+		Entry("a package's file", "/node_modules/x/index.js", "", true),
+		Entry("a store copy's file", "/node_modules/.pnpm/x@1.0.0/node_modules/x/index.js", "", true),
+		Entry("a context package's file", "/.proscenium/packages/g/node_modules/x/index.js", "", true),
+		Entry("with a trailing slash on the root", "/node_modules/x/index.js", "/", true),
+		Entry("the app's own file", "/lib/x.js", "", false),
+		Entry("a directory that only ends in node_modules", "/my_node_modules/x.js", "", false),
+		Entry("a sibling the root is a text prefix of", "_ext/node_modules/x/index.js", "", false),
+		Entry("the root itself", "", "", false),
+	)
+
+	It("has no packages the app installed when no app root is set", func() {
+		testConfig.RootPath = ""
+
+		Expect(utils.IsAppPackageFile("/node_modules/x/index.js", testConfig)).To(BeFalse())
+	})
 })

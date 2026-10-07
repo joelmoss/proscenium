@@ -318,13 +318,16 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								// ...OR that gem IS installed to node_modules, then change ResolveDir to the gem's
 								// node_modules directory. This ensures that bare imports are resolved relative to the
 								// gem's node_modules directory, and not the app's node_modules directory.
-								gemName, _, foundGem := utils.PathIsRubyGem(args.Importer, cfg)
+								//
+								// A package the app installed inside the gem's root is neither: it keeps the
+								// ResolveDir beside it (see utils.IsAppPackageFile).
+								gemRef, foundGem := utils.GemFromFsPath(args.Importer, cfg)
 								if gem, contextDir, ok := utils.GemContext(args.Importer, cfg); ok {
 									// Dependency contexts: the gem's context is the only lookup base.
 									resolveArgs.ResolveDir = contextDir
 									mappedGem = gem
-								} else if foundGem {
-									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemName)
+								} else if foundGem && !utils.IsAppPackageFile(args.Importer, cfg) {
+									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemRef.Name)
 									_, err := os.Stat(nodeModulePath)
 									if err == nil {
 										realPath, err := filepath.EvalSymlinks(nodeModulePath)

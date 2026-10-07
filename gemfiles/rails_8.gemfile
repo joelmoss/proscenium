@@ -5,6 +5,7 @@ source "https://rubygems.org"
 gem "amazing_print"
 gem "debug"
 gem "rails", "~> 8.0.3"
+gem "json", "< 3"
 
 group :development do
   gem "appraisal"

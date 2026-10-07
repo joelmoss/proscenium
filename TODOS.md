@@ -374,6 +374,49 @@ app-local package's), or drop the exemption for a package a gem shares.
 **Effort:** S (human) / S (CC)
 **Priority:** P3
 
+### Take an exports-hidden file from beside an app package, not the app root
+
+**What:** When a dependency's `exports` leaves a file out (`trans/private.js`, or a CSS module or
+SVG), bundless takes it from under a node_modules instead. For a package the app installed inside
+a gem whose root is the app root, that fallback (`fileUnderNodeModules(root, …)` in the OnResolve
+chain, `nodeModulesFile(fallbackDir, …)` in `loadAsset`), and the gem-root and app-root retries
+before it, use the app root, so the app's copy is served even when another version is installed
+beside the package.
+
+**Why:** Master served the right copy through the gem's context; the #154 app-root-gem fix
+(`utils.IsAppPackageFile`) takes those files out of the context. It needs all four together: a
+gem developed in its own repository under pnpm, the gem's context declaring that package, an
+exports-hidden deep import, and a different version at the app root.
+
+**Context:** A fix that walked up from the importer's real directory was reverted (`656dd736`,
+reverted by the commit after it): unbundled builds preserve symlinks, so a package linked in from
+outside the app root (`link:`, a workspace, `npm link`) counted as an app package, lost the app's
+peers and could walk above the app root. A fix has to decide package-ness from the importer's
+real path, stop the walk at the app root, and keep a servable link spelling for a store outside
+it. Adversarial probes of each case are in the PR for this fix.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P3
+**Depends on:** nothing
+
+### Resolve a package's CSS mixin imports beside the package
+
+**What:** `internal/resolver/resolve.go` resolves a bare `@mixin … from url("pkg/x.css")` from
+the app root even when the importing stylesheet belongs to a package with its own copy of `pkg`
+installed beside it, as pnpm and Bun do.
+
+**Why:** Under an isolated store the package's mixin can come from a different version, or be
+missing, with the mixin left unexpanded and no error.
+
+**Context:** Tried and reverted during the #154 app-root-gem fix: resolving from the package's
+real directory lost app peers for an external `link:` package, refused global-store dependencies
+that had a servable app link, read a stale cached real root after `current` was retargeted, and
+let a file inside the package shadow the specifier. A fix needs fallbacks for each.
+
+**Effort:** M (human) / S (CC)
+**Priority:** P4
+**Depends on:** nothing
+
 ### Serve gem contexts from a bundle root outside the Rails app
 
 **What:** Contexts live at `Bundler.root`. When that is outside `Rails.root`, as in a monorepo whose

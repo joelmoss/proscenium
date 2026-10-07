@@ -263,7 +263,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					result := esbuild.OnLoadResult{
 						Loader:     esbuild.LoaderDefault,
 						ResolveDir: filepath.ToSlash(filepath.Dir(realPath)),
-						PluginData: types.PluginData{GemPath: pluginData.GemPath},
+						PluginData: types.PluginData{GemPath: pluginData.GemPath, RealPath: realPath},
 					}
 
 					if !utils.PathIsCss(realPath) {
@@ -550,10 +550,17 @@ func nodeModulesFile(dir string, specifier string) (string, bool) {
 }
 
 // The file system path a bare import's gem is looked up by. A rubygems-namespaced
-// importer is a virtual `@rubygems/` path; its loader attaches the gem root instead.
+// importer is a virtual `@rubygems/` path; its loader attaches the file's real path, and the gem
+// root. The real path matters: a package the app installed inside the gem's root is not the gem's
+// (see utils.IsAppPackageFile), and only the file says which it is.
 func contextImporter(args esbuild.OnResolveArgs) string {
 	if args.Namespace == "rubygems" {
-		return types.PluginDataOf(args.PluginData).GemPath
+		pluginData := types.PluginDataOf(args.PluginData)
+		if pluginData.RealPath != "" {
+			return pluginData.RealPath
+		}
+
+		return pluginData.GemPath
 	}
 
 	return args.Importer
