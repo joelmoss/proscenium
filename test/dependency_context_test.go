@@ -527,6 +527,16 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(code).To(ContainSubstring("trans 2.0.0"))
 		})
 
+		It("takes its CSS mixin from the version installed beside it by its gem URL", func() {
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/mixins.css")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring("padding: 1px"))
+			Expect(code).NotTo(ContainSubstring("padding: 2px"))
+		})
+
 		It("takes its CSS mixin from the version installed beside it", func() {
 			ok, code := build(owner + "/mixins.css")
 
@@ -551,4 +561,10 @@ var _ = Describe("Gem dependency contexts", func() {
 		Entry("a sibling the root is a text prefix of", "_ext/node_modules/x/index.js", "", false),
 		Entry("the root itself", "", "", false),
 	)
+
+	It("has no packages the app installed when no app root is set", func() {
+		testConfig.RootPath = ""
+
+		Expect(utils.IsAppPackageFile("/node_modules/x/index.js", testConfig)).To(BeFalse())
+	})
 })

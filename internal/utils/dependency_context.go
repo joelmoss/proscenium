@@ -43,12 +43,9 @@ func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir strin
 // keeps the fallbacks that hand it the app's peers, which walking up from the gem never reaches.
 //
 // The root is normalised as UrlPathFromFsPath normalises it, and nothing is concatenated: this
-// runs for every import a build resolves.
+// runs for every import a build resolves. An unset root cleans to ".", which no absolute path
+// starts with.
 func IsAppPackageFile(fsPath string, cfg *types.ConfigT) bool {
-	if cfg.RootPath == "" {
-		return false
-	}
-
 	rel, ok := strings.CutPrefix(fsPath, strings.TrimSuffix(cleanFsPath(cfg.RootPath), "/"))
 
 	return ok && strings.HasPrefix(rel, "/") && strings.Contains(rel, "/node_modules/")
