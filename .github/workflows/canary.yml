@@ -72,7 +72,7 @@ jobs:
       - if: runner.os == 'Windows'
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
 
-      - run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb
+      - run: bin/test -v test/cli/git_scripts_test.rb test/bun_layout_test.rb test/cli/install_test.rb test/cli/spec_kinds_test.rb
         shell: bash
         env:
           PROSCENIUM_PNPM: ${{ steps.newest.outputs.pnpm }}
