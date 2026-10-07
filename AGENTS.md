@@ -9,7 +9,7 @@ Proscenium is a Rails engine that provides real-time frontend asset bundling and
 ## Prerequisites
 
 - Ruby >= 3.4.0 (project uses 3.4.8)
-- Go 1.25+
+- Go 1.27.1+ (go.mod's go line, which the Rakefile's `-go` for xgo must match)
 - Rails 7.2 to 8.x
 
 ## Architecture
@@ -238,7 +238,7 @@ builds every platform.
 - **FFI boundary**: Ruby communicates with Go via C-exported functions in `main.go`. Changes to the Go function signatures require matching updates in `lib/proscenium/builder.rb`.
 - **Middleware stack**: `lib/proscenium/middleware/` contains multiple specialized middleware (Esbuild, RubyGems, Vendor, Chunks, etc.), not just the main `middleware.rb`.
 - **Go FFI functions** (`main.go`): `build_to_string(filePath, configJson)`, `resolve(filePath, configJson)`, `compile(configJson)`, `free_cstr(ptr)` and `reset_config()`. The first three accept JSON config and return C structs. `free_cstr(ptr)` frees a string Go allocated with `C.CString`, which the Go runtime cannot collect; Ruby calls it on every result string once read (`read_and_free` in `lib/proscenium/builder.rb`). `reset_config()` takes nothing and does nothing; it is kept as the one call into Go that needs no Rails app, for bin/verify-installed-gem and the packaging test, and as the bare FFI-call cost that benchmarks/bridge.rb times. Check `Result`, `ResolveResult`, `CompileResult` struct definitions when modifying.
-- **go.work is gitignored**: The `go.work` and `go.work.sum` files are not checked in. Each developer needs their own pointing to their local esbuild fork.
+- **go.work is gitignored**: The `go.work` and `go.work.sum` files are not checked in. Each developer needs their own pointing to their local esbuild fork. Its `go` line must be at least go.mod's, or every workspace build fails with `module . listed in go.work file requires go >= ...`; after raising go.mod's, run `go work edit -go=<version>`.
 - **Compiled binaries are gitignored**: `lib/proscenium/ext/` contents (`.so`, `.h` files) are not checked in.
 - **Go runtime + Puma `preload_app!` fork hazard**: never call `Builder.build_to_string`/`resolve`/`compile` from a Rails boot-time initializer. Go's runtime cannot survive a `fork()` once it has been initialized (see [golang/go#15538](https://github.com/golang/go/issues/15538), unfixed) - a `preload_app!` + `workers` Puma setup forks after boot, so any pre-fork Go call would break every worker. The Go runtime only initializes lazily on the first actual builder call, and stock Proscenium's own boot sequence never triggers it - this only bites if custom app code calls a builder method during boot. See README's "Puma preload_app! and Cluster Mode" section.
 

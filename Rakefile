@@ -172,8 +172,13 @@ PLATFORMS.each do |ruby_platform, go_platform|
       # rather than the module path, which put it in a root-owned ext/joelmoss/. xgo then hands
       # the files to ext/'s owner. Without both, every Linux build failed with EACCES.
       ext_path.mkpath
-      sh %(xgo -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared -out=proscenium ) +
-         %(-dest="#{ext_dir}" -targets="#{go_platform}" .)
+      # -go pins the image's Go. Without it xgo pulls ghcr.io/techknowlogick/xgo:latest, which
+      # moves with every Go release, so the Linux gems could build with a different Go than the
+      # native ones, which setup-go takes from go.mod. Bump it with go.mod's go line. xgo appends
+      # the value to the image name as is, and the image tags are `go-<version>`: a bare 1.27.1
+      # names an image that does not exist.
+      sh %(xgo -go go-1.27.1 -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared ) +
+         %(-out=proscenium -dest="#{ext_dir}" -targets="#{go_platform}" .)
 
       ext_path.glob("proscenium-#{goos}-*").each do |built|
         built.rename ext_path.join(built.extname == '.h' ? 'proscenium.h' : 'proscenium')
