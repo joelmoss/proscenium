@@ -437,8 +437,9 @@ var _ = Describe("Gem dependency contexts", func() {
 		}
 
 		// Requested by its gem URL, the package is loaded in the rubygems namespace, whose loaders hand
-		// its imports the file's real path. With the map, that path decides it is not the gem's; without
-		// it, bundless's first lookup, from the directory beside the file, is the one that answers.
+		// its imports the file's real path. With the map, that path decides it is not the gem's. Without
+		// it this was never broken - bundless's first lookup, beside the file, answers - so that case is
+		// the control.
 		for _, withMap := range []bool{true, false} {
 			It(fmt.Sprintf("serves the version installed beside it by its gem URL (map: %v)", withMap), func() {
 				if !withMap {
