@@ -722,7 +722,7 @@ A candidate GO requires original source identity, distinct dependency contexts, 
 | `internal/types/types.go`, `internal/plugin/bundler.go`, `internal/plugin/bundless.go`, `internal/css/mixins.go`, `internal/resolver/resolve.go` | The context map config and the one issuer-aware lookup; real-path identity; named resolution misses. |
 | `internal/utils/utils.go`, `lib/proscenium.rb` | Nested-copy serving under `.proscenium/packages/<gem>/node_modules/` with the existing containment rules. |
 | `bin/verify-installed-gem` | Run the installed `exe/proscenium --version` in a clean process and assert load isolation. |
-| `test/package_manager/` | Stage A proof, conformance fixtures, the CLI's own test helper and the hermetic registry. |
+| `test/package_manager/` | The fixture gems (`stage_a/`, kept from the Stage A proof after its scripts were removed), conformance fixtures, the CLI's own test helper and the hermetic registry. |
 | `.github/workflows/main.yml`, fixture manifests and locks | Clean install; pinned manager matrix; no registry boot dependency. |
 | Registry controller, routes and tests | Remove; convert valuable validation cases. |
 | README and guides | The README section, quickstart, gem author guide and migration recipe. |

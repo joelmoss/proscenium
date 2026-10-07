@@ -4,19 +4,22 @@ require 'test_helper'
 require 'json'
 require 'open3'
 require 'tmpdir'
-require_relative 'bundle'
-require_relative 'context'
+require 'proscenium/dependency_context'
+require_relative 'package_manager/stage_a/bundle'
 
-# The CI half of the Stage A london leg (#154): stage_a_hue_shape, which has hue's manifest shape,
-# installed by Bundler into a read-only bundle with no node_modules of its own, gets its
-# dependencies from a hand-written context through pnpm, and the seam routes its imports there.
+# What the engine builds from a real pnpm install of a gem with ui-gem's manifest shape (#154):
+# stage_a_hue_shape, installed by Bundler into a read-only bundle with no node_modules of its own,
+# gets its dependencies from its context through pnpm, and the engine routes its imports there. The
+# pnpm counterpart of bun_layout_test.rb, and the only build against a real pnpm tree on every
+# supported pnpm line: the package-manager job's pnpm 12 leg and the nightly canary run it, so a
+# pnpm release that lays files out where the engine cannot reach them fails here.
 #
-# Runs only with STAGE_A=1, because it needs pnpm and the network (npm and GitHub; the hermetic
-# registry is not built yet). The stage-a CI job sets it.
-class StageA::HueShapeTest < ActiveSupport::TestCase
+# Runs only with STAGE_A=1, because it needs pnpm and the network. The package-manager CI job sets
+# it.
+class Proscenium::PnpmLayoutTest < ActiveSupport::TestCase
   GEM = StageA::Bundle::GIT
   ENTRY = "node_modules/@rubygems/#{GEM}/index.js".freeze
-  DIR = Dir.mktmpdir('stage_a_hue_shape')
+  DIR = Dir.mktmpdir('pnpm_layout')
   Minitest.after_run do
     StageA::Bundle.writable!(DIR)
     FileUtils.rm_rf(DIR)
@@ -28,14 +31,24 @@ class StageA::HueShapeTest < ActiveSupport::TestCase
       roots = StageA::Bundle.install(DIR).transform_values { File.realpath(it) }
       app = File.join(DIR, 'app')
       File.write(File.join(app, 'package.json'), "#{JSON.pretty_generate(
-        'name' => 'stage-a-app', 'private' => true
+        'name' => 'pnpm-layout-app', 'private' => true
       )}\n")
-      StageA::Context.register_pnpm(app)
-      context = StageA::Context.write(app, GEM, roots.fetch(GEM))
+      File.write(File.join(app, 'pnpm-workspace.yaml'), "packages:\n  - .proscenium/packages/*\n")
+      context = write_context(app, roots.fetch(GEM))
       pnpm(app, 'install')
 
       { app: File.realpath(app), roots:, context: File.realpath(context) }
     end
+  end
+
+  # The gem's context, from its installed package.json through the shipped projection.
+  def self.write_context(app, root)
+    manifest = JSON.parse(File.read(File.join(root, 'package.json')))
+    dir = File.join(app, '.proscenium/packages', GEM)
+    FileUtils.mkdir_p(dir)
+    context = Proscenium::DependencyContext.project(GEM, manifest)
+    File.write(File.join(dir, 'package.json'), Proscenium::DependencyContext.to_json(context))
+    dir
   end
 
   def self.pnpm(app, *args)
@@ -62,37 +75,21 @@ class StageA::HueShapeTest < ActiveSupport::TestCase
     code.scan(%r{^// node_modules/\.pnpm/([^/]+)/node_modules/}).flatten.uniq.sort
   end
 
-  it 'installs from a gem root with no node_modules of its own' do
-    root = self.class.setup_app[:roots].fetch(GEM)
+  # C28: the gems are installed read-only, as a shared or system install is, with no node_modules
+  # of their own. The write is the control that read-only is real, not just a mode bit.
+  it 'installs from read-only gem roots with no node_modules of their own' do
+    roots = self.class.setup_app[:roots]
 
-    refute_path_exists File.join(root, 'node_modules')
-    refute File.writable?(root)
-  end
+    refute_path_exists File.join(roots.fetch(GEM), 'node_modules')
+    # An archive gem and the Git checkout this test builds alike.
+    [roots.fetch('stage_a_widget_a'), roots.fetch(GEM)].each do |root|
+      file = File.join(root, 'index.js')
 
-  it 'installs the context as a workspace, without a version and from no registry (C42)' do
-    lock = File.read(File.join(app, 'pnpm-lock.yaml'))
+      assert_raises(Errno::EACCES) { File.write(file, '//', mode: 'a') }
+      next if Gem.win_platform? # A read-only directory still accepts new files on Windows.
 
-    assert_includes lock, "  .proscenium/packages/#{GEM}:"
-    refute_includes lock, "@rubygems/#{GEM}@"
-    refute JSON.parse(File.read(File.join(context, 'package.json'))).key?('version')
-  end
-
-  it 'puts react and react-dom, declared as plain dependencies, in the context (C43)' do
-    %w[react react-dom escape-string-regexp].each do |name|
-      link = File.join(context, 'node_modules', name)
-
-      assert File.symlink?(link), "#{name} is not linked into the context"
-      assert_includes File.realpath(link), '/node_modules/.pnpm/'
+      assert_raises(Errno::EACCES) { File.write(File.join(root, 'new.js'), '') }
     end
-  end
-
-  it 'leaves every committed input byte-identical across frozen installs (C08)' do
-    files = %w[package.json pnpm-lock.yaml pnpm-workspace.yaml].map { File.join(app, it) } +
-            [File.join(context, 'package.json')]
-    before = files.map { File.binread(it) }
-    2.times { self.class.pnpm(app, 'install', '--frozen-lockfile') }
-
-    assert_equal(before, files.map { File.binread(it) })
   end
 
   it 'bundles the context dependencies, with one React' do
@@ -111,9 +108,9 @@ class StageA::HueShapeTest < ActiveSupport::TestCase
     refute_includes code, "/node_modules/@rubygems/#{GEM}/node_modules/"
   end
 
-  # The positive controls: without the seam the context is out of reach, so the same entry
+  # The positive controls: without the context map the context is out of reach, so the same entry
   # resolves none of its dependencies.
-  it 'reaches none of them without the seam' do
+  it 'reaches none of them without the context map' do
     assert_empty bundled_packages(build(seam: false, bundle: true))
     assert_match(/from "react"/, build(seam: false, bundle: false))
   end

@@ -29,12 +29,15 @@ end
 # `proscenium install` and `install --frozen`, end to end: the Stage A fixture gems, genuinely
 # installed by Bundler, an app on pnpm or Bun, and the real manager (#154, Gate B rows).
 #
-# Runs only with STAGE_A=1: it needs pnpm, Bun and the network. The stage-a CI job sets it.
+# Runs only with STAGE_A=1: it needs pnpm, Bun and the network. The package-manager CI job sets it.
 describe 'proscenium install' do
   LIB = File.expand_path('../../lib', __dir__)
   EXE = File.expand_path('../../exe/proscenium', __dir__)
   GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
+  # What the context of stage_a_hue_shape (ui-gem's manifest shape) must hold: React and react-dom
+  # as plain dependencies, and a `github:` one.
+  SHAPED_DEPENDENCIES = %w[react react-dom escape-string-regexp].freeze
   # C40: Proscenium's own share of an install. Calibrated on CI 2026-10-04 from the warm no-op
   # frozen install: Linux pnpm 741 ms / Bun 245, macOS 846 / 281, Windows 1385 / 609. The slowest
   # plus headroom. The cold and one-gem-changed installs are held to the same ceiling.
@@ -117,7 +120,7 @@ describe 'proscenium install' do
 
   %w[pnpm bun].each do |manager|
     describe manager do
-      it 'registers, writes every context, installs, and is then up to date' do
+      it 'installs every context, ui-gem\'s shape included, and is then up to date' do
         dir = app(manager)
         out, err, status = proscenium(dir, 'install', manager:)
 
@@ -131,6 +134,50 @@ describe 'proscenium install' do
         refute_path_exists File.join(dir, '.proscenium/installing')
         assert_includes err, 'PSM-E-REACT' # hue's shape: React as a dependency is a warning
 
+        # ui-gem's manifest shape, from stage_a_hue_shape: no `version`, React and react-dom as
+        # plain dependencies, and a `github:` dependency. Its context installs as a workspace, not
+        # from a registry (C42), and its dependencies land in the context (C43), from the store on
+        # pnpm.
+        shaped = File.join(dir, '.proscenium/packages/stage_a_hue_shape')
+        lockfile = File.join(dir, manager == 'bun' ? 'bun.lock' : 'pnpm-lock.yaml')
+
+        root = InstallFixture.roots.fetch('stage_a_hue_shape')
+        spec = Gem::Specification.load(File.join(root, 'stage_a_hue_shape.gemspec'))
+
+        # The fixture keeps ui-gem's traits: a Git source whose package.json is not in
+        # `spec.files`, and has no `version`; nor does the context generated from it.
+        assert_includes root, '/bundler/gems/'
+        refute_includes spec.files, 'package.json'
+        [File.join(root, 'package.json'), File.join(shaped, 'package.json')].each do |path|
+          manifest = JSON.parse(File.read(path))
+
+          refute manifest.key?('version'), path
+          # React and react-dom as plain dependencies, not peers or optional ones, and a `github:`.
+          assert_equal %w[react react-dom], manifest['dependencies'].keys.grep(/\Areact/).sort, path
+          assert(manifest['dependencies'].values.any? { it.start_with?('github:') },
+                 "no github: dependency in #{path}")
+        end
+        lock = File.read(lockfile)
+
+        if manager == 'pnpm'
+          assert_includes lock, '  .proscenium/packages/stage_a_hue_shape:'
+          refute_includes lock, '@rubygems/stage_a_hue_shape@'
+        else
+          assert_includes lock, '"@rubygems/stage_a_hue_shape@workspace:.proscenium/packages/' \
+                                'stage_a_hue_shape"'
+        end
+        SHAPED_DEPENDENCIES.each do |name|
+          link = File.join(shaped, 'node_modules', name)
+
+          assert_path_exists File.join(link, 'package.json'), "#{name} is not in the context"
+          assert_includes File.realpath(link), '/node_modules/.pnpm/' if manager == 'pnpm'
+        end
+        WIDGETS.each do |gem|
+          peers = JSON.parse(File.read(context(dir, gem)))['peerDependencies']
+
+          assert_equal({ 'react' => '^18.3.1' }, peers, gem)
+        end
+
         bytes = GEMS.to_h { [it, File.binread(context(dir, it))] }
         out, err, status = proscenium(dir, 'install', manager:)
 
@@ -138,10 +185,19 @@ describe 'proscenium install' do
         refute_includes out, '@@'
         assert_equal(bytes, GEMS.to_h { [it, File.binread(context(dir, it))] })
 
-        out, err, status = proscenium(dir, 'install', '--frozen', manager:)
+        # C08: repeat frozen installs leave every committed input byte for byte as it was.
+        committed = [File.join(dir, 'package.json'), lockfile,
+                     *Dir[File.join(dir, '.proscenium/packages/*/package.json')]]
+        committed << File.join(dir, 'pnpm-workspace.yaml') if manager == 'pnpm'
+        before = committed.to_h { [it, File.binread(it)] }
+        2.times do
+          out, err, status = proscenium(dir, 'install', '--frozen', manager:)
 
-        assert_predicate status, :success?, err
-        assert_includes out, "Everything is up to date for #{GEMS.size} gems."
+          assert_predicate status, :success?, err
+          assert_includes out, "Everything is up to date for #{GEMS.size} gems."
+        end
+
+        assert_equal(before, committed.to_h { [it, File.binread(it)] })
 
         out, err, status = proscenium(dir, 'inspect', '--json')
         report = JSON.parse(out)

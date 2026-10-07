@@ -4,17 +4,18 @@ require 'test_helper'
 require 'json'
 require 'open3'
 require 'tmpdir'
-require_relative 'bundle'
-require_relative 'context'
+require 'proscenium/dependency_context'
+require_relative 'package_manager/stage_a/bundle'
 
-# The CI half of the Stage A codaset leg (#154): what Bun does with registered contexts, from the
-# fixture gems. stage_a_widget_a needs ms 2.0.0 and stage_a_widget_b ms 2.1.3; the app declares
-# ms 2.1.3 and React, which both widgets take as a peer.
+# What Bun does with registered contexts, built through the engine (#154): the only test that
+# builds against a real Bun-installed tree, under both linkers. stage_a_widget_a needs ms 2.0.0 and
+# stage_a_widget_b ms 2.1.3; the app declares ms 2.1.3 and React, which both widgets take as a
+# peer. Contexts are written with the shipped projection, as `proscenium install` writes them.
 #
-# Runs only with STAGE_A=1: it needs Bun and the network. The stage-a CI job sets it.
-class StageA::BunTest < ActiveSupport::TestCase
+# Runs only with STAGE_A=1: it needs Bun and the network. The package-manager CI job sets it.
+class Proscenium::BunLayoutTest < ActiveSupport::TestCase
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
-  DIR = Dir.mktmpdir('stage_a_bun')
+  DIR = Dir.mktmpdir('bun_layout')
   Minitest.after_run do
     StageA::Bundle.writable!(DIR)
     FileUtils.rm_rf(DIR)
@@ -29,15 +30,25 @@ class StageA::BunTest < ActiveSupport::TestCase
       dir = File.join(DIR, linker)
       FileUtils.mkdir_p(dir)
       File.write(File.join(dir, 'package.json'), "#{JSON.pretty_generate(
-        'name' => 'stage-a-app', 'private' => true, 'workspaces' => ['.proscenium/packages/*'],
+        'name' => 'bun-layout-app', 'private' => true, 'workspaces' => ['.proscenium/packages/*'],
         'trustedDependencies' => [],
         'dependencies' => { 'ms' => '2.1.3', 'react' => '18.3.1', 'react-dom' => '18.3.1' }
       )}\n")
       File.write(File.join(dir, 'bunfig.toml'), "[install]\nlinker = \"#{linker}\"\n")
-      WIDGETS.each { StageA::Context.write(dir, it, roots.fetch(it)) }
+      WIDGETS.each { write_context(dir, it) }
       bun(dir, 'install')
       File.realpath(dir)
     end
+  end
+
+  # The gem's context, from its installed package.json through the shipped projection.
+  def self.write_context(app, gem)
+    manifest = JSON.parse(File.read(File.join(roots.fetch(gem), 'package.json')))
+    path = File.join(app, '.proscenium/packages', gem, 'package.json')
+    FileUtils.mkdir_p(File.dirname(path))
+    File.write(path, Proscenium::DependencyContext.to_json(
+                       Proscenium::DependencyContext.project(gem, manifest)
+                     ))
   end
 
   def self.bun(dir, *args)

@@ -160,10 +160,11 @@ jobs:
       - run: bin/test
         shell: bash
 
-  # #154's end-to-end suites against real managers: the Stage A legs, `proscenium install` and the
-  # adopted app. Stage D qualification runs them on every host the gem ships for. They reach npm
-  # and GitHub until the hermetic registry exists. See test/package_manager/stage_a/README.md.
-  stage-a:
+  # #154's end-to-end suites against real managers: their native behaviour the CLI relies on,
+  # `proscenium install` and the adopted app. Stage D qualification runs them on every host the gem
+  # ships for. They reach npm and GitHub until the hermetic registry exists. The fixture gems are
+  # in test/package_manager/stage_a/ (see its README).
+  package-manager:
     # A hang must fail the run, not hold a runner for the default six hours. The Windows leg runs
     # the install suite twice, the second time as a standard user.
     timeout-minutes: 40
@@ -239,11 +240,11 @@ jobs:
         run: go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium.dll main.go
       # Verbose, so the log names each test as it runs: a hang otherwise shows only as dots.
       - if: matrix.ruby == 'default' && matrix.pnpm_line == 0
-        run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/ test/proxy_rule_test.rb
+        run: bin/test -v test/cli/git_scripts_test.rb test/bun_layout_test.rb test/pnpm_layout_test.rb test/cli/install_test.rb test/cli/spec_kinds_test.rb test/adopted/ test/proxy_rule_test.rb
         shell: bash
       # fixtures/adopted is a committed app that pins pnpm 11 itself, so the pnpm 12 leg skips it.
       - if: matrix.pnpm_line == 1
-        run: bin/test -v test/package_manager/stage_a/ test/cli/install_test.rb test/cli/spec_kinds_test.rb
+        run: bin/test -v test/cli/git_scripts_test.rb test/bun_layout_test.rb test/pnpm_layout_test.rb test/cli/install_test.rb test/cli/spec_kinds_test.rb
         shell: bash
       - if: matrix.ruby == '4.0'
         run: bin/test -v

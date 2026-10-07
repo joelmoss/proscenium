@@ -1,28 +1,29 @@
 # frozen_string_literal: true
 
-require 'test_helper'
+require_relative 'helper'
+require 'fileutils'
 require 'json'
 require 'open3'
 require 'tmpdir'
 
-module StageA; end
-
 # A gem-introduced Git dependency with install or prepare scripts must not run them without the
-# app's approval, on pnpm or Bun (#154 Stage A, C55). The dependency comes from a local bare
-# repository over `git+file://`, so this needs no network; its scripts write marker files.
+# app's approval, on pnpm or Bun (#154, C55): the native behaviour the trusted-source rule and the
+# `github:` allow-list rely on, checked against the managers themselves, and by the nightly canary
+# against each line's newest patch. The dependency comes from a local bare repository over
+# `git+file://`, so this needs no network; its scripts write marker files.
 #
-# Runs only with STAGE_A=1, because it needs pnpm and Bun. The stage-a CI job sets it.
-class StageA::GitScriptsTest < ActiveSupport::TestCase
-  DIR = Dir.mktmpdir('stage_a_git_scripts')
-  Minitest.after_run { FileUtils.rm_rf(DIR) }
+# Runs only with STAGE_A=1, because it needs pnpm and Bun. The package-manager CI job sets it.
+describe 'a gem-introduced Git dependency' do
+  GIT_SCRIPTS_DIR = Dir.mktmpdir('cli_git_scripts')
+  Minitest.after_run { FileUtils.rm_rf(GIT_SCRIPTS_DIR) }
 
   before { skip 'set STAGE_A=1 to run (needs pnpm and Bun)' unless ENV['STAGE_A'] }
 
-  def markers = File.join(DIR, 'markers')
+  def markers = File.join(GIT_SCRIPTS_DIR, 'markers')
 
   def git(dir, *args)
-    out, status = Open3.capture2e('git', '-c', 'user.name=Stage A', '-c',
-                                  'user.email=stage-a@example.com', *args, chdir: dir)
+    out, status = Open3.capture2e('git', '-c', 'user.name=Proscenium', '-c',
+                                  'user.email=proscenium@example.com', *args, chdir: dir)
     raise "git #{args.join(' ')} failed:\n#{out}" unless status.success?
 
     out
@@ -30,7 +31,7 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
 
   # A bare repository holding a package whose `scripts` each write a marker, and the commit.
   def repository(name, scripts)
-    src = File.join(DIR, "#{name}-src")
+    src = File.join(GIT_SCRIPTS_DIR, "#{name}-src")
     FileUtils.mkdir_p([src, markers])
     write = ->(hook) { "require('fs').writeFileSync('#{markers}/#{name}-#{hook}', '')" }
     package = { 'name' => name, 'version' => '1.0.0', 'main' => 'index.js',
@@ -40,8 +41,8 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
     git(src, 'init', '-q')
     git(src, 'add', '-A')
     git(src, 'commit', '-q', '-m', name)
-    bare = File.join(DIR, "#{name}.git")
-    git(DIR, 'clone', '-q', '--bare', src, bare)
+    bare = File.join(GIT_SCRIPTS_DIR, "#{name}.git")
+    git(GIT_SCRIPTS_DIR, 'clone', '-q', '--bare', src, bare)
     # `file:///D:/...` on Windows: after `file://` comes a host, so a drive letter needs a slash.
     "git+file://#{'/' unless bare.start_with?('/')}#{bare}##{git(src, 'rev-parse', 'HEAD').strip}"
   end
@@ -50,7 +51,7 @@ class StageA::GitScriptsTest < ActiveSupport::TestCase
   # whether the install succeeded.
   # `approve` names the package in the manager's allowlist, as the positive control.
   def install(manager, name, spec, approve: false)
-    app = File.join(DIR, "#{manager}-#{name}#{'-approved' if approve}")
+    app = File.join(GIT_SCRIPTS_DIR, "#{manager}-#{name}#{'-approved' if approve}")
     FileUtils.mkdir_p(File.join(app, '.proscenium/packages/g'))
     File.write(File.join(app, '.proscenium/packages/g/package.json'),
                JSON.generate('name' => '@rubygems/g', 'private' => true,
