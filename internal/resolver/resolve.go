@@ -97,8 +97,19 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		mappedGem, mappedContext, mapped = utils.GemContext(importer, cfg)
 	}
 
+	// A bare import from a package the app installed resolves beside it (see utils.IsAppPackageFile).
+	// From the app root, a package's CSS mixin import picked up the app's copy, which may be a
+	// different version or none.
+	fromPackage := !mapped && !isGem && utils.IsBareModule(filePath) &&
+		utils.IsAppPackageFile(importer, cfg)
+
 	if mapped {
 		rootPath = mappedContext
+	} else if fromPackage {
+		rootPath = path.Dir(importer)
+		if real, err := filepath.EvalSymlinks(rootPath); err == nil {
+			rootPath = filepath.ToSlash(real)
+		}
 	} else if isGem {
 		rootPath = gem.Root
 
@@ -201,6 +212,17 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		}
 
 		utils.DebugContextRoute(cfg, mappedGem, filePath, absPath)
+
+		return returnResolve(urlPath, absPath, nil, cfg)
+	}
+
+	if fromPackage {
+		absPath := utils.ContextRealPath(utils.JoinFsPath(rootPath, key), cfg)
+
+		urlPath, ok := utils.UrlPathFromFsPath(absPath, cfg)
+		if !ok {
+			return returnResolve("", "", fmt.Errorf("%q from %q resolved outside the app root and every bundled gem", filePath, path.Base(importer)), cfg)
+		}
 
 		return returnResolve(urlPath, absPath, nil, cfg)
 	}

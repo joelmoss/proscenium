@@ -141,7 +141,7 @@ func Css(cfg *types.ConfigT) esbuild.Plugin {
 					// without the ResolveDir above (esbuild only defaults it for the file namespace),
 					// every @import in gem CSS arrived with an empty ResolveDir and nil plugin data.
 					if args.Namespace == "rubygems" {
-						result.PluginData = types.PluginData{GemPath: pluginData.GemPath}
+						result.PluginData = types.PluginData{GemPath: pluginData.GemPath, RealPath: pluginData.RealPath}
 					}
 
 					return result, nil

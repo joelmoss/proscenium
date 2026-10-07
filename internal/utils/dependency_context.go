@@ -15,24 +15,36 @@ import (
 // app that has adopted them.
 
 // The dependency context of the gem owning `fsPath`, when the map has that gem. `fsPath` is a
-// file in the gem, or its root.
-//
-// A file under `node_modules/` is a package's, never the gem's, even inside the gem's root: a gem
-// developed in its own repository is in its own bundle, so its root is the app root and holds the
-// app's node_modules. That package's bare imports resolve from where it was installed.
+// file in the gem, or its root. A package the app installed is not the gem's, even inside the
+// gem's root (see IsAppPackageFile).
 func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir string, ok bool) {
 	if len(cfg.DependencyContexts) == 0 || fsPath == "" {
 		return "", "", false
 	}
 
 	ref, found := GemFromFsPath(fsPath, cfg)
-	if !found || strings.Contains(ref.Suffix, "/node_modules/") {
+	if !found || IsAppPackageFile(fsPath, cfg) {
 		return "", "", false
 	}
 
 	contextDir, ok = cfg.DependencyContexts[ref.Name]
 
 	return ref.Name, contextDir, ok
+}
+
+// Whether `fsPath` is a file of a package installed under the app root: below a `node_modules/`
+// there, including a context's under `.proscenium/packages/`. A gem developed in its own
+// repository is in its own bundle (`gemspec` in the Gemfile), so its root is the app root and
+// holds these. Their bare imports resolve beside them, as node resolution does: under pnpm and Bun
+// a package's own dependencies are installed next to its real path, and walking up from there
+// still reaches the app's node_modules for its peers.
+//
+// Only under the app root. A gem installed elsewhere that ships a package in its own node_modules
+// keeps the fallbacks that hand it the app's peers, which walking up from the gem never reaches.
+func IsAppPackageFile(fsPath string, cfg *types.ConfigT) bool {
+	rel, ok := strings.CutPrefix(fsPath, cfg.RootPath+"/")
+
+	return ok && strings.Contains("/"+rel, "/node_modules/")
 }
 
 // Logs, with cfg.Debug, a bare import resolved from a gem's context: which gem, what it imported and

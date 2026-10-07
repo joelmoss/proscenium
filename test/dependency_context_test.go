@@ -404,24 +404,102 @@ var _ = Describe("Gem dependency contexts", func() {
 	// A gem developed in its own repository is in its own bundle (`gemspec` in the Gemfile), so its
 	// root is the app root, and node_modules sits inside it. A package installed there is not the
 	// gem's code: its own bare imports resolve from where the package manager put them, beside it in
-	// the store, not from the gem's context, which declares only the gem's direct dependencies.
-	It("resolves a context package's own dependencies when the gem's root is the app root", func() {
-		pkg("node_modules/.pnpm/trans@1.0.0/node_modules/trans", "trans", "1.0.0", `export default "trans 1.0.0";`)
-		pkg("node_modules/.pnpm/owner@1.0.0/node_modules/owner", "owner", "1.0.0",
-			"export { default } from 'trans'\n")
-		link("../../trans@1.0.0/node_modules/trans", "node_modules/.pnpm/owner@1.0.0/node_modules/trans")
-		link(".pnpm/owner@1.0.0/node_modules/owner", "node_modules/owner")
-		link("../../../../node_modules/.pnpm/owner@1.0.0/node_modules/owner",
-			".proscenium/packages/"+gem+"/node_modules/owner")
-		write("lib/own.js", "export { default } from 'owner'\n")
-		testConfig.RubyGems = map[string]string{gem: root}
+	// the store - not from the gem's context, which declares only the gem's direct dependencies, and
+	// not from the app root, which here holds a different version of the same package.
+	Describe("a package installed inside a gem whose root is the app root", func() {
+		const owner = "node_modules/.pnpm/owner@1.0.0/node_modules/owner"
+		// The URL's prefix is the gem's, as for any file under its root; the store path names the version.
+		const trans = "/node_modules/.pnpm/trans@1.0.0/node_modules/trans/index.js"
 
-		okWith, with := build("lib/own.js")
-		testConfig.DependencyContexts = nil
-		okWithout, without := build("lib/own.js")
+		BeforeEach(func() {
+			pkg("node_modules/.pnpm/trans@1.0.0/node_modules/trans", "trans", "1.0.0", `export default "trans 1.0.0";`)
+			write("node_modules/.pnpm/trans@1.0.0/node_modules/trans/mixin.css", "@define-mixin pad { padding: 1px; }\n")
+			pkg("node_modules/trans", "trans", "2.0.0", `export default "trans 2.0.0";`)
+			write("node_modules/trans/mixin.css", "@define-mixin pad { padding: 2px; }\n")
+			pkg(owner, "owner", "1.0.0", "export { default } from 'trans'\n")
+			write(owner+"/mixins.css", ".box { @mixin pad from url(\"trans/mixin.css\"); }\n")
+			link("../../trans@1.0.0/node_modules/trans", "node_modules/.pnpm/owner@1.0.0/node_modules/trans")
+			link(".pnpm/owner@1.0.0/node_modules/owner", "node_modules/owner")
+			link("../../../../node_modules/.pnpm/owner@1.0.0/node_modules/owner",
+				".proscenium/packages/"+gem+"/node_modules/owner")
+			write("lib/own.js", "export { default } from 'owner'\n")
+			testConfig.RubyGems = map[string]string{gem: root}
+		})
 
-		Expect(okWithout).To(BeTrue(), without)
-		Expect(okWith).To(BeTrue(), with)
-		Expect(with).To(Equal(without))
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("bundles the version installed beside it (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+
+				ok, code := build("lib/own.js")
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring("trans 1.0.0"))
+				Expect(code).NotTo(ContainSubstring("trans 2.0.0"))
+				Expect(code).NotTo(ContainSubstring(`from "trans"`))
+			})
+		}
+
+		It("serves the version installed beside it when the package is requested by its gem URL", func() {
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(trans + `"`))
+		})
+
+		It("imports the version's stylesheet when the package's CSS is requested by its gem URL", func() {
+			write("node_modules/.pnpm/trans@1.0.0/node_modules/trans/style.css", ".trans-one { color: red; }\n")
+			write("node_modules/trans/style.css", ".trans-two { color: blue; }\n")
+			write(owner+"/style.css", "@import 'trans/style.css';\n")
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/style.css")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(`.pnpm/trans@1.0.0/node_modules/trans/style.css"`))
+			Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/style.css"`))
+		})
+
+		It("resolves the version installed beside it outside a build", func() {
+			urlPath, absPath, err := r.Resolve("trans", root+"/"+owner+"/index.js", testConfig)
+
+			Expect(err).NotTo(HaveOccurred())
+			Expect(urlPath).To(HaveSuffix(trans))
+			Expect(absPath).To(Equal(root + trans))
+		})
+
+		// The rule is for packages under the app root. A gem installed elsewhere that ships a package
+		// in its own node_modules still hands that package the app's peers, which walking up from
+		// the gem never reaches.
+		It("still gives a package shipped inside a gem outside the app root the app's peer", func() {
+			ext := root + "_ext"
+			for file, body := range map[string]string{
+				"index.js":                           "export { default } from './node_modules/peerless/index.js'\n",
+				"node_modules/peerless/package.json": `{"name":"peerless","version":"1.0.0","main":"index.js"}`,
+				"node_modules/peerless/index.js":     "export { default } from 'trans'\n",
+			} {
+				Expect(os.MkdirAll(filepath.Dir(ext+"/"+file), 0o755)).To(Succeed())
+				Expect(os.WriteFile(ext+"/"+file, []byte(body), 0o644)).To(Succeed())
+			}
+			DeferCleanup(os.RemoveAll, ext)
+			testConfig.RubyGems = map[string]string{gem: root, "ext": ext}
+			testConfig.DependencyContexts = nil
+
+			ok, code := build("node_modules/@rubygems/ext/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring("trans 2.0.0"))
+		})
+
+		It("takes its CSS mixin from the version installed beside it", func() {
+			ok, code := build(owner + "/mixins.css")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring("padding: 1px"))
+			Expect(code).NotTo(ContainSubstring("padding: 2px"))
+		})
 	})
 })
