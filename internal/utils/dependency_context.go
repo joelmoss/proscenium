@@ -94,23 +94,13 @@ func ContextRealPath(fsPath string, cfg *types.ConfigT) string {
 		return real
 	}
 
-	if spelled := SpellThroughRoot(real, cfg); spelled != real {
-		return spelled
-	}
-
-	return appSpelling(fsPath, real, cfg)
-}
-
-// A real path under the app root's real path, spelled back through the root the app was given, so
-// that it has a URL. The root itself may be a link, as a Capistrano-style `current` is, and on
-// Windows a real path also expands 8.3 short names and takes the on-disk case. Otherwise `real`
-// unchanged.
-func SpellThroughRoot(real string, cfg *types.ConfigT) string {
+	// The root itself may be a link, as a Capistrano-style `current` is: the real path is then
+	// under the release directory, and is spelled back through the root the app was given.
 	if root := realRoot(cfg.RootPath); root != "" && strings.HasPrefix(real, root+"/") {
 		return strings.TrimSuffix(cfg.RootPath, "/") + real[len(root):]
 	}
 
-	return real
+	return appSpelling(fsPath, real, cfg)
 }
 
 // A context's link to a file outside the app root, as pnpm's global virtual store makes, spelled

@@ -97,21 +97,8 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		mappedGem, mappedContext, mapped = utils.GemContext(importer, cfg)
 	}
 
-	// A bare import from any package the app installed resolves beside it (see
-	// utils.IsAppPackageFile). From the app root, a package's CSS mixin import picked up the app's
-	// copy, which may be a different version or none. GemContext never maps such an importer, so
-	// this and `mapped` are exclusive.
-	fromPackage := !isGem && utils.IsBareModule(filePath) && utils.IsAppPackageFile(importer, cfg)
-
 	if mapped {
 		rootPath = mappedContext
-	} else if fromPackage {
-		// The package's real directory, where pnpm and Bun put its dependencies beside it, spelled
-		// through the app root so what resolves there has a URL with or without contexts.
-		rootPath = path.Dir(importer)
-		if real, err := filepath.EvalSymlinks(rootPath); err == nil {
-			rootPath = utils.SpellThroughRoot(filepath.ToSlash(real), cfg)
-		}
 	} else if isGem {
 		rootPath = gem.Root
 
@@ -205,22 +192,15 @@ func resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath stri
 		key = k
 	}
 
-	// A context or a package directory resolves to a real path, as the build plugins' results do,
-	// so one file has one URL. rootPath is the context or the package directory here.
-	if mapped || fromPackage {
-		absPath := utils.ContextRealPath(utils.JoinFsPath(rootPath, key), cfg)
+	if mapped {
+		absPath := utils.ContextRealPath(utils.JoinFsPath(mappedContext, key), cfg)
 
 		urlPath, ok := utils.UrlPathFromFsPath(absPath, cfg)
-		if !ok && mapped {
+		if !ok {
 			return returnResolve("", "", fmt.Errorf("%q from gem %q resolved outside the app root", filePath, mappedGem), cfg)
 		}
-		if !ok {
-			return returnResolve("", "", fmt.Errorf("%q from %q resolved outside the app root and every bundled gem", filePath, path.Base(importer)), cfg)
-		}
 
-		if mapped {
-			utils.DebugContextRoute(cfg, mappedGem, filePath, absPath)
-		}
+		utils.DebugContextRoute(cfg, mappedGem, filePath, absPath)
 
 		return returnResolve(urlPath, absPath, nil, cfg)
 	}

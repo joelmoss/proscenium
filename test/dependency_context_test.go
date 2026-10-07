@@ -408,16 +408,11 @@ var _ = Describe("Gem dependency contexts", func() {
 	// not from the app root, which here holds a different version of the same package.
 	Describe("a package installed inside a gem whose root is the app root", func() {
 		const owner = "node_modules/.pnpm/owner@1.0.0/node_modules/owner"
-		// The URL's prefix is the gem's, as for any file under its root; the store path names the version.
-		const trans = "/node_modules/.pnpm/trans@1.0.0/node_modules/trans/index.js"
 
 		BeforeEach(func() {
 			pkg("node_modules/.pnpm/trans@1.0.0/node_modules/trans", "trans", "1.0.0", `export default "trans 1.0.0";`)
-			write("node_modules/.pnpm/trans@1.0.0/node_modules/trans/mixin.css", "@define-mixin pad { padding: 1px; }\n")
 			pkg("node_modules/trans", "trans", "2.0.0", `export default "trans 2.0.0";`)
-			write("node_modules/trans/mixin.css", "@define-mixin pad { padding: 2px; }\n")
 			pkg(owner, "owner", "1.0.0", "export { default } from 'trans'\n")
-			write(owner+"/mixins.css", ".box { @mixin pad from url(\"trans/mixin.css\"); }\n")
 			link("../../trans@1.0.0/node_modules/trans", "node_modules/.pnpm/owner@1.0.0/node_modules/trans")
 			link(".pnpm/owner@1.0.0/node_modules/owner", "node_modules/owner")
 			link("../../../../node_modules/.pnpm/owner@1.0.0/node_modules/owner",
@@ -443,7 +438,7 @@ var _ = Describe("Gem dependency contexts", func() {
 
 		// Requested by its gem URL, the package is loaded in the rubygems namespace, whose loaders hand
 		// its imports the file's real path. With the map, that path decides it is not the gem's; without
-		// it, the step-1 lookup beside the file is the one that answers.
+		// it, bundless's first lookup, from the directory beside the file, is the one that answers.
 		for _, withMap := range []bool{true, false} {
 			It(fmt.Sprintf("serves the version installed beside it by its gem URL (map: %v)", withMap), func() {
 				if !withMap {
@@ -475,54 +470,6 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/style.css"`))
 		})
 
-		It("resolves the version installed beside it outside a build", func() {
-			urlPath, absPath, err := r.Resolve("trans", root+"/"+owner+"/index.js", testConfig)
-
-			Expect(err).NotTo(HaveOccurred())
-			Expect(urlPath).To(HaveSuffix(trans))
-			Expect(absPath).To(Equal(root + trans))
-		})
-
-		// A package linked into the app from a store outside the app root, such as pnpm's global virtual
-		// store: what it installed beside itself has no URL. Named, rather than the app root's copy.
-		It("names the package when what is installed beside it is outside the app root", func() {
-			store := root + "_store/owner@1.0.0/node_modules"
-			for file, body := range map[string]string{
-				"owner/package.json": `{"name":"owner","version":"1.0.0","main":"index.js"}`,
-				"owner/index.js":     "export { default } from 'trans'\n",
-				"trans/package.json": `{"name":"trans","version":"1.0.0","main":"index.js"}`,
-				"trans/index.js":     `export default "trans 1.0.0";`,
-			} {
-				Expect(os.MkdirAll(filepath.Dir(store+"/"+file), 0o755)).To(Succeed())
-				Expect(os.WriteFile(store+"/"+file, []byte(body), 0o644)).To(Succeed())
-			}
-			DeferCleanup(os.RemoveAll, root+"_store")
-			link(store+"/owner", "node_modules/linked-owner")
-
-			_, _, err := r.Resolve("trans", root+"/node_modules/linked-owner/index.js", testConfig)
-
-			Expect(err).To(MatchError(`"trans" from "index.js" resolved outside the app root and every bundled gem`))
-		})
-
-		// Without contexts nothing else spells a real path back through the app root, so a root that
-		// is itself a link (a Capistrano-style `current`, or on Windows a short or differently cased
-		// spelling) must not turn the package directory's real path into one with no URL.
-		It("resolves the version installed beside it when the app root is a link and there is no map", func() {
-			current := root + "_current"
-			Expect(os.Symlink(root, current)).To(Succeed())
-			DeferCleanup(os.Remove, current)
-			testConfig.RootPath = current
-			testConfig.RubyGems = map[string]string{gem: current}
-			testConfig.DependencyContexts = nil
-
-			urlPath, absPath, err := r.Resolve("trans", current+"/"+owner+"/index.js", testConfig)
-
-			// Without the map it keeps owner's link to the store copy, under the root's own spelling.
-			Expect(err).NotTo(HaveOccurred())
-			Expect(urlPath).To(MatchRegexp(`\.pnpm/(trans|owner)@1\.0\.0/node_modules/trans/index\.js$`))
-			Expect(absPath).To(HavePrefix(current + "/node_modules/.pnpm/"))
-		})
-
 		// Resolving beside a package still walks up to the app's node_modules, so a peer only the
 		// app installed - React here - is found as before.
 		for _, withMap := range []bool{true, false} {
@@ -536,12 +483,9 @@ var _ = Describe("Gem dependency contexts", func() {
 				link(".pnpm/peerful@1.0.0/node_modules/peerful", "node_modules/peerful")
 
 				ok, code := build("lib/peer.js")
-				_, absPath, err := r.Resolve("react", root+"/"+peerful+"/index.js", testConfig)
 
 				Expect(ok).To(BeTrue(), code)
 				Expect(code).To(ContainSubstring(reactBody))
-				Expect(err).NotTo(HaveOccurred())
-				Expect(absPath).To(HaveSuffix("/node_modules/react/index.js"))
 			})
 		}
 
@@ -568,23 +512,6 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(code).To(ContainSubstring("trans 2.0.0"))
 		})
 
-		It("takes its CSS mixin from the version installed beside it by its gem URL", func() {
-			testConfig.Bundle = false
-
-			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/mixins.css")
-
-			Expect(ok).To(BeTrue(), code)
-			Expect(code).To(ContainSubstring("padding: 1px"))
-			Expect(code).NotTo(ContainSubstring("padding: 2px"))
-		})
-
-		It("takes its CSS mixin from the version installed beside it", func() {
-			ok, code := build(owner + "/mixins.css")
-
-			Expect(ok).To(BeTrue(), code)
-			Expect(code).To(ContainSubstring("padding: 1px"))
-			Expect(code).NotTo(ContainSubstring("padding: 2px"))
-		})
 	})
 
 	DescribeTable("which files are packages the app installed",
