@@ -490,6 +490,30 @@ var _ = Describe("Gem dependency contexts", func() {
 			})
 		}
 
+		// A package linked into node_modules from outside the app root (`link:`, a workspace, `npm
+		// link`) keeps its link spelling when unbundling, which preserves symlinks, but resolves from
+		// its real directory, which never reaches the app's node_modules. It keeps the gem's lookups,
+		// as before, so a peer such as React still resolves.
+		It("still resolves a peer for a package linked in from outside the app root", func() {
+			linked := root + "_linked"
+			for file, body := range map[string]string{
+				"package.json": `{"name":"linked","version":"1.0.0","main":"index.js"}`,
+				"index.js":     "export { marker } from 'react'\n",
+			} {
+				Expect(os.MkdirAll(linked, 0o755)).To(Succeed())
+				Expect(os.WriteFile(linked+"/"+file, []byte(body), 0o644)).To(Succeed())
+			}
+			DeferCleanup(os.RemoveAll, linked)
+			link(linked, "node_modules/linked")
+			testConfig.Bundle = false
+
+			ok, code := build("node_modules/linked/index.js")
+
+			Expect(ok).To(BeTrue(), code)
+			Expect(code).To(ContainSubstring(`react/index.js"`))
+			Expect(code).NotTo(ContainSubstring(`from "react"`))
+		})
+
 		// The rule is for packages under the app root. A gem installed elsewhere that ships a package
 		// in its own node_modules still hands that package the app's peers, which walking up from
 		// the gem never reaches.

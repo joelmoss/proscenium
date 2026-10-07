@@ -42,13 +42,27 @@ func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir strin
 // Only under the app root. A gem installed elsewhere that ships a package in its own node_modules
 // keeps the fallbacks that hand it the app's peers, which walking up from the gem never reaches.
 //
+// A package linked into node_modules from outside the app root (`link:`, a workspace, `npm
+// link`) is not one: unbundling preserves symlinks, so its files keep the link's spelling under
+// the app root, but its imports resolve from its real directory, which never reaches the app's
+// node_modules. It keeps the gem's lookups, as it did before.
+//
 // The root is normalised as UrlPathFromFsPath normalises it, and nothing is concatenated: this
 // runs for every import a build resolves. An unset root cleans to ".", which no absolute path
-// starts with.
+// starts with. Only a path that passes that check pays for evaluating its links.
 func IsAppPackageFile(fsPath string, cfg *types.ConfigT) bool {
 	rel, ok := strings.CutPrefix(fsPath, strings.TrimSuffix(cleanFsPath(cfg.RootPath), "/"))
+	if !ok || !strings.HasPrefix(rel, "/") || !strings.Contains(rel, "/node_modules/") {
+		return false
+	}
 
-	return ok && strings.HasPrefix(rel, "/") && strings.Contains(rel, "/node_modules/")
+	real, err := filepath.EvalSymlinks(fsPath)
+	if err != nil {
+		return true
+	}
+	root := realRoot(cfg.RootPath)
+
+	return root == "" || strings.HasPrefix(filepath.ToSlash(real), root+"/")
 }
 
 // Logs, with cfg.Debug, a bare import resolved from a gem's context: which gem, what it imported and
