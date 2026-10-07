@@ -437,8 +437,9 @@ var _ = Describe("Gem dependency contexts", func() {
 		}
 
 		// Requested by its gem URL, the package is loaded in the rubygems namespace, whose loaders hand
-		// its imports the file's real path. With the map, that path decides it is not the gem's; without
-		// it, bundless's first lookup, from the directory beside the file, is the one that answers.
+		// its imports the file's real path. With the map, that path decides it is not the gem's. Without
+		// it this was never broken - bundless's first lookup, beside the file, answers - so that case is
+		// the control.
 		for _, withMap := range []bool{true, false} {
 			It(fmt.Sprintf("serves the version installed beside it by its gem URL (map: %v)", withMap), func() {
 				if !withMap {
@@ -468,6 +469,41 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(ok).To(BeTrue(), code)
 			Expect(code).To(ContainSubstring(`.pnpm/trans@1.0.0/node_modules/trans/style.css"`))
 			Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/style.css"`))
+		})
+
+		// A file the dependency's `exports` leaves out is taken from under node_modules when resolution
+		// refuses it. For a package the app installed, that is the copy installed beside the package,
+		// not the app root's, which here is another version with the same files.
+		Describe("a file its dependency's exports leave out", func() {
+			BeforeEach(func() {
+				for dir, version := range map[string]string{
+					"node_modules/.pnpm/trans@1.0.0/node_modules/trans": "1.0.0",
+					"node_modules/trans": "2.0.0",
+				} {
+					write(dir+"/package.json", `{"name":"trans","version":"`+version+`","exports":{".":"./index.js"}}`)
+					write(dir+"/private.js", `export default "trans `+version+` private";`)
+					write(dir+"/look.module.css", ".v"+strings.ReplaceAll(version, ".", "")+" { color: red; }\n")
+				}
+				write(owner+"/deep.js", "export { default } from 'trans/private.js'\n")
+				write(owner+"/styled.js", "import styles from 'trans/look.module.css'\nexport default styles\n")
+				testConfig.Bundle = false
+			})
+
+			It("serves the copy installed beside the package by its gem URL", func() {
+				ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/deep.js")
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring(`.pnpm/trans@1.0.0/node_modules/trans/private.js"`))
+				Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/private.js"`))
+			})
+
+			It("loads the CSS module installed beside the package by its gem URL", func() {
+				ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/styled.js")
+
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(ContainSubstring("v100"))
+				Expect(code).NotTo(ContainSubstring("v200"))
+			})
 		})
 
 		// Resolving beside a package still walks up to the app's node_modules, so a peer only the
