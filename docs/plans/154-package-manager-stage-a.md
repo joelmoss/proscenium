@@ -11,7 +11,8 @@ The proof's scripts and pilot-only tests were removed once Stages B to E shipped
 moved to `test/cli/`; `bun_test.rb` and `hue_shape_test.rb` became `test/bun_layout_test.rb` and
 `test/pnpm_layout_test.rb` on the shipped context projection; and the ui-gem-shape install checks
 moved into `test/cli/install_test.rb`.
-The fixture gems stay in `test/package_manager/stage_a/`. Paths below are as they were.
+The fixture gems stay in `test/package_manager/stage_a/`. Paths below are as they were, and so is
+the CI job's name: `stage-a` is now `package-manager`.
 
 ## Summary
 
