@@ -441,16 +441,28 @@ var _ = Describe("Gem dependency contexts", func() {
 			})
 		}
 
-		It("serves the version installed beside it when the package is requested by its gem URL", func() {
-			testConfig.Bundle = false
+		// Requested by its gem URL, the package is loaded in the rubygems namespace, whose loaders hand
+		// its imports the file's real path. With the map, that path decides it is not the gem's; without
+		// it, the step-1 lookup beside the file is the one that answers.
+		for _, withMap := range []bool{true, false} {
+			It(fmt.Sprintf("serves the version installed beside it by its gem URL (map: %v)", withMap), func() {
+				if !withMap {
+					testConfig.DependencyContexts = nil
+				}
+				testConfig.Bundle = false
 
-			ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/index.js")
+				ok, code := build("node_modules/@rubygems/" + gem + "/" + owner + "/index.js")
 
-			Expect(ok).To(BeTrue(), code)
-			Expect(code).To(ContainSubstring(trans + `"`))
-		})
+				// The map makes it the store copy's real path; without it, owner's link to that copy.
+				Expect(ok).To(BeTrue(), code)
+				Expect(code).To(MatchRegexp(`\.pnpm/(trans|owner)@1\.0\.0/node_modules/trans/index\.js"`))
+				Expect(code).NotTo(ContainSubstring(`/` + gem + `/node_modules/trans/index.js"`))
+			})
+		}
 
-		It("imports the version's stylesheet when the package's CSS is requested by its gem URL", func() {
+		// Map only: without contexts, a bare import with an extension takes the shortcut that serves
+		// `/node_modules/<specifier>` unresolved, as it always has for an app without them.
+		It("imports the version's stylesheet by its gem URL", func() {
 			write("node_modules/.pnpm/trans@1.0.0/node_modules/trans/style.css", ".trans-one { color: red; }\n")
 			write("node_modules/trans/style.css", ".trans-two { color: blue; }\n")
 			write(owner+"/style.css", "@import 'trans/style.css';\n")
@@ -469,6 +481,27 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(err).NotTo(HaveOccurred())
 			Expect(urlPath).To(HaveSuffix(trans))
 			Expect(absPath).To(Equal(root + trans))
+		})
+
+		// A package linked into the app from a store outside the app root, such as pnpm's global virtual
+		// store: what it installed beside itself has no URL. Named, rather than the app root's copy.
+		It("names the package when what is installed beside it is outside the app root", func() {
+			store := root + "_store/owner@1.0.0/node_modules"
+			for file, body := range map[string]string{
+				"owner/package.json": `{"name":"owner","version":"1.0.0","main":"index.js"}`,
+				"owner/index.js":     "export { default } from 'trans'\n",
+				"trans/package.json": `{"name":"trans","version":"1.0.0","main":"index.js"}`,
+				"trans/index.js":     `export default "trans 1.0.0";`,
+			} {
+				Expect(os.MkdirAll(filepath.Dir(store+"/"+file), 0o755)).To(Succeed())
+				Expect(os.WriteFile(store+"/"+file, []byte(body), 0o644)).To(Succeed())
+			}
+			DeferCleanup(os.RemoveAll, root+"_store")
+			link(store+"/owner", "node_modules/linked-owner")
+
+			_, _, err := r.Resolve("trans", root+"/node_modules/linked-owner/index.js", testConfig)
+
+			Expect(err).To(MatchError(`"trans" from "index.js" resolved outside the app root and every bundled gem`))
 		})
 
 		// The rule is for packages under the app root. A gem installed elsewhere that ships a package
@@ -502,4 +535,20 @@ var _ = Describe("Gem dependency contexts", func() {
 			Expect(code).NotTo(ContainSubstring("padding: 2px"))
 		})
 	})
+
+	DescribeTable("which files are packages the app installed",
+		func(rel string, rootSuffix string, expected bool) {
+			testConfig.RootPath = root + rootSuffix
+
+			Expect(utils.IsAppPackageFile(root+rel, testConfig)).To(Equal(expected))
+		},
+		Entry("a package's file", "/node_modules/x/index.js", "", true),
+		Entry("a store copy's file", "/node_modules/.pnpm/x@1.0.0/node_modules/x/index.js", "", true),
+		Entry("a context package's file", "/.proscenium/packages/g/node_modules/x/index.js", "", true),
+		Entry("with a trailing slash on the root", "/node_modules/x/index.js", "/", true),
+		Entry("the app's own file", "/lib/x.js", "", false),
+		Entry("a directory that only ends in node_modules", "/my_node_modules/x.js", "", false),
+		Entry("a sibling the root is a text prefix of", "_ext/node_modules/x/index.js", "", false),
+		Entry("the root itself", "", "", false),
+	)
 })

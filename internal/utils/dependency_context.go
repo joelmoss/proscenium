@@ -33,18 +33,25 @@ func GemContext(fsPath string, cfg *types.ConfigT) (gem string, contextDir strin
 }
 
 // Whether `fsPath` is a file of a package installed under the app root: below a `node_modules/`
-// there, including a context's under `.proscenium/packages/`. A gem developed in its own
-// repository is in its own bundle (`gemspec` in the Gemfile), so its root is the app root and
-// holds these. Their bare imports resolve beside them, as node resolution does: under pnpm and Bun
-// a package's own dependencies are installed next to its real path, and walking up from there
-// still reaches the app's node_modules for its peers.
+// there, including a context's under `.proscenium/packages/`. That is every package the app
+// installed, and also, for a gem developed in its own repository (`gemspec` in the Gemfile), every
+// package under the gem's root, which is the app root. Their bare imports resolve beside them, as
+// node resolution does: under pnpm and Bun a package's own dependencies are installed next to its
+// real path, and walking up from there still reaches the app's node_modules for its peers.
 //
 // Only under the app root. A gem installed elsewhere that ships a package in its own node_modules
 // keeps the fallbacks that hand it the app's peers, which walking up from the gem never reaches.
+//
+// The root is normalised as UrlPathFromFsPath normalises it, and nothing is concatenated: this
+// runs for every import a build resolves.
 func IsAppPackageFile(fsPath string, cfg *types.ConfigT) bool {
-	rel, ok := strings.CutPrefix(fsPath, cfg.RootPath+"/")
+	if cfg.RootPath == "" {
+		return false
+	}
 
-	return ok && strings.Contains("/"+rel, "/node_modules/")
+	rel, ok := strings.CutPrefix(fsPath, strings.TrimSuffix(cleanFsPath(cfg.RootPath), "/"))
+
+	return ok && strings.HasPrefix(rel, "/") && strings.Contains(rel, "/node_modules/")
 }
 
 // Logs, with cfg.Debug, a bare import resolved from a gem's context: which gem, what it imported and
