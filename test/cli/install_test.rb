@@ -148,8 +148,15 @@ describe 'proscenium install' do
         # `spec.files`, and has no `version`; nor does the context generated from it.
         assert_includes root, '/bundler/gems/'
         refute_includes spec.files, 'package.json'
-        refute JSON.parse(File.read(File.join(root, 'package.json'))).key?('version')
-        refute JSON.parse(File.read(File.join(shaped, 'package.json'))).key?('version')
+        [File.join(root, 'package.json'), File.join(shaped, 'package.json')].each do |path|
+          manifest = JSON.parse(File.read(path))
+
+          refute manifest.key?('version'), path
+          # React and react-dom as plain dependencies, not peers or optional ones, and a `github:`.
+          assert_equal %w[react react-dom], manifest['dependencies'].keys.grep(/\Areact/).sort, path
+          assert(manifest['dependencies'].values.any? { it.start_with?('github:') },
+                 "no github: dependency in #{path}")
+        end
         lock = File.read(lockfile)
 
         if manager == 'pnpm'

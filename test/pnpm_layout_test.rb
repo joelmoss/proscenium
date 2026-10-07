@@ -79,13 +79,17 @@ class Proscenium::PnpmLayoutTest < ActiveSupport::TestCase
   # of their own. The write is the control that read-only is real, not just a mode bit.
   it 'installs from read-only gem roots with no node_modules of their own' do
     roots = self.class.setup_app[:roots]
-    file = File.join(roots.fetch('stage_a_widget_a'), 'index.js')
 
     refute_path_exists File.join(roots.fetch(GEM), 'node_modules')
-    assert_raises(Errno::EACCES) { File.write(file, '//', mode: 'a') }
-    next if Gem.win_platform? # A read-only directory still accepts new files on Windows.
+    # An archive gem and the Git checkout this test builds alike.
+    [roots.fetch('stage_a_widget_a'), roots.fetch(GEM)].each do |root|
+      file = File.join(root, 'index.js')
 
-    assert_raises(Errno::EACCES) { File.write(File.join(File.dirname(file), 'new.js'), '') }
+      assert_raises(Errno::EACCES) { File.write(file, '//', mode: 'a') }
+      next if Gem.win_platform? # A read-only directory still accepts new files on Windows.
+
+      assert_raises(Errno::EACCES) { File.write(File.join(root, 'new.js'), '') }
+    end
   end
 
   it 'bundles the context dependencies, with one React' do
