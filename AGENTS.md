@@ -166,7 +166,8 @@ exist yet needs a build job as well.
 
 - `x86_64-darwin`, `arm64-darwin` (macOS) - built natively, `CGO_ENABLED=1`
 - `x86_64-linux-gnu`, `aarch64-linux-gnu` (Linux) - cross-compiled with
-  [xgo](https://github.com/techknowlogick/xgo), pinned to a version
+  [xgo](https://github.com/techknowlogick/xgo): the CLI is pinned in `release.yml`, its image (and so its
+  Go) by `-go go-<version>` in the Rakefile. Image tags carry the `go-` prefix; a bare version is a 404
 - `x64-mingw-ucrt` (Windows) - built natively on `windows-latest`, `CGO_ENABLED=1`. The library is
   `proscenium.dll`, not `proscenium`. `xgo` cannot build it: its linker fails with
   `x86_64-w64-mingw32-ld: export_file.def:1: syntax error`
@@ -231,6 +232,11 @@ says so. The plain gem it produces inherits whatever the last compile left behin
 `PROSCENIUM_PACKAGE_EXT` is unset for that build. Prefer the workflow, which is the only thing that
 builds every platform.
 
+A version bump edits `lib/proscenium/version.rb` plus the `proscenium (x.y.z)` line in `Gemfile.lock`,
+`gemfiles/*.gemfile.lock` and `fixtures/adopted/Gemfile.lock` (two lines there), committed as
+`chore(release): x.y.z`; tag it annotated (`git tag -a vx.y.z -m vx.y.z`). There is no CHANGELOG: the
+GitHub release is the changelog (the gemspec's `changelog_uri`), written by hand from the commits.
+
 ## Gotchas
 
 - **Compile before testing**: You must run `bundle exec rake compile:local` before running Ruby tests. The Go shared library must be built first.
@@ -240,6 +246,14 @@ builds every platform.
 - **Go FFI functions** (`main.go`): `build_to_string(filePath, configJson)`, `resolve(filePath, configJson)`, `compile(configJson)`, `free_cstr(ptr)` and `reset_config()`. The first three accept JSON config and return C structs. `free_cstr(ptr)` frees a string Go allocated with `C.CString`, which the Go runtime cannot collect; Ruby calls it on every result string once read (`read_and_free` in `lib/proscenium/builder.rb`). `reset_config()` takes nothing and does nothing; it is kept as the one call into Go that needs no Rails app, for bin/verify-installed-gem and the packaging test, and as the bare FFI-call cost that benchmarks/bridge.rb times. Check `Result`, `ResolveResult`, `CompileResult` struct definitions when modifying.
 - **go.work is gitignored**: The `go.work` and `go.work.sum` files are not checked in. Each developer needs their own pointing to their local esbuild fork. Its `go` line must be at least go.mod's, or every workspace build fails with `module . listed in go.work file requires go >= ...`; after raising go.mod's, run `go work edit -go=<version>`.
 - **Compiled binaries are gitignored**: `lib/proscenium/ext/` contents (`.so`, `.h` files) are not checked in.
+- **Updating Go dependencies**: `go get -u` raises go.mod's `go` line when a module needs a newer Go;
+  `go get go@<current>` puts it back and downgrades just those modules. `go list -m -u` sorts
+  esbuild-internal's `-<sha>` tags as hex, so take its newest tag by date (`git tag --sort=-creatordate`).
+  A Go version bump moves go.mod, the Rakefile's xgo `-go`, and each developer's `go.work`; check it
+  with the golangci-lint release binary CI pins, since one built locally uses the local Go.
+- **Updating gems**: `bundle update --all`, then the same with `BUNDLE_GEMFILE` for each Appraisal
+  gemfile. `fixtures/adopted/Gemfile` pins Rails exactly: move it to the main lock's Rails, then
+  `bundle update --all --local` there.
 - **Go runtime + Puma `preload_app!` fork hazard**: never call `Builder.build_to_string`/`resolve`/`compile` from a Rails boot-time initializer. Go's runtime cannot survive a `fork()` once it has been initialized (see [golang/go#15538](https://github.com/golang/go/issues/15538), unfixed) - a `preload_app!` + `workers` Puma setup forks after boot, so any pre-fork Go call would break every worker. The Go runtime only initializes lazily on the first actual builder call, and stock Proscenium's own boot sequence never triggers it - this only bites if custom app code calls a builder method during boot. See README's "Puma preload_app! and Cluster Mode" section.
 
 ## Environment quirks (agent shells)
@@ -253,6 +267,10 @@ builds every platform.
 - `fsmonitor_ipc__send_query` errors on git calls are noise (`core.fsmonitor=true` plus the
   sandbox blocking its socket); use `git -c core.fsmonitor=false`.
 - Always pass `rg` a path, or it reads stdin and hangs.
+- The repository is public. Never name the private consumer apps or their UI gem in docs, commits or
+  release notes: docs call them `app-a`, `app-b`, `app-c` and `ui-gem`.
+- Watch a GitHub Actions run with a background Bash loop (sandbox off) that prints `gh` errors, not a
+  Monitor: a Monitor's `gh` calls failed silently here and it reported nothing.
 
 ## Skill routing
 
