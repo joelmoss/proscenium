@@ -11,8 +11,8 @@ require 'tmpdir'
 # while the dotfile deny it sits in front of still denies everything else. Without the rule, the
 # deny blocks those paths too, which is the control that the rule is what lets them through.
 #
-# Needs nginx on PATH. The package-manager job installs it on Linux, and there the test fails rather than
-# skips.
+# Needs nginx on PATH. The package-manager job installs it on Linux, and there the test fails
+# rather than skips.
 describe 'the documented proxy rule' do
   GUIDE = File.expand_path('../docs/guides/rubygem_npm_dependencies.md', __dir__)
   ALLOWED = %w[/node_modules/.pnpm/ms@2.1.3/node_modules/ms/index.js

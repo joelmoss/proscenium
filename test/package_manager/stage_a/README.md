@@ -1,27 +1,30 @@
-# Stage A proof (#154)
+# Package-manager fixture gems (#154)
 
-The disposable proof that a gem's JavaScript dependencies can be installed into a dependency-only
-context and resolved from it, while the gem's own files stay at the root Bundler installed. The
-contract is the "Stage A execution contract" section of `docs/plans/154-package-manager.md`.
-Results go in `docs/plans/154-package-manager-stage-a.md`. Nothing here is production code:
-Stage B and C replace it.
+Synthetic gems the package-manager tests install the way an app gets them: genuinely, through
+Bundler, into a throwaway, read-only bundle. They started as #154's Stage A proof, which is why
+they keep the `stage_a_` prefix; the proof's results are in
+`docs/plans/154-package-manager-stage-a.md`.
 
 ## Layout
 
 | Path | What it is |
 |---|---|
-| `gems/` | Sources of the synthetic fixture gems |
+| `gems/` | Sources of the fixture gems |
 | `bundle.rb` | `StageA::Bundle.install(dir)`: builds the archive gems, installs every fixture gem with Bundler into `dir/bundle`, makes it read-only, and returns `{ name => installed root }` |
-| `bundle_test.rb` | What each installed gem ships, and that its root is read-only |
-| `../../dependency_context_test.go` | The resolver seam against a pnpm-shaped tree |
+
+Used by `test/cli/install_test.rb`, `test/cli/spec_kinds_test.rb`, `test/cli/gem_check_test.rb`,
+`test/bun_layout_test.rb`, `test/adopted/`, `test/first_run_test.rb` and
+`test/context_wiring_test.rb`, and by `fixtures/adopted`'s Gemfile.
 
 ## Fixture gems
 
 | Gem | Installed as | Opted in | Shape |
 |---|---|---|---|
 | `stage_a_assets` | archive | no | JS and CSS with relative imports, no package.json. The control: a gem that does not participate. |
+| `stage_a_app_dependent` | path, in `fixtures/adopted` only | no | A gem that relies on the app for its JavaScript dependencies. |
 | `stage_a_widget_a` | archive | yes | React `^18.3.1` peer, ms 2.0.0 |
 | `stage_a_widget_b` | archive | yes | React `^18.3.1` peer, ms 2.1.3 |
+| `stage_a_specs` | archive, built by `spec_kinds_test.rb` with `Bundle.build` | yes | Every dependency spec kind: ranges, `npm:` aliases, a dist-tag, `github:`, a tarball URL. |
 | `gem_npm` | archive | yes | The repository's `fixtures/dummy/vendor/gem_npm` (string-length `^6.0.0`) |
 | `stage_a_hue_shape` | Git | yes | ui-gem's traits: package.json without `version`, `react` and `react-dom` as plain dependencies, a `github:` dependency, and package.json missing from `spec.files`. Its Ruby version is a prerelease (`0.5.3.pre1`). |
 
@@ -31,104 +34,15 @@ local Git repository, because only a Git checkout keeps a manifest that `spec.fi
 The installed `bundle/` is made read-only (`a-w`); `StageA::Bundle.writable!` undoes it for
 cleanup.
 
-The plan names is-number 6.0.0 and 7.0.0 for the widgets, but `is-number` is one of Proscenium's
-browser-native replacements (`internal/replacements/src/is-number.mjs`): the engine swaps the
-import out before any resolution, so the version conflict would never reach a context. The
-widgets use `ms` 2.0.0 and 2.1.3 instead, which is not replaced.
+`is-number` is one of Proscenium's browser-native replacements
+(`internal/replacements/src/is-number.mjs`): the engine swaps the import out before any
+resolution, so the widgets conflict on `ms` 2.0.0 and 2.1.3 instead.
 
-Two readings of the plan, recorded here so they are not mistaken for accidents:
-
-- **`stage_a_assets` does not opt in.** The fixture paragraph says each fixture sets
-  `proscenium.dependencies`, but an opted-in gem with no manifest is a participation error, and
-  C01 needs a gem that does not participate. It is the control.
+- **`stage_a_assets` does not opt in.** An opted-in gem with no manifest is a participation
+  error, and the tests need a gem that does not participate.
 - **`gem_npm` gets its file list and opt-in at build time**, in `bundle.rb`, not in its gemspec.
-  The dummy app loads that gemspec as a path gem, and Stage C would otherwise start treating it
-  as a participant.
+  The dummy app loads that gemspec as a path gem, and would otherwise treat it as a participant.
 
 `stage_a_hue_shape`'s `github:` dependency is `sindresorhus/escape-string-regexp` at the v5.0.0
 commit: public, small, and with no install scripts. It is not one of ui-gem's own dependencies, so
 the fixture copies ui-gem's shape without copying its manifest.
-
-## The resolver seam
-
-`ConfigT.DependencyContexts` (Go) maps a gem name to the absolute path of its hand-written context,
-`.proscenium/packages/<gem>/`. It does nothing unless set, and only Stage A sets it. For a
-mapped gem:
-
-- A bare import resolves from the context directory, replacing the whole existing chain. That
-  includes its first step, whose walk-up from an in-tree gem reaches the app's `node_modules`
-  first. Hooked at `bundler.go` (bundled), the `bundless.go` resolve chain and its
-  bare-with-extension shortcut, the bundless asset loader (CSS modules and SVG by package name),
-  and `resolver.Resolve`, which CSS mixins go through.
-- Ordinary `node_modules` walk-up from the context still applies, as the plan's Lookup section
-  says: it is how hoisted copies are found. So a package only the app declares still resolves
-  for the gem. A spec pins that, and step 2 records what each real layout does with it.
-- A package nothing provides is an error naming the gem and the package, never a browser
-  external.
-- While the seam is on, a resolved path under `node_modules/` or `.proscenium/packages/` is
-  replaced by its real path (`utils.ContextRealPath`), so the app and a gem reach a shared React
-  at one URL when unbundling. Bundled builds get this from esbuild already.
-
-Each of those has a spec in `test/dependency_context_test.go`, and each spec was checked to fail with
-its part of the seam removed.
-
-Known limit: the real-path rule compares against `RootPath` as text, so the root must itself be
-a real path. On macOS a temporary directory under `/var` is really under `/private/var`; the
-specs evaluate the root first.
-
-**Getting the map into a running app (decided, built in step 4).** `Proscenium::Builder.new`
-merges keyword overrides straight into the Go config, so Ruby-level probes pass
-`DependencyContexts:` directly. The browser identity probe needs the middleware's builder, which
-takes no overrides: step 4 adds one line to `Builder#initialize` passing
-`Proscenium.config.stage_a_contexts` (nil, so absent, unless a probe app sets it in an
-initializer), and the same key to the Bun daemon's handshake in `runtime/server.rb`.
-
-## Tool probes (4 October 2026)
-
-A `git+file://` dependency on a local bare repository, whose package has a `postinstall` script:
-
-| Manager | Installs it | Runs the script |
-|---|---|---|
-| pnpm 10.34.4 | yes | no (blocked, build approval needed) |
-| Bun 1.4.2 | yes, with a full or short SHA | no (`Blocked 1 postinstall`) |
-| Bun 1.3.13 | no: `no commit matching "<sha>" found` | n/a |
-
-So the hermetic fixtures can serve Git dependencies from a local bare repository on both
-supported lines. A `github:` specifier itself cannot be redirected there; step 2 decides whether
-the CI copy of `stage_a_hue_shape` uses `git+file://` and only the local ui-gem leg keeps `github:`.
-
-## The app legs (steps 2 and 3)
-
-`probe/` is a Go command that builds a list of entry points through the engine, with the seam on
-or off, and records the modules or imports each one pulls in. `leg.rb` drives it against copies
-of an app's JS configuration and the local checkout of the gem its bundle points at, on pnpm or
-Bun:
-
-```sh
-ruby test/package_manager/stage_a/leg.rb ~/dev/clients/example-org/app-b \
-  ~/dev/clients/example-org/ui-gem CONFIG tmp/stage_a_london
-ruby test/package_manager/stage_a/leg.rb ~/dev/app-c ~/dev/proscenium-ui CONFIG \
-  tmp/stage_a_codaset
-```
-
-CONFIG is a local JSON file naming the gem, the manager, and the app's entry points, aliases and
-externals (the script's header gives the format); the apps' configuration stays out of this
-repository. It writes only under the output directory, which it refuses to delete unless it made
-it. The CI half of the app-b leg is `hue_shape_test.rb`: the same check for `stage_a_hue_shape`,
-through `Proscenium::Builder`, run by the `stage-a` CI job and locally with
-`STAGE_A=1 bin/test test/package_manager/stage_a/`. The app-c leg's CI half is `bun_test.rb`:
-where Bun's hoisted and isolated linkers put the widgets' conflicting `ms` copies, what each widget
-then builds against, and that an explicit `trustedDependencies` blocks a gem-introduced package
-Bun trusts by default. `git_scripts_test.rb` checks that neither manager runs a gem-introduced
-Git dependency's scripts without approval, `drift_test.rb` shows a frozen check needs no
-descriptor receipt, `peers.rb` is the C12 peer probe, and `identity.rb` loads an unbundled page in
-Chromium to show one shared package is one module. They write
-contexts with `context.rb`. The
-verdicts are in `docs/plans/154-package-manager-stage-a.md`.
-
-## Not yet built
-
-- The contexts for these fixtures, the hermetic registry and committed tarballs, and
-  proscenium-ui at a pinned revision.
-- The `Builder`/daemon wiring above: the probes pass the seam's map to `Proscenium::Builder`
-  directly, so no running app needed it.

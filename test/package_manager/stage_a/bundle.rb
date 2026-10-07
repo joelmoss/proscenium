@@ -11,7 +11,7 @@ module StageA
   #
   # The archive gems are built locally and installed from the app's vendor/cache with
   # `bundle install --local`, so no gem index or network is involved. stage_a_hue_shape is a Git
-  # source, as hue is: its package.json is not in `spec.files`, and only a Git checkout keeps it.
+  # source, as ui-gem is: its package.json is not in `spec.files`, and only a Git checkout keeps it.
   module Bundle
     GEMS = File.expand_path('gems', __dir__)
     ARCHIVES = %w[stage_a_assets stage_a_widget_a stage_a_widget_b].freeze
