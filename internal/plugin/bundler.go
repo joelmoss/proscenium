@@ -50,6 +50,15 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					return false
 				}
 
+				// A module the importing package's `browser` field disables comes back with no
+				// namespace. Leave it to esbuild, which resolves it again from the importer and
+				// replaces it with an empty module; returned as is, the bare name is not a file path.
+				if r.Namespace == "" {
+					onResolveResult.Path = ""
+
+					return true
+				}
+
 				if r.SideEffects {
 					onResolveResult.SideEffects = esbuild.SideEffectsTrue
 				} else {

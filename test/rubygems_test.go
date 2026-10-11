@@ -442,7 +442,7 @@ var _ = Describe("gem stylesheet imports", func() {
 	})
 
 	EntryPoint("node_modules/@rubygems/gem2/app/views/imports.css", func() {
-		// A gem's bare import resolves from the gem's own node_modules in both modes (bareLookupDir).
+		// A gem's bare import resolves from the gem's own node_modules in both modes (bareLookupDirs).
 		// Bundling used to resolve it against the app root, so an app without the package kept the
 		// @import for the browser while unbundling found the gem's copy. Unbundling is the path that
 		// used to panic.
@@ -488,6 +488,22 @@ var _ = Describe("gem stylesheet imports", func() {
 	// still gets it.
 	EntryPoint("node_modules/@rubygems/gem2/link_dependency.js", func() {
 		AssertCode(`console.log("pnpm-link-ext/one.js");`)
+	})
+
+	// A package the gem ships resolves its own imports beside itself, then from the app: its
+	// `browser` map disables `optional`, and `pnpm-link-ext` is a peer only the app provides, so
+	// that import needs the second lookup directory.
+	EntryPoint("node_modules/@rubygems/gem2/package_peer.js", func() {
+		AssertCode(`console.log("pnpm-link-ext/one.js");`)
+	})
+	EntryPoint("node_modules/@rubygems/gem2/node_modules/peerk/index.js", func() {
+		AssertCode(`import "/node_modules/pnpm-link-ext/one.js";`, Unbundle)
+	})
+
+	// A file another package's `exports` leaves out comes from the nearest node_modules above the
+	// shipped package's file, not from a node_modules inside the importer's own directory.
+	EntryPoint("node_modules/@rubygems/gem2/node_modules/peerk/styles.css", func() {
+		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/expk/hidden.css";`, Unbundle)
 	})
 })
 

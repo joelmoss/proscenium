@@ -315,7 +315,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					var isBare string
 					var hasExt bool
 
-					// Where a gem's file resolves a bare import from (bareLookupDir): its context when
+					// Where a gem's file resolves a bare import from (bareLookupDirs): its context when
 					// mapped, else its own node_modules or the app. Declared here, as gotos below
 					// jump past the assignment.
 					var lookupDirs []string
@@ -381,7 +381,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					// With dependency contexts the app's imports resolve to real paths, as a gem's do, or the
 					// browser would load a package both share as two modules; so this shortcut is skipped. A
-					// gem's file skips it too: the gem may ship the package itself (bareLookupDir).
+					// gem's file skips it too: the gem may ship the package itself (bareLookupDirs).
 					if isBare != "" && hasExt && !gemFile && len(cfg.DependencyContexts) == 0 {
 						// Bare module with extension, so there is no need to resolve it if we prefix the path
 						// with "/node_modules/".
@@ -454,7 +454,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 									return result, nil
 								}
 								if result.Path == "" && hasExt {
-									fileUnderNodeModules(dir, originalPath, &result)
+									fileUnderNearestNodeModules(dir, originalPath, &result)
 								}
 								if result.Path != "" {
 									break
@@ -543,6 +543,18 @@ func fileUnderNodeModules(dir string, specifier string, result *esbuild.OnResolv
 	if file, ok := nodeModulesFile(dir, specifier); ok {
 		result.Path = file
 		result.Errors = nil
+	}
+}
+
+// fileUnderNodeModules from `dir` up to the first directory outside any node_modules: a file of a
+// package the gem ships resolves from beside itself, and the package it names may be in any
+// node_modules from there up to the gem root.
+func fileUnderNearestNodeModules(dir string, specifier string, result *esbuild.OnResolveResult) {
+	for d := dir; ; d = fsDir(d) {
+		fileUnderNodeModules(d, specifier, result)
+		if result.Path != "" || !helpers.IsInsideNodeModules(d) || d == fsDir(d) {
+			return
+		}
 	}
 }
 

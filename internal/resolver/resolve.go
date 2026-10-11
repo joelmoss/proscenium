@@ -42,7 +42,7 @@ import (
 //
 // Outside a build the plugins' rules do not apply. A bare specifier a gem does not map to a
 // dependency context resolves from the app root, not by the plugins' lookup from the importer
-// (plugin.bareLookupDir): CSS mixins resolve through here, and a review measured four silent
+// (plugin.bareLookupDirs): CSS mixins resolve through here, and a review measured four silent
 // mixin regressions from resolving beside the package instead (external link peers, a global
 // store, a stale real-root cache, entry-point shadowing), so #154 kept this as it was.
 //
