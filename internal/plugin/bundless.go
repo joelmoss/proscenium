@@ -42,14 +42,20 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					// Dependency contexts: a mapped gem's bare asset resolves from its context.
+					// A gem's bare asset resolves as its other bare imports do (bareLookupDir); a mapped
+					// gem's from its context alone.
 					resolveDir := args.ResolveDir
 					fallbackDir := ""
-					if _, contextDir, ok := utils.GemContext(contextImporter(args), cfg); ok {
-						resolveDir = contextDir
-						fallbackDir = contextDir
-					} else if len(cfg.DependencyContexts) > 0 {
-						fallbackDir = root
+					if dir, mappedGem, ok := bareLookupDir(contextImporter(args), result.Path, cfg); ok && mappedGem != "" {
+						resolveDir = dir
+						fallbackDir = dir
+					} else {
+						if ok {
+							resolveDir = dir
+						}
+						if len(cfg.DependencyContexts) > 0 {
+							fallbackDir = root
+						}
 					}
 
 					// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
@@ -305,8 +311,11 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					var isBare string
 					var hasExt bool
 
-					// Set when the import comes from a gem mapped to a dependency context.
-					mappedGem, mappedContext, mapped := utils.GemContext(contextImporter(args), cfg)
+					// Where a gem's file resolves a bare import from (bareLookupDir): its context when
+					// mapped, else its own node_modules or the app. Declared here, as gotos below
+					// jump past the assignment.
+					var lookupDir, mappedGem string
+					var gemFile, mapped bool
 
 					if utils.IsBareModule(result.Path) {
 						if aliasedPath, exists := utils.HasAlias(result.Path, cfg); exists {
@@ -332,6 +341,9 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 
 					isBare = utils.ExtractBareModule(result.Path)
 					_, hasExt = utils.HasExtension(result.Path)
+
+					lookupDir, mappedGem, gemFile = bareLookupDir(contextImporter(args), result.Path, cfg)
+					mapped = mappedGem != ""
 
 					if utils.IsCssImportedFromJs(result.Path, args) {
 						// We're importing a CSS file from JS(X). Assigning `pluginData.importedFromJs` tells
@@ -362,8 +374,9 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					}
 
 					// With dependency contexts the app's imports resolve to real paths, as a gem's do, or the
-					// browser would load a package both share as two modules; so this shortcut is skipped.
-					if isBare != "" && hasExt && !mapped && len(cfg.DependencyContexts) == 0 {
+					// browser would load a package both share as two modules; so this shortcut is skipped. A
+					// gem's file skips it too: the gem may ship the package itself (bareLookupDir).
+					if isBare != "" && hasExt && !gemFile && len(cfg.DependencyContexts) == 0 {
 						// Bare module with extension, so there is no need to resolve it if we prefix the path
 						// with "/node_modules/".
 						result.Path = "/node_modules/" + result.Path
@@ -401,61 +414,46 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						originalPath := result.Path
 						resolveArgs := cloneResolveArgs(args)
 
-						// Bare modules imported from a ruby gem are resolved as follows...
-						// 1. use the unchanged ResolveDir, which will apply for NPM installed modules.
-						// 2. use the gem path as the ResolveDir (if different), which will apply for non-NPM installed modules.
-						// 3. try again using the root as the ResolveDir (if different), which will be the app.
-
 						// A rubygems-namespaced import always carries its gem root: the loaders attach
 						// it (bundless's OnLoad for JS, the css plugin's for CSS). Missing means a
 						// loader dropped it, which used to panic here and would otherwise resolve
 						// silently against the app root instead.
-						gemPath := types.PluginDataOf(args.PluginData).GemPath
-						if args.Namespace == "rubygems" && gemPath == "" {
+						if args.Namespace == "rubygems" && types.PluginDataOf(args.PluginData).GemPath == "" {
 							return result, fmt.Errorf("no gem root attached to %s: its loader dropped the plugin data", args.Path)
 						}
 
-						if mapped && isBare != "" {
-							// Dependency contexts: the gem's context replaces the whole chain below, including step 1,
-							// whose walk-up from an in-tree gem would reach the app's node_modules first.
-							resolveArgs.ResolveDir = mappedContext
+						switch {
+						case mapped && isBare != "":
+							// Dependency contexts: the gem's context is the only lookup base. A walk up from
+							// an in-tree gem would reach the app's node_modules first.
+							resolveArgs.ResolveDir = lookupDir
 							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
 								return result, nil
 							}
 							if result.Path == "" && hasExt {
-								fileUnderNodeModules(mappedContext, originalPath, &result)
+								fileUnderNodeModules(lookupDir, originalPath, &result)
 							}
 							if result.Path == "" {
 								return result, utils.ContextMiss(mappedGem, originalPath)
 							}
 							utils.DebugContextRoute(cfg, mappedGem, originalPath, result.Path)
-						} else {
-							// 1
+
+						case gemFile && isBare != "":
+							// A gem's own node_modules, nearest first and never above the gem root, else
+							// the app (bareLookupDir). A file the package's `exports` leaves out is
+							// served from there too, as the shortcut above serves the app's.
+							resolveArgs.ResolveDir = lookupDir
+							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+								return result, nil
+							}
+							if result.Path == "" && hasExt {
+								fileUnderNodeModules(lookupDir, originalPath, &result)
+							}
+
+						default:
 							ok := resolveWithEsbuild(resolveArgs, &result)
 							if !ok {
 								return result, nil
-							}
-
-							// 2
-							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-								resolveArgs.ResolveDir != gemPath {
-								resolveArgs.ResolveDir = gemPath
-								result.Path = originalPath
-
-								if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
-									return result, nil
-								}
-							}
-
-							// 3
-							if result.Path == "" && isBare != "" && args.Namespace == "rubygems" &&
-								resolveArgs.ResolveDir != root {
-								resolveArgs.ResolveDir = root
-								result.Path = originalPath
-
-								if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
-									return result, nil
-								}
 							}
 
 							// The app's import skipped the shortcut above, so it gets the same fallback.

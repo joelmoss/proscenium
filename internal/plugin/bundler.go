@@ -5,7 +5,6 @@ import (
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -309,36 +308,11 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 									goto FINISH
 								}
 
-								// If importer is a RubyGem...
-								//
-								// ...and that gem is NOT installed to node_modules, then change ResolveDir to the app
-								// root. This ensures that bare imports are resolved relative to the app root, and not
-								// the gem root, which allows us to use the app's package.json.
-								//
-								// ...OR that gem IS installed to node_modules, then change ResolveDir to the gem's
-								// node_modules directory. This ensures that bare imports are resolved relative to the
-								// gem's node_modules directory, and not the app's node_modules directory.
-								//
-								// A package the app installed inside the gem's root is neither: it keeps the
-								// ResolveDir beside it (see utils.IsAppPackageFile).
-								gemRef, foundGem := utils.GemFromFsPath(args.Importer, cfg)
-								if gem, contextDir, ok := utils.GemContext(args.Importer, cfg); ok {
-									// Dependency contexts: the gem's context is the only lookup base.
-									resolveArgs.ResolveDir = contextDir
+								// A gem's file resolves bare imports from its context, its own node_modules or
+								// the app (bareLookupDir); any other file keeps esbuild's ResolveDir.
+								if dir, gem, ok := bareLookupDir(args.Importer, result.Path, cfg); ok {
+									resolveArgs.ResolveDir = dir
 									mappedGem = gem
-								} else if foundGem && !utils.IsAppPackageFile(args.Importer, cfg) {
-									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemRef.Name)
-									_, err := os.Stat(nodeModulePath)
-									if err == nil {
-										realPath, err := filepath.EvalSymlinks(nodeModulePath)
-										if err != nil {
-											return result, err
-										}
-
-										resolveArgs.ResolveDir = filepath.ToSlash(realPath)
-									} else {
-										resolveArgs.ResolveDir = root
-									}
 								}
 							}
 

@@ -40,6 +40,12 @@ import (
 //	/lib/x.js                          /lib/x.js                               <root>/lib/x.js
 //	/lib/x, pkg  (no extension, bare)  /<key>                                  <root>/<key>
 //
+// Outside a build the plugins' rules do not apply. A bare specifier a gem does not map to a
+// dependency context resolves from the app root, not by the plugins' lookup from the importer
+// (plugin.bareLookupDir): CSS mixins resolve through here, and a review measured four silent
+// mixin regressions from resolving beside the package instead (external link peers, a global
+// store, a stale real-root cache, entry-point shadowing), so #154 kept this as it was.
+//
 // A panic anywhere below, on this goroutine, is returned as the error rather than taking down the
 // Ruby process that called in. See BuildToString.
 func Resolve(filePath string, importer string, cfg *types.ConfigT) (urlPath string, absPath string, err error) {

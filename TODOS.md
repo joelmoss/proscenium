@@ -30,27 +30,6 @@ sees is Proscenium's own `*PanicError`, which `errors.As` recognises with no for
 **Priority:** P4
 **Depends on:** None
 
-### Resolve a gem's bare-with-extension imports against the gem when unbundling
-
-**What:** `bundless.go`'s catch-all turns a bare specifier that already has an extension
-(`open-props/shadows.css`, `pkg/index.js`) straight into `/node_modules/<specifier>` without
-resolving it, so an import from a gem file of a package installed only in that gem's own
-`node_modules` points at the app's `node_modules` instead: missing, or a different version, and
-the build reports success either way. The extensionless form (`open-props/shadows`) goes through
-esbuild and resolves from the gem correctly since the gem-stylesheet fix.
-
-**Why:** Found by the /review outside pass on the recover work, 2026-09-20, as the one gap left in
-gem CSS resolution. Pre-existing and shared with gem JavaScript; a resolution-policy change, not
-a bug fix, so it was not folded into that branch.
-
-**Context:** The shortcut is the `isBare != "" && hasExt` branch before the resolve ladder. Route
-it through `resolveWithEsbuild` when the importer is in the rubygems namespace, and pin it with a
-`@import 'open-props/shadows.css'` case beside the existing "gem stylesheet imports" spec.
-
-**Effort:** S
-**Priority:** P4
-**Depends on:** None
-
 ### Key the Bun daemon's build cache on the whole module graph
 
 **What:** `lib/proscenium/runtime/server.rb`'s `cached(path, sourcemap)` keys an entry on
@@ -539,6 +518,14 @@ Builds on `inspect`'s existing per-gem projection.
 **Depends on:** a real gem with a non-npm-valid name opting in
 
 ## Done
+
+### Resolve a gem's bare-with-extension imports against the gem when unbundling
+
+An unbundled import like `open-props/shadows.css` from a gem file used to become the app's
+`/node_modules/open-props/shadows.css` without being resolved. It now goes through the one lookup
+policy for bare imports from gem files (`plugin.bareLookupDir`, F3-12 in docs/AUDIT.md), as the
+extensionless form did, and bundling uses the same policy. Pinned by the `imports_with_extension.css`
+spec in `test/rubygems_test.go`.
 
 ### Map gem paths to `@rubygems/` without a regex (#95)
 
