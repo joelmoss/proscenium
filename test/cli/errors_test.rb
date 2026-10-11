@@ -40,18 +40,18 @@ describe Proscenium::CLI::Error do
     'PSM-E-INTERRUPTED' => { command: 'pnpm install' },
     'PSM-E-CROSS-GEM-TARGET' => { gem: 'widget', other: 'other' },
     'PSM-E-CONFIG' => { detail: '"proscenium.gemOverrides" in package.json must be an object' },
-    'PSM-E-PROBLEMS' => { count: 2 },
-    'PSM-E-DRIFT' => { count: 2, list: "  - widget: its context is out of date\n  " \
-                                       '- pnpm-lock.yaml is missing' },
+    'PSM-E-PROBLEMS' => {},
+    'PSM-E-DRIFT' => { list: "  - widget: its context is out of date\n  " \
+                             '- pnpm-lock.yaml is missing' },
     'PSM-E-NOT-REGISTERED' => { file: 'pnpm-workspace.yaml', manager: 'pnpm' },
     'PSM-E-GITIGNORE' => {},
     'PSM-E-LOCKFILE-MISSING' => { lockfile: 'pnpm-lock.yaml' },
     'PSM-E-NOT-INSTALLED' => {},
     'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
     'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
-    'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react', manager: 'pnpm' },
-    'PSM-E-COLLISION' => { count: 1, list: '  - package.json dependencies has @rubygems/hue as ' \
-                                           '"github:example-org/hue#22e6604"' },
+    'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react' },
+    'PSM-E-COLLISION' => { list: '  - package.json dependencies has @rubygems/hue as ' \
+                                 '"github:example-org/hue#22e6604"' },
     'PSM-E-OWNED-DIR' => { entries: 'mine' },
     'PSM-E-OWNED-LINK' => { paths: '.proscenium/packages' },
     'PSM-E-CREDENTIAL' => { gem: 'widget', name: 'private-pkg' },

@@ -68,8 +68,7 @@ module Proscenium
     # `pnpm update react` can leave it: install checks this too, and the engine repeats it for each
     # generation.
     def split_peers(root, gems)
-      pnpm = ContextMap.registers?(root, 'pnpm-workspace.yaml')
-      CLI::Verify.new(root, Struct.new(:name).new(pnpm ? 'pnpm' : 'bun'), gems).check_peers
+      CLI::Verify.new(root, nil, gems).check_peers
       []
     rescue CLI::Error => e
       [e.message]

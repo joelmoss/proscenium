@@ -107,7 +107,7 @@ module Proscenium
         @contexts.problems.each do |code, args|
           @reporter.error(Error.new(code, **args), phase: 'validate', manager: @manager.name)
         end
-        raise Error.new('PSM-E-PROBLEMS', count: @contexts.problems.size)
+        raise Error, 'PSM-E-PROBLEMS'
       end
 
       # `.proscenium/packages/` is Proscenium's: every entry is a generated context. A package.json
@@ -182,8 +182,7 @@ module Proscenium
         found = Collisions.find(@root, @manager.name, @contexts.contexts.keys)
         return if found.empty?
 
-        raise Error.new('PSM-E-COLLISION', count: found.size,
-                                           list: found.map { "  - #{it}" }.join("\n"))
+        raise Error.new('PSM-E-COLLISION', list: found.map { "  - #{it}" }.join("\n"))
       end
 
       # Committed contexts no participating gem owns. A locked gem that is not installed (another
@@ -223,7 +222,7 @@ module Proscenium
         return if drift.empty?
 
         list = drift.map { "  - #{it}" }.join("\n")
-        raise Error.new('PSM-E-DRIFT', count: drift.size, list:)
+        raise Error.new('PSM-E-DRIFT', list:)
       end
 
       # A line for each committed context kept for a gem that is not installed.
