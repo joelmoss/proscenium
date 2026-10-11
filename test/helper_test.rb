@@ -30,6 +30,43 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     end
   end
 
+  # A tag helper given a source with no leading slash resolves it through the manifest, in the
+  # manifest's own key space: `/app/...` for an app file, `@rubygems/...` for a gem's, and the
+  # first output of the entry.
+  describe '#compute_asset_path' do
+    before do
+      Proscenium::Manifest.manifest = {
+        '/app/components/x.js' => ['/assets/app/components/x-AAA.js'],
+        '/app/components/x.css' => ['/assets/app/components/x-CCC.css'],
+        '@rubygems/gem1/x.js' => ['/assets/gem1/x-BBB.js', '/assets/gem1/x-BBB.css']
+      }
+    end
+
+    after { Proscenium::Manifest.reset! }
+
+    let(:helpers) { ActionController::Base.helpers }
+
+    it 'returns the digested URL of an app javascript' do
+      assert_includes helpers.javascript_include_tag('app/components/x'),
+                      'src="/assets/app/components/x-AAA.js"'
+    end
+
+    it 'returns the digested URL of an app stylesheet' do
+      assert_includes helpers.stylesheet_link_tag('app/components/x'),
+                      'href="/assets/app/components/x-CCC.css"'
+    end
+
+    it "returns the first output of a gem's entry" do
+      assert_includes helpers.javascript_include_tag('@rubygems/gem1/x'),
+                      'src="/assets/gem1/x-BBB.js"'
+    end
+
+    it 'falls back to the path at the root when the manifest has no entry' do
+      assert_includes helpers.javascript_include_tag('app/components/missing'),
+                      'src="/app/components/missing.js"'
+    end
+  end
+
   describe '#include_stylesheets' do
     it 'includes side loaded stylesheets' do
       get '/'
