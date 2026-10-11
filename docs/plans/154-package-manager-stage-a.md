@@ -10,7 +10,8 @@ The proof's scripts and pilot-only tests were removed once Stages B to E shipped
 `git show f0d7d447:test/package_manager/stage_a/<file>` recovers any of them. `git_scripts_test.rb`
 moved to `test/cli/`; `bun_test.rb` and `ui_gem_shape_test.rb` became `test/bun_layout_test.rb` and
 `test/pnpm_layout_test.rb` on the shipped context projection; and the ui-gem-shape install checks
-moved into `test/cli/install_test.rb`.
+moved into `test/cli/install_test.rb`. Those suites have since moved again, together with
+`spec_kinds_test.rb`, into `test/package_manager/`.
 The fixture gems stay in `test/package_manager/stage_a/`. Paths below are as they were, and so is
 the CI job's name: `stage-a` is now `package-manager`.
 
