@@ -1,18 +1,20 @@
 # frozen_string_literal: true
 
 require 'json'
+require_relative 'app_package'
 require_relative 'bundled_gems'
 require_relative 'context_map'
 require_relative 'dependency_context'
-require_relative 'cli/contexts'
+require_relative 'context_plan'
 require_relative 'cli/error'
-require_relative 'cli/verify'
 
 module Proscenium
   # Whether an adopted app's committed gem dependency contexts are what its bundle calls for
   # (#154). A stale context resolves a gem's imports against the wrong dependency graph, so the
   # engine refuses to build until `proscenium install` brings them up to date. Built from
-  # committed files and Bundler only; it loads nothing the `proscenium` CLI may not.
+  # committed files and Bundler only. The engine and the CLI both load it, so it loads nothing
+  # the CLI may not, and of cli/ only the error catalog and the author rules (both directions
+  # are pinned by test/cli/load_isolation_test.rb).
   module StaleContexts
     COMMAND = 'Run `bundle exec proscenium install` and commit .proscenium/packages.'
     EDITED = 'its dependency context was edited by hand'
@@ -36,8 +38,8 @@ module Proscenium
       return [unparsable] if unparsable
 
       participating = BundledGems.participating(specs, overrides: BundledGems.overrides(root))
-      contexts = CLI::Contexts.new(root, participating)
-      committed = CLI::Contexts.committed(root)
+      contexts = ContextPlan.new(root, participating)
+      committed = ContextPlan.committed(root)
       found = contexts.problems.map { |code, args| CLI::Error.new(code, **args).message }
       contexts.contexts.each_value do |context|
         problem = compare(context, committed[context.gem])
@@ -68,10 +70,55 @@ module Proscenium
     # `pnpm update react` can leave it: install checks this too, and the engine repeats it for each
     # generation.
     def split_peers(root, gems)
-      CLI::Verify.new(root, nil, gems).check_peers
+      gem, package = peer_split(root, gems)
+      gem ? [CLI::Error.new('PSM-E-PEER-SPLIT', gem:, package:).message] : []
+    end
+
+    # The first `[gem, package]` where a peer a context declares, that the app also depends on,
+    # resolves from the context and from the app to two different real directories; nil when
+    # every one is a single copy. A context that is missing or not valid JSON has no peers to
+    # check: `problems` and `install --frozen` report it themselves.
+    def peer_split(root, gems)
+      app = app_dependencies(root)
+      gems.each do |gem|
+        dir = File.join(root, ContextMap::CONTEXTS, gem)
+        (peers(dir).keys & app).each do |name|
+          from_gem = real_dependency_dir(root, dir, name)
+          from_app = real_dependency_dir(root, root, name)
+          return [gem, name] unless from_gem.nil? || from_app.nil? || from_gem == from_app
+        end
+      end
+      nil
+    end
+
+    def peers(dir)
+      context = ContextMap.read_json(File.join(dir, 'package.json'))
+      peers = context['peerDependencies'] if context.is_a?(Hash)
+      peers.is_a?(Hash) ? peers : {}
+    rescue Errno::ENOENT, JSON::ParserError
+      {}
+    end
+
+    def app_dependencies(root)
+      package = ContextMap.read_json(File.join(root, 'package.json'))
+      return [] unless package.is_a?(Hash)
+
+      AppPackage::DEPENDENCY_FIELDS.flat_map { package[it].is_a?(Hash) ? package[it].keys : [] }
+    rescue Errno::ENOENT, JSON::ParserError
       []
-    rescue CLI::Error => e
-      [e.message]
+    end
+
+    # The real directory `name` resolves to from `dir`, walking up node_modules as Node does,
+    # but no higher than the app at `root`.
+    def real_dependency_dir(root, dir, name)
+      current = dir
+      loop do
+        candidate = File.join(current, 'node_modules', name)
+        return File.realpath(candidate) if File.exist?(candidate)
+        return nil if current == root || current == File.dirname(current)
+
+        current = File.dirname(current)
+      end
     end
 
     # The committed context is projected again from the fields it holds, not taken on trust: a

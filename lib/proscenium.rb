@@ -40,6 +40,7 @@ module Proscenium
   autoload :Resolver
   autoload :BundledGems
   autoload :ContextMap
+  autoload :ContextPlan
   autoload :StaleContexts
   autoload :MappingGeneration
 

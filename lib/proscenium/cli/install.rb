@@ -6,7 +6,7 @@ require_relative '../bundled_gems'
 require_relative '../dependency_context'
 require_relative '../stale_contexts'
 require_relative 'collisions'
-require_relative 'contexts'
+require_relative '../context_plan'
 require_relative 'diff'
 require_relative 'manager'
 require_relative 'platform_variants'
@@ -86,9 +86,9 @@ module Proscenium
         specs = timed(:bundle) { BundledGems.installed_specs }
         @excluded = BundledGems.excluded_names(specs)
         @contexts = timed(:projection) do
-          Contexts.new(@root, BundledGems.participating(specs, overrides:))
+          ContextPlan.new(@root, BundledGems.participating(specs, overrides:))
         end
-        @committed = Contexts.committed(@root)
+        @committed = ContextPlan.committed(@root)
         check_owned_directory
         report_problems
         check_platform_variants(specs, overrides)
@@ -143,7 +143,7 @@ module Proscenium
 
       # A file, or a link leading nowhere, where only context directories belong.
       def strays
-        dir = File.join(@root, Contexts::DIR)
+        dir = File.join(@root, ContextMap::CONTEXTS)
         return [] unless Dir.exist?(dir)
 
         Dir.children(dir).reject { File.directory?(File.join(dir, it)) } - OURS
@@ -152,8 +152,8 @@ module Proscenium
       # Everything install writes is under .proscenium/ (C29). A link anywhere on the way, or in
       # place of a context, would send those writes outside the app.
       def check_owned_links
-        owned = ['.proscenium', Contexts::DIR] + @committed.flat_map do |gem, path|
-          [File.join(Contexts::DIR, gem), relative(path)]
+        owned = ['.proscenium', ContextMap::CONTEXTS] + @committed.flat_map do |gem, path|
+          [File.join(ContextMap::CONTEXTS, gem), relative(path)]
         end
         links = owned.select { File.symlink?(File.join(@root, it)) }
         raise Error.new('PSM-E-OWNED-LINK', paths: links.join(', ')) if links.any?
@@ -212,7 +212,7 @@ module Proscenium
       end
 
       def check_drift
-        @committed = Contexts.committed(@root)
+        @committed = ContextPlan.committed(@root)
         drift = []
         registered = Registration.registered?(@root, @manager.name)
         drift << 'the gem contexts are not registered' unless registered
@@ -290,7 +290,7 @@ module Proscenium
       # links survive.
       def write_contexts
         changed.map do |context|
-          dir = File.join(@root, Contexts::DIR, context.gem)
+          dir = File.join(@root, ContextMap::CONTEXTS, context.gem)
           FileUtils.mkdir_p(dir)
           path = File.join(dir, 'package.json')
           ProjectLock.write("#{path}.tmp", context.json)
@@ -301,8 +301,8 @@ module Proscenium
 
       def remove_orphans
         orphans.map do |gem|
-          FileUtils.rm_rf(File.join(@root, Contexts::DIR, gem))
-          "#{Contexts::DIR}/#{gem} (removed)"
+          FileUtils.rm_rf(File.join(@root, ContextMap::CONTEXTS, gem))
+          "#{ContextMap::CONTEXTS}/#{gem} (removed)"
         end
       end
 

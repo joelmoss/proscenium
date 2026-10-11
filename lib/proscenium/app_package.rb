@@ -7,6 +7,10 @@ module Proscenium
   # it reads JSON through, it loads nothing the `proscenium` CLI may not.
   module AppPackage
     LOCAL_SPECS = %w[link: file: workspace: portal:].freeze
+    # The fields an app's own dependencies are under. Peers too: pnpm installs the app's own peers
+    # at the root.
+    DEPENDENCY_FIELDS = %w[dependencies devDependencies optionalDependencies
+                           peerDependencies].freeze
 
     module_function
 
@@ -18,7 +22,7 @@ module Proscenium
       package = read(root) or return []
 
       members = bun?(root, package) ? workspace_members(root, package['workspaces']) : []
-      %w[dependencies devDependencies optionalDependencies peerDependencies].flat_map do |field|
+      DEPENDENCY_FIELDS.flat_map do |field|
         deps = package[field]
         next [] unless deps.is_a?(Hash)
 

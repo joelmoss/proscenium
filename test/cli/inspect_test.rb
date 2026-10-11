@@ -30,7 +30,7 @@ describe Proscenium::CLI::Inspect do
     dc = Proscenium::DependencyContext
     projected = ->(deps) { dc.to_json(dc.project('widget', 'dependencies' => deps)) }
     json = projected.call({ 'ms' => '^2' })
-    context = Proscenium::CLI::Contexts::Context.new(gem: 'widget', json:)
+    context = Proscenium::ContextPlan::Context.new(gem: 'widget', json:)
     inspect = Proscenium::CLI::Inspect.new('/app', nil)
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'package.json')

@@ -3,7 +3,7 @@
 require 'json'
 require 'bundler'
 require_relative '../bundled_gems'
-require_relative 'contexts'
+require_relative '../context_plan'
 require_relative 'gitignore'
 require_relative 'manager'
 require_relative 'registration'
@@ -56,8 +56,8 @@ module Proscenium
                                                  'dependencies through Proscenium')
         end
 
-        contexts = Contexts.new(@root, participating)
-        committed = Contexts.committed(@root)
+        contexts = ContextPlan.new(@root, participating)
+        committed = ContextPlan.committed(@root)
         gems = participating.keys.select { @only.nil? || it == @only }.map do |name|
           gem_report(name, participating[name], contexts, committed)
         end
