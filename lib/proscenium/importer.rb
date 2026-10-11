@@ -32,6 +32,8 @@ module Proscenium
       #   or a URL, which has no file on disk. Should be the actual asset file, eg. app.css,
       #   some/component.js.
       # @return [String|nil] the digest of the imported file path if a css module (*.module.css).
+      #
+      # @api public: an extension point for component gems (README, "Extending Proscenium").
       def import(filepath = nil, sideloaded: false, **)
         self.imported ||= {}
 
@@ -90,6 +92,8 @@ module Proscenium
       #
       # @param filepath [Pathname] Absolute file system path of the Ruby file to sideload.
       # @param options [Hash] Options to pass to `import`.
+      #
+      # @api public: an extension point for component gems (README, "Extending Proscenium").
       def sideload(filepath, **options)
         return if !Proscenium.config.side_load || (options[:js] == false && options[:css] == false)
 

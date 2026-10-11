@@ -251,6 +251,25 @@ resolution - no CSS modules, SVG components or i18n.
 
 ## Infrastructure
 
+### Run the public component gems' suites against this checkout
+
+**What:** A `downstream` job in `.github/workflows/main.yml` that checks out proscenium-phlex and
+proscenium-view_component, points their Gemfiles at this checkout, compiles Go once and runs each
+gem's `rails test`.
+
+**Why:** Those gems pin `proscenium` from RubyGems (`~> 0.26`, `>= 0.21.0`) and only ever test a
+release. The extension API they build on (README, "Extending Proscenium") is pinned by contract
+tests here, which catch a changed call shape; a change that keeps every signature but changes
+behaviour is seen only after the next release.
+
+**Context:** Start from the `package-manager` job, which already compiles Go and runs a
+subprocess tier. Keep the job advisory at first: a red test of a gem's own must not block a
+Proscenium pull request.
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** None.
+
 ### Verify the platform-less gem before publishing
 
 **What:** A release verify leg that resolves to the platform-less gem and asserts

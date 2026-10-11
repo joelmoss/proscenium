@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
+  # @api public: an extension point for component gems (README, "Extending Proscenium").
   module CssModule::Path
     # Returns the path to the CSS module file for this class, where the file is located alongside
     # the class file, and has the same name as the class file, but with a `.module.css` extension.

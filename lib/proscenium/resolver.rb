@@ -10,6 +10,8 @@ module Proscenium
     # @param as_array [Boolean] whether or not to return the manifest path, non-manifest path, and
     #   absolute file system path as an array. Only returns the resolved path if false (default).
     # @return [String, Array<String>]
+    #
+    # @api public: an extension point for component gems (README, "Extending Proscenium").
     def self.resolve(path, as_array: false)
       # Normalised before anything reads it, the guard and the cache key included. The bun test
       # harness hands this Bun's own spelling of a module path, which on Windows is `D:\...`;

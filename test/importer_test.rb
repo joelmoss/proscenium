@@ -204,6 +204,22 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       Proscenium.config.output_path.rmtree
     end
 
+    # proscenium-phlex imports each CSS module its class attributes resolved with `sideloaded: true`
+    # after every render, so the notification must fire once per path, not per render.
+    it 'notifies once for a path imported with sideloaded: true' do
+      events = []
+      subscriber = ActiveSupport::Notifications.subscribe('sideload.proscenium') do |*, payload|
+        events << payload.slice(:identifier, :sideloaded)
+      end
+
+      2.times { subject.import '/app/views/layouts/application.js', sideloaded: true }
+
+      assert_equal [{ identifier: '/app/views/layouts/application.js', sideloaded: true }], events
+      assert_equal({ '/app/views/layouts/application.js' => {} }, subject.imported)
+    ensure
+      ActiveSupport::Notifications.unsubscribe(subscriber)
+    end
+
     # proscenium-ui's Select sideloads its own file again with `lazy: true` after the component's
     # inheritance chain sideloaded it eagerly, and relies on the later options winning.
     it 'merges the options of a repeat sideload, notifying once' do

@@ -55,6 +55,8 @@ module Proscenium
     # @yieldparam transformed_name [String]
     # @yieldparam side_load_path [String, nil]
     # @return [Array<String>] the transformed CSS module names.
+    #
+    # @api public: an extension point for component gems (README, "Extending Proscenium").
     def class_names(*names, require_prefix: true)
       self.class.filter_names(names).map do |name|
         transformed, path = transform_class_name(name, require_prefix: require_prefix)

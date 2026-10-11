@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+# @api public: an extension point for component gems (README, "Extending Proscenium").
 module Proscenium::CssModule
   extend ActiveSupport::Autoload
 
