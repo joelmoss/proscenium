@@ -38,7 +38,7 @@ module Proscenium
           opts = opts.merge(data: opts[:data] || {})
           opts = opts.merge(preload_links_header: false) if fragments
 
-          out << helpers.stylesheet_link_tag(path.delete_prefix('/'), extname: false, **opts)
+          out << helpers.stylesheet_link_tag(path, extname: false, **opts)
         end
 
         if fragments
@@ -64,7 +64,7 @@ module Proscenium
           opts = opts[:js].is_a?(Hash) ? opts[:js] : {}
           opts = opts.merge(preload_links_header: false) if fragments
 
-          out << helpers.javascript_include_tag(path.delete_prefix('/'), extname: false, **opts)
+          out << helpers.javascript_include_tag(path, extname: false, **opts)
         end
 
         if fragments
