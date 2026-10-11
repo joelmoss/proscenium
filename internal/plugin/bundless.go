@@ -222,7 +222,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						} else {
 							// == Unqualified path! - use esbuild to resolve.
 
-							resolveArgs := cloneResolveArgs(args)
+							resolveArgs := args
 							resolveArgs.ResolveDir = gemPath
 
 							suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
@@ -412,7 +412,7 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						// Unqualified path! - use esbuild to resolve.
 
 						originalPath := result.Path
-						resolveArgs := cloneResolveArgs(args)
+						resolveArgs := args
 
 						// A rubygems-namespaced import always carries its gem root: the loaders attach
 						// it (bundless's OnLoad for JS, the css plugin's for CSS). Missing means a

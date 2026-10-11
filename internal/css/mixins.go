@@ -189,10 +189,7 @@ func (p *cssParser) readMixinDefinitions(filePath string) bool {
 		return false
 	}
 
-	tokens, err2 := newCssTokenizer(contents, filePath)
-	if err2 != nil {
-		return false
-	}
+	tokens := newCssTokenizer(string(contents), filePath)
 
 	tokens.next()
 

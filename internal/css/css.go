@@ -6,8 +6,6 @@ import (
 	"strings"
 )
 
-const debug = false
-
 // CssWarning represents a non-fatal warning generated during CSS parsing.
 type CssWarning struct {
 	Text     string
@@ -49,7 +47,7 @@ func ParseCss(input string, path string, cfg *types.ConfigT) (string, []CssWarni
 }
 
 func newCssParser(input string, path string, cfg *types.ConfigT) *cssParser {
-	t, _ := newCssTokenizer(input, path)
+	t := newCssTokenizer(input, path)
 
 	return &cssParser{
 		tokens:             t,

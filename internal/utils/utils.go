@@ -25,21 +25,6 @@ func ToString(a interface{}) (string, bool) {
 	return "", false
 }
 
-func KindToString(e esbuild.ResolveKind) string {
-	kindStrings := []string{
-		"ResolveNone",
-		"ResolveEntryPoint",
-		"ResolveJSImportStatement",
-		"ResolveJSRequireCall",
-		"ResolveJSDynamicImport",
-		"ResolveJSRequireResolve",
-		"ResolveCSSImportRule",
-		"ResolveCSSComposesFrom",
-		"ResolveCSSURLToken",
-	}
-	return kindStrings[e]
-}
-
 func HasExtension(name string) (extension string, found bool) {
 	ext := path.Ext(name)
 	return ext, ext != ""
@@ -284,9 +269,9 @@ func GemFromSpecifier(spec string, cfg *types.ConfigT) (GemRef, bool, error) {
 }
 
 // Parses an absolute file system path, answering which bundled gem contains it. The filesystem-
-// space counterpart of GemFromSpecifier, and the replacement for PathIsRubyGem.
+// space counterpart of GemFromSpecifier.
 //
-// Longest root wins, and a root matches only at a "/" boundary. PathIsRubyGem took the first match
+// Longest root wins, and a root matches only at a "/" boundary. The PathIsRubyGem it replaced took the first match
 // of a bare HasPrefix from a Go map range, and gem roots are stored without a trailing separator -
 // so a path under a root that merely shares a string prefix with another (`/gems/foo-ext` against
 // `/gems/foo`) or sits under a nested root could be credited to the wrong gem, and picked
@@ -330,12 +315,6 @@ func GemFromFsPath(fsPath string, cfg *types.ConfigT) (GemRef, bool) {
 	}
 
 	return ref, found
-}
-
-// Deprecated: use GemFromFsPath, which returns the suffix this drops.
-func PathIsRubyGem(path string, cfg *types.ConfigT) (gemName string, gemPath string, found bool) {
-	ref, ok := GemFromFsPath(path, cfg)
-	return ref.Name, ref.Root, ok
 }
 
 // Checks if the given path is a Ruby gem, ie. starts with "@rubygems/" or "node_modules/@rubygems".

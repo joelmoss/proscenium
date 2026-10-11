@@ -3,7 +3,6 @@ package proscenium_test
 import (
 	b "joelmoss/proscenium/internal/builder"
 	. "joelmoss/proscenium/test/support"
-	"regexp"
 
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -287,11 +286,6 @@ var _ = Describe("b.BuildToString(svg)", func() {
 	)
 
 	When("importing remote svg from css", func() {
-		PIt("should not bundle or encode; leave as is", func() {
-			var re = regexp.MustCompile(`^https?://.+(^\.svg)`)
-			Expect(re.MatchString("https://sdfsdf.jsvg")).To(BeTrue())
-		})
-
 		PIt("should not bundle or encode; leave as is", func() {
 			MockURL("/at.svg", svgContent)
 

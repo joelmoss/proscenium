@@ -55,10 +55,8 @@ func Svg(cfg *types.ConfigT) api.Plugin {
 					// Built once, at module scope, so every render returns the same element.
 					contents = fmt.Sprintf("const svg = %s;\nexport default function() {\n\treturn svg;\n}\n", contents)
 
+					// Only a `.svg` file reaches this namespace, so its component is always JSX.
 					loader := api.LoaderJSX
-					if utils.PathIsTsx(args.Path) {
-						loader = api.LoaderTSX
-					}
 
 					return api.OnLoadResult{
 						Contents:   &contents,

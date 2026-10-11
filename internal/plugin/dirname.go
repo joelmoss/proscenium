@@ -26,7 +26,6 @@ func Dirname(cfg *types.ConfigT) api.Plugin {
 
 					// Skip npm packages in node_modules.
 					if strings.Contains(args.Path, "/node_modules/") {
-						debug.Debug(cfg.Debug, strings.Contains(args.Path, "/node_modules/"))
 						return api.OnLoadResult{}, nil
 					}
 

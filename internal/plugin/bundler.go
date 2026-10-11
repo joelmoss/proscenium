@@ -121,7 +121,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				} else {
 					// == Unqualified path! - use esbuild to resolve.
 
-					resolveArgs := cloneResolveArgs(args)
+					resolveArgs := args
 					resolveArgs.ResolveDir = gemPath
 
 					suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
@@ -297,7 +297,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								result.Path = ""
 							}
 						} else {
-							resolveArgs := cloneResolveArgs(args)
+							resolveArgs := args
 							mappedGem := ""
 
 							if utils.IsBareModule(result.Path) {
@@ -378,22 +378,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 // The first of the two doors esbuild's own path forms come through: Importer and ResolveDir are
 // whatever the platform produced. Everything below the boundary is slash-form, so they are
-// converted once, here, rather than at each site that reads them. args is a value, so assigning
-// back covers cloneResolveArgs too.
+// converted once, here, rather than at each site that reads them. args is a value, so a
+// copy taken after this carries the conversion.
 func toSlashArgs(args esbuild.OnResolveArgs) (importer string, resolveDir string) {
 	return filepath.ToSlash(args.Importer), filepath.ToSlash(args.ResolveDir)
-}
-
-func cloneResolveArgs(args esbuild.OnResolveArgs) esbuild.OnResolveArgs {
-	return esbuild.OnResolveArgs{
-		Path:       args.Path,
-		Importer:   args.Importer,
-		Namespace:  args.Namespace,
-		ResolveDir: args.ResolveDir,
-		Kind:       args.Kind,
-		PluginData: args.PluginData,
-		With:       args.With,
-	}
 }
 
 // Strips the "unbundle:" prefix from the `result.Path`, and returns true if the prefix was found.

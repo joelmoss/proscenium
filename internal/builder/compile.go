@@ -72,7 +72,7 @@ func compile(cfg *types.ConfigT) (bool, string) {
 	// Delete old compiled assets.
 	os.RemoveAll(outputPath)
 
-	_, err := replacements.Build()
+	err := replacements.Build()
 	if err != nil {
 		return compileError("build npm replacements", err.Error())
 	}

@@ -17,13 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Describe("nested", func() {
-// 	AssertCode("relative", `console.log("pkg/nest/one.js");`)
-// 	AssertCode("same package", `console.log("pkg/nest/two.js");`)
-// 	AssertCode("different package", `console.log("pkg/three.js");`)
-// 	AssertCode("app", `console.log("/lib/foo.js");`)
-// })
-
 // The first error of a failed build, decoded from the JSON the builder returns.
 func firstBuildError(result string) (pluginName string, text string) {
 	var e struct{ PluginName, Text string }
