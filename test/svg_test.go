@@ -84,7 +84,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		It("leaves an svg referenced from css external", func() {
 			_, code, _ := b.BuildToString("lib/svg/svg.css", testConfig)
 
-			Expect(code).To(ContainCode(`url(/hue/icons/angle-right-regular.svg)`))
+			Expect(code).To(ContainCode(`url(/ui-gem/icons/angle-right-regular.svg)`))
 		})
 	})
 
@@ -134,7 +134,7 @@ var _ = Describe("b.BuildToString(svg)", func() {
 		_, code, _ := b.BuildToString("lib/svg/svg.css", testConfig)
 
 		Expect(code).To(ContainCode(`
-			url(/hue/icons/angle-right-regular.svg)`,
+			url(/ui-gem/icons/angle-right-regular.svg)`,
 		))
 	})
 

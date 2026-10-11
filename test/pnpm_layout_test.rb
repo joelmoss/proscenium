@@ -8,7 +8,8 @@ require 'proscenium/dependency_context'
 require_relative 'package_manager/stage_a/bundle'
 
 # What the engine builds from a real pnpm install of a gem with ui-gem's manifest shape (#154):
-# stage_a_hue_shape, installed by Bundler into a read-only bundle with no node_modules of its own,
+# stage_a_ui_gem_shape, installed by Bundler into a read-only bundle with no node_modules of its
+# own,
 # gets its dependencies from its context through pnpm, and the engine routes its imports there. The
 # pnpm counterpart of bun_layout_test.rb, and the only build against a real pnpm tree on every
 # supported pnpm line: the package-manager job's pnpm 12 leg and the nightly canary run it, so a

@@ -50,13 +50,13 @@ describe Proscenium::CLI::Error do
     'PSM-E-REGISTRY-TARBALL' => { packages: '@rubygems/widget' },
     'PSM-E-WORKSPACE-MISSING' => { gems: 'widget', manager: 'bun' },
     'PSM-E-PEER-SPLIT' => { gem: 'widget', package: 'react' },
-    'PSM-E-COLLISION' => { list: '  - package.json dependencies has @rubygems/hue as ' \
-                                 '"github:example-org/hue#22e6604"' },
+    'PSM-E-COLLISION' => { list: '  - package.json dependencies has @rubygems/ui-gem as ' \
+                                 '"github:example-org/ui-gem#22e6604"' },
     'PSM-E-OWNED-DIR' => { entries: 'mine' },
     'PSM-E-OWNED-LINK' => { paths: '.proscenium/packages' },
     'PSM-E-CREDENTIAL' => { gem: 'widget', name: 'private-pkg' },
     'PSM-E-BUN-DEFAULT-TRUSTED' => {},
-    'PSM-E-TRUSTED-SOURCE' => { list: '  - hue: esbuild (github:evil/esbuild)' },
+    'PSM-E-TRUSTED-SOURCE' => { list: '  - ui-gem: esbuild (github:evil/esbuild)' },
     'PSM-E-PLATFORM-VARIANT' => { variants: 'widget (widget-1.0.0-x86_64-linux.gem)' },
     'PSM-E-UNC-SHIM' => { manager: 'pnpm', root: '//server/share/app' },
     'PSM-W-END-OF-LIFE' => { manager: 'pnpm', version: '11.28.4', eol: '2027-04-30' }
