@@ -32,12 +32,6 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
                  }, Proscenium::Importer.imported)
   end
 
-  it 'side loads variant' do
-    skip 'fixme'
-    pp PagesController.new.request
-    pp PagesController.render :variant
-  end
-
   it 'side loads partial' do
     BarePagesController.render :sideloadpartial
 

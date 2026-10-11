@@ -119,7 +119,7 @@ golangci-lint run
 ## Testing
 
 - Ruby tests use Minitest (with Maxitest) and are in `test/`
-- Ruby tests use RSpec-style DSL: `describe`, `context` (aliased as `with`), `it`
+- Ruby tests use RSpec-style DSL: `describe`, `context`, `it`
 - Test helper sets `ENV['PROSCENIUM_TESTS'] = '1'`
 - Go tests use Ginkgo/Gomega and are in `test/`
 - Go test suite file: `test/proscenium_suite_test.go`

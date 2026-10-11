@@ -3,8 +3,6 @@
 module Proscenium
   class Middleware
     class Base
-      include ActiveSupport::Benchmarkable
-
       def self.attempt(request)
         new(request).renderable!&.attempt
       end
@@ -70,8 +68,6 @@ module Proscenium
         when '.js', '.mjs', '.ts', '.tsx', '.jsx' then 'application/javascript'
         when '.css' then 'text/css'
         when '.map' then 'application/json'
-        else
-          ::Rack::Mime.mime_type(::File.extname(path_to_build), nil) || 'application/javascript'
         end
       end
 

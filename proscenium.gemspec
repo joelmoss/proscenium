@@ -26,7 +26,6 @@ Gem::Specification.new do |spec|
     'exe/*',
     'lib/proscenium/**/*',
     'lib/generators/**/*',
-    'lib/tasks/**/*',
     'lib/proscenium.rb',
     'CODE_OF_CONDUCT.md',
     'README.md',

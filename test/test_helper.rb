@@ -24,10 +24,6 @@ module ActiveSupport
       Proscenium::Manifest.reset!
     end
 
-    class << self
-      alias with context
-    end
-
     # Runs the block as though on Windows, or not. For code whose Windows branch only converts a
     # path's spelling, so it can be exercised on every platform from a literal Windows-form path.
     # Plain singleton surgery rather than Minitest::Mock, which this suite does not load.
@@ -38,36 +34,6 @@ module ActiveSupport
     ensure
       Gem.singleton_class.alias_method(:win_platform?, :__orig_win_platform?)
       Gem.singleton_class.remove_method(:__orig_win_platform?)
-    end
-  end
-end
-
-module ViewHelper
-  def self.extended(parent)
-    parent.class_exec do
-      delegate :view_context, to: :controller
-
-      def controller
-        @controller ||= ActionView::TestCase::TestController.new
-      end
-    end
-  end
-
-  def view(obj, &blk)
-    let :instance do
-      instance_exec(&obj)
-    end
-
-    let :view do
-      result = if blk
-                 instance.call(view_context:) do
-                   instance.instance_exec(instance, &blk)
-                 end
-               else
-                 instance.call(view_context:)
-               end
-
-      ::Capybara::Node::Simple.new result
     end
   end
 end

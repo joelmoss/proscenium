@@ -15,6 +15,5 @@ Rails.application.routes.draw do
   get '/boom.rjs' => 'rjs#boom'
 
   # get '/sideloadpartial', to: 'pages#sideloadpartial'
-  # get '/variant', to: 'pages#variant'
   # get 'first_component', to: 'pages#first_component'
 end
