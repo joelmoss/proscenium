@@ -5,7 +5,7 @@ require 'json'
 require 'open3'
 require 'tmpdir'
 require 'proscenium/dependency_context'
-require_relative 'package_manager/stage_a/bundle'
+require_relative 'stage_a/bundle'
 
 # What the engine builds from a real pnpm install of a gem with ui-gem's manifest shape (#154):
 # stage_a_ui_gem_shape, installed by Bundler into a read-only bundle with no node_modules of its

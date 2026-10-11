@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require_relative 'helper'
+require_relative '../cli/helper'
 require 'json'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
-require_relative '../package_manager/stage_a/bundle'
+require_relative 'stage_a/bundle'
 require_relative 'private_registry'
 require_relative 'logging_proxy'
 
