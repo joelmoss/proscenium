@@ -6,13 +6,6 @@ require_relative 'proscenium/error'
 module Proscenium
   extend ActiveSupport::Autoload
 
-  # Default paths for Rails assets. Used by the `compute_asset_path` helper to maintain Rails
-  # default conventions of where JS and CSS files are located.
-  DEFAULT_RAILS_ASSET_PATHS = {
-    stylesheet: 'app/assets/stylesheets/',
-    javascript: 'app/javascript/'
-  }.freeze
-
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
   # A gem dependency context's own node_modules holds the copy of a package the linker nested

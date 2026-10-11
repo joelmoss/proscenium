@@ -2,6 +2,7 @@
 
 require 'json'
 require 'yaml'
+require_relative '../app_package'
 require_relative '../context_map'
 
 module Proscenium
@@ -12,14 +13,11 @@ module Proscenium
     module Collisions
       module_function
 
-      DEPENDENCY_FIELDS = %w[dependencies devDependencies optionalDependencies
-                             peerDependencies].freeze
-
       # One line for each package of the app's own taking a context's name.
       def find(root, manager, gems)
         names = gems.to_h { ["@rubygems/#{it}", it] }
         app = read_json(File.join(root, 'package.json')) || {}
-        pinned = DEPENDENCY_FIELDS.flat_map do |field|
+        pinned = AppPackage::DEPENDENCY_FIELDS.flat_map do |field|
           (app[field] || {}).filter_map do |name, spec|
             next if !names.key?(name) || context_workspace?(spec, name) ||
                     context_link?(root, spec, names[name])

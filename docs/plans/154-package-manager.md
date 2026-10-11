@@ -8,7 +8,7 @@ Status: reviewed design specification. The asset-serving boundary is confirmed; 
 
 Tracking issue: [#154](https://github.com/joelmoss/proscenium/issues/154). This document is the only copy of the plan. The issue tracks stage status and records maintainer sign-off; it does not restate the plan.
 
-Revised 4 October 2026 after a full plan review: v1 is a pilot on pnpm and Bun, npm and Yarn are unsupported, gems opt in to participation, the CLI is Ruby and runs inside the app's bundle, and v1 has four commands. [Research limits and settled decisions](#research-limits-and-settled-decisions) lists every settled decision; the reasoning behind each is in the Review record at the end of this file. `bin/check-154-plan` keeps this body free of superseded text and gates the start of Stage A.
+Revised 4 October 2026 after a full plan review: v1 is a pilot on pnpm and Bun, npm and Yarn are unsupported, gems opt in to participation, the CLI is Ruby and runs inside the app's bundle, and v1 has four commands. [Research limits and settled decisions](#research-limits-and-settled-decisions) lists every settled decision; the reasoning behind each is in the Review record at the end of this file. `bin/check-154-plan` kept this body free of superseded text and gated the start of Stage A; it was removed once Stage A finished (docs/AUDIT.md, F3-14).
 
 ## Motivation
 

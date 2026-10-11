@@ -21,7 +21,8 @@ The project is a hybrid Ruby gem + Go shared library:
 
 ### Key Components
 
-- `lib/proscenium/builder.rb` - FFI interface to Go binary, handles build/resolve/compile operations
+- `lib/proscenium/builder.rb` - FFI interface to Go binary, handles build/resolve/compile operations;
+  the binding itself is `builder/request.rb`, autoloaded so the library opens on the first call
 - `lib/proscenium/railtie.rb` - Rails engine configuration and middleware setup
 - `lib/proscenium/middleware.rb` - Rack middleware that intercepts asset requests
 - `lib/proscenium/side_load.rb` - Auto-loads JS/CSS alongside views, partials, layouts
@@ -37,9 +38,10 @@ The project is a hybrid Ruby gem + Go shared library:
   (`GOLDEN=update bin/test test/cli/errors_test.rb` rewrites them); `cli/reporter.rb` lays out
   and colours human output, and `--json` keeps a stable event shape. The supported pnpm and Bun
   lines are `cli/capabilities.json`
-- `lib/proscenium/context_map.rb`, `stale_contexts.rb`, `mapping_generation.rb` - The engine side
-  of #154: which gems map to a committed context under `.proscenium/packages/`, the refusal to
-  build while one is stale, and the development-time check for files that changed
+- `lib/proscenium/context_map.rb`, `context_plan.rb`, `stale_contexts.rb`, `mapping_generation.rb` -
+  The model of #154 the engine and the CLI share: which gems map to a committed context under
+  `.proscenium/packages/`, the contexts the bundle calls for (`ContextPlan`), the refusal to build
+  while one is stale, and the development-time check for files that changed
 - `lib/proscenium/runtime/` - The `bun test` harness: a `rails runner` daemon (`server.rb`) over a Unix socket, plus the Bun plugin (`bun.js`) and its bootstrap (`bootstrap.js`)
 
 ### Backlog and audits

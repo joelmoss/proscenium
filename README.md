@@ -104,7 +104,8 @@ fine; if not, `gem update --system`. Bundler 2.5.6 or newer resolves the platfor
 needing anything else from you.
 
 Installing on a platform not listed here gets you the platform-less gem, which carries no compiled
-library, and Proscenium will say so by name when it loads rather than failing somewhere inside FFI.
+library, and Proscenium will say so by name on its first build or resolve, rather than failing
+somewhere inside FFI.
 If your platform should be supported, please [open an
 issue](https://github.com/joelmoss/proscenium/issues).
 
@@ -973,12 +974,12 @@ only with a note in the release.
 | `Proscenium::SideLoad.sideload_inheritance_chain(obj, options)` | Side loads the assets of `obj`'s class and each superclass, as described below. |
 | `Proscenium::SideLoad.merge_options(base, override, receiver)` | Merges side load options as Proscenium does for views: a new Hash, keys symbolized at every depth, any `css`/`js` Proc evaluated against `receiver`. |
 | `Proscenium::Importer.import(path, sideloaded: false, **options)` | Imports one asset for the current request, once, merging repeat options (later ones win). A truthy `sideloaded` sends a `sideload.proscenium` notification. |
-| `Proscenium::Importer.sideload(path, **options)` | Imports the script and stylesheet beside the Ruby file at `path`. `lazy: true` keeps a script with the imports but writes no tag for it. |
-| `Proscenium::CssModule` | Included into a component, against its `css_module_path`: `css_module` transforms every name, `class_names` only `@`-prefixed ones, and the private `cssm` is the component's `Transformer`. |
+| `Proscenium::Importer.sideload(path, **options)` | Imports the script and stylesheet beside the Ruby file at `path`, an absolute `Pathname` (anything else raises `ArgumentError`). Does nothing when side loading is off, or `js:` and `css:` are both `false`. `lazy: true` keeps a script with the imports but writes no tag for it. |
+| `Proscenium::CssModule` | Included into a component, against its `css_module_path`: `css_module` transforms every name, `class_names` only `@`-prefixed ones and paths (a name with a `/`, such as `/lib/users@name`), and the private `cssm` is the component's `Transformer`. |
 | `Proscenium::CssModule::Path` | Extended by a component class: `css_module_path` is the `.module.css` beside its source file, else the nearest ancestor's. |
 | `Proscenium::CssModule::Transformer#class_names(*names, require_prefix: true)` | Transforms names; given a block, yields each transformed name and the path of the CSS module it side loads, if any. |
 | `Proscenium::SourcePath` | Included into a class: `source_path` is the file the class is defined in. |
-| `Proscenium::Resolver.resolve(path)` | The URL an asset is served at, from the manifest when one is loaded. |
+| `Proscenium::Resolver.resolve(path)` | Where an asset is served, for an absolute file or URL path (a `./` or `../` path raises `ArgumentError`): its URL, or, when a loaded manifest has it, the entry's outputs as an Array, its own first. `as_array: true` returns `[manifest outputs, URL, file]`. |
 | `Proscenium::Utils.merge_bang_attributes!(names, attributes, allowed)` | Turns an allowed `:name!` argument into `name: true`, unless `name` was given as a keyword. |
 
 Side loading and CSS module lookup walk a component's class hierarchy through these methods,
@@ -992,6 +993,8 @@ which the component's classes provide:
   anything else.
 - `sideload_assets_options` on the instance: its own side load options, merged over the ones
   given.
+- `css_module_path` on each class, from `CssModule::Path`: the class's CSS module, used by
+  `CssModule` and walked the same way, ending at an abstract class.
 
 The walk side loads each class's script, starting with the component's own, then the first CSS
 module found, then each class's stylesheet starting with the topmost, so a component's styles
