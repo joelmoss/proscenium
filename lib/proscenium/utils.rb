@@ -79,7 +79,7 @@ module Proscenium
     # Example:
     #
     #   def tab(name, *args, href:, **attributes)
-    #     Hue::Utils.merge_bang_attributes!(args, attributes, [:current])
+    #     UiGem::Utils.merge_bang_attributes!(args, attributes, [:current])
     #   end
     #
     # Allowing you to use either of the following API's:

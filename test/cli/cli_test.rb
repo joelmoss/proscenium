@@ -74,8 +74,8 @@ describe Proscenium::CLI do
       Struct.new(:call).new(42)
     end
 
-    assert_equal [42, 42], [cli('doctor').first, cli('doctor', 'hue').first]
-    assert_equal [nil, 'hue'], seen
+    assert_equal [42, 42], [cli('doctor').first, cli('doctor', 'ui-gem').first]
+    assert_equal [nil, 'ui-gem'], seen
     assert_includes cli('--help')[1], 'doctor [gem]'
   ensure
     Proscenium::CLI::Inspect.define_singleton_method(:new, new)

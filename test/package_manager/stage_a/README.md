@@ -27,10 +27,10 @@ Used by `test/cli/install_test.rb`, `test/cli/spec_kinds_test.rb`, `test/cli/gem
 | `stage_a_widget_b` | archive | yes | React `^18.3.1` peer, ms 2.1.3 |
 | `stage_a_specs` | archive, built by `spec_kinds_test.rb` with `Bundle.build` | yes | Every dependency spec kind: ranges, `npm:` aliases, a dist-tag, `github:`, a tarball URL. |
 | `gem_npm` | archive | yes | The repository's `fixtures/dummy/vendor/gem_npm` (string-length `^6.0.0`) |
-| `stage_a_hue_shape` | Git | yes | ui-gem's traits: package.json without `version`, `react` and `react-dom` as plain dependencies, a `github:` dependency, and package.json missing from `spec.files`. Its Ruby version is a prerelease (`0.5.3.pre1`). |
+| `stage_a_ui_gem_shape` | Git | yes | ui-gem's traits: package.json without `version`, `react` and `react-dom` as plain dependencies, a `github:` dependency, and package.json missing from `spec.files`. Its Ruby version is a prerelease (`0.5.3.pre1`). |
 
 Archive gems are built with `Gem::Package.build` and installed with `bundle install --local` from
-the app's `vendor/cache`, so there is no gem index and no network. `stage_a_hue_shape` comes from a
+the app's `vendor/cache`, so there is no gem index and no network. `stage_a_ui_gem_shape` comes from a
 local Git repository, because only a Git checkout keeps a manifest that `spec.files` leaves out.
 The installed `bundle/` is made read-only (`a-w`); `StageA::Bundle.writable!` undoes it for
 cleanup.
@@ -44,6 +44,6 @@ resolution, so the widgets conflict on `ms` 2.0.0 and 2.1.3 instead.
 - **`gem_npm` gets its file list and opt-in at build time**, in `bundle.rb`, not in its gemspec.
   The dummy app loads that gemspec as a path gem, and would otherwise treat it as a participant.
 
-`stage_a_hue_shape`'s `github:` dependency is `sindresorhus/escape-string-regexp` at the v5.0.0
+`stage_a_ui_gem_shape`'s `github:` dependency is `sindresorhus/escape-string-regexp` at the v5.0.0
 commit: public, small, and with no install scripts. It is not one of ui-gem's own dependencies, so
 the fixture copies ui-gem's shape without copying its manifest.

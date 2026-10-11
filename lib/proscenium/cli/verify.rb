@@ -13,7 +13,8 @@ module Proscenium
     class Verify
       # A `packages:` key in pnpm-lock.yaml, and a `packages` entry in bun.lock, for a
       # `@rubygems/*` package that is not a link to its context. A pnpm key starting with `@` is
-      # always quoted, and a Git one holds colons: `'@rubygems/hue@git+ssh://git@github.com/...':`.
+      # always quoted, and a Git one holds colons:
+      # `'@rubygems/ui-gem@git+ssh://git@github.com/...':`.
       PNPM_REGISTRY = %r{^\s{2}'(@rubygems/[^@'\s]+)@(?!link:|workspace:)[^']*':\s*$}
       BUN_REGISTRY = %r{"(@rubygems/[^"]+)":\s*\["@rubygems/[^@"]+@(?!workspace:)}
 

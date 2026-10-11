@@ -63,9 +63,9 @@ describe Proscenium::CLI::GemCheck do
     assert_includes out, 'stage_a_widget_a 1.0.0 passes every check'
   end
 
-  it "flags hue's shape: the manifest left out of spec.files and React as a dependency" do
+  it "flags ui-gem's shape: the manifest left out of spec.files and React as a dependency" do
     assert_equal [2, %w[PSM-E-REACT PSM-E-GEM-FILES]],
-                 codes(File.join(FIXTURES, 'stage_a_hue_shape'))
+                 codes(File.join(FIXTURES, 'stage_a_ui_gem_shape'))
   end
 
   it 'flags a gem that has not opted in' do
@@ -187,22 +187,22 @@ describe Proscenium::CLI::GemCheck do
   # postinstall ran under the name the app trusts, through a workspace context too.
   it 'finds a trusted name a gem reaches through Git, a URL or an alias to another package' do
     manifests = {
-      'hue' => { 'dependencies' => { 'esbuild' => 'github:evil/esbuild', 'sharp' => 'npm:evil@1',
-                                     'ms' => 'github:vercel/ms' },
-                 'optionalDependencies' => { 'canvas' => 'https://evil.example/c.tgz' } },
+      'ui-gem' => { 'dependencies' => { 'esbuild' => 'github:evil/esbuild', 'sharp' => 'npm:evil@1',
+                                        'ms' => 'github:vercel/ms' },
+                    'optionalDependencies' => { 'canvas' => 'https://evil.example/c.tgz' } },
       'ui' => { 'dependencies' => { 'esbuild' => '^0.25', 'sharp' => 'npm:sharp@0.33' } }
     }
     found = Proscenium::CLI::Rules.trusted_substitutions(%w[esbuild sharp canvas], manifests)
 
-    assert_equal ['hue: esbuild (github:evil/esbuild)', 'hue: sharp (npm:evil@1)',
-                  'hue: canvas (https://evil.example/c.tgz)'], found
+    assert_equal ['ui-gem: esbuild (github:evil/esbuild)', 'ui-gem: sharp (npm:evil@1)',
+                  'ui-gem: canvas (https://evil.example/c.tgz)'], found
   end
 
   # Install refuses it before any write, for Bun and for pnpm's build approvals alike.
   it 'is refused by an install for any manager that trusts the name' do
     context = Struct.new(:json).new(JSON.generate('dependencies' => { 'esbuild' => 'github:e/v' }))
     install = Proscenium::CLI::Install.new(Dir.pwd, nil)
-    install.instance_variable_set(:@contexts, Struct.new(:contexts).new({ 'hue' => context }))
+    install.instance_variable_set(:@contexts, Struct.new(:contexts).new({ 'ui-gem' => context }))
     manager = Struct.new(:name, :trusted_names)
     install.instance_variable_set(:@manager, manager.new('bun', %w[esbuild]))
     error = assert_raises(Proscenium::CLI::Error) { install.send(:check_trusted_sources) }

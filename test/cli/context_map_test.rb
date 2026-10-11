@@ -19,7 +19,7 @@ describe Proscenium::ContextMap do
   def write(path, body) = File.write(File.join(@root, path), body)
 
   def specs
-    [GemSpec.new('hue', { 'proscenium.dependencies' => 'true' }, '/gems/hue'),
+    [GemSpec.new('ui-gem', { 'proscenium.dependencies' => 'true' }, '/gems/ui-gem'),
      GemSpec.new('rails', {}, '/gems/rails')]
   end
 
@@ -33,7 +33,7 @@ describe Proscenium::ContextMap do
   it "maps every participating gem once pnpm's workspace file registers them" do
     write('pnpm-workspace.yaml', "packages:\n  - .proscenium/packages/*\n")
 
-    assert_equal({ 'hue' => File.join(@root, '.proscenium/packages/hue') },
+    assert_equal({ 'ui-gem' => File.join(@root, '.proscenium/packages/ui-gem') },
                  CM.contexts(@root, specs))
   end
 
@@ -178,7 +178,7 @@ describe Proscenium::ContextMap do
 
   describe 'adoption notice' do
     it 'names the opted-in gems and the command, before adoption' do
-      assert_equal 'hue opt in to installing their NPM dependencies through Proscenium. ' \
+      assert_equal 'ui-gem opt in to installing their NPM dependencies through Proscenium. ' \
                    'Run `bundle exec proscenium install` to install them.',
                    CM.adoption_notice(@root, specs)
     end

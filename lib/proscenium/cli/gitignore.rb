@@ -44,7 +44,8 @@ module Proscenium
         # Git's `**/` also matches no directory at all. Ruby's does too with FNM_PATHNAME, inside a
         # pattern, but not at its start, so that prefix is also dropped; without FNM_PATHNAME, a
         # trailing `**` (and `*`) crosses `/` as Git's trailing `/**` does.
-        # Any segment of the rule may name a gem's directory, such as `.proscenium/packages/hue/**`,
+        # Any segment of the rule may name a gem's directory, such as
+        # `.proscenium/packages/ui-gem/**`,
         # and one with a wildcard, class or brace, such as `[ah]ue`, may match any of them.
         names = ['gem', *pattern.split('/')]
         wide = pattern.split('/').map { it.match?(/[*?\[{]/) ? '*' : it }.join('/')

@@ -34,7 +34,7 @@ describe Proscenium::CLI::Registration do
     # is never installed: registering would change nothing.
     it 'refuses a packages list that excludes the contexts' do
       ["packages:\n  - .proscenium/packages/*\n  - '!.proscenium/packages/*'\n",
-       "packages: ['!.proscenium/packages/hue']\n", "packages: ['!**']\n",
+       "packages: ['!.proscenium/packages/ui-gem']\n", "packages: ['!**']\n",
        "packages: ['.proscenium/packages/*', '!.proscenium/packages/[ah]ue']\n"].each do |text|
         error = assert_raises(Proscenium::CLI::Error, text) { P.splice(text) }
 
@@ -351,7 +351,7 @@ describe Proscenium::CLI::Registration do
         File.write(File.join(dir, '.gitignore'), reordered)
 
         refute system('git', '-C', dir, 'check-ignore', '-q', '--no-index',
-                      '.proscenium/packages/hue/package.json')
+                      '.proscenium/packages/ui-gem/package.json')
         assert_equal reordered, G.splice(reordered)
       end
     end
@@ -359,8 +359,9 @@ describe Proscenium::CLI::Registration do
     # Git applies the last matching rule, so a later one naming a gem's own directory hides that
     # gem's context: the lines go after it again.
     it 'adds the lines again after a later rule that names a gem' do
-      %w[.proscenium/packages/hue/** hue/ .proscenium/packages/hue/package.json
-         .proscenium/packages/[ah]ue/** .proscenium/packages/h?e/ **/{hue,ui}/].each do |rule|
+      %w[.proscenium/packages/ui-gem/** ui-gem/ .proscenium/packages/ui-gem/package.json
+         .proscenium/packages/[tu]i-gem/** .proscenium/packages/u?-gem/
+         **/{ui-gem,ui}/].each do |rule|
         Dir.mktmpdir('ignore') do |dir|
           system('git', 'init', '-q', dir, exception: true)
           text = "#{G.splice('')}#{rule}\n"
@@ -368,7 +369,7 @@ describe Proscenium::CLI::Registration do
 
           refute_equal text, G.splice(text), rule
           refute system('git', '-C', dir, 'check-ignore', '-q', '--no-index',
-                        '.proscenium/packages/hue/package.json'), rule
+                        '.proscenium/packages/ui-gem/package.json'), rule
         end
       end
     end
@@ -390,16 +391,16 @@ describe Proscenium::CLI::Registration do
             system('git', '-C', dir, 'check-ignore', '-q', '--no-index', path)
           end
 
-          refute ignored.call('.proscenium/packages/hue/package.json'), "under #{rule}"
+          refute ignored.call('.proscenium/packages/ui-gem/package.json'), "under #{rule}"
           assert ignored.call('.proscenium/lock'), "under #{rule}"
-          assert ignored.call('.proscenium/packages/hue/node_modules/x/a.js'), "under #{rule}"
+          assert ignored.call('.proscenium/packages/ui-gem/node_modules/x/a.js'), "under #{rule}"
           File.write(File.join(dir, '.gitignore'), after)
 
-          refute ignored.call('.proscenium/packages/hue/package.json'), "then #{rule}"
+          refute ignored.call('.proscenium/packages/ui-gem/package.json'), "then #{rule}"
           assert_equal after, G.splice(after)
           File.write(File.join(dir, '.gitignore'), between)
 
-          refute ignored.call('.proscenium/packages/hue/package.json'), "between #{rule}"
+          refute ignored.call('.proscenium/packages/ui-gem/package.json'), "between #{rule}"
           assert_equal between, G.splice(between)
         end
       end
@@ -455,83 +456,84 @@ describe Proscenium::CLI::Registration do
 
     it 'names a dependency on a gem that is not its context, as a pin from before adopting' do
       write('package.json', JSON.generate(
-                              'dependencies' => { '@rubygems/hue' => 'github:example-org/hue#1',
+                              'dependencies' => { '@rubygems/ui-gem' => 'github:example/ui-gem#1',
                                                   '@rubygems/other' => '1.0.0', 'react' => '18' },
                               'devDependencies' => { '@rubygems/widget' => 'workspace:*' },
                               'optionalDependencies' => {
-                                '@rubygems/hue' => 'link:.proscenium/packages/hue'
+                                '@rubygems/ui-gem' => 'link:.proscenium/packages/ui-gem'
                               }
                             ))
 
-      assert_equal ['package.json dependencies has @rubygems/hue as "github:example-org/hue#1"'],
-                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
+      assert_equal ['package.json dependencies has @rubygems/ui-gem as "github:example/ui-gem#1"'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem widget])
     end
 
     # Only a link to the gem's own context is the context; one to a vendored copy is another source.
     it 'names a link to anything but the context' do
-      deps = { '@rubygems/hue' => 'link:vendor/hue',
+      deps = { '@rubygems/ui-gem' => 'link:vendor/ui-gem',
                '@rubygems/widget' => 'link:./.proscenium/packages/widget/' }
       write('package.json', JSON.generate('dependencies' => deps))
 
-      assert_equal ['package.json dependencies has @rubygems/hue as "link:vendor/hue"'],
-                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
+      assert_equal ['package.json dependencies has @rubygems/ui-gem as "link:vendor/ui-gem"'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem widget])
     end
 
     # `workspace:<name>@<range>` is another workspace package under the context's name.
     it 'names a workspace alias to another package' do
-      deps = { '@rubygems/hue' => 'workspace:other@*', '@rubygems/widget' => 'workspace:^1.0.0',
+      deps = { '@rubygems/ui-gem' => 'workspace:other@*', '@rubygems/widget' => 'workspace:^1.0.0',
                '@rubygems/ui' => 'workspace:@rubygems/ui@*' }
       write('package.json', JSON.generate('dependencies' => deps))
 
-      assert_equal ['package.json dependencies has @rubygems/hue as "workspace:other@*"'],
-                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget ui])
+      assert_equal ['package.json dependencies has @rubygems/ui-gem as "workspace:other@*"'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem widget ui])
     end
 
     it 'names a workspace package with a context name, skipping excluded ones' do
       write('pnpm-workspace.yaml', "packages:\n  - packages/*\n  - '!packages/old'\n  " \
                                    "- .proscenium/packages/*\n")
-      write('packages/hue/package.json', '{"name": "@rubygems/hue"}')
+      write('packages/ui-gem/package.json', '{"name": "@rubygems/ui-gem"}')
       write('packages/old/package.json', '{"name": "@rubygems/widget"}')
       write('packages/ui/package.json', '{"name": "ui"}')
-      write('.proscenium/packages/hue/package.json', '{"name": "@rubygems/hue"}')
+      write('.proscenium/packages/ui-gem/package.json', '{"name": "@rubygems/ui-gem"}')
 
-      assert_equal ['packages/hue/package.json is named @rubygems/hue'],
-                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue widget])
+      assert_equal ['packages/ui-gem/package.json is named @rubygems/ui-gem'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem widget])
       # An exclusion with braces, which pnpm expands, or spelled with or without a leading `./`.
-      ["  - packages/*\n  - '!packages/{hue,old}'\n", "  - ./packages/*\n  - '!packages/hue'\n",
-       "  - packages/*\n  - '!./packages/hue'\n"].each do |list|
+      ["  - packages/*\n  - '!packages/{ui-gem,old}'\n",
+       "  - ./packages/*\n  - '!packages/ui-gem'\n",
+       "  - packages/*\n  - '!./packages/ui-gem'\n"].each do |list|
         write('pnpm-workspace.yaml', "packages:\n#{list}")
 
-        assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue]), list
+        assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem]), list
       end
     end
 
     it 'reads a pnpm-workspace.yaml with dates and aliases, and skips one it cannot parse' do
       write('pnpm-workspace.yaml', "when: 2026-01-01\nbase: &b packages/*\npackages:\n  - *b\n")
-      write('packages/hue/package.json', '{"name": "@rubygems/hue"}')
+      write('packages/ui-gem/package.json', '{"name": "@rubygems/ui-gem"}')
 
-      assert_equal ['packages/hue/package.json is named @rubygems/hue'],
-                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue])
+      assert_equal ['packages/ui-gem/package.json is named @rubygems/ui-gem'],
+                   Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem])
       write('pnpm-workspace.yaml', "packages: [packages/*\n")
 
-      assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue])
+      assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem])
     end
 
     it 'skips the contexts however the registration spells them' do
       %w[./.proscenium/packages/* .proscenium/packages/*/].each do |pattern|
         write('pnpm-workspace.yaml', "packages:\n  - '#{pattern}'\n")
-        write('.proscenium/packages/hue/package.json', '{"name": "@rubygems/hue"}')
+        write('.proscenium/packages/ui-gem/package.json', '{"name": "@rubygems/ui-gem"}')
 
-        assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[hue]), pattern
+        assert_empty Proscenium::CLI::Collisions.find(@root, 'pnpm', %w[ui-gem]), pattern
       end
     end
 
     it "reads Bun's workspaces from package.json" do
       write('package.json', '{"workspaces": {"packages": ["libs/*", ".proscenium/packages/*"]}}')
-      write('libs/hue/package.json', '{"name": "@rubygems/hue"}')
+      write('libs/ui-gem/package.json', '{"name": "@rubygems/ui-gem"}')
 
-      assert_equal ['libs/hue/package.json is named @rubygems/hue'],
-                   Proscenium::CLI::Collisions.find(@root, 'bun', %w[hue])
+      assert_equal ['libs/ui-gem/package.json is named @rubygems/ui-gem'],
+                   Proscenium::CLI::Collisions.find(@root, 'bun', %w[ui-gem])
       assert_empty Proscenium::CLI::Collisions.find(@root, 'bun', %w[widget])
     end
   end

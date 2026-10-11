@@ -33,9 +33,10 @@ end
 describe 'proscenium install' do
   LIB = File.expand_path('../../lib', __dir__)
   EXE = File.expand_path('../../exe/proscenium', __dir__)
-  GEMS = %w[gem_npm stage_a_hue_shape stage_a_widget_a stage_a_widget_b].freeze
+  GEMS = %w[gem_npm stage_a_ui_gem_shape stage_a_widget_a stage_a_widget_b].freeze
   WIDGETS = %w[stage_a_widget_a stage_a_widget_b].freeze
-  # What the context of stage_a_hue_shape (ui-gem's manifest shape) must hold: React and react-dom
+  # What the context of stage_a_ui_gem_shape (ui-gem's manifest shape) must hold: React and
+  # react-dom
   # as plain dependencies, and a `github:` one.
   SHAPED_DEPENDENCIES = %w[react react-dom escape-string-regexp].freeze
   # C40: Proscenium's own share of an install. Calibrated on CI 2026-10-04 from the warm no-op
@@ -132,17 +133,17 @@ describe 'proscenium install' do
         GEMS.each { assert_path_exists context(dir, it) }
         refute_path_exists File.join(dir, '.proscenium/packages/stage_a_assets')
         refute_path_exists File.join(dir, '.proscenium/installing')
-        assert_includes err, 'PSM-E-REACT' # hue's shape: React as a dependency is a warning
+        assert_includes err, 'PSM-E-REACT' # ui-gem's shape: React as a dependency is a warning
 
-        # ui-gem's manifest shape, from stage_a_hue_shape: no `version`, React and react-dom as
+        # ui-gem's manifest shape, from stage_a_ui_gem_shape: no `version`, React and react-dom as
         # plain dependencies, and a `github:` dependency. Its context installs as a workspace, not
         # from a registry (C42), and its dependencies land in the context (C43), from the store on
         # pnpm.
-        shaped = File.join(dir, '.proscenium/packages/stage_a_hue_shape')
+        shaped = File.join(dir, '.proscenium/packages/stage_a_ui_gem_shape')
         lockfile = File.join(dir, manager == 'bun' ? 'bun.lock' : 'pnpm-lock.yaml')
 
-        root = InstallFixture.roots.fetch('stage_a_hue_shape')
-        spec = Gem::Specification.load(File.join(root, 'stage_a_hue_shape.gemspec'))
+        root = InstallFixture.roots.fetch('stage_a_ui_gem_shape')
+        spec = Gem::Specification.load(File.join(root, 'stage_a_ui_gem_shape.gemspec'))
 
         # The fixture keeps ui-gem's traits: a Git source whose package.json is not in
         # `spec.files`, and has no `version`; nor does the context generated from it.
@@ -160,11 +161,11 @@ describe 'proscenium install' do
         lock = File.read(lockfile)
 
         if manager == 'pnpm'
-          assert_includes lock, '  .proscenium/packages/stage_a_hue_shape:'
-          refute_includes lock, '@rubygems/stage_a_hue_shape@'
+          assert_includes lock, '  .proscenium/packages/stage_a_ui_gem_shape:'
+          refute_includes lock, '@rubygems/stage_a_ui_gem_shape@'
         else
-          assert_includes lock, '"@rubygems/stage_a_hue_shape@workspace:.proscenium/packages/' \
-                                'stage_a_hue_shape"'
+          assert_includes lock, '"@rubygems/stage_a_ui_gem_shape@workspace:.proscenium/packages/' \
+                                'stage_a_ui_gem_shape"'
         end
         SHAPED_DEPENDENCIES.each do |name|
           link = File.join(shaped, 'node_modules', name)
@@ -206,11 +207,11 @@ describe 'proscenium install' do
         assert_equal manager, report.dig('manager', 'name')
         assert_equal(GEMS, report['gems'].map { it['gem'] })
         assert_equal ['current'], report['gems'].map { it['status'] }.uniq
-        hue = report['gems'].find { it['gem'] == 'stage_a_hue_shape' }
+        ui_gem = report['gems'].find { it['gem'] == 'stage_a_ui_gem_shape' }
 
-        assert_match %r{\Ahttps?://|/stage_a_hue_shape}, hue['source']
+        assert_match %r{\Ahttps?://|/stage_a_ui_gem_shape}, ui_gem['source']
         assert_equal ['escape-string-regexp@github:sindresorhus/escape-string-regexp#ba9a447'],
-                     hue['gitAndUrl']
+                     ui_gem['gitAndUrl']
         assert_empty report['buildRefused']
 
         # Every reason the engine refuses to build, not only each gem's own context: an orphan.
@@ -637,14 +638,14 @@ describe 'proscenium install' do
   it "refuses an app still depending on a gem's package itself, changing nothing (C05)" do
     dir = app('pnpm')
     package = JSON.parse(File.read(File.join(dir, 'package.json')))
-    package['dependencies']['@rubygems/stage_a_hue_shape'] = 'github:example-org/hue#22e6604'
+    package['dependencies']['@rubygems/stage_a_ui_gem_shape'] = 'github:example-org/ui-gem#22e6604'
     File.write(File.join(dir, 'package.json'), JSON.generate(package))
     before = Dir.children(dir).sort
     _, err, status = proscenium(dir, 'install')
 
     assert_equal 2, status.exitstatus
     assert_includes err, 'PSM-E-COLLISION'
-    assert_includes err, '@rubygems/stage_a_hue_shape as "github:example-org/hue#22e6604"'
+    assert_includes err, '@rubygems/stage_a_ui_gem_shape as "github:example-org/ui-gem#22e6604"'
     assert_equal before, Dir.children(dir).sort
   end
 

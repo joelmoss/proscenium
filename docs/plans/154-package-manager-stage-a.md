@@ -8,7 +8,7 @@ needed to repeat the run.
 The proof's scripts and pilot-only tests were removed once Stages B to E shipped (`leg.rb`,
 `probe/`, `context.rb`, `peers.rb`, `identity.rb`, `drift_test.rb` and `bundle_test.rb`);
 `git show f0d7d447:test/package_manager/stage_a/<file>` recovers any of them. `git_scripts_test.rb`
-moved to `test/cli/`; `bun_test.rb` and `hue_shape_test.rb` became `test/bun_layout_test.rb` and
+moved to `test/cli/`; `bun_test.rb` and `ui_gem_shape_test.rb` became `test/bun_layout_test.rb` and
 `test/pnpm_layout_test.rb` on the shipped context projection; and the ui-gem-shape install checks
 moved into `test/cli/install_test.rb`.
 The fixture gems stay in `test/package_manager/stage_a/`. Paths below are as they were, and so is
@@ -81,7 +81,7 @@ broken browser import.
 | app-b | 8dc567de |
 | ui-gem | checkout at 7400c7a9 |
 
-ui-gem has three pins in app-b, all different: `BUNDLE_LOCAL__HUE` points Bundler at the checkout
+ui-gem has three pins in app-b, all different: `BUNDLE_LOCAL__UI_GEM` points Bundler at the checkout
 (7400c7a9), Gemfile.lock records 7904fb90, and package.json's `github:` pin is 22e66043. That is
 the double-pin drift the plan exists to remove. The proof reads ui-gem's files and manifest from the
 checkout, which is what app-b's bundle loads.
@@ -129,7 +129,7 @@ three directories compare.
   with the seam off matches base on every entry.
 - **The unbundled seam-off control proves nothing here.** ui-gem's checkout has its own
   `node_modules` (it is a working checkout), and today's unbundled chain falls back to the gem
-  root, so it finds ui-gem's own dependencies there. The CI half below, with `stage_a_hue_shape`
+  root, so it finds ui-gem's own dependencies there. The CI half below, with `stage_a_ui_gem_shape`
   installed read-only and without a `node_modules`, is the real control.
 - **Frozen installs are stable (C08).** In unref and ref, two repeated
   `pnpm install --frozen-lockfile` runs and a frozen install after deleting every `node_modules`
@@ -157,11 +157,11 @@ the page supplies it. So:
   (`autoInstallPeers: true`, app-b's lock setting), as links into the store. The app declares no
   React, so there is nothing to share and nothing to split.
 
-### CI half: `stage_a_hue_shape`
+### CI half: `stage_a_ui_gem_shape`
 
-`test/package_manager/stage_a/hue_shape_test.rb`, run by the `stage-a` CI job (ubuntu-latest,
+`test/package_manager/stage_a/ui_gem_shape_test.rb`, run by the `stage-a` CI job (ubuntu-latest,
 pnpm 10.33.1) and locally with `STAGE_A=1 bin/test test/package_manager/stage_a/` (macOS 27.0.1,
-Node 26.10.0, pnpm 10.34.4). `stage_a_hue_shape` has ui-gem's manifest shape and is installed by
+Node 26.10.0, pnpm 10.34.4). `stage_a_ui_gem_shape` has ui-gem's manifest shape and is installed by
 Bundler as a Git source into a read-only bundle, so its root has no `node_modules`. The test
 writes its context into an app that declares nothing, registers it, runs `pnpm install`, and
 builds the gem's entry through `Proscenium::Builder` with and without the seam.
@@ -200,7 +200,7 @@ fewer ui-gem file), with `leg.rb` and a local CONFIG for app-a's settings.
 |---|---|
 | pnpm | 10.34.4, selected by app-a's `packageManager` field |
 | app-a | e9754d69b |
-| ui-gem | the same checkout as app-b (7400c7a9), through `BUNDLE_LOCAL__HUE` |
+| ui-gem | the same checkout as app-b (7400c7a9), through `BUNDLE_LOCAL__UI_GEM` |
 
 | Cell | Bundled, matching base | Unbundled, matching base |
 |---|---|---|

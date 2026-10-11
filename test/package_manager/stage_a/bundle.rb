@@ -10,12 +10,12 @@ module StageA
   # throwaway BUNDLE_PATH that is then made read-only. Nothing here loads Rails.
   #
   # The archive gems are built locally and installed from the app's vendor/cache with
-  # `bundle install --local`, so no gem index or network is involved. stage_a_hue_shape is a Git
+  # `bundle install --local`, so no gem index or network is involved. stage_a_ui_gem_shape is a Git
   # source, as ui-gem is: its package.json is not in `spec.files`, and only a Git checkout keeps it.
   module Bundle
     GEMS = File.expand_path('gems', __dir__)
     ARCHIVES = %w[stage_a_assets stage_a_widget_a stage_a_widget_b].freeze
-    GIT = 'stage_a_hue_shape'
+    GIT = 'stage_a_ui_gem_shape'
 
     # The repository's own gem_npm fixture (string-length ^6.0.0). Its gemspec lists no files and
     # does not opt in, and the dummy app loads it as a path gem, so the archive gets both here
@@ -73,14 +73,14 @@ module StageA
       FileUtils.mv(File.join(source, file), cache)
     end
 
-    # A local Git repository holding stage_a_hue_shape, committed so Bundler can lock a revision.
+    # A local Git repository holding stage_a_ui_gem_shape, committed so Bundler can lock a revision.
     def git_repo(dir)
       repo = File.join(dir, GIT)
       FileUtils.cp_r(File.join(GEMS, GIT), repo)
       git(repo, 'init', '-q')
       git(repo, 'add', '-A')
       git(repo, '-c', 'user.name=Stage A', '-c', 'user.email=stage-a@example.com',
-          'commit', '-q', '-m', 'stage_a_hue_shape')
+          'commit', '-q', '-m', 'stage_a_ui_gem_shape')
       repo
     end
 
