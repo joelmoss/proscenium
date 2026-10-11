@@ -3,6 +3,7 @@ package css
 import (
 	"joelmoss/proscenium/internal/types"
 	"os"
+	"strings"
 )
 
 const debug = false
@@ -36,6 +37,14 @@ func ParseCssFile(path string, cfg *types.ConfigT) (string, []CssWarning, error)
 //   - input: The CSS to parse.
 //   - path: The absolute file system path of the file being parsed.
 func ParseCss(input string, path string, cfg *types.ConfigT) (string, []CssWarning, error) {
+	// The parser only expands mixins, and writing a stylesheet back from its tokens is lossy: the
+	// tokenizer re-escapes an identifier that starts with an escaped digit as `\2xl` (a control
+	// character), for one. A stylesheet that names no mixin is left as written. An at-rule spelled
+	// with an escape (`@\6dixin`) is not looked for; nothing writes one.
+	if !strings.Contains(input, "@mixin") && !strings.Contains(input, "@define-mixin") {
+		return input, nil, nil
+	}
+
 	return newCssParser(input, path, cfg).parse()
 }
 
