@@ -28,6 +28,13 @@ func TestBareLookupDir(t *testing.T) {
 		gem+"/lib/deep/node_modules/nested", // a package nearer the importer
 		gem+"/lib/deep",
 	)
+	// The importers that IsAppPackageFile evaluates must exist: a path it cannot evaluate counts as
+	// an app package anyway, so a missing file would pass that row for the wrong reason.
+	for _, f := range []string{app + "/node_modules/pkg/lib/x.js", gem + "/lib/deep/x.js", gem + "/x.js"} {
+		if err := os.WriteFile(filepath.FromSlash(f), nil, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
 
 	cfg := &types.ConfigT{
 		RootPath: app,
@@ -53,6 +60,7 @@ func TestBareLookupDir(t *testing.T) {
 		{"a scoped name is looked up whole", gem + "/lib/deep/x.js", "@scope/missing/x", app, "", true, cfg},
 		{"a package only above the gem root is not the gem's", gem + "/lib/deep/x.js", "stray", app, "", true, cfg},
 		{"a package the gem does not have resolves from the app", gem + "/x.js", "react", app, "", true, cfg},
+		{"a relative specifier is not a bare import", gem + "/lib/deep/x.js", "./nested", "", "", false, cfg},
 		{"a file that is not a gem's keeps its own lookup", app + "/app/views/x.js", "react", "", "", false, cfg},
 		{"a package the app installed in a gem's root keeps its own", app + "/node_modules/pkg/lib/x.js", "react", "", "", false, appGem},
 	}

@@ -22,10 +22,12 @@ import (
 // a bundling build answers with real paths, and a package linked from outside both roots (`link:`,
 // a pnpm store, a symlinked app root) is legitimately resolved there.
 //
-// `ok` is false for an importer that is not a gem's file, and for a package the app installed
-// inside a gem's root (utils.IsAppPackageFile), which resolve beside themselves as esbuild does.
+// `ok` is false for a specifier that is not bare, for an importer that is not a gem's file, and for
+// a package the app installed inside a gem's root (utils.IsAppPackageFile), which resolve beside
+// themselves as esbuild does.
 func bareLookupDir(importer string, specifier string, cfg *types.ConfigT) (dir string, mappedGem string, ok bool) {
-	if importer == "" {
+	pkg := utils.ExtractBareModule(specifier)
+	if importer == "" || pkg == "" {
 		return "", "", false
 	}
 
@@ -38,9 +40,8 @@ func bareLookupDir(importer string, specifier string, cfg *types.ConfigT) (dir s
 		return contextDir, gem.Name, true
 	}
 
-	pkg := utils.ExtractBareModule(specifier)
 	gemRoot := strings.TrimSuffix(gem.Root, "/")
-	for d := fsDir(importer); pkg != ""; d = fsDir(d) {
+	for d := fsDir(importer); ; d = fsDir(d) {
 		if info, err := os.Stat(utils.JoinFsPath(d, "node_modules", pkg)); err == nil && info.IsDir() {
 			return d, "", true
 		}
