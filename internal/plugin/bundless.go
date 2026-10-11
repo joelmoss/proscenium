@@ -42,33 +42,37 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						return false
 					}
 
-					// A gem's bare asset resolves as its other bare imports do (bareLookupDir); a mapped
+					// A gem's bare asset resolves as its other bare imports do (bareLookupDirs); a mapped
 					// gem's from its context alone.
-					resolveDir := args.ResolveDir
+					resolveDirs := []string{args.ResolveDir}
 					fallbackDir := ""
-					if dir, mappedGem, ok := bareLookupDir(contextImporter(args), result.Path, cfg); ok && mappedGem != "" {
-						resolveDir = dir
-						fallbackDir = dir
-					} else {
-						if ok {
-							resolveDir = dir
-						}
-						if len(cfg.DependencyContexts) > 0 {
-							fallbackDir = root
-						}
+					dirs, mappedGem := bareLookupDirs(contextImporter(args), result.Path, cfg)
+					if dirs != nil {
+						resolveDirs = dirs
+					}
+					if mappedGem != "" {
+						fallbackDir = dirs[0]
+					} else if len(cfg.DependencyContexts) > 0 {
+						fallbackDir = root
 					}
 
 					// IsResolvingPath keeps this from re-entering the plugin's own OnResolve.
-					r := build.Resolve(result.Path, esbuild.ResolveOptions{
-						ResolveDir: resolveDir,
-						Importer:   args.Importer,
-						Kind:       args.Kind,
-						PluginData: types.PluginData{IsResolvingPath: true},
-					})
-					if utils.HasPanicMessage(r.Errors) {
-						result.Errors = r.Errors
+					var r esbuild.ResolveResult
+					for _, dir := range resolveDirs {
+						r = build.Resolve(result.Path, esbuild.ResolveOptions{
+							ResolveDir: dir,
+							Importer:   args.Importer,
+							Kind:       args.Kind,
+							PluginData: types.PluginData{IsResolvingPath: true},
+						})
+						if utils.HasPanicMessage(r.Errors) {
+							result.Errors = r.Errors
 
-						return true
+							return true
+						}
+						if len(r.Errors) == 0 && r.Path != "" {
+							break
+						}
 					}
 					found := filepath.ToSlash(r.Path)
 					if len(r.Errors) > 0 || r.Path == "" {
@@ -314,7 +318,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					// Where a gem's file resolves a bare import from (bareLookupDir): its context when
 					// mapped, else its own node_modules or the app. Declared here, as gotos below
 					// jump past the assignment.
-					var lookupDir, mappedGem string
+					var lookupDirs []string
+					var mappedGem string
 					var gemFile, mapped bool
 
 					if utils.IsBareModule(result.Path) {
@@ -342,7 +347,8 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 					isBare = utils.ExtractBareModule(result.Path)
 					_, hasExt = utils.HasExtension(result.Path)
 
-					lookupDir, mappedGem, gemFile = bareLookupDir(contextImporter(args), result.Path, cfg)
+					lookupDirs, mappedGem = bareLookupDirs(contextImporter(args), result.Path, cfg)
+					gemFile = lookupDirs != nil
 					mapped = mappedGem != ""
 
 					if utils.IsCssImportedFromJs(result.Path, args) {
@@ -426,12 +432,12 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 						case mapped && isBare != "":
 							// Dependency contexts: the gem's context is the only lookup base. A walk up from
 							// an in-tree gem would reach the app's node_modules first.
-							resolveArgs.ResolveDir = lookupDir
+							resolveArgs.ResolveDir = lookupDirs[0]
 							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
 								return result, nil
 							}
 							if result.Path == "" && hasExt {
-								fileUnderNodeModules(lookupDir, originalPath, &result)
+								fileUnderNodeModules(lookupDirs[0], originalPath, &result)
 							}
 							if result.Path == "" {
 								return result, utils.ContextMiss(mappedGem, originalPath)
@@ -439,15 +445,20 @@ func Bundless(cfg *types.ConfigT) esbuild.Plugin {
 							utils.DebugContextRoute(cfg, mappedGem, originalPath, result.Path)
 
 						case gemFile && isBare != "":
-							// A gem's own node_modules, nearest first and never above the gem root, else
-							// the app (bareLookupDir). A file the package's `exports` leaves out is
-							// served from there too, as the shortcut above serves the app's.
-							resolveArgs.ResolveDir = lookupDir
-							if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
-								return result, nil
-							}
-							if result.Path == "" && hasExt {
-								fileUnderNodeModules(lookupDir, originalPath, &result)
+							// Each lookup directory in turn (bareLookupDirs). A file the package's `exports`
+							// leaves out is served from there too, as the shortcut above serves the app's.
+							for _, dir := range lookupDirs {
+								resolveArgs.ResolveDir = dir
+								result.Path = originalPath
+								if ok := resolveWithEsbuild(resolveArgs, &result); !ok {
+									return result, nil
+								}
+								if result.Path == "" && hasExt {
+									fileUnderNodeModules(dir, originalPath, &result)
+								}
+								if result.Path != "" {
+									break
+								}
 							}
 
 						default:

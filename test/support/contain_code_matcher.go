@@ -2,7 +2,6 @@ package support
 
 import (
 	"fmt"
-	"joelmoss/proscenium/internal/utils"
 	"strings"
 
 	"4d63.com/collapsewhitespace"
@@ -16,8 +15,13 @@ type ContainCodeMatcher struct {
 }
 
 func (matcher *ContainCodeMatcher) Match(actual any) (success bool, err error) {
-	actualString, ok := utils.ToString(actual)
-	if !ok {
+	var actualString string
+	switch a := actual.(type) {
+	case string:
+		actualString = a
+	case []byte:
+		actualString = string(a)
+	default:
 		return false, fmt.Errorf("ContainCode matcher requires a string.  Got:\n%s", format.Object(actual, 1))
 	}
 

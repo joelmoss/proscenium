@@ -471,6 +471,18 @@ var _ = Describe("gem stylesheet imports", func() {
 		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/open-props/shadows.css";`, Unbundle)
 	})
 
+	// A file the package's `exports` leaves out is still served from the gem's own node_modules
+	// when unbundling, as the app's shortcut serves the app's (fileUnderNodeModules).
+	EntryPoint("node_modules/@rubygems/gem2/app/views/imports_hidden.css", func() {
+		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/expk/hidden.css";`, Unbundle)
+	})
+
+	// A gem's JS importing a bare CSS module from a package the app provides: unbundling loads it
+	// through the css plugin, from the lookup's directory, rather than leaving the import raw.
+	EntryPoint("node_modules/@rubygems/gem2/asset_peer.js", func() {
+		AssertCode(`const u = "/node_modules/pnpm-link/three.module.css";`, Unbundle)
+	})
+
 	// The lookup's bound picks where resolution starts, never what it may return: the app's
 	// `link:` package lives outside both the gem and the app, and a gem that leaves it to the app
 	// still gets it.

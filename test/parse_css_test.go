@@ -58,7 +58,8 @@ var _ = Describe("Build(parseCss)", func() {
 		// A newline inside a string or url(), or after a backslash, is a bad token: only malformed CSS
 		// has one. The parser used to stop there and silently drop the rest of the stylesheet, and the
 		// tokenizer cannot write one back as written (it decodes escapes and drops quotes and the
-		// whitespace inside), so the input is returned unchanged for esbuild to report.
+		// whitespace inside), so the input is returned unchanged for esbuild to report. Each input
+		// defines a mixin, so it reaches the tokenizer rather than the pass-through for no mixin.
 		DescribeTable("returns malformed CSS unchanged",
 			func(input string) {
 				output, _, err := css.ParseCss(input, "/foo.css", testConfig)
@@ -66,12 +67,12 @@ var _ = Describe("Build(parseCss)", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(output).To(Equal(input))
 			},
-			Entry("string broken by a newline", "a{content:\"x\ny\";}\nb{color:blue}"),
-			Entry("string holding an escaped newline", "a{content:\"\\a x\n;}\nb{color:blue}"),
-			Entry("backslash before a newline", "a{color:red\\\n;}\nb{color:blue}"),
-			Entry("url ending in a quote", "a{background:url(a\"b\")}\nb{color:blue}"),
-			Entry("url with whitespace inside", "a{background:url(a\nb)}\nb{color:blue}"),
-			Entry("url holding an escaped paren", "a{background:url(a\\29  b)}\nb{color:blue}"),
+			Entry("string broken by a newline", "@define-mixin m{}a{content:\"x\ny\";}\nb{color:blue}"),
+			Entry("string holding an escaped newline", "@define-mixin m{}a{content:\"\\a x\n;}\nb{color:blue}"),
+			Entry("backslash before a newline", "@define-mixin m{}a{color:red\\\n;}\nb{color:blue}"),
+			Entry("url ending in a quote", "@define-mixin m{}a{background:url(a\"b\")}\nb{color:blue}"),
+			Entry("url with whitespace inside", "@define-mixin m{}a{background:url(a\nb)}\nb{color:blue}"),
+			Entry("url holding an escaped paren", "@define-mixin m{}a{background:url(a\\29  b)}\nb{color:blue}"),
 			Entry("bad token inside a mixin declaration", "a{@mixin red from url(a\nb);}\nb{color:blue}"),
 			Entry("bad token after a mixin that resolves", "a{@mixin red from url(\"/lib/mixins/colors.css\");}\nb{content:\"x\ny\";}"),
 			Entry("bad token in a local mixin that is never used", "@define-mixin m { content: \"x\n; }\na{color:red}"),

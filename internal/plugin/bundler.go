@@ -299,6 +299,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 						} else {
 							resolveArgs := args
 							mappedGem := ""
+							var lookupDirs []string
 
 							if utils.IsBareModule(result.Path) {
 								// replace some npm modules with browser native APIs
@@ -309,15 +310,24 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								}
 
 								// A gem's file resolves bare imports from its context, its own node_modules or
-								// the app (bareLookupDir); any other file keeps esbuild's ResolveDir.
-								if dir, gem, ok := bareLookupDir(args.Importer, result.Path, cfg); ok {
-									resolveArgs.ResolveDir = dir
-									mappedGem = gem
-								}
+								// the app (bareLookupDirs); any other file keeps esbuild's ResolveDir.
+								lookupDirs, mappedGem = bareLookupDirs(args.Importer, result.Path, cfg)
 							}
 
-							// Unqualified path! - use esbuild to resolve.
-							ok := resolveWithEsbuild(resolveArgs, &result)
+							// Unqualified path! - use esbuild to resolve, from each lookup directory in turn.
+							ok := false
+							if lookupDirs == nil {
+								ok = resolveWithEsbuild(resolveArgs, &result)
+							} else {
+								original := result.Path
+								for _, dir := range lookupDirs {
+									resolveArgs.ResolveDir = dir
+									result.Path, result.External = original, false
+									if ok = resolveWithEsbuild(resolveArgs, &result); ok || result.Errors != nil {
+										break
+									}
+								}
+							}
 							if !ok {
 								if mappedGem != "" && result.Errors == nil {
 									return result, utils.ContextMiss(mappedGem, result.Path)
