@@ -63,6 +63,23 @@ class Proscenium::PackagingTest < ActiveSupport::TestCase
     end
   end
 
+  # The library is opened by the first call into it, not by naming Builder or one of its error
+  # classes: a `rescue_from Proscenium::Builder::BuildError` loaded while Puma boots with
+  # `preload_app!` would otherwise start the Go runtime before the fork (golang/go#15538).
+  describe 'naming a builder constant' do
+    it 'does not open the library' do
+      _, err, status = Open3.capture3(
+        RbConfig.ruby, '-I', ROOT.join('lib').to_s,
+        '-e', 'require "proscenium/builder"; Proscenium::Builder::BuildError; ' \
+              'Proscenium::Builder::ResolveError; Proscenium::Builder::Result; ' \
+              'abort "the library was opened" unless Proscenium::Builder.autoload?(:Request)',
+        chdir: ROOT.to_s
+      )
+
+      assert_predicate status, :success?, err
+    end
+  end
+
   describe 'a platform with no compiled library' do
     it 'names the platform instead of failing inside FFI' do
       Dir.mktmpdir do |dir|
@@ -74,7 +91,8 @@ class Proscenium::PackagingTest < ActiveSupport::TestCase
 
         _, err, status = Open3.capture3(
           RbConfig.ruby, '-I', lib, '-r', 'pathname',
-          '-e', 'require "proscenium"; require "proscenium/builder"',
+          '-e', 'require "proscenium"; require "proscenium/builder"; ' \
+                'Proscenium::Builder.reset_config!',
           chdir: ROOT.to_s
         )
 
