@@ -13,10 +13,13 @@ module Proscenium
   # The `proscenium` command (#154): installs participating gems' JavaScript dependencies through
   # the app's own package manager. It runs under `bundle exec` and reads the bundle in process.
   #
-  # Load isolation is a contract, tested in test/cli/load_isolation_test.rb: nothing under
-  # lib/proscenium/cli/ may require `proscenium` itself, ActiveSupport, Rails, FFI or the engine
-  # library. Only Proscenium's plain-Ruby modules the engine shares with it (bundled_gems,
-  # dependency_context, context_map, stale_contexts) and these files.
+  # Load isolation is a contract in both directions, tested in test/cli/load_isolation_test.rb.
+  # Nothing under lib/proscenium/cli/ may require `proscenium` itself, ActiveSupport, Rails, FFI or
+  # the engine library: only the plain-Ruby model the engine shares with it (bundled_gems,
+  # dependency_context, context_map, context_plan, stale_contexts) and these files. And that
+  # model loads no more of cli/ than error.rb (its message catalog) and rules.rb (the author
+  # rules a plan applies), so a change to the package manager, install or verify cannot break
+  # the engine.
   module CLI
     USAGE = <<~TEXT
       Usage: bundle exec proscenium <command> [options]

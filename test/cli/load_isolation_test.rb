@@ -45,3 +45,29 @@ describe 'CLI load isolation' do
     assert_includes loaded_after(%w[--version], preamble: "require 'proscenium'"), 'ActiveSupport'
   end
 end
+
+# The other direction: the engine reaches the model through StaleContexts, and must load no more of
+# the CLI than its error catalog and the author rules the model applies. Every other file under
+# cli/ (the package manager, install, verify) is the CLI's own.
+describe 'Engine load isolation' do
+  ENGINE_LIB = File.expand_path('../../lib', __dir__)
+
+  # The files under lib/proscenium/cli/ loaded after requiring `feature` in a clean process.
+  def cli_files_after(feature)
+    script = "require #{feature.inspect}; " \
+             'puts $LOADED_FEATURES.grep(%r{/lib/proscenium/cli/}).map { File.basename(it) }.sort'
+    out, status = Open3.capture2e(RbConfig.ruby, '-I', ENGINE_LIB, '-e', script)
+    raise "subprocess failed:\n#{out}" unless status.success?
+
+    out.split
+  end
+
+  it 'loads only the error catalog and the author rules from the CLI' do
+    assert_equal %w[error.rb rules.rb], cli_files_after('proscenium/stale_contexts')
+  end
+
+  # The control: a CLI command must be seen, or the check above proves nothing.
+  it 'sees the CLI when something loads it' do
+    assert_includes cli_files_after('proscenium/cli/install'), 'manager.rb'
+  end
+end

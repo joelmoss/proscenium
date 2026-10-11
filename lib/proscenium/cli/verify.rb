@@ -2,6 +2,7 @@
 
 require 'json'
 require_relative '../context_map'
+require_relative '../stale_contexts'
 require_relative 'manager'
 
 module Proscenium
@@ -40,7 +41,7 @@ module Proscenium
 
       def check_workspaces(lock)
         missing = @gems.reject do |gem|
-          path = ".proscenium/packages/#{gem}"
+          path = "#{ContextMap::CONTEXTS}/#{gem}"
           if @manager.name == 'pnpm'
             # An importer with no dependencies is written on one line: `  <path>: {}`.
             lock.match?(/^  #{Regexp.escape(path)}:(?: \{\})?$/)
@@ -54,53 +55,11 @@ module Proscenium
       end
 
       # Each peer a context declares that the app also depends on must resolve, from the context
-      # and from the app, to one real directory. A context that is missing or not valid JSON has
-      # no peers to check; StaleContexts and `install --frozen` report it themselves.
+      # and from the app, to one real directory. The rule is the engine's too, so it lives with
+      # StaleContexts.
       def check_peers
-        app = app_dependencies
-        @gems.each do |gem|
-          dir = File.join(@root, '.proscenium', 'packages', gem)
-          (peers(dir).keys & app).each do |name|
-            from_gem = resolve(dir, name)
-            from_app = resolve(@root, name)
-            next if from_gem.nil? || from_app.nil? || from_gem == from_app
-
-            raise Error.new('PSM-E-PEER-SPLIT', gem:, package: name)
-          end
-        end
-      end
-
-      def peers(dir)
-        context = ContextMap.read_json(File.join(dir, 'package.json'))
-        peers = context['peerDependencies'] if context.is_a?(Hash)
-        peers.is_a?(Hash) ? peers : {}
-      rescue Errno::ENOENT, JSON::ParserError
-        {}
-      end
-
-      def app_dependencies
-        package = ContextMap.read_json(File.join(@root, 'package.json'))
-        return [] unless package.is_a?(Hash)
-
-        # Peers too: pnpm installs the app's own peers at the root.
-        %w[dependencies devDependencies optionalDependencies peerDependencies].flat_map do |field|
-          package[field].is_a?(Hash) ? package[field].keys : []
-        end
-      rescue Errno::ENOENT, JSON::ParserError
-        []
-      end
-
-      # The real directory `name` resolves to from `dir`, walking up node_modules as Node does,
-      # but no higher than the app.
-      def resolve(dir, name)
-        current = dir
-        loop do
-          candidate = File.join(current, 'node_modules', name)
-          return File.realpath(candidate) if File.exist?(candidate)
-          return nil if current == @root || current == File.dirname(current)
-
-          current = File.dirname(current)
-        end
+        gem, package = StaleContexts.peer_split(@root, @gems)
+        raise Error.new('PSM-E-PEER-SPLIT', gem:, package:) if gem
       end
     end
   end
