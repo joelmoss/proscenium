@@ -65,7 +65,7 @@ module Proscenium
             from_app = resolve(@root, name)
             next if from_gem.nil? || from_app.nil? || from_gem == from_app
 
-            raise Error.new('PSM-E-PEER-SPLIT', gem:, package: name, manager: @manager.name)
+            raise Error.new('PSM-E-PEER-SPLIT', gem:, package: name)
           end
         end
       end
