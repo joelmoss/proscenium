@@ -17,6 +17,15 @@ only the developer's own config can produce it, which is why it waited.
 The fork's `api_plugin_panic_test.go` pins the exact text today, and the contract is written at
 both ends (`pluginPanicMsg`, `IsPanicMessage`).
 
+The 2026-10-10 audit (`F3-11`) found the fork writes the prefix in three places, not one:
+`pluginPanicMsg` (api/api_impl.go), and upstream's own recovers in bundler/bundler.go (`panic: %v
+(while parsing %q)`) and linker/linker.go (`recoverInternalError`). The parse recover reaches a
+classifier here: `resolver.Resolve` runs a real build, turns its first error into an `error`, and
+`css/mixins.go` checks it with `utils.IsPanicError`, a second text classifier this item does not
+name. A message ID on `pluginPanicMsg` alone would stop catching parse panics the prefix catches
+today, so mark all three recovers, or keep the prefix as a fallback. Half of what `IsPanicError`
+sees is Proscenium's own `*PanicError`, which `errors.As` recognises with no fork change.
+
 **Effort:** S
 **Priority:** P4
 **Depends on:** None
@@ -101,6 +110,12 @@ trade while the copies are still scattered. `internal/utils/utils.go` is the nat
 Windows work, which is what this waited on: the three hand-spelled conversion copies are gone.
 Windows also gave the convention a doc comment (TWO PATH SPACES, in `internal/utils/utils.go`), two
 named predicates, and three ingress doors, which are the seams types would go on.
+
+A cheaper first step, from the 2026-10-10 audit (`F3-11`): give the remaining doors names in
+`internal/utils` (`filepath.ToSlash(filepath.Dir(x))` is spelled three times, `EvalSymlinks` plus
+`ToSlash` six), then fence them with a `forbidigo` rule allowing `filepath.ToSlash`,
+`EvalSymlinks`, `Dir` and `Join` only in `internal/utils`, so a new plugin callback that forgets
+the conversion fails `golangci-lint` rather than Windows CI. The types stay the end state.
 
 **Effort:** L. **Priority:** P3.
 
@@ -227,27 +242,16 @@ README's `bun test` section records that.
 **Priority:** P3 (was P2)
 **Depends on:** A post-cache measurement of the separate-map case.
 
-### Node, Vitest and Deno test adapters
+### Node and Vitest test adapters
 
-**What:** Adapters so `node --test`, Vitest and Deno can run app JavaScript, driving the same
-daemon protocol as the Bun plugin (`lib/proscenium/runtime/server.rb`).
+Tracked in [#175](https://github.com/joelmoss/proscenium/issues/175): adapters so `node --test` and
+Vitest can run app JavaScript through the daemon protocol the Bun plugin uses. Deno is out of
+scope: it has no load hook, so it could only ever do resolution. The runtime server's
+self-announcing socket mode (`announce`, `stdout:`, the `Dir.mktmpdir` socket, the stdin-EOF
+`watch:`) is reached only from its tests today and is kept for these adapters.
 
-**Why:** Issue #65 asked for "Bun, Deno or Node" and is closed with Bun shipped. Nobody is asking
-for the rest. The item stays only because the constraints below were expensive to establish. The
-daemon is mostly runtime-agnostic, but not entirely: `op_handshake` hands every client the Bun
-plugin's path, and `RUNTIME_MODULES` adds Bun's own module namespaces to the entry build's
-externals. An adapter is a new plugin file plus letting the client say which runtime is asking.
-
-**Context:** Node's `resolve` hook sees extensionless and bare specifiers directly, so the Node
-adapter is *simpler* than Bun's - but it must use async `module.register`, not the synchronous
-`module.registerHooks`, which cannot await the daemon. Node also rejects unknown import attributes
-at parse time (`ERR_IMPORT_ATTRIBUTE_UNSUPPORTED`), so every file has to go through the load hook
-for `with { unbundle: 'true' }` to survive. Deno has no load hook at all, so it can only ever do
-resolution - no CSS modules, SVG components or i18n.
-
-**Effort:** M
-**Priority:** P4 (was P3)
-**Depends on:** Someone asking.
+**Priority:** P3
+**Depends on:** None.
 
 ## Infrastructure
 

@@ -46,8 +46,8 @@ The project is a hybrid Ruby gem + Go shared library:
 
 - `TODOS.md` - The backlog: open items grouped by area, each with What / Why / Context and, for
   most, a `**Priority:**` line (P3, P4). Finished items move to `## Done`.
-- `docs/AUDIT.md` - Two read-only simplification audits (2026-09-08: `F-<AREA>-<N>`; 2026-10-01:
-  `F2-<AREA>-<N>`, `H-<N>`, `BL-<N>`, `Q-<N>`). Read the header's precedence rules and the
+- `docs/AUDIT.md` - Three read-only audits (2026-09-08: `F-<AREA>-<N>`; 2026-10-01:
+  `F2-<AREA>-<N>`, `H-<N>`, `BL-<N>`, `Q-<N>`; the 2026-10-10 architecture audit: `F3-<N>`). Read the header's precedence rules and the
   Progress table first: that table is the current status of every finding, and a finding's own
   write-up further down is a dated snapshot whose described symptoms later work may have corrected.
 

@@ -1,13 +1,15 @@
 # Simplification Audits
 
-Two read-only structural audits of the whole repository, looking for materially useful
+Three read-only audits of the whole repository: two looking for materially useful
 simplifications in data structures, state representation, control flow, algorithms and
-ownership. Nothing in either was implemented as part of the audit itself.
+ownership, and an architecture audit of organisation, modularity and independent change. Nothing
+in any of them was implemented as part of the audit itself.
 
 | Audit | At commit | IDs | Section |
 |---|---|---|---|
-| 2026-10-01 | `65a3857d` | `F2-<AREA>-<N>`, `H-<N>` (hygiene), `BL-<N>` (bug leads), `Q-<N>` | first, below Progress |
-| 2026-09-08 | `5edd7363` | `F-<AREA>-<N>`, Codex `#<N>` | second |
+| 2026-10-10 | `659176b7` | `F3-<N>` | first, below Progress |
+| 2026-10-01 | `65a3857d` | `F2-<AREA>-<N>`, `H-<N>` (hygiene), `BL-<N>` (bug leads), `Q-<N>` | second |
+| 2026-09-08 | `5edd7363` | `F-<AREA>-<N>`, Codex `#<N>` | third |
 
 **Precedence.** Each audit's own later passes override its earlier text, as before (the
 2026-09-08 audit's pass 4 overrides its per-lane sections). Across the two:
@@ -20,7 +22,10 @@ ownership. Nothing in either was implemented as part of the audit itself.
 - The 2026-10-01 **Prior-finding status reconciliation** is the current status of every
   2026-09-08 finding. Where it disagrees with a 2026-09-08 per-lane section (stale line numbers,
   narrowed or withdrawn halves), it wins.
-- **Progress**, directly below, is the record of what has landed, across both audits.
+- **Progress**, directly below, is the record of what has landed, across all three audits.
+- The 2026-10-10 audit is the newest; its **Decisions** were the owner's, and where its findings
+  touch an older one (F3-14's `PathIsRubyGem`, closed with #102), its evidence of a changed cost
+  is stated.
 
 Both of the 2026-10-01 audit's questions are answered, so nothing in the queue waits on a
 decision. **Q-1** is moot: #154 removed the registry (see Progress). It was: the npm registry controller is a supported feature, not yet fully released, so
@@ -58,6 +63,10 @@ was later closed as not planned (#92, 2026-10-03); see Progress.
 | F2-BOOT-1 and H-3 (#92), F2-CI-1 (#93), F-TEST-1 (#97), F-GOBUILD-1 (#101), F-GOUTILS-1 steps 2 and 3 with H-5 (#102), F-CONTRACT-2 (#104), F-DAEMON-2, F-SIDELOAD-2, F-BUNJS-1, F-TOOL-1, F-GEN-1 and F-GOPLUGIN-2 (#105) | **Closed as not planned** — 2026-10-03, after a review of every open audit issue for real-world impact. None changes what a Proscenium user sees: each needs an undocumented override, a new platform, a developer's own unusual import or a typo inside Proscenium, or is a test-harness or dead-code cleanup. F-TEST-1 was mostly done already: `test_helper.rb` resets `env_vars` and the Manifest, and the remaining `precompile` and `bundle` writes are harmless. F-GOBUILD-1 found no drift: both builds use the same option keys, apart from the deliberate `AbsPaths`, and the same plugins. F2-CI-1's two wrong comments (`release.yml`, AGENTS.md) were corrected instead of adding the check. Do not restart any of these from the write-ups below. **F-IMPORTER-1/2 (#99) was kept open:** a probe on 2026-10-03 sideloaded one template twice and got 4 `sideload.proscenium` events for 2 imported keys, so every repeat render of a sideloaded partial or component re-resolved and logged again. |
 | F-IMPORTER-1/2 | **Done** — #99, `2e1e0357`. `Importer.import` resolves first and keys on the resolved path, so the duplicate check and the stored key agree and a repeat sideload no longer fires `sideload.proscenium`. One private `store` replaces the four copies of the store arms. A repeat import merges its options into the existing entry, later ones winning key by key, and notifies once; proscenium-ui's Select relies on that when it sideloads itself `lazy: true` over an eager sideload of the same file. **The audit's option semantics were not taken:** field 6(d) proposed first-write-wins, which would have broken that `lazy: true` override. The CSS-module branch computes the digest when the stored entry has none (a stylesheet first imported as a plain file), and the unread `:abs_path` field is dropped from entries; `:digest` stays, since the memo lookup reads it back. **F-IMPORTER-2's landmine does not arm:** `_sideload`'s first-match loop is unchanged, and a repeat import of the non-CSS branch now returns the same truthy array as the first rather than nil, so `find` still stops at the first existing file. Tests in `test/importer_test.rb`: a repeat JS sideload with `.tsx`, `.ts` and `.js` all present, a repeat CSS-module sideload, a pre-compiled CSS module keyed by its manifest path, the merge, and the digest of a stylesheet first imported as a plain file. |
 | F2-*, H-*, BL-* (2026-10-01) | Open. Ranked in the 2026-10-01 **Final priorities and dependencies**. |
+| F3-2, F3-3, F3-4, F3-5, F3-11, F3-13, F3-15 | **Done** — PR #RUBYPR. |
+| F3-6 | **Step 1 done** — PR #RUBYPR: `ContextPlan` and the peer-split rule are model-side, and the reverse load test pins that the engine loads only `cli/error.rb` and `cli/rules.rb`. The `contexts/` namespace is open, as one batch move with F3-8. |
+| F3-14 | **Ruby half done** — PR #RUBYPR. |
+| F3-1, F3-7, F3-8, F3-9, F3-10, F3-12, F3-14 (Go), F3-16 | Open. |
 | Everything else | Open. |
 
 The order now lives in the 2026-10-01 **Final priorities and dependencies**, which interleaves
@@ -73,6 +82,131 @@ in `2e1e0357`. The ranking below is kept as the record of the audit, not as a qu
 The high-severity pair from 2026-09-08 (**F-GOCSS-1 -> F-GOCSS-2**, a hang and a panic that
 aborted the host Ruby process) is done, as are **F-GOPLUGIN-1**, **F-MW-1**, **F-MW-2**,
 **F-GOUTILS-1 step 1**, **F-GOBUNDLE-1** and **F-GORESOLVE-1**.
+
+---
+
+# Architecture Audit — 2026-10-10
+
+Read-only architecture audit of the whole repository at `659176b7` (0.26.1), asking what a top
+Ruby and Go architect would complain about: organisation, modularity, duplication, dead code, and
+whether parts of the code can be changed independently. Third audit; the two above it were on the
+do-not-re-report list, and nothing they closed as not planned is reopened. Thirteen bounded lanes
+plus a cross-cutting pass, every headline claim re-verified at HEAD by the coordinator, then an
+independent audit-the-audit pass and an engineering review of the implementation plan, with an
+outside (Codex) voice. The lane write-ups were working notes and are not kept; each finding below
+carries its own evidence.
+
+## Complaints
+
+1. **No bounded contexts, and the one boundary declared was enforced one way.** `lib/proscenium/`
+   held the engine, the FFI gateway, the #154 model and the CLI side by side. `cli.rb` said the
+   CLI never loads the engine, and a test pinned it; the engine loaded the CLI's package-manager
+   code on every development boot (`stale_contexts.rb` → `cli/verify` → `cli/manager`) and
+   built a `Struct` to stand in for a manager. (F3-5, F3-6)
+2. **A hidden lifecycle.** `ffi_lib` ran in `Builder::Request`'s body, so naming any
+   `Proscenium::Builder` constant started the Go runtime; README and AGENTS.md said the opposite.
+   (F3-2)
+3. **Rules without owners, spelled many times and drifting.** Which package manager (about 20
+   branches in 9 files, `else` meaning pnpm in some and Bun in others), context staleness (three
+   classifiers), `.proscenium/packages` (25 spellings), path-under-root (four Ruby and six Go
+   spellings, differing on whether the root itself counts), and bundle against unbundle resolution
+   (16 rules in both plugins, three diverged, among them the lookup base). (F3-7, F3-12, F3-16)
+4. **`CLI::Error` stands for four things**: raised failures, collected problems, warnings that
+   exit 0, and catalog text the engine renders. (F3-8)
+5. **Large objects whose seams are already named**: `Install` (5 jobs), `Builder` (7),
+   `ContextMap` (5), `Manager` (323 lines, no `private`), `runtime/server.rb` (10 concerns), two
+   210-line Go `OnResolve` closures with `goto FINISH`. (F3-16)
+6. **The CSS package re-renders every stylesheet through an unmaintained 2018 tokenizer**
+   (`riking/cssparse`), which corrupts an identifier that starts with an escaped digit. (F3-1)
+7. **Tooling at the edges**: `rake release` published from a laptop, `rake` aborted, 79 orphaned
+   fixtures, three identical copies of the Bun preload with nothing checking them, the Go compile
+   command spelled 10 times in CI. (F3-3, F3-9, F3-14)
+
+## Findings
+
+Ranked by realistic trigger and cost. **P1** are defects; **P2** is the independent-work ask.
+
+| ID | Pri | Finding | Evidence at `659176b7` |
+|---|---|---|---|
+| F3-1 | P1 | Mixin-free CSS goes through the tokenizer anyway; cssparse's `escapeIdent` writes a leading digit raw, so `.\32xl\:text-lg` (Tailwind `2xl:`) becomes `.\2xl…` (U+0002), silently | `internal/css/parser.go:54-89` renders every file; cssparse `token.go:274-297` |
+| F3-2 | P1 | Naming `Proscenium::Builder::BuildError` (a `rescue_from` loaded during a Puma `preload_app!` boot) started Go before the fork | `builder.rb:58-63`; README.md:966, AGENTS.md:257 |
+| F3-3 | P1 | `task release: %i[build push]` extended Bundler's `release`: tag, push, publish with no verify legs; `default` named tasks that do not exist | `Rakefile:4,12,13` |
+| F3-4 | P1 | `compute_asset_path` looked up `Manifest[path]` with no leading slash; keys are `/app/…` and `@rubygems/…`, values arrays | `helper.rb:48-54`, `manifest.rb:21-27` |
+| F3-5 | P2 | `manager:` (PEER-SPLIT) and `count:` (PROBLEMS, COLLISION, DRIFT) reach no template; the first is why the engine built a stand-in manager | `verify.rb:68`, `install.rb:110,185,226`, `stale_contexts.rb:71-72` |
+| F3-6 | P2 | The engine must not load the CLI: move `CLI::Contexts` and the peer-split rule to the model, pin the reverse direction; later, one `contexts/` namespace for the model | `stale_contexts.rb:7-9`, `test/cli/load_isolation_test.rb` |
+| F3-7 | P2 | One drift classification (`missing/projection/edited/changed/invalid`) for `StaleContexts.compare`, `Install#describe_change` and `Inspect#status`, which share five sentences and differ on "edited" | `stale_contexts.rb:80-100`, `install.rb:236-256`, `inspect.rb:98-106` |
+| F3-8 | P2 | Split the catalog's text from its exit statuses, so the model renders `[code, args]` pairs without the CLI's exception class (decided: pairs plus a text table, no Diagnostic type) | `cli/error.rb`, `stale_contexts.rb:41` |
+| F3-9 | P2 | The package-manager test tier has no home: six differently worded `STAGE_A` skips across `test/`, `test/cli/`, `test/adopted/`, and its file list hand-kept three times in CI | `main.yml:243,247`, `canary.yml:75` |
+| F3-10 | P2 | Five subprocess runners in the tests with no deadline beside one hardened one | `test/cli/*`, `test/*_layout_test.rb` |
+| F3-11 | P2 | The panic-marker and path-space TODOs understate their scope | TODOS.md |
+| F3-12 | P2 | One lookup policy for a bare import from a gem file (importer dir, gem root, app root; a mapped gem's context only), bounded to the gem and app roots; the `node_modules/@rubygems/<gem>` npm shape is legacy and goes | `bundler.go:312-342`, `bundless.go:45-53,:364-370,:404-465` |
+| F3-13 | P2 | The API component gems build on (`SideLoad.merge_options`, `sideload_inheritance_chain`, `Importer.import`/`sideload`, `CssModule`, `CssModule::Path`, `Transformer#class_names`, `SourcePath`, `Resolver.resolve`, `Utils.merge_bang_attributes!`) was undeclared, and four entries and the protocol had no test | `side_load.rb`, `importer.rb`, `css_module/` |
+| F3-14 | P3 | Dead code, verified zero callers (Ruby and Go), and tests that test nothing | see below |
+| F3-15 | P3 | The private UI gem was named in public comments, test data and a fixture gem | AGENTS.md's naming rule |
+| F3-16 | P3 | Duplication to fold and objects to split when next touched | see below |
+
+**F3-14, dead.** Ruby: `Middleware::BuildError`, `Benchmarkable` in the middleware base, the
+unreachable `content_type` fallback, `Importer.import`'s nil default and `each_*`'s
+`delete: false`, CssModule's no-op ternary arms, public `Transformer#class_name!`,
+`Reporter#info`'s `phase:`, `run_manager`'s optional lock, `ViewHelper`, the `with` alias, a
+`skip 'fixme'` test from 2024 and its views, 79 import-map fixtures, the gemspec's `lib/tasks`
+glob, `bin/check-154-plan`. Go: `ConfigT.GemPath` and its Ruby feeder, `ConfigT.UseDevCSSModuleNames`
+and its vacuous spec, `KindToString`, `PathIsRubyGem` (#102's cost changed: its last caller left
+in `f0d7d447`), `//export build` on an unexported function, `cloneResolveArgs` (a field-by-field
+copy of a value type), an SVG TSX branch, three shims the lookup never tries, the CSS `original`
+builder and `const debug`, the `Bundle` test marker's one redundant use, a panic message naming a
+variable that no longer exists, two `PIt` specs with one name, `.golangci.yml`'s ghost exclusion
+paths. Not dead, by documented decision: `reset_config`, `FDebug`, `materialised: true`.
+
+**F3-16, duplication and splits.** One `read_text` for Node config files (six spellings); the app's
+`packageManager` parsed once; one lockfile-to-manager table; path-under-root as one helper per
+language; the chunk file name as one Go constant with a test that reads it from Ruby;
+`utils.JsString` for every Go-to-JS literal (closes BL-1); named constants for the plugin
+namespaces; a test that the three copies of the Bun preload match; the CI compile command and
+the Windows git block as one step each; `server.rb` split at
+`handle`; Go `OnResolve` stages as named functions with white-box tests. The manager-adapter seam
+(one row per manager) is the first step of the npm adapter, not a change on its own.
+
+## Vocabulary
+
+| Today | One term |
+|---|---|
+| "context" for the file, the directory and the projected set | **projection**, **contexts dir** (`.proscenium/packages`), **plan** (`ContextPlan`) |
+| root, project root | **app root** (`Rails.root`, `RootPath`), **bundle root** (`Bundler.root`), **gem root** |
+| adopted (Ruby), `len(DependencyContexts) > 0` (Go, 5 sites) | one `cfg.Adopted()` |
+| `Builder::Request` | the FFI binding (`Builder::Library` when next renamed) |
+| `css.ParseCss`, `css.CssWarning` | `css.ExpandMixins`, `css.Warning` |
+| bundless, unbundle | **unbundled build** (the mode), **`unbundle:` import** (the per-import opt-out) |
+| JS `Daemon` (it is the client) | `DaemonClient` |
+| `STAGE_A`, `phase4_*` | the **package-manager** tier |
+
+## Decisions (owner, 2026-10-11)
+
+- The `node_modules/@rubygems/<gem>` npm-installed shape is legacy, checked against both apps
+  that use gem dependency contexts: neither declares or installs one. F3-12 deletes it.
+- The extension API is declared public, proven by contract tests here (not a downstream CI job;
+  that is a TODO). F3-13.
+- The runtime server's self-announcing socket mode stays, for the Node and Vitest adapters (#175;
+  Deno is out).
+- This audit lands here, as its own section.
+- `Builder::Request` moves to an autoloaded file regardless of a probe; the probe (below) then
+  reproduced the hang.
+- `NODE_ENV` stays as it is.
+- F3-8 is `[code, args]` pairs plus a text table, not a Diagnostic type.
+- Engineering review: the model moves flat (`ContextPlan` beside its siblings) and the
+  `contexts/` namespace waits for one batch move; `resolve.go` keeps the app root for every
+  non-mapped bare specifier (the 2026-10-07 decision); F3-12's bound picks the `ResolveDir`
+  before esbuild runs, because a bundle build returns real paths; the bare-with-extension
+  shortcut is folded into F3-12.
+
+## Audit log
+
+- 2026-10-10: inventory, 13 lanes and a cross-cutting pass, coordinator re-verification (14 of 15
+  headline claims confirmed, one at medium), two review passes, an independent audit of the audit.
+- 2026-10-11: owner decisions; engineering review of the plan (Codex outside voice: 5 findings, all
+  verified and taken). F3-2's fork probe in the dummy app: a child that builds after the parent
+  only named `BuildError` hung 3 of 3 runs before the change, and exited in under a second 3 of 3
+  after it.
 
 ---
 
