@@ -127,7 +127,7 @@ jobs:
       # this, as sqlite3's native extension once did on Windows. Requiring
       # proscenium first because builder.rb needs Proscenium::Error at class-definition time.
       #
-      # Failing on the pin warning as well, because builder.rb only warns - a user should not lose
+      # Failing on the pin warning as well, because builder/request.rb only warns - a user should not lose
       # their app over it - and a warning nobody reads is how a failed pin would go unnoticed.
       - name: The compiled library loads
         shell: bash
@@ -138,6 +138,9 @@ jobs:
           out=$(bundle exec ruby -Ilib -rpathname -e '
             require "proscenium"
             require "proscenium/builder"
+            # The binding is autoloaded: only a call opens the library, attaches its functions
+            # and pins it on Windows. Requiring builder.rb alone touches none of that.
+            Proscenium::Builder.reset_config!
             puts "FFI OK, loaded #{Proscenium::Builder::LIBRARY_PATH}"
           ' 2>&1) || status=$?
           echo "$out"
@@ -146,14 +149,14 @@ jobs:
 
       # Windows only, and not a formality: ffi calls FreeLibrary on the Go library during VM
       # teardown, which used to segfault the interpreter on roughly three runs in five. The
-      # module pin in builder.rb is what stops it, and a flaky crash needs repetition to catch -
+      # module pin in builder/request.rb is what stops it, and a flaky crash needs repetition to catch -
       # a single run passing proves nothing. See the comment above the pin.
       - name: The interpreter exits cleanly with the library loaded
         if: runner.os == 'Windows'
         shell: bash
         run: |
           for i in 1 2 3 4 5; do
-            bundle exec ruby -Ilib -e 'require "proscenium"; require "proscenium/builder"'
+            bundle exec ruby -Ilib -e 'require "proscenium"; require "proscenium/builder"; Proscenium::Builder.reset_config!'
             echo "run $i exited $?"
           done
 

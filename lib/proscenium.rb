@@ -6,6 +6,13 @@ require_relative 'proscenium/error'
 module Proscenium
   extend ActiveSupport::Autoload
 
+  # Rails' default asset directories. Nothing in Proscenium reads this; it is public, and its
+  # removal waits on a release note (H-3 in docs/AUDIT.md, closed as not planned in #92).
+  DEFAULT_RAILS_ASSET_PATHS = {
+    stylesheet: 'app/assets/stylesheets/',
+    javascript: 'app/javascript/'
+  }.freeze
+
   FILE_EXTENSIONS = ['js', 'mjs', 'ts', 'jsx', 'tsx', 'css', 'js.map', 'mjs.map', 'jsx.map',
                      'ts.map', 'tsx.map', 'css.map'].freeze
   # A gem dependency context's own node_modules holds the copy of a package the linker nested

@@ -204,6 +204,13 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
       Proscenium.config.output_path.rmtree
     end
 
+    # Public API: a component gem passes the Ruby file's absolute Pathname.
+    it 'refuses a path that is not an absolute Pathname' do
+      [Rails.root.join('app/views/user.rb').to_s, Pathname.new('app/views/user.rb')].each do |path|
+        assert_raises(ArgumentError) { subject.sideload path }
+      end
+    end
+
     # proscenium-phlex imports each CSS module its class attributes resolved with `sideloaded: true`
     # after every render, so the notification must fire once per path, not per render.
     it 'notifies once for a path imported with sideloaded: true' do
