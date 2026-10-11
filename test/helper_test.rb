@@ -85,7 +85,7 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
     end
 
     # A UI gem's Select sideloads its own script `lazy: true`, to load it itself when needed: it
-    # is kept with the imports, but no tag is written for it.
+    # is imported, but no tag is written for it.
     it 'leaves out a javascript side loaded lazily' do
       lazy = -> { Proscenium::Importer.import '/app/views/layouts/bare.js', lazy: true }
       BarePagesController.before_action lazy

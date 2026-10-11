@@ -56,8 +56,8 @@ describe 'Engine load isolation' do
   def cli_files_after(feature)
     script = "require #{feature.inspect}; " \
              'puts $LOADED_FEATURES.grep(%r{/lib/proscenium/cli/}).map { File.basename(it) }.sort'
-    out, status = Open3.capture2e(RbConfig.ruby, '-I', ENGINE_LIB, '-e', script)
-    raise "subprocess failed:\n#{out}" unless status.success?
+    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ENGINE_LIB, '-e', script)
+    raise "subprocess failed:\n#{out}#{err}" unless status.success?
 
     out.split
   end
