@@ -12,7 +12,7 @@ in any of them was implemented as part of the audit itself.
 | 2026-09-08 | `5edd7363` | `F-<AREA>-<N>`, Codex `#<N>` | third |
 
 **Precedence.** Each audit's own later passes override its earlier text, as before (the
-2026-09-08 audit's pass 4 overrides its per-lane sections). Across the two:
+2026-09-08 audit's pass 4 overrides its per-lane sections). Across the audits:
 
 - The 2026-10-01 **Final priorities and dependencies** was the queue; since 2026-10-03 the
   only one of its GitHub issues still open was F-IMPORTER-1/2 (#99), fixed in `2e1e0357` and
