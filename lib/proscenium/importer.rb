@@ -34,7 +34,7 @@ module Proscenium
       # @return [String|nil] the digest of the imported file path if a css module (*.module.css).
       #
       # @api public: an extension point for component gems (README, "Extending Proscenium").
-      def import(filepath = nil, sideloaded: false, **)
+      def import(filepath, sideloaded: false, **)
         self.imported ||= {}
 
         if filepath.end_with?('.module.css')
@@ -133,7 +133,8 @@ module Proscenium
         end
       end
 
-      def each_stylesheet(delete: false)
+      # Yields each imported stylesheet and removes it from the imports.
+      def each_stylesheet
         return if imported.blank?
 
         blk = proc do |key, options|
@@ -143,10 +144,11 @@ module Proscenium
           end
         end
 
-        delete ? imported.delete_if(&blk) : imported.each(&blk)
+        imported.delete_if(&blk)
       end
 
-      def each_javascript(delete: false)
+      # Yields each imported javascript and removes it from the imports.
+      def each_javascript
         return if imported.blank?
 
         blk = proc do |key, options|
@@ -155,7 +157,7 @@ module Proscenium
             true
           end
         end
-        delete ? imported.delete_if(&blk) : imported.each(&blk)
+        imported.delete_if(&blk)
       end
 
       def css_imported?

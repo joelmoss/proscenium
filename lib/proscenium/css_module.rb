@@ -18,14 +18,14 @@ module Proscenium::CssModule
 
   module ClassMethods
     def css_module(*names, path: nil)
-      path ||= respond_to?(:css_module_path) ? css_module_path : path
+      path ||= css_module_path if respond_to?(:css_module_path)
 
       cssm = Transformer.new(path)
       cssm.class_names(*names, require_prefix: false).join(' ')
     end
 
     def class_names(*names, path: nil)
-      path ||= respond_to?(:css_module_path) ? css_module_path : path
+      path ||= css_module_path if respond_to?(:css_module_path)
       names = Transformer.filter_names(names)
 
       cssm = Transformer.new(path)

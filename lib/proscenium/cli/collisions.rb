@@ -2,7 +2,7 @@
 
 require 'json'
 require 'yaml'
-require_relative 'registration'
+require_relative '../context_map'
 
 module Proscenium
   module CLI

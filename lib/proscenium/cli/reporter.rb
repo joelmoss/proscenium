@@ -37,9 +37,9 @@ module Proscenium
       end
 
       # A line of the human summary, or an event in JSON mode.
-      def info(message, event: 'info', phase: nil, **details)
+      def info(message, event: 'info', **details)
         if @json
-          emit(event:, phase:, status: 'ok', message:, details:)
+          emit(event:, phase: nil, status: 'ok', message:, details:)
         elsif !@quiet
           @out.puts message
         end

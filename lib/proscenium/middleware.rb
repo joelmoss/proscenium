@@ -4,8 +4,6 @@ module Proscenium
   class Middleware
     extend ActiveSupport::Autoload
 
-    class BuildError < Error; end
-
     autoload :Base
     autoload :Esbuild
     autoload :RubyGems

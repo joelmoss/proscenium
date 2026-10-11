@@ -65,6 +65,8 @@ module Proscenium
       end
     end
 
+    private
+
     def class_name!(name, original_name, path: @source_path)
       unless path
         raise Proscenium::CssModule::TransformError.new(original_name, 'CSS module path not given')
@@ -79,8 +81,6 @@ module Proscenium
         "#{transformed_name}_#{digest}"
       end
     end
-
-    private
 
     # Returns `[transformed_name, side_load_path]` for a single class-name reference.
     # `side_load_path` is the exact string that `class_name!` passed to `Importer.import`, or

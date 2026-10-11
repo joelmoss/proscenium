@@ -306,13 +306,13 @@ module Proscenium
         end
       end
 
-      def run_manager(lock = nil)
+      def run_manager(lock)
         unless @reporter.json?
           @reporter.info(@reporter.paint("Running #{@manager.name} #{manager_args.join(' ')}...",
                                          :dim))
         end
         Runner.run(@manager.executable, manager_args, root: @root,
-                                                      on_spawn: lock&.method(:manager_started),
+                                                      on_spawn: lock.method(:manager_started),
                                                       manager: @manager.name)
       rescue Error => e
         raise unless e.code == 'PSM-E-NATIVE'
@@ -326,7 +326,7 @@ module Proscenium
                                           escape: "It involves #{involved}.")
         raise error
       ensure
-        lock&.manager_finished
+        lock.manager_finished
       end
 
       def manager_args
