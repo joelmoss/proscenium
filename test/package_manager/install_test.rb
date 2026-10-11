@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
-require_relative 'helper'
+require_relative '../cli/helper'
 require 'json'
 require 'open3'
 require 'rbconfig'
 require 'tmpdir'
-require_relative '../package_manager/stage_a/bundle'
+require_relative 'stage_a/bundle'
 
 # The fixture bundle, installed once for every class in this file: nested `describe`s are classes
 # of their own, so a class-level memo would install it again for each.
