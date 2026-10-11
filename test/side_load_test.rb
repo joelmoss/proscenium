@@ -456,5 +456,64 @@ class Proscenium::SideLoadTest < ActiveSupport::TestCase
       assert_equal({ defer: true }, options[:js])
       assert_kind_of Proc, obj.sideload_assets_options[:js]
     end
+
+    # The protocol proscenium-phlex and proscenium-view_component components follow: a class
+    # answers `source_path` and `abstract_class`, may define `.sideload(options)`, and its
+    # instance answers `sideload_assets_options`.
+    describe 'a component class hierarchy' do
+      # base (abstract) < parent < child, each with a script, a stylesheet and a CSS module
+      # beside its source.
+      let(:files) do
+        extensions = %w[.rb .js .css .module.css]
+        %w[base parent child].flat_map { |name| extensions.map { name + it } }
+                             .map { Rails.root.join('app/components', it) }
+      end
+
+      def hierarchy(calls)
+        dir = Rails.root.join('app/components')
+        define = lambda do |name, parent, abstract|
+          Class.new(parent) do
+            define_singleton_method(:source_path) { dir.join("#{name}.rb") }
+            define_singleton_method(:abstract_class) { abstract }
+            define_singleton_method(:sideload) { |options| calls << [name, options] }
+            define_method(:sideload_assets_options) { nil }
+          end
+        end
+        base = define.call('base', Object, true)
+        parent = define.call('parent', base, false)
+        define.call('child', parent, false)
+      end
+
+      def sideload(options = {})
+        calls = []
+        FakeFS.with_fresh do
+          files.each { FileUtils.mkdir_p(it.dirname) && FileUtils.touch(it) }
+          Proscenium::SideLoad.sideload_inheritance_chain(hierarchy(calls).new, options)
+        end
+        calls
+      end
+
+      it 'side loads each class up to the abstract one, scripts first, stylesheets base-first' do
+        sideload
+
+        assert_equal %w[/app/components/child.js /app/components/parent.js
+                        /app/components/child.module.css
+                        /app/components/parent.css /app/components/child.css],
+                     Proscenium::Importer.imported.keys
+      end
+
+      it 'side loads only the first CSS module in the chain' do
+        sideload
+
+        refute_includes Proscenium::Importer.imported.keys, '/app/components/parent.module.css'
+      end
+
+      it 'calls each class\'s own .sideload with the options, once per class' do
+        calls = sideload(js: { defer: true })
+
+        assert_equal [['child', { js: { defer: true } }], ['parent', { js: { defer: true } }]],
+                     calls
+      end
+    end
   end
 end

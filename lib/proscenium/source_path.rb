@@ -2,6 +2,8 @@
 
 # Include this into any class to expose a `source_path` class and instance method, which will return
 # the absolute file system path to the current object.
+#
+# @api public: an extension point for component gems (README, "Extending Proscenium").
 module Proscenium::SourcePath
   def self.included(base)
     base.extend ClassMethods

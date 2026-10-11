@@ -87,6 +87,8 @@ module Proscenium
     #   tab 'Tab 1', required: true
     #   tab 'Tab 1', :required!
     #
+    #
+    # @api public: an extension point for component gems (README, "Extending Proscenium").
     def merge_bang_attributes!(names, kw_attributes, allowed)
       allowed.each do |name|
         sym_name = name.to_sym

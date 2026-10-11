@@ -95,6 +95,8 @@ module Proscenium
       #
       # If the class responds to `.sideload`, it will be called after the regular side loading. You
       # can use this to customise what is side loaded.
+      #
+      # @api public: an extension point for component gems (README, "Extending Proscenium").
       def sideload_inheritance_chain(obj, options)
         return unless Proscenium.config.side_load
 
@@ -168,6 +170,8 @@ module Proscenium
       # attribute, so writing to it would leak one request's options into every later one. Values
       # other than hashes are passed through as they are, not copied: `dup` on an ActiveRecord
       # model returns a new record with no id.
+      #
+      # @api public: an extension point for component gems (README, "Extending Proscenium").
       def merge_options(base, override, receiver)
         options = base.nil? ? {} : base
         options = { js: options, css: options } unless options.is_a?(Hash)

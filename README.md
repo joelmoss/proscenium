@@ -56,6 +56,7 @@
 - [Resolution](#resolution)
 - [Aliases](#aliases)
 - [Pre-compilation](#pre-compilation)
+- [Extending Proscenium](#extending-proscenium)
 - [Puma `preload_app!` and Cluster Mode](#puma-preload_app-and-cluster-mode)
 - [Thanks](#thanks)
 - [Development](#development)
@@ -958,6 +959,43 @@ Rails.configuration.proscenium.precompile = Set[
 ```
 
 This will bundle, code split, tree shake, and compile all your JS, TS, JSX, TSX and CSS files and place them in the `public/assets` directory, ready to be served in production.
+
+## Extending Proscenium
+
+Gems that bring side loading and CSS modules to other component libraries, such as
+[proscenium-phlex](https://github.com/joelmoss/proscenium-phlex) and
+[proscenium-view_component](https://github.com/joelmoss/proscenium-view_component), build on a
+small public API. Each method below is tagged `@api public` and has its own tests, so it changes
+only with a note in the release.
+
+| API | What it does |
+| --- | --- |
+| `Proscenium::SideLoad.sideload_inheritance_chain(obj, options)` | Side loads the assets of `obj`'s class and each superclass, as described below. |
+| `Proscenium::SideLoad.merge_options(base, override, receiver)` | Merges side load options as Proscenium does for views: a new Hash, keys symbolized at every depth, any `css`/`js` Proc evaluated against `receiver`. |
+| `Proscenium::Importer.import(path, sideloaded: false, **options)` | Imports one asset for the current request, once, merging repeat options (later ones win). A truthy `sideloaded` sends a `sideload.proscenium` notification. |
+| `Proscenium::Importer.sideload(path, **options)` | Imports the script and stylesheet beside the Ruby file at `path`. `lazy: true` keeps a script with the imports but writes no tag for it. |
+| `Proscenium::CssModule` | Included into a component, against its `css_module_path`: `css_module` transforms every name, `class_names` only `@`-prefixed ones, and the private `cssm` is the component's `Transformer`. |
+| `Proscenium::CssModule::Path` | Extended by a component class: `css_module_path` is the `.module.css` beside its source file, else the nearest ancestor's. |
+| `Proscenium::CssModule::Transformer#class_names(*names, require_prefix: true)` | Transforms names; given a block, yields each transformed name and the path of the CSS module it side loads, if any. |
+| `Proscenium::SourcePath` | Included into a class: `source_path` is the file the class is defined in. |
+| `Proscenium::Resolver.resolve(path)` | The URL an asset is served at, from the manifest when one is loaded. |
+| `Proscenium::Utils.merge_bang_attributes!(names, attributes, allowed)` | Turns an allowed `:name!` argument into `name: true`, unless `name` was given as a keyword. |
+
+Side loading and CSS module lookup walk a component's class hierarchy through these methods,
+which the component's classes provide:
+
+- `source_path` on each class: the Ruby file whose sibling `.js`/`.ts`/`.jsx`/`.tsx`, `.css` and
+  `.module.css` files are side loaded.
+- `abstract_class` on each class, optional: when true, the walk stops there, and neither that
+  class nor any above it is side loaded or searched for a CSS module.
+- `sideload(options)` on each class, optional: called after that class's own assets, to side load
+  anything else.
+- `sideload_assets_options` on the instance: its own side load options, merged over the ones
+  given.
+
+The walk side loads each class's script, starting with the component's own, then the first CSS
+module found, then each class's stylesheet starting with the topmost, so a component's styles
+come after the ones it inherits.
 
 ## Puma `preload_app!` and Cluster Mode
 
