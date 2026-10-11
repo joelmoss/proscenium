@@ -9,8 +9,19 @@ CLOBBER.include 'pkg'
 
 # See https://github.com/techknowlogick/xgo
 
-task default: %i[test rubocop]
-task release: %i[build push]
+# Releases run from .github/workflows/release.yml on a pushed `v*` tag, never from a laptop: the
+# workflow installs and loads every platform gem it built before anything publishes. Bundler's
+# own `release` tags, pushes and publishes from here with none of that, so it is replaced, along
+# with the steps it chains.
+%w[release release:guard_clean release:source_control_push release:rubygem_push].each do |name|
+  Rake::Task[name].clear
+end
+
+desc 'Releases run from .github/workflows/release.yml: push an annotated v* tag'
+task :release do
+  abort 'Releases run from .github/workflows/release.yml, not from here. Push an annotated ' \
+        'v* tag; see Releasing in AGENTS.md.'
+end
 
 #
 # Go target      | Ruby gem platform  | built by
