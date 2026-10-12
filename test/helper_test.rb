@@ -65,6 +65,11 @@ class Proscenium::HelperTest < ActionDispatch::IntegrationTest
       assert_includes helpers.javascript_include_tag('app/components/missing'),
                       'src="/app/components/missing.js"'
     end
+
+    it "falls back to the gem's URL under /node_modules when the manifest has no entry" do
+      assert_includes helpers.javascript_include_tag('@rubygems/gem1/missing'),
+                      'src="/node_modules/@rubygems/gem1/missing.js"'
+    end
   end
 
   describe '#include_stylesheets' do
