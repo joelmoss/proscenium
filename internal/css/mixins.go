@@ -205,9 +205,9 @@ func (p *cssParser) readMixinDefinitions(filePath string) bool {
 
 			// A bad token in the definition, or a definition the file ends before closing: expanded,
 			// it would break the valid stylesheet that uses it, and esbuild never sees this file to
-			// report it. A file that ends inside a definition ends inside whatever it was writing - a
-			// comment, a url(), an escape - which, copied as written, runs on into that stylesheet.
-			// So the mixin is refused with a warning, rather than expanded, or made to return the
+			// report it. A file that ends inside a definition can end inside whatever it was writing -
+			// a comment, a url(), an escape - which, copied as written, runs on into that stylesheet;
+			// one that ends between tokens leaves a body cut short. So the mixin is refused with a warning, rather than expanded, or made to return the
 			// whole stylesheet unchanged. The last definition of a name wins, malformed or not.
 			k := filePath + "#" + key
 			if tokens.malformed || !closed {
