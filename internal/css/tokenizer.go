@@ -3,11 +3,28 @@ package css
 import (
 	"strings"
 
-	"github.com/riking/cssparse/tokenizer"
+	"github.com/joelmoss/esbuild-internal/css_lexer"
+	"github.com/joelmoss/esbuild-internal/logger"
 )
 
+// A token, with its text exactly as written and, for an identifier, at-keyword, url, string or
+// function, its value with escapes decoded.
+type cssToken struct {
+	Type  css_lexer.T
+	Value string
+	raw   string
+}
+
 type cssTokenizers struct {
-	tokenizer *tokenizer.Tokenizer
+	// The text this stream tokenizes, its tokens, the index of the next one, and where the last one
+	// returned ends.
+	src    string
+	tokens []css_lexer.Token
+	i      int
+	end    int32
+
+	// The token `Next` returned last.
+	current cssToken
 
 	// The file path of the current file being parsed.
 	filePath string
@@ -41,47 +58,63 @@ type cssTokenizer struct {
 }
 
 func newCssTokenizer(input string, filePath string) *cssTokenizer {
-	tk := cssTokenizers{
-		tokenizer: newTokenizer(input),
-		filePath:  filePath,
-	}
-
 	return &cssTokenizer{
-		tokenizers: []*cssTokenizers{&tk},
+		tokenizers: []*cssTokenizers{newTokenizer(input, filePath)},
 	}
 }
 
-// CSS input preprocessing turns CRLF, CR and form feed into LF. The tokenizer does the first two
-// and not the form feed, so a form feed ending a hex escape (`.a\2E\fb`, class `a.b`) was kept
-// after it and written back as `.a\2E \fb`: class `a.` and a descendant `b`. All three are done
-// here, CRLF first, so a CR then a form feed stays two newlines rather than becoming a CRLF the
-// tokenizer would fold into one.
-var newlines = strings.NewReplacer("\r\n", "\n", "\r", "\n", "\f", "\n")
+// The lexer's own warnings are dropped: esbuild lexes the output again, and reports them then.
+var discardLog = logger.Log{AddMsg: func(logger.Msg) {}}
 
-func newTokenizer(input string) *tokenizer.Tokenizer {
-	return tokenizer.NewTokenizer(strings.NewReader(newlines.Replace(input)))
+func newTokenizer(input string, filePath string) *cssTokenizers {
+	tokens := css_lexer.Tokenize(discardLog, logger.Source{Contents: input}, css_lexer.Options{})
+
+	return &cssTokenizers{src: input, tokens: tokens.Tokens, filePath: filePath}
 }
 
-// Whether `t` ends the stream. The tokenizer's own StopToken also counts a bad string, url or
-// escape, which is recorded as `malformed` instead of ending a mixin stream or a scan early.
-func endsStream(t tokenizer.TokenType) bool {
-	return t == tokenizer.TokenEOF || t == tokenizer.TokenError
+// Returns the next token, and the end of the stream once there are none, for every later call too.
+//
+// Tokens are copied from the source as written, never written back from their value, so what the
+// parser does not replace comes out unchanged. The lexer leaves out a comment that has no
+// whitespace beside it, and a byte order mark; the text between two tokens is returned as a
+// whitespace token of its own, so that dropping the token after it - a `@define-mixin`, say -
+// keeps it.
+func (t *cssTokenizers) Next() cssToken {
+	start := int32(len(t.src))
+	if t.i < len(t.tokens) {
+		start = t.tokens[t.i].Range.Loc.Start
+	}
+
+	switch {
+	case t.end < start:
+		raw := t.src[t.end:start]
+		t.current = cssToken{Type: css_lexer.TWhitespace, Value: raw, raw: raw}
+		t.end = start
+	case t.i < len(t.tokens):
+		tok := t.tokens[t.i]
+		t.i++
+		t.end = tok.Range.End()
+		t.current = cssToken{Type: tok.Kind, Value: tok.DecodedText(t.src), raw: t.src[start:t.end]}
+	default:
+		t.current = cssToken{Type: css_lexer.TEndOfFile}
+	}
+
+	return t.current
 }
 
-// A bad string, url or escape: a newline inside a string or url(), or after a backslash. Only
-// malformed CSS has one.
-func isBad(t tokenizer.TokenType) bool {
-	return t == tokenizer.TokenBadString || t == tokenizer.TokenBadURI || t == tokenizer.TokenBadEscape
+// Whether `t` ends the stream.
+func endsStream(t css_lexer.T) bool {
+	return t == css_lexer.TEndOfFile
 }
 
-// The token as CSS text. The tokenizer decodes `\c ` in a string into a literal form feed and writes
-// it back raw, which CSS reads as a newline, ending the string: a captured mixin holding one came out
-// broken. Written back as the escape.
-func render(t *tokenizer.Token) string {
-	return strings.ReplaceAll(t.Render(), "\f", `\c `)
+// A bad string or url, or a backslash before a newline: a newline inside a string or url(), or
+// after a backslash. Only malformed CSS has one.
+func isBad(t cssToken) bool {
+	return t.Type == css_lexer.TUnterminatedString || t.Type == css_lexer.TBadURL ||
+		(t.Type == css_lexer.TDelim && t.raw == `\`)
 }
 
-func (x *cssTokenizer) next() *tokenizer.Token {
+func (x *cssTokenizer) next() cssToken {
 	// Pop the inserted mixin that ran out last time, if it is still on top. Whatever its end
 	// completed - a `@mixin` declaration that was its last statement - can have inserted another
 	// above it. It then stays below until that one is done, and runs out again: removed at once,
@@ -98,7 +131,7 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	}
 
 	token := x.currentTokenizer().Next()
-	if isBad(token.Type) && len(x.tokenizers) == 1 {
+	if isBad(token) && len(x.tokenizers) == 1 {
 		x.malformed = true
 	}
 
@@ -112,7 +145,7 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	// future path still ends with its mixin instead of swallowing what follows.
 	if endsStream(token.Type) && len(x.tokenizers) > 1 {
 		x.exhausted = x.tokenizers[len(x.tokenizers)-1]
-		return &token
+		return token
 	}
 
 	if x.incrNestingOnNext {
@@ -121,10 +154,10 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 	}
 
 	switch token.Type {
-	case tokenizer.TokenOpenBrace:
+	case css_lexer.TOpenBrace:
 		x.incrNestingOnNext = true
 
-	case tokenizer.TokenCloseBrace:
+	case css_lexer.TCloseBrace:
 		// A `}` with no block to close leaves the root the root. Counted, it took the nesting below
 		// zero, where nothing was at the root again: a later `@define-mixin` captured to the end of
 		// the file and everything after it was dropped.
@@ -133,15 +166,15 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 		}
 	}
 
-	return &token
+	return token
 }
 
-func (x *cssTokenizer) currentTokenizer() *tokenizer.Tokenizer {
-	return x.tokenizers[len(x.tokenizers)-1].tokenizer
+func (x *cssTokenizer) currentTokenizer() *cssTokenizers {
+	return x.tokenizers[len(x.tokenizers)-1]
 }
 
-func (x *cssTokenizer) currentToken() tokenizer.Token {
-	return x.currentTokenizer().Token()
+func (x *cssTokenizer) currentToken() cssToken {
+	return x.currentTokenizer().current
 }
 
 // The file path of the stream currently being tokenized.
@@ -152,7 +185,8 @@ func (x *cssTokenizer) currentFilePath() string {
 // Insert the given tokens into the stream: the definition of the mixin `mixinName` from `filePath`,
 // or with no name, tokens that are no mixin's.
 func (x *cssTokenizer) insertTokens(tokens string, filePath string, mixinName string) {
-	t := &cssTokenizers{tokenizer: newTokenizer(tokens), filePath: filePath, mixinName: mixinName}
+	t := newTokenizer(tokens, filePath)
+	t.mixinName = mixinName
 	if mixinName != "" {
 		t.mixinKey = filePath + "#" + mixinName
 		x.openMixins++
@@ -183,12 +217,12 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 	var mixinIdent string
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
-	x.forEachToken(func(token *tokenizer.Token) bool {
+	x.forEachToken(func(token cssToken) bool {
 		switch token.Type {
-		case tokenizer.TokenOpenBrace:
+		case css_lexer.TOpenBrace:
 			return false
 
-		case tokenizer.TokenIdent:
+		case css_lexer.TIdent:
 			if mixinIdent == "" {
 				mixinIdent = token.Value
 			}
@@ -209,51 +243,53 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 // whatever came after its `@mixin`, so `@define-mixin m{color:red}a{@mixin m;color:blue}` became
 // `a{color:redcolor:blue}`. The body gets the semicolon it left out. Decided by the body's last
 // token other than whitespace, comments, `<!--` and `-->`: a body ending in a rule and then one of
-// those is not missing one, and given one it stuck to the next selector at the root.
-func terminateBody(body string, last tokenizer.TokenType) string {
+// those is not missing one, and given one it stuck to the next selector at the root. The semicolon
+// goes straight after that token, `end` bytes in: trimming the body's trailing whitespace instead
+// would take the space of an escape that ends it, `foo\ `, and escape the semicolon.
+func terminateBody(body string, last css_lexer.T, end int) string {
 	switch last {
-	case noToken, tokenizer.TokenSemicolon, tokenizer.TokenCloseBrace:
+	case noToken, css_lexer.TSemicolon, css_lexer.TCloseBrace:
 		return body
 	}
-
-	end := len(strings.TrimRight(body, " \t\r\n\f"))
 
 	return body[:end] + ";" + body[end:]
 }
 
 // The type `captureBlock` reports for a block holding nothing but whitespace, comments, `<!--` and
-// `-->`. No captured token has this type: `forEachToken` stops at TokenError, which `endsStream`
-// counts.
-const noToken = tokenizer.TokenError
+// `-->`. No captured token has this type: `forEachToken` stops at the end of the stream.
+const noToken = css_lexer.TEndOfFile
 
 // Capture all output between the nest opening brace, until the closing brace at the given level,
-// and the type of its last token other than whitespace, comments, `<!--` and `-->`, none of which
-// is a statement.
-func (x *cssTokenizer) captureBlock(level int) (string, tokenizer.TokenType) {
+// with the type of its last token other than whitespace, comments, `<!--` and `-->`, none of which
+// is a statement, and where in the output that token ends.
+func (x *cssTokenizer) captureBlock(level int) (string, css_lexer.T, int) {
 	var content strings.Builder
 	last := noToken
+	end := 0
 
-	x.forEachToken(func(token *tokenizer.Token) bool {
-		if token.Type == tokenizer.TokenOpenBrace && x.nesting == level {
+	x.forEachToken(func(token cssToken) bool {
+		if token.Type == css_lexer.TOpenBrace && x.nesting == level {
 			content.Reset()
 			return true
 		}
 
-		if token.Type == tokenizer.TokenCloseBrace && x.nesting == level {
+		if token.Type == css_lexer.TCloseBrace && x.nesting == level {
 			return false
 		}
 
+		content.WriteString(token.raw)
+
 		switch token.Type {
-		case tokenizer.TokenS, tokenizer.TokenComment, tokenizer.TokenCDO, tokenizer.TokenCDC:
+		case css_lexer.TWhitespace, css_lexer.TCDO, css_lexer.TCDC:
 		default:
 			last = token.Type
+			end = content.Len()
 		}
 
-		content.WriteString(render(token))
 		return true
 	})
 
-	return content.String(), last
+	return content.String(), last, end
 }
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.
@@ -261,17 +297,16 @@ func (x *cssTokenizer) captureBlock(level int) (string, tokenizer.TokenType) {
 //
 // Iteration always stops at the end of the input, so a caller that is waiting for a token which
 // never arrives - an unterminated mixin definition, say - terminates instead of spinning on the
-// end-of-input token, which the tokenizer returns forever once reached. An error token is the
-// same - the tokenizer consumes nothing more once in error - so it stops too. The "bad" tokens are
-// passed to `iterFn` as content.
-func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
+// end-of-input token, which the tokenizer returns forever once reached. The "bad" tokens are passed
+// to `iterFn` as content.
+func (x *cssTokenizer) forEachToken(iterFn func(token cssToken) bool) {
 	for {
 		token := x.currentToken()
 		if endsStream(token.Type) {
 			break
 		}
 
-		if !iterFn(&token) {
+		if !iterFn(token) {
 			break
 		}
 

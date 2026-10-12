@@ -21,7 +21,6 @@ require (
 	github.com/onsi/gomega v1.44.0
 	github.com/peterbourgon/diskv v2.0.1+incompatible
 	github.com/peterbourgon/mergemap v0.0.1
-	github.com/riking/cssparse v0.0.0-20180325025645-c37ded0aac89
 	github.com/sergi/go-diff v1.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )

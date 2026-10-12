@@ -5,7 +5,7 @@ import (
 	"joelmoss/proscenium/internal/types"
 	"strings"
 
-	"github.com/riking/cssparse/tokenizer"
+	"github.com/joelmoss/esbuild-internal/css_lexer"
 )
 
 type cssParser struct {
@@ -77,10 +77,9 @@ func (p *cssParser) parse() (string, []CssWarning, error) {
 	}
 
 	// Malformed CSS: a bad token in the input itself, definitions included. Stopping at one used to
-	// drop the rest of the stylesheet silently, and the tokenizer cannot write one back as written -
-	// it decodes escapes and drops the quotes and the whitespace inside - so the input goes on
-	// unchanged, mixins unexpanded, for esbuild to report at the right line, as it would with
-	// Proscenium out of the way.
+	// drop the rest of the stylesheet silently. The input goes on unchanged, mixins unexpanded, so
+	// esbuild reports it at the line it is on in the file, which an expanded mixin above it would
+	// move, as it would with Proscenium out of the way.
 	if p.tokens.malformed {
 		return p.input, p.warnings, p.err
 	}
@@ -159,7 +158,7 @@ func (p *cssParser) append(input string) {
 // only decide whether to keep going. A stop token ends the stylesheet here just as it does in
 // `handleNextToken`, so a truncated declaration terminates rather than handing the callback the
 // end of the stream.
-func (p *cssParser) forEachToken(iterFn func(token *tokenizer.Token) bool) {
+func (p *cssParser) forEachToken(iterFn func(token cssToken) bool) {
 	for {
 		token := p.tokens.next()
 		if endsStream(token.Type) {
@@ -189,7 +188,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 	}
 
 	switch token.Type {
-	case tokenizer.TokenAtKeyword:
+	case css_lexer.TAtKeyword:
 		switch token.Value {
 		case "define-mixin":
 			// A mixin is defined only at the root of a file: never in a mixin body, where one
@@ -199,18 +198,18 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				p.addWarning("@mixin "+stream.mixinName, "Mixin %q in %q cannot define a mixin",
 					stream.mixinName, stream.filePath)
 
-				return render(token), true
+				return token.raw, true
 			}
 
 			if p.tokens.nesting > 0 {
 				p.addWarning("@define-mixin", "A mixin can only be defined at the root of a file")
 
-				return render(token), true
+				return token.raw, true
 			}
 
 			key, def := p.tokens.parseMixinDefinition()
 			if key == "" {
-				return render(token), true
+				return token.raw, true
 			}
 
 			p.mixins[p.filePath+"#"+key] = def
@@ -218,28 +217,29 @@ func (p *cssParser) handleNextToken() (string, bool) {
 			return "", true
 		case "mixin":
 			var mixinIdent, uri string
+			var inURL bool
 
 			// Capture the mixin declaration, so we can output it later if we fail to resolve it.
 			var original strings.Builder
-			original.WriteString(render(token))
+			original.WriteString(token.raw)
 
 			// Iterate over all tokens until the next semicolon, or the closing brace of the block
 			// holding the declaration, to find the mixin name and URI.
-			p.forEachToken(func(token *tokenizer.Token) bool {
+			p.forEachToken(func(token cssToken) bool {
 				// The declaration was the block's last statement, with no semicolon. Reading on to
 				// the next `;` swallowed the block's end and every rule up to it. The brace goes back
 				// as a stream of its own, under any mixin inserted below, so it comes out after the
 				// expansion, and is counted again when read.
-				if token.Type == tokenizer.TokenCloseBrace {
+				if token.Type == css_lexer.TCloseBrace {
 					p.tokens.nesting++
-					p.tokens.insertTokens(render(token), p.tokens.currentFilePath(), "")
+					p.tokens.insertTokens(token.raw, p.tokens.currentFilePath(), "")
 
 					return false
 				}
 
-				original.WriteString(render(token))
+				original.WriteString(token.raw)
 
-				if token.Type == tokenizer.TokenSemicolon {
+				if token.Type == css_lexer.TSemicolon {
 					// Current token is a semicolon, so we're done. `original` already ends with it,
 					// which is why nothing is appended to it below - this used to skip a token here
 					// instead, to stop the unresolved path rendering the semicolon twice, and that
@@ -247,14 +247,27 @@ func (p *cssParser) handleNextToken() (string, bool) {
 					return false
 				}
 
+				// The mixin URI - if any - is written `url(x)`, a url token, or `url("x")`, the url
+				// function and then a string.
 				switch token.Type {
-				case tokenizer.TokenIdent: // get the mixin name.
+				case css_lexer.TIdent: // get the mixin name.
 					if mixinIdent == "" {
 						mixinIdent = token.Value
 					}
 
-				case tokenizer.TokenURI: // get the mixin URI - if any.
+				case css_lexer.TURL:
 					uri = token.Value
+
+				case css_lexer.TFunction:
+					inURL = strings.EqualFold(token.Value, "url")
+
+				case css_lexer.TString:
+					if inURL {
+						uri = token.Value
+					}
+
+				case css_lexer.TCloseParen:
+					inURL = false
 				}
 
 				return true
@@ -274,5 +287,5 @@ func (p *cssParser) handleNextToken() (string, bool) {
 		}
 	}
 
-	return render(token), true
+	return token.raw, true
 }
