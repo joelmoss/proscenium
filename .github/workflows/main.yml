@@ -31,6 +31,7 @@ permissions:
 
 jobs:
   go-test:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -68,6 +69,7 @@ jobs:
       - run: go test ./test ./internal/...
 
   ruby-test:
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
@@ -378,6 +380,7 @@ jobs:
         shell: bash
 
   bun-test:
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
@@ -428,6 +431,7 @@ jobs:
         working-directory: fixtures/dummy
 
   rubocop:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -439,6 +443,7 @@ jobs:
       - run: bundle exec rubocop -P --fail-level C
 
   golangci-lint:
+    timeout-minutes: 10
     runs-on: ubuntu-latest
     env:
       GOWORK: off
@@ -458,3 +463,23 @@ jobs:
       - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.13.2
+
+  # Lints these workflows with the rules and ignores in .github/jactionlint.yaml. Pinned like
+  # golangci-lint: a jactionlint release can add a rule, and a branch nobody touched should not go
+  # red because upstream shipped. It runs shellcheck on `run:` scripts, which ubuntu-latest has.
+  jactionlint:
+    timeout-minutes: 10
+    runs-on: ubuntu-latest
+    env:
+      GOWORK: off
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: ./go.mod
+
+      - run: go install github.com/jdx/jactionlint/v2/cmd/jactionlint@v2.1.0
+      - run: jactionlint

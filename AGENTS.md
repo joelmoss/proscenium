@@ -118,6 +118,7 @@ bin/console
 ```bash
 bundle exec rubocop
 golangci-lint run
+jactionlint # the workflows, against .github/jactionlint.yaml
 ```
 
 ## Testing
@@ -149,6 +150,8 @@ golangci-lint run
 - CI compiles Go with: `go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go`
   (`proscenium.dll` on Windows, which `rake compile:local` also produces there)
 - Rubocop runs with `-P --fail-level C`
+- jactionlint lints the workflows on its default profile, pinned by `go install ...@v<version>` in
+  main.yml. `unpinned-uses` is off, and each ignore in `.github/jactionlint.yaml` carries its reason
 
 ## Go Package Structure
 

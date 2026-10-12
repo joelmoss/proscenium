@@ -23,6 +23,12 @@ on:
         type: boolean
         default: false
 
+# Never cancel: a run cancelled mid-publish leaves the version half-published. A second run of the
+# same tag or branch waits for the first instead.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: read
 
@@ -43,6 +49,7 @@ jobs:
   #
   # Nothing is pushed, and the key is never printed.
   verify-publisher:
+    timeout-minutes: 10
     if: inputs.verify_publisher
     runs-on: ubuntu-latest
     environment: release
@@ -81,6 +88,7 @@ jobs:
           '
 
   platforms:
+    timeout-minutes: 10
     if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
     outputs:
@@ -100,6 +108,7 @@ jobs:
           bundler-cache: true
       - id: split
         run: |
+          set -o pipefail
           all=$(bundle exec rake platforms:json | tail -1)
           {
             echo "darwin=$(jq -c '[.[] | select(test("darwin"))]' <<<"$all")"
@@ -118,6 +127,7 @@ jobs:
           }
 
   build-darwin:
+    timeout-minutes: 20
     needs: platforms
     if: '!inputs.verify_publisher'
     runs-on: macos-latest
@@ -146,6 +156,7 @@ jobs:
           if-no-files-found: error
 
   build-linux:
+    timeout-minutes: 30
     needs: platforms
     if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
@@ -192,6 +203,7 @@ jobs:
   # definition Go generates for c-shared (`export_file.def:1: syntax error`). The runner's
   # toolchain can, as the test workflow's Windows cells already show.
   build-windows:
+    timeout-minutes: 20
     needs: platforms
     if: '!inputs.verify_publisher'
     runs-on: windows-latest
@@ -238,6 +250,7 @@ jobs:
   # got packed. Here nothing has ever written to that directory, so there is nothing to inherit.
   # The assertion below is the guard, not the fix - it fails loudly if that ever stops being true.
   build-plain:
+    timeout-minutes: 10
     needs: platforms
     if: '!inputs.verify_publisher'
     runs-on: ubuntu-latest
@@ -256,6 +269,7 @@ jobs:
           gem build proscenium.gemspec -o "pkg/proscenium-${{ needs.platforms.outputs.version }}.gem"
       - name: The plain gem must carry no compiled library
         run: |
+          set -o pipefail
           tar -xOf "pkg/proscenium-${{ needs.platforms.outputs.version }}.gem" data.tar.gz \
             | tar -tzf - > /tmp/plain-contents.txt
           if grep -q '^lib/proscenium/ext/' /tmp/plain-contents.txt; then
@@ -280,6 +294,7 @@ jobs:
   # `gem install` succeeds whether or not the library can be loaded, which is why this asserts the
   # resolved platform and then requires it.
   verify:
+    timeout-minutes: 20
     needs: [platforms, build-darwin, build-linux, build-windows, build-plain]
     runs-on: ubuntu-latest
     strategy:
@@ -336,6 +351,7 @@ jobs:
   # anywhere. bin/verify-installed-gem runs directly on each. The index holds every gem, so this is
   # also where each host is shown to pick its own platform gem over the platform-less one.
   verify-native:
+    timeout-minutes: 20
     needs: [platforms, build-darwin, build-linux, build-windows, build-plain]
     strategy:
       fail-fast: false
@@ -380,6 +396,7 @@ jobs:
           sh bin/verify-installed-gem "${{ needs.platforms.outputs.version }}" "${{ matrix.expect }}" http://localhost:8808
 
   publish:
+    timeout-minutes: 15
     needs: [platforms, verify, verify-native]
     if: startsWith(github.ref, 'refs/tags/v') && inputs.dry_run != true
     runs-on: ubuntu-latest

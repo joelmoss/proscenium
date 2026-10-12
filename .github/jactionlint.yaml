@@ -1,0 +1,36 @@
+# jactionlint (https://github.com/jdx/jactionlint) on the default profile, which adds the security
+# and policy rules to what actionlint checks. CI runs it in main.yml's jactionlint job.
+# See https://jactionlint.jdx.dev/rules for all rule IDs.
+profile: default
+
+rules:
+  # Actions stay on version tags, except where a moved tag could publish a gem: release.yml pins
+  # configure-rubygems-credentials to a commit in the publish job, and says why there. A SHA on
+  # every other `uses:` would also need Dependabot or Renovate to keep them current, and this
+  # repository runs neither.
+  unpinned-uses: off
+
+# Matched by workflow structure, not by line, so they survive edits around them.
+ignores:
+  - rule: dangerous-triggers
+    file: .github/workflows/claude.yml
+    reason: >-
+      claude-code-action runs only for a commenter with write access to the repository, and lets
+      no bot through unless allowed_bots is set, which it is not. The job checks out the default
+      branch, never pull request code.
+  - rule: concurrency-limits
+    file: .github/workflows/claude.yml
+    reason: >-
+      Every comment starts a run, including those the job's `if` then skips, and a newer pending
+      run replaces an older one in a concurrency group. A group would let an ordinary comment
+      evict a queued @claude request.
+  - rule: adhoc-packages
+    file: .github/workflows/release.yml
+    job: verify
+    reason: >-
+      rubygems-generate_index builds the local gem index the job installs from. It is a gem
+      command plugin used outside the bundle, the way a user installs Proscenium.
+  - rule: adhoc-packages
+    file: .github/workflows/release.yml
+    job: verify-native
+    reason: As for the verify job.
