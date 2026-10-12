@@ -22,16 +22,19 @@ module Subprocess
       pid = Process.spawn(env, *command, chdir:, in: File::NULL, out:, err:,
                                          **(Gem.win_platform? ? {} : { pgroup: true }))
       deadline = Time.now + timeout
-      nil
       sleep 0.1 until (status = Process.wait2(pid, Process::WNOHANG)&.last) || Time.now > deadline
       unless status
         kill_tree(pid)
+        pid = nil
         raise "#{command.first(3).join(' ')} did not finish in #{timeout}s. It printed:\n" \
               "#{File.read(out)}#{File.read(err)}"
       end
 
       [File.read(out), File.read(err), status]
     ensure
+      # Its own process group, so Ctrl-C reaches only this process: anything that ends the wait
+      # early, an interrupt included, leaves the command running unless it is killed here.
+      kill_tree(pid) if pid && !status
       # rm_rf ignores a file still open: `bun test`'s Rails daemon outlives it for a moment,
       # holding the output files, and Windows will not delete an open file.
       FileUtils.rm_rf(dir)
