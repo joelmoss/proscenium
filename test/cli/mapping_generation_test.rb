@@ -4,12 +4,12 @@ require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
 require 'json'
-require 'proscenium/mapping_generation'
+require 'proscenium/contexts/mapping_generation'
 
 # Mapping generations (#154): a change to a file the context map is built from starts a new one,
 # at most once a second, and nothing read in an older one leaks into it.
-describe Proscenium::MappingGeneration do
-  MG = Proscenium::MappingGeneration
+describe Proscenium::Contexts::MappingGeneration do
+  MG = Proscenium::Contexts::MappingGeneration
 
   before do
     @root = Dir.mktmpdir('generation')
@@ -30,7 +30,7 @@ describe Proscenium::MappingGeneration do
   end
 
   def local_packages(generation)
-    Proscenium::ContextMap.config(@root, generation)[:AppLocalPackages]
+    Proscenium::Contexts::Map.config(@root, generation)[:AppLocalPackages]
   end
 
   # A lockfile changes what the app's packages resolve to, so it starts a generation too.

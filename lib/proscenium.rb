@@ -2,6 +2,9 @@
 
 require 'active_support'
 require_relative 'proscenium/error'
+# Required rather than autoloaded: the model's files are also required directly (by the CLI), and
+# one that defined Contexts first would leave its autoloads unregistered.
+require_relative 'proscenium/contexts'
 
 module Proscenium
   extend ActiveSupport::Autoload
@@ -39,10 +42,6 @@ module Proscenium
   autoload :Importer
   autoload :Resolver
   autoload :BundledGems
-  autoload :ContextMap
-  autoload :ContextPlan
-  autoload :StaleContexts
-  autoload :MappingGeneration
 
   class Deprecator
     def deprecation_warning(name, message, _caller_backtrace = nil)

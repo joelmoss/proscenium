@@ -18,7 +18,7 @@ func TestNewConfig(t *testing.T) {
 		}
 	})
 
-	// The keys Ruby's Proscenium::ContextMap sends (#154): a missed rename would leave the map empty
+	// The keys Ruby's Proscenium::Contexts::Map sends (#154): a missed rename would leave the map empty
 	// and every gem silently resolving from the app's packages.
 	t.Run("parses the dependency context map", func(t *testing.T) {
 		cfg, err := types.NewConfig([]byte(`{"DependencyContexts": {"ui-gem": "/app/.proscenium/packages/ui-gem"},

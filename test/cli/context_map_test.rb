@@ -4,13 +4,13 @@ require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
 require 'json'
-require 'proscenium/context_map'
-require 'proscenium/stale_contexts'
+require 'proscenium/contexts/map'
+require 'proscenium/contexts/stale'
 
 # What the engine tells Go about gem dependency contexts (#154, Stage C): nothing until the app
 # adopts them, then a context for every participating gem, and the app's own local packages.
-describe Proscenium::ContextMap do
-  CM = Proscenium::ContextMap
+describe Proscenium::Contexts::Map do
+  CM = Proscenium::Contexts::Map
   GemSpec = Struct.new(:name, :metadata, :full_gem_path)
 
   before { @root = Dir.mktmpdir('context_map') }
@@ -52,7 +52,7 @@ describe Proscenium::ContextMap do
 
     assert_empty CM.contexts(@root, specs)
     assert_equal ['"proscenium.gemOverrides" in package.json must be an object'],
-                 Proscenium::StaleContexts.problems(@root, specs, [])
+                 Proscenium::Contexts::Stale.problems(@root, specs, [])
   end
 
   # Not only while bun.lock is there: an adopted Bun app missing it is an incomplete checkout,

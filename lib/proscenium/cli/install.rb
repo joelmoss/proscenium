@@ -3,10 +3,10 @@
 require 'fileutils'
 require 'bundler'
 require_relative '../bundled_gems'
-require_relative '../dependency_context'
-require_relative '../stale_contexts'
+require_relative '../contexts/projection'
+require_relative '../contexts/stale'
 require_relative 'collisions'
-require_relative '../context_plan'
+require_relative '../contexts/plan'
 require_relative 'diff'
 require_relative 'manager'
 require_relative 'platform_variants'
@@ -54,10 +54,11 @@ module Proscenium
 
         contexts.flat_map do |gem, json|
           context = JSON.parse(json)
-          Rules::DEPENDENCY_FIELDS.flat_map { (context[it] || {}).keys }
-                                  .reject { it.start_with?('@rubygems/') }
-                                  .select { output.match?(named(it)) }
-                                  .map { [gem, it] }
+          fields = Contexts::Rules::DEPENDENCY_FIELDS
+          fields.flat_map { (context[it] || {}).keys }
+                .reject { it.start_with?('@rubygems/') }
+                .select { output.match?(named(it)) }
+                .map { [gem, it] }
         end
       end
 
@@ -86,9 +87,9 @@ module Proscenium
         specs = timed(:bundle) { BundledGems.installed_specs }
         @excluded = BundledGems.excluded_names(specs)
         @contexts = timed(:projection) do
-          ContextPlan.new(@root, BundledGems.participating(specs, overrides:))
+          Contexts::Plan.new(@root, BundledGems.participating(specs, overrides:))
         end
-        @committed = ContextPlan.committed(@root)
+        @committed = Contexts::Plan.committed(@root)
         check_owned_directory
         report_problems
         check_platform_variants(specs, overrides)
@@ -121,7 +122,7 @@ module Proscenium
           # macOS's .DS_Store is ours to remove; anything else, a .git included, is the user's.
           next (Dir.children(File.dirname(path)) - OURS).any? unless File.exist?(path)
 
-          !generated?(gem, ContextMap.read_json(path))
+          !generated?(gem, Contexts::Map.read_json(path))
         rescue JSON::ParserError
           true
         end
@@ -135,7 +136,7 @@ module Proscenium
       # `proscenium` block naming a projection. A `proscenium` key alone is not enough, or install
       # would remove someone else's package as an orphan.
       def generated?(gem, package)
-        package.is_a?(Hash) && package['name'] == DependencyContext.name_for(gem) &&
+        package.is_a?(Hash) && package['name'] == Contexts::Projection.name_for(gem) &&
           package.dig('proscenium', 'projection').is_a?(String)
       rescue TypeError
         false
@@ -143,7 +144,7 @@ module Proscenium
 
       # A file, or a link leading nowhere, where only context directories belong.
       def strays
-        dir = File.join(@root, ContextMap::CONTEXTS)
+        dir = File.join(@root, Contexts::Map::CONTEXTS)
         return [] unless Dir.exist?(dir)
 
         Dir.children(dir).reject { File.directory?(File.join(dir, it)) } - OURS
@@ -152,8 +153,8 @@ module Proscenium
       # Everything install writes is under .proscenium/ (C29). A link anywhere on the way, or in
       # place of a context, would send those writes outside the app.
       def check_owned_links
-        owned = ['.proscenium', ContextMap::CONTEXTS] + @committed.flat_map do |gem, path|
-          [File.join(ContextMap::CONTEXTS, gem), relative(path)]
+        owned = ['.proscenium', Contexts::Map::CONTEXTS] + @committed.flat_map do |gem, path|
+          [File.join(Contexts::Map::CONTEXTS, gem), relative(path)]
         end
         links = owned.select { File.symlink?(File.join(@root, it)) }
         raise Error.new('PSM-E-OWNED-LINK', paths: links.join(', ')) if links.any?
@@ -170,9 +171,9 @@ module Proscenium
       def check_trusted_sources
         manifests = @contexts.contexts.transform_values { JSON.parse(it.json) }
         # Bun's trust is read only when a gem reaches some package another way.
-        return if Rules.substitutions(manifests).empty?
+        return if Contexts::Rules.substitutions(manifests).empty?
 
-        found = Rules.trusted_substitutions(@manager.trusted_names, manifests)
+        found = Contexts::Rules.trusted_substitutions(@manager.trusted_names, manifests)
         return if found.empty?
 
         raise Error.new('PSM-E-TRUSTED-SOURCE', list: found.map { "  - #{it}" }.join("\n"))
@@ -212,13 +213,13 @@ module Proscenium
       end
 
       def check_drift
-        @committed = ContextPlan.committed(@root)
+        @committed = Contexts::Plan.committed(@root)
         drift = []
         registered = Registration.registered?(@root, @manager.name)
         drift << 'the gem contexts are not registered' unless registered
         drift << "#{lockfile} is missing" unless File.exist?(File.join(@root, lockfile))
         changed.each { drift << describe_change(it) }
-        orphans.each { drift << format(StaleContexts::ORPHAN, gem: it) }
+        orphans.each { drift << format(Contexts::Stale::ORPHAN, gem: it) }
         return if drift.empty?
 
         list = drift.map { "  - #{it}" }.join("\n")
@@ -236,8 +237,8 @@ module Proscenium
       # compares bytes, so one the engine still builds with, only reformatted, is a hand edit.
       def describe_change(context)
         path = @committed[context.gem]
-        drift = StaleContexts.drift(context, path) || :edited
-        cause = "#{context.gem}: #{StaleContexts::REASONS[drift]}"
+        drift = Contexts::Stale.drift(context, path) || :edited
+        cause = "#{context.gem}: #{Contexts::Stale::REASONS[drift]}"
         return cause if drift == :missing
 
         "#{cause}\n#{Diff.unified(relative(path), File.read(path), context.json)}"
@@ -279,7 +280,7 @@ module Proscenium
       # links survive.
       def write_contexts
         changed.map do |context|
-          dir = File.join(@root, ContextMap::CONTEXTS, context.gem)
+          dir = File.join(@root, Contexts::Map::CONTEXTS, context.gem)
           FileUtils.mkdir_p(dir)
           path = File.join(dir, 'package.json')
           ProjectLock.write("#{path}.tmp", context.json)
@@ -290,8 +291,8 @@ module Proscenium
 
       def remove_orphans
         orphans.map do |gem|
-          FileUtils.rm_rf(File.join(@root, ContextMap::CONTEXTS, gem))
-          "#{ContextMap::CONTEXTS}/#{gem} (removed)"
+          FileUtils.rm_rf(File.join(@root, Contexts::Map::CONTEXTS, gem))
+          "#{Contexts::Map::CONTEXTS}/#{gem} (removed)"
         end
       end
 
@@ -327,7 +328,7 @@ module Proscenium
         # dependencies left out of a production install.
         if @options[:production]
           (@excluded & @committed.keys).each do |gem|
-            args << "--filter=!#{DependencyContext.name_for(gem)}"
+            args << "--filter=!#{Contexts::Projection.name_for(gem)}"
           end
         end
         args + Array(@options[:js_args])

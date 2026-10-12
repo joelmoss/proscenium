@@ -4,9 +4,9 @@ require 'json'
 require 'rubygems/package'
 require 'zlib'
 require_relative 'gem_archive'
-require_relative 'rules'
+require_relative '../contexts/rules'
 require_relative '../bundled_gems'
-require_relative '../context_map'
+require_relative '../contexts/map'
 
 module Proscenium
   module CLI
@@ -67,8 +67,9 @@ module Proscenium
         end
 
         gyp = root.empty? ? 'binding.gyp' : File.join(root, 'binding.gyp')
-        problems = Rules.check(gem, manifest, root: source_root(root), path: manifest_path,
-                                              binding_gyp: files.include?(gyp))
+        problems = Contexts::Rules.check(gem, manifest, root: source_root(root),
+                                                        path: manifest_path,
+                                                        binding_gyp: files.include?(gyp))
         # A field of the wrong type stops here: the checks below read it as an object.
         return problems if problems.any? { it.first == 'PSM-E-MANIFEST' }
 
@@ -86,15 +87,16 @@ module Proscenium
       # A reference to another gem's context needs that gem as a runtime dependency.
       def cross_gem(spec, manifest)
         runtime = spec.runtime_dependencies.map(&:name)
-        Rules::DEPENDENCY_FIELDS.flat_map { (manifest[it] || {}).keys }
-                                .grep(%r{\A@rubygems/})
-                                .map { it.delete_prefix('@rubygems/') }
-                                .reject { runtime.include?(it) }
-                                .map { ['PSM-E-CROSS-GEM', { gem: spec.name, other: it }] }
+        fields = Contexts::Rules::DEPENDENCY_FIELDS
+        fields.flat_map { (manifest[it] || {}).keys }
+              .grep(%r{\A@rubygems/})
+              .map { it.delete_prefix('@rubygems/') }
+              .reject { runtime.include?(it) }
+              .map { ['PSM-E-CROSS-GEM', { gem: spec.name, other: it }] }
       end
 
       def parse(text)
-        manifest = ContextMap.parse_json(text)
+        manifest = Contexts::Map.parse_json(text)
         manifest.is_a?(Hash) ? manifest : 'it is not a JSON object'
       rescue JSON::ParserError => e
         "it is not valid JSON (#{e.message.lines.first.strip})"
@@ -115,7 +117,7 @@ module Proscenium
         @source = @path
         return [spec, spec.files, nil, nil] unless File.exist?(manifest)
 
-        cause = Rules.manifest_file_problem(manifest, @path)
+        cause = Contexts::Rules.manifest_file_problem(manifest, @path)
         [spec, spec.files, cause ? nil : File.read(manifest), cause]
       end
 

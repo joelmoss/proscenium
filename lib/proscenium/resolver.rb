@@ -57,7 +57,7 @@ module Proscenium
     def self.generation
       return 0 if Rails.env.production?
 
-      number, changed = MappingGeneration.refresh(ContextMap.project_root)
+      number, changed = Contexts::MappingGeneration.refresh(Contexts::Map.project_root)
       reset if changed
       number
     end

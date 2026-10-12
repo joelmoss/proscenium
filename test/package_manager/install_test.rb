@@ -221,7 +221,7 @@ describe 'proscenium install' do
         out, = proscenium(dir, 'inspect')
 
         assert_includes out, "Rails will refuse to build assets until you fix:\n  - " \
-                             "#{format(Proscenium::StaleContexts::ORPHAN, gem: 'gone')}"
+                             "#{format(Proscenium::Contexts::Stale::ORPHAN, gem: 'gone')}"
         FileUtils.rm_rf(File.dirname(orphan))
 
         File.write(context(dir, 'gem_npm'), '{}')
@@ -508,7 +508,7 @@ describe 'proscenium install' do
         assert_equal 4, status.exitstatus
         assert_includes err, 'stage_a_widget_a: its dependency context was edited by hand'
         assert_includes err, '-    "ms": "9.9.9"'
-        assert_includes err, format(Proscenium::StaleContexts::ORPHAN, gem: 'ghost')
+        assert_includes err, format(Proscenium::Contexts::Stale::ORPHAN, gem: 'ghost')
 
         _, err, status = proscenium(dir, 'install', manager:)
 

@@ -3,12 +3,12 @@
 require 'json'
 require 'bundler'
 require_relative '../bundled_gems'
-require_relative '../context_plan'
+require_relative '../contexts/plan'
 require_relative 'gitignore'
 require_relative 'manager'
 require_relative 'registration'
 require_relative 'verify'
-require_relative '../stale_contexts'
+require_relative '../contexts/stale'
 
 module Proscenium
   module CLI
@@ -56,14 +56,14 @@ module Proscenium
                                                  'dependencies through Proscenium')
         end
 
-        contexts = ContextPlan.new(@root, participating)
-        committed = ContextPlan.committed(@root)
+        contexts = Contexts::Plan.new(@root, participating)
+        committed = Contexts::Plan.committed(@root)
         gems = participating.keys.select { @only.nil? || it == @only }.map do |name|
           gem_report(name, participating[name], contexts, committed)
         end
         manager, problems = select_manager
         # An app that uses none of this has nothing to set up, whatever its manager.
-        if participating.any? || committed.any? || ContextMap.registrar(@root)
+        if participating.any? || committed.any? || Contexts::Map.registrar(@root)
           problems += project_problems(manager, contexts, committed)
         else
           problems = []
@@ -72,7 +72,7 @@ module Proscenium
         { 'schema' => 1, 'manager' => manager_report(manager), 'gems' => gems,
           'notParticipating' => BundledGems.unparticipating_with_manifest(specs, overrides:),
           # Every reason the engine refuses to build: orphans and split peers as well.
-          'buildRefused' => StaleContexts.problems(@root, specs),
+          'buildRefused' => Contexts::Stale.problems(@root, specs),
           'problems' => problems.map { problem_report(it) } }
       rescue BundledGems::ConfigError => e
         raise Error.new('PSM-E-CONFIG', detail: e.message)
@@ -88,7 +88,7 @@ module Proscenium
           'context' => ".proscenium/packages/#{name}",
           'status' => status(context, on_disk, path),
           'projectionSha256' => current&.dig('proscenium', 'projectionSha256'),
-          'kept' => current ? (current.keys & DependencyContext::FIELDS) : [],
+          'kept' => current ? (current.keys & Contexts::Projection::FIELDS) : [],
           'gitAndUrl' => (context&.git_and_url || []).map { redact(it) },
           'optionalPeers' => optional_peers(current)
         }
@@ -103,7 +103,7 @@ module Proscenium
         return 'missing' unless on_disk
         return 'current' if on_disk == context.json
 
-        [nil, :edited].include?(StaleContexts.drift(context, path)) ? 'edited' : 'stale'
+        [nil, :edited].include?(Contexts::Stale.drift(context, path)) ? 'edited' : 'stale'
       end
 
       # Where Gemfile.lock takes the gem from.

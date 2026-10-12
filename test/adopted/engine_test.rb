@@ -118,8 +118,8 @@ describe 'an adopted app' do
     path = '.proscenium/packages/stage_a_widget_a/package.json'
     older = JSON.parse(File.read(File.join(Adopted::ROOT, path)))
     older['dependencies'] = older['dependencies'].merge('ms' => '1.0.0')
-    stale = Proscenium::DependencyContext.to_json(
-      Proscenium::DependencyContext.project('stage_a_widget_a', older)
+    stale = Proscenium::Contexts::Projection.to_json(
+      Proscenium::Contexts::Projection.project('stage_a_widget_a', older)
     )
     Adopted.with_file(path, stale) do
       message, log = Adopted.run(refusal('lib/app.js'))

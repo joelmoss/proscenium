@@ -75,12 +75,12 @@ class Proscenium::Runtime::ServerTest < ActiveSupport::TestCase
   describe 'while an install is in progress' do
     before do
       request('build', path: '/lib/import_absolute_module.js') # warm the cache
-      Proscenium::ContextMap.singleton_class.alias_method(:real_installing?, :installing?)
-      Proscenium::ContextMap.define_singleton_method(:installing?) { |_root| true }
+      Proscenium::Contexts::Map.singleton_class.alias_method(:real_installing?, :installing?)
+      Proscenium::Contexts::Map.define_singleton_method(:installing?) { |_root| true }
     end
 
     after do
-      Proscenium::ContextMap.singleton_class.alias_method(:installing?, :real_installing?)
+      Proscenium::Contexts::Map.singleton_class.alias_method(:installing?, :real_installing?)
     end
 
     it 'refuses builds, cached or not, and resolves' do

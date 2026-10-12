@@ -2,10 +2,10 @@
 
 require 'json'
 require_relative '../bundled_gems'
-require_relative '../context_map'
-require_relative '../dependency_context'
+require_relative '../contexts/map'
+require_relative '../contexts/projection'
 require_relative 'gem_archive'
-require_relative 'rules'
+require_relative '../contexts/rules'
 
 module Proscenium
   module CLI
@@ -50,14 +50,14 @@ module Proscenium
       # Whether the author contract refuses the variant, as it would on the host that installs it:
       # the projection drops scripts and workspaces, so equal projections do not show it.
       def refused?(gem, variant, text)
-        manifest = ContextMap.parse_json(text)
+        manifest = Contexts::Map.parse_json(text)
         return true unless manifest.is_a?(Hash)
 
         # A host that installs it refuses a frontend root outside the gem.
         root = BundledGems.frontend_root(variant) or return true
         gyp = root.empty? ? 'binding.gyp' : File.join(root, 'binding.gyp')
-        Rules.check(gem, manifest, binding_gyp: variant.files.include?(gyp))
-             .any? { !Rules::WARNINGS.include?(it.first) }
+        Contexts::Rules.check(gem, manifest, binding_gyp: variant.files.include?(gyp))
+                       .any? { !Contexts::Rules::WARNINGS.include?(it.first) }
       rescue JSON::ParserError
         true
       end
@@ -70,10 +70,10 @@ module Proscenium
 
       # The projection hash of a manifest's text, or nil for none that can be read.
       def projection(gem, text)
-        manifest = text && ContextMap.parse_json(text)
+        manifest = text && Contexts::Map.parse_json(text)
         return nil unless manifest.is_a?(Hash)
 
-        DependencyContext.project(gem, manifest).dig('proscenium', 'projectionSha256')
+        Contexts::Projection.project(gem, manifest).dig('proscenium', 'projectionSha256')
       rescue JSON::ParserError
         nil
       end

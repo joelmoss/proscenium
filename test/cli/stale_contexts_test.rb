@@ -4,12 +4,12 @@ require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
 require 'json'
-require 'proscenium/stale_contexts'
+require 'proscenium/contexts/stale'
 
 # When an adopted app's committed contexts no longer match its bundle (#154, C36, C45-C): the
 # engine refuses to build until `proscenium install` runs.
-describe Proscenium::StaleContexts do
-  SC = Proscenium::StaleContexts
+describe Proscenium::Contexts::Stale do
+  SC = Proscenium::Contexts::Stale
   StaleSpec = Struct.new(:name, :metadata, :full_gem_path, :runtime_dependencies)
 
   before do
@@ -33,8 +33,8 @@ describe Proscenium::StaleContexts do
 
   # The context `install` writes for `manifest`.
   def write_context(gem, manifest)
-    context = Proscenium::DependencyContext.project(gem, JSON.parse(manifest))
-    write(".proscenium/packages/#{gem}/package.json", Proscenium::DependencyContext.to_json(context))
+    context = Proscenium::Contexts::Projection.project(gem, JSON.parse(manifest))
+    write(".proscenium/packages/#{gem}/package.json", Proscenium::Contexts::Projection.to_json(context))
   end
 
   def problems(specs = [@ui_gem], locked = specs.map(&:name)) = SC.problems(@root, specs, locked)

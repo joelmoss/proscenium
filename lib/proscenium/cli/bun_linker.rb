@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
-require_relative '../context_map'
+require_relative '../contexts/map'
 require_relative 'manager'
 
 module Proscenium
@@ -65,7 +65,7 @@ module Proscenium
 
       def workspaces?(root)
         path = File.join(root, 'package.json')
-        File.exist?(path) && ContextMap.read_json(path).key?('workspaces')
+        File.exist?(path) && Contexts::Map.read_json(path).key?('workspaces')
       rescue JSON::ParserError
         false
       end

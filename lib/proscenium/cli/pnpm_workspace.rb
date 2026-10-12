@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'yaml'
-require_relative '../context_map'
+require_relative '../contexts/map'
 require_relative 'brackets'
 
 module Proscenium
@@ -22,14 +22,14 @@ module Proscenium
       # whatever indentation its items use. The result is parsed back; anything but the old list
       # plus the pattern, with every other key unchanged, is refused rather than written.
       def splice(text)
-        return text if ContextMap.registered_in?('pnpm-workspace.yaml', text, strict: true)
+        return text if Contexts::Map.registered_in?('pnpm-workspace.yaml', text, strict: true)
 
-        text = ContextMap.utf8(text)
-        bom = text.start_with?(ContextMap::BOM) ? ContextMap::BOM : ''
+        text = Contexts::Map.utf8(text)
+        bom = text.start_with?(Contexts::Map::BOM) ? Contexts::Map::BOM : ''
         body = text.delete_prefix(bom)
         spliced = splice_body(body)
         verify(body, spliced)
-        if ContextMap.excludes?(ContextMap.yaml_packages(spliced))
+        if Contexts::Map.excludes?(Contexts::Map.yaml_packages(spliced))
           raise Error.new('PSM-E-REGISTRATION-EXCLUDED', file: 'pnpm-workspace.yaml')
         end
 
@@ -51,12 +51,12 @@ module Proscenium
           insert_into_flow(text, flow.end(0), text[flow.end(0)...close], eol)
         elsif (key = text.match(BLOCK, at))
           indent = text[key.end(0)..][/\A(?:[ \t]*(?:#.*)?\r?\n)*([ \t]*)- /, 1] || '  '
-          text.dup.insert(key.end(0), "#{indent}- #{ContextMap::REGISTRATION}#{eol}")
+          text.dup.insert(key.end(0), "#{indent}- #{Contexts::Map::REGISTRATION}#{eol}")
         else
           # A new key would override a list inherited through a merge key (`<<: *defaults`).
           raise refused if merges?(text)
 
-          "packages:#{eol}  - #{ContextMap::REGISTRATION}#{eol}#{eol unless text.empty?}#{text}"
+          "packages:#{eol}  - #{Contexts::Map::REGISTRATION}#{eol}#{eol unless text.empty?}#{text}"
         end
       end
 
@@ -69,7 +69,7 @@ module Proscenium
       end
 
       # The root mapping's `packages` key and its value, at any indentation, or nil. The last pair,
-      # as pnpm and ContextMap read it; another mapping's `packages` key is not it.
+      # as pnpm and Contexts::Map read it; another mapping's `packages` key is not it.
       def root_pair(text)
         root = Psych.parse_stream(text).children.first&.root
         return unless root.is_a?(Psych::Nodes::Mapping)
@@ -89,10 +89,11 @@ module Proscenium
       # `packages: *list` as a flow list of the entries it names plus the pattern, so the anchored
       # list stays as it is for anything else that uses it.
       def spell_out(text, node)
-        entries = ContextMap.yaml_packages(text)
+        entries = Contexts::Map.yaml_packages(text)
         raise refused unless entries&.all?(String)
 
-        list = (entries + [ContextMap::REGISTRATION]).map { "'#{it.gsub("'", "''")}'" }.join(', ')
+        list = (entries + [Contexts::Map::REGISTRATION]).map { "'#{it.gsub("'", "''")}'" }
+        list = list.join(', ')
         start = offset(text, node)
         "#{text[0...start]}[#{list}]#{text[(start + node.end_column - node.start_column)..]}"
       end
@@ -107,16 +108,16 @@ module Proscenium
                     elsif indent then "#{',' unless comma}#{eol}#{indent}"
                     else comma ? ' ' : ', '
                     end
-        item = "'#{ContextMap::REGISTRATION}'#{',' if comma}"
+        item = "'#{Contexts::Map::REGISTRATION}'#{',' if comma}"
         text.dup.insert(start + list.length, "#{separator}#{item}")
       end
 
-      # The `packages` list of a document that is empty or a mapping, as ContextMap reads it.
+      # The `packages` list of a document that is empty or a mapping, as Contexts::Map reads it.
       def packages(text)
         root = Psych.parse_stream(text).children.first&.root
         raise refused unless root.nil? || root.is_a?(Psych::Nodes::Mapping)
 
-        ContextMap.yaml_packages(text)
+        Contexts::Map.yaml_packages(text)
       rescue Psych::SyntaxError
         raise refused
       end
@@ -125,7 +126,7 @@ module Proscenium
       def verify(text, spliced)
         before = packages(text)
         after = packages(spliced)
-        expected = Array(before) + [ContextMap::REGISTRATION]
+        expected = Array(before) + [Contexts::Map::REGISTRATION]
         same = after.is_a?(Array) && after.tally == expected.tally
         raise refused unless same && others(spliced) == others(text)
       end

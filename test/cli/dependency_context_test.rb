@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require_relative 'helper'
-require 'proscenium/dependency_context'
+require 'proscenium/contexts/projection'
 
 # The projection and its hash. The hashes below are golden vectors, computed by an independent
 # implementation of the encoding as well as this one: a change to any of them changes every
 # committed context in every app, so it must be deliberate, named in the CHANGELOG, and come with a
 # new projection version.
-describe Proscenium::DependencyContext do
-  DC = Proscenium::DependencyContext
+describe Proscenium::Contexts::Projection do
+  DC = Proscenium::Contexts::Projection
 
   def sha(manifest, gem: 'widget') = DC.project(gem, manifest).dig('proscenium', 'projectionSha256')
 
@@ -46,7 +46,7 @@ describe Proscenium::DependencyContext do
                'pnpm' => { 'overrides' => { 'ms' => '1.0.0' } },
                'patchedDependencies' => { 'ms@2.1.3' => 'patches/ms.patch' },
                'engineStrict' => true, 'engines' => { 'node' => '>= 20' } }
-    context = Proscenium::DependencyContext.project('widget', BASE.merge(policy))
+    context = Proscenium::Contexts::Projection.project('widget', BASE.merge(policy))
 
     assert_empty context.keys & %w[overrides resolutions pnpm patchedDependencies engineStrict]
     assert_equal({ 'node' => '>= 20' }, context['engines'])
@@ -57,7 +57,7 @@ describe Proscenium::DependencyContext do
   it "drops a gem's own script approvals" do
     approvals = { 'trustedDependencies' => ['ms'], 'allowBuilds' => { 'ms@2.1.3' => true },
                   'pnpm' => { 'onlyBuiltDependencies' => ['ms'], 'allowBuilds' => ['ms'] } }
-    context = Proscenium::DependencyContext.project('widget', BASE.merge(approvals))
+    context = Proscenium::Contexts::Projection.project('widget', BASE.merge(approvals))
 
     assert_empty context.keys & %w[trustedDependencies allowBuilds pnpm]
     assert_equal sha(BASE), sha(BASE.merge(approvals))

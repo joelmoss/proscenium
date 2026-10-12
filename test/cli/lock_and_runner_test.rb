@@ -6,7 +6,7 @@ require 'fileutils'
 require 'rbconfig'
 require 'proscenium/cli/project_lock'
 require 'proscenium/cli/runner'
-require 'proscenium/context_map'
+require 'proscenium/contexts/map'
 
 # The project lock and install marker, and running the manager (#154, C34, C35).
 describe 'project lock and runner' do
@@ -28,7 +28,7 @@ describe 'project lock and runner' do
     Lock.new(@root).synchronize('again') { pass }
   end
 
-  # A running Rails app probes the lock with a shared lock (ContextMap.installing?). That must
+  # A running Rails app probes the lock with a shared lock (Contexts::Map.installing?). That must
   # not read as another install.
   it 'waits out a probe of the lock rather than reporting busy' do
     FileUtils.mkdir_p(File.join(@root, '.proscenium'))
@@ -221,7 +221,7 @@ describe 'project lock and runner' do
     assert_operator elapsed, :<, 4, 'the CLI waited for the background process'
     Lock.new(@root).synchronize('retry') { pass }
 
-    refute Proscenium::ContextMap.installing?(@root)
+    refute Proscenium::Contexts::Map.installing?(@root)
   ensure
     kill(File.read(child).to_i) if child && File.exist?(child)
   end

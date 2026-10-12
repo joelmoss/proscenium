@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
-require_relative '../context_map'
+require_relative '../contexts/map'
 require_relative '../yaml_tree'
 require_relative 'pnpm_approvals'
 require 'open3'
@@ -53,7 +53,7 @@ module Proscenium
         path = File.join(root, 'package.json')
         return nil unless File.exist?(path)
 
-        field = ContextMap.read_json(path)['packageManager']
+        field = Contexts::Map.read_json(path)['packageManager']
         field.is_a?(String) ? field.split('@').first : nil
       rescue JSON::ParserError
         nil
@@ -129,7 +129,7 @@ module Proscenium
       # probing would change the project before install could refuse anything.
       def pinned_version
         path = File.join(@root, 'package.json')
-        field = File.exist?(path) && ContextMap.read_json(path)['packageManager']
+        field = File.exist?(path) && Contexts::Map.read_json(path)['packageManager']
         return unless field.is_a?(String)
 
         name, version = field.split('+').first.split('@', 2)
@@ -151,7 +151,7 @@ module Proscenium
         path = File.join(@root, 'pnpm-workspace.yaml')
         return unless File.exist?(path)
 
-        text = ContextMap.utf8(File.read(path)).delete_prefix(ContextMap::BOM)
+        text = Contexts::Map.utf8(File.read(path)).delete_prefix(Contexts::Map::BOM)
         value, = YamlTree.value(text, key)
         value.value if value.is_a?(Psych::Nodes::Scalar)
       rescue Psych::SyntaxError
@@ -190,7 +190,7 @@ module Proscenium
       # registration, so a file that is not strict JSON is refused here, before any write.
       def package_json
         path = File.join(@root, 'package.json')
-        File.exist?(path) ? ContextMap.read_json(path) : nil
+        File.exist?(path) ? Contexts::Map.read_json(path) : nil
       rescue JSON::ParserError
         raise Error.new('PSM-E-REGISTRATION', file: 'package.json')
       end
@@ -280,7 +280,7 @@ module Proscenium
       # here, so at worst an app that is not a member is refused.
       def member?(dir, root)
         path = File.join(dir, 'package.json')
-        package = File.exist?(path) && ContextMap.read_json(path)
+        package = File.exist?(path) && Contexts::Map.read_json(path)
         return false unless package.is_a?(Hash)
 
         workspaces = package['workspaces']

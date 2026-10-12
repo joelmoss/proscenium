@@ -3,7 +3,7 @@
 require 'rubygems/package'
 require 'zlib'
 require_relative '../bundled_gems'
-require_relative 'rules'
+require_relative '../contexts/rules'
 
 module Proscenium
   module CLI
@@ -35,7 +35,9 @@ module Proscenium
 
       def manifest_entry(entry)
         return [nil, 'it is not a regular file'] unless entry.file?
-        return [nil, 'it is larger than 1 MB'] if entry.header.size > Rules::MANIFEST_LIMIT
+
+        limit = Contexts::Rules::MANIFEST_LIMIT
+        return [nil, 'it is larger than 1 MB'] if entry.header.size > limit
 
         [entry.read, nil]
       end
