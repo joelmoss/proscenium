@@ -33,7 +33,7 @@ module Proscenium
         return if !fragments && !included_comment
 
         out = []
-        Proscenium::Importer.each_stylesheet do |path, opts|
+        Proscenium::Importer.each_stylesheet(delete: true) do |path, opts|
           opts = opts[:css].is_a?(Hash) ? opts[:css] : {}
           opts = opts.merge(data: opts[:data] || {})
           opts = opts.merge(preload_links_header: false) if fragments
@@ -58,7 +58,7 @@ module Proscenium
         return if !fragments && !included_comment
 
         out = []
-        Proscenium::Importer.each_javascript do |path, opts|
+        Proscenium::Importer.each_javascript(delete: true) do |path, opts|
           next if opts.delete(:lazy)
 
           opts = opts[:js].is_a?(Hash) ? opts[:js] : {}

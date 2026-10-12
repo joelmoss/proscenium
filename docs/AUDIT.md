@@ -147,7 +147,8 @@ Ranked by realistic trigger and cost. **P1** are defects; **P2** is the independ
 
 **F3-14, dead.** Ruby: `Middleware::BuildError`, `Benchmarkable` in the middleware base, the
 unreachable `content_type` fallback, `Importer.import`'s nil default and `each_*`'s
-`delete: false`, CssModule's no-op ternary arms, public `Transformer#class_name!` (wrong: an app calls it, so it
+`delete: false` (wrong: apps pass `delete:`, so the keyword and its `false` default stay, now
+`@api public`), CssModule's no-op ternary arms, public `Transformer#class_name!` (wrong: an app calls it, so it
 stays public and is now `@api public`),
 `Reporter#info`'s `phase:`, `run_manager`'s optional lock, `ViewHelper`, the `with` alias, a
 `skip 'fixme'` test from 2024 and its views, 79 import-map fixtures, the gemspec's `lib/tasks`
