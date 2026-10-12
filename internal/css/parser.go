@@ -155,9 +155,9 @@ func (p *cssParser) append(input string) {
 // Returning false from that function will break from the iteration.
 //
 // Iteration stops at the end of the stream, so `iterFn` is guaranteed a renderable token and can
-// only decide whether to keep going. A stop token ends the stylesheet here just as it does in
-// `handleNextToken`, so a truncated declaration terminates rather than handing the callback the
-// end of the stream.
+// only decide whether to keep going. The end of the stream, or a bad token in the input, ends the
+// stylesheet here just as it does in `handleNextToken`, so a truncated declaration terminates
+// rather than handing the callback the end of the stream.
 func (p *cssParser) forEachToken(iterFn func(token cssToken) bool) {
 	for {
 		token := p.tokens.next()
