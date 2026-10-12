@@ -153,13 +153,6 @@ spelling: `resolve.go` and `plugin/css.go` since `8452092a`, and `dirname.go`, `
 with it the missing boundary - root `/app` no longer claims `/app-other/x.css`.
 `test/dirname_boundary_test.go` pins that, and fails against both naive migrations.
 
-**Still open from the Codex adversarial pass** (`docs/AUDIT.md`, "CODEX ADVERSARIAL PASS"). One item
-left: finding 2, vendor's `immutable, max-age=100.years` on an unversioned URL. It is a one-header
-decision - drop `immutable` and shorten `max-age` so `Last-Modified` revalidates, or record it as
-accepted. Do not leave it open. Findings 9 and 10 are fixed in `407921ba` and finding 3 is recorded
-won't-fix there; the reasoning, including the measurements that rejected a per-root load lock, is
-in `docs/AUDIT.md`'s table rather than repeated here.
-
 **Worth keeping from the middleware fixes:** normalise a request path once, then route, check and
 build from that single value. Three separate defects were the same shape - `Chunks` reading a raw
 path the file handler later normalised, and `find_type` / `file_readable?` / `path_to_build`

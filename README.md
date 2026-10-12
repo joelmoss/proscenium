@@ -913,9 +913,11 @@ treated as test, and so is served and precompiled unminified.
 
 ## Resolution
 
-Proscenium will serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories of your Rails application's root: `/app`, `/lib`, `/config`, `/node_modules`, `/vendor`.
+Proscenium will build and serve files ending with any of these extension: `js,mjs,ts,css,jsx,tsx` from the following directories, and their sub-directories of your Rails application's root: `/app`, `/lib`, `/config`, `/node_modules`.
 
 So a file at `/app/views/users/index.js` will be served from `https://localhost:3000/app/views/users/index.js`.
+
+`.js` and `.css` files under `/vendor` are served as they are, without building, and with `Cache-Control: public, max-age=3155695200, immutable`. A browser never asks for one again, so put a version in the path of each vendored file (`/vendor/foo/1.2.3/foo.js`), and change the path when the file changes. This suits a package you load at run time rather than bundle, such as one marked `external`.
 
 You can continue to access any file in the `/public` directory as you normally would. Proscenium will not process files in the `/public` directory.
 
