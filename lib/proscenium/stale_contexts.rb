@@ -17,7 +17,15 @@ module Proscenium
   # are pinned by test/cli/load_isolation_test.rb).
   module StaleContexts
     COMMAND = 'Run `bundle exec proscenium install` and commit .proscenium/packages.'
-    EDITED = 'its dependency context was edited by hand'
+    # Why a committed context is not the one install would write, by its `drift`. The engine,
+    # `install --frozen` and `inspect` all classify a context with `drift`, so they name one cause.
+    REASONS = {
+      missing: "its dependency context hasn't been written yet",
+      invalid: 'its dependency context is not valid JSON',
+      projection: 'its dependency context was written by a different version of Proscenium',
+      edited: 'its dependency context was edited by hand',
+      changed: 'its NPM dependencies changed since its dependency context was written'
+    }.freeze
     ORPHAN = '%<gem>s: its dependency context is left over, as the gem is no longer in the ' \
              'bundle or no longer opted in'
 
@@ -121,28 +129,27 @@ module Proscenium
       end
     end
 
-    # The committed context is projected again from the fields it holds, not taken on trust: a
-    # hand edit that kept the reported hash would build against a graph no install produced.
-    def compare(context, path)
-      return "its dependency context hasn't been written yet" unless path && File.exist?(path)
+    # Why the engine refuses the committed context at `path`, or nil when it builds with it.
+    def compare(context, path) = REASONS[drift(context, path)]
+
+    # How the committed context at `path` differs from `context`, as a key of REASONS, or nil
+    # when it holds the same JSON. It is projected again from the fields it holds, not taken on
+    # trust: a hand edit that kept the reported hash would build against a graph no install
+    # produced.
+    def drift(context, path)
+      return :missing unless path && File.exist?(path)
 
       committed = ContextMap.read_json(path)
-      unless committed.is_a?(Hash) && committed['proscenium'].is_a?(Hash)
-        return 'its dependency context is not valid JSON'
-      end
-      if committed['proscenium']['projection'] != DependencyContext::PROJECTION
-        return 'its dependency context was written by a different version of Proscenium'
-      end
+      return :invalid unless committed.is_a?(Hash) && committed['proscenium'].is_a?(Hash)
+      return :projection if committed['proscenium']['projection'] != DependencyContext::PROJECTION
 
       # Parsed, so reformatting is not an edit; whole, so its name and the other generated fields
       # count as well as its hash.
-      edited = DependencyContext.project(context.gem, committed) != committed
-      return EDITED if edited
-      return if committed == JSON.parse(context.json)
+      return :edited if DependencyContext.project(context.gem, committed) != committed
 
-      'its NPM dependencies changed since its dependency context was written'
+      :changed unless committed == JSON.parse(context.json)
     rescue JSON::ParserError
-      'its dependency context is not valid JSON'
+      :invalid
     end
 
     # The build error for the app at `root`, or nil when its contexts are current. Read once per

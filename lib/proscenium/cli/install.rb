@@ -232,26 +232,15 @@ module Proscenium
         end
       end
 
+      # Why a context whose bytes differ from what install writes is drift, with the diff. Frozen
+      # compares bytes, so one the engine still builds with, only reformatted, is a hand edit.
       def describe_change(context)
         path = @committed[context.gem]
-        unless path && File.exist?(path)
-          return "#{context.gem}: its dependency context hasn't been written yet"
-        end
+        drift = StaleContexts.drift(context, path) || :edited
+        cause = "#{context.gem}: #{StaleContexts::REASONS[drift]}"
+        return cause if drift == :missing
 
-        before = File.read(path)
-        diff = Diff.unified(relative(path), before, context.json)
-        committed = JSON.parse(before)['proscenium'] || {}
-        current = JSON.parse(context.json)['proscenium']
-        cause = if committed['projection'] != current['projection']
-                  'its dependency context was written by a different version of Proscenium'
-                elsif committed['projectionSha256'] == current['projectionSha256']
-                  'its dependency context was edited by hand'
-                else
-                  'its NPM dependencies changed since its dependency context was written'
-                end
-        "#{context.gem}: #{cause}\n#{diff}"
-      rescue JSON::ParserError
-        "#{context.gem}: its dependency context is not valid JSON"
+        "#{cause}\n#{Diff.unified(relative(path), File.read(path), context.json)}"
       end
 
       def install
