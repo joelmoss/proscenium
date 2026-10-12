@@ -19,7 +19,8 @@ type cssParser struct {
 	// Map of mixin names and their contents.
 	mixins cssMixins
 
-	// Mixins from other files whose definition held a bad token, refused when used.
+	// Mixins from other files refused when used: a definition that held a bad token, or that the
+	// file ends before closing.
 	malformedMixins map[string]bool
 
 	// How many mixins this parse has expanded, and the length of the definitions inserted, both
