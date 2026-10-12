@@ -94,15 +94,16 @@ module Proscenium
         }
       end
 
-      # `stale` exactly when the engine refuses to build: the projection hash differs. Different
-      # bytes with the same hash are a hand edit, which only `install --frozen` refuses.
+      # `edited` when the gem's dependencies are what install would write but the file is not: a
+      # reformat, which the engine builds with and only `install --frozen` refuses, or a hand edit
+      # to its fields, which the engine refuses too (`buildRefused` says which). `stale` when
+      # install would write something else, and the engine refuses it.
       def status(context, on_disk, path)
         return 'invalid' unless context
         return 'missing' unless on_disk
         return 'current' if on_disk == context.json
 
-        reason = StaleContexts.compare(context, path)
-        reason.nil? || reason == StaleContexts::EDITED ? 'edited' : 'stale'
+        [nil, :edited].include?(StaleContexts.drift(context, path)) ? 'edited' : 'stale'
       end
 
       # Where Gemfile.lock takes the gem from.
