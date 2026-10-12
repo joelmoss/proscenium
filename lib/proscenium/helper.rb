@@ -47,11 +47,12 @@ module Proscenium
 
     # A tag helper's source with no leading slash, looked up in the manifest's own key space:
     # `/app/...` for an app file, `@rubygems/...` for a gem's. An entry holds its outputs, the
-    # entry's own first.
+    # entry's own first. With no entry, the URL the middleware serves it at, as Resolver builds it.
     def compute_asset_path(path, options = {})
       if %i[javascript stylesheet].include?(options[:type])
-        entry = path.start_with?('@rubygems/') ? path : "/#{path}"
-        return Proscenium::Manifest[entry]&.first || "/#{path}"
+        gem = path.start_with?('@rubygems/')
+        return Proscenium::Manifest[gem ? path : "/#{path}"]&.first ||
+               (gem ? "/node_modules/#{path}" : "/#{path}")
       end
 
       super
