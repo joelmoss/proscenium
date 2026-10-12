@@ -107,11 +107,30 @@ func endsStream(t css_lexer.T) bool {
 	return t == css_lexer.TEndOfFile
 }
 
-// A bad string or url, or a backslash before a newline: a newline inside a string or url(), or
-// after a backslash. Only malformed CSS has one.
+// A bad string or url, a backslash before a newline, or a comment left open: a newline inside a
+// string or url(), or after a backslash, or the end of the file inside a comment. Only malformed CSS
+// has one. An open comment copied into a mixin body commented out the rest of the stylesheet using it.
 func isBad(t cssToken) bool {
 	return t.Type == css_lexer.TUnterminatedString || t.Type == css_lexer.TBadURL ||
-		(t.Type == css_lexer.TDelim && t.raw == `\`)
+		(t.Type == css_lexer.TDelim && t.raw == `\`) ||
+		(t.Type == css_lexer.TWhitespace && hasOpenComment(t.raw))
+}
+
+// Whether `ws`, the text of a whitespace token - whitespace and comments only - ends inside a comment.
+func hasOpenComment(ws string) bool {
+	for {
+		start := strings.Index(ws, "/*")
+		if start < 0 {
+			return false
+		}
+
+		end := strings.Index(ws[start+2:], "*/")
+		if end < 0 {
+			return true
+		}
+
+		ws = ws[start+2+end+2:]
+	}
 }
 
 func (x *cssTokenizer) next() cssToken {

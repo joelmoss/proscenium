@@ -40,6 +40,11 @@ var _ = Describe("Build(parseCss)", func() {
 		// A stylesheet that uses a mixin is copied from its source too, token by token, so all but
 		// the definitions it drops and the declarations it expands comes out byte for byte as
 		// written. Compared with Equal: the matcher compares layout loosely.
+		//
+		// Value: protects=a stylesheet that uses a mixin is copied as written outside its expansions;
+		// fails_when=a token is re-rendered, or a gap is attached to or dropped with another token;
+		// why_new=BeParsedTo compares layout loosely; seam=none; no_claim=esbuild's reading of the
+		// output (css_test.go covers that)
 		DescribeTable("keeps a stylesheet that uses a mixin as written",
 			func(input string, expected string) {
 				output, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
@@ -66,12 +71,25 @@ var _ = Describe("Build(parseCss)", func() {
 				"a{color:red;/* c */}"),
 			Entry("a comment at the end", "@define-mixin m{color:red;}a{@mixin m;}/* tail */",
 				"a{color:red;}/* tail */"),
+			// The lexer reads a comment beside whitespace as part of the whitespace, and one between two
+			// tokens as no token at all: the output has to keep both, in either order.
+			Entry("a comment then whitespace", "@define-mixin m{color:red;}a/*c*/ b{@mixin m;}",
+				"a/*c*/ b{color:red;}"),
+			Entry("whitespace then a comment", "@define-mixin m{color:red;}a /*c*/b{@mixin m;}",
+				"a /*c*/b{color:red;}"),
 		)
 
-		It("resolves a mixin file written as an unquoted url()", func() {
-			Expect("a{@mixin red from url(/lib/mixins/colors.css);}").To(
-				BeParsedTo("a{ color: red; }", "/foo.css", testConfig))
-		})
+		// Value: protects=a mixin file named by url() resolves however it is written; fails_when=url
+		// is matched case-sensitively or the URL is taken with its padding; why_new=only lowercase,
+		// unpadded url() is used elsewhere; seam=none; no_claim=none beyond protects
+		DescribeTable("resolves a mixin file named by url()",
+			func(declaration string) {
+				Expect("a{" + declaration + "}").To(BeParsedTo("a{ color: red; }", "/foo.css", testConfig))
+			},
+			Entry("unquoted", "@mixin red from url(/lib/mixins/colors.css);"),
+			Entry("quoted, in capitals", `@mixin red from URL("/lib/mixins/colors.css");`),
+			Entry("quoted, padded", `@mixin red from url( "/lib/mixins/colors.css" );`),
+		)
 
 		It("refuses a nil config", func() {
 			success, err := BeParsedTo("body{}", "/foo.css", nil).Match("body{}")
@@ -108,6 +126,7 @@ var _ = Describe("Build(parseCss)", func() {
 			Entry("string holding an escaped newline", "@define-mixin m{}a{content:\"\\a x\n;}\nb{color:blue}"),
 			Entry("backslash before a newline", "@define-mixin m{}a{color:red\\\n;}\nb{color:blue}"),
 			Entry("backslash before a newline, after a comment", "@define-mixin m{}a{color:red/*c*/\\\n;}\nb{color:blue}"),
+			Entry("comment left open at the end", "@define-mixin m{color:red}a{@mixin m;}/* open"),
 			Entry("url ending in a quote", "@define-mixin m{}a{background:url(a\"b\")}\nb{color:blue}"),
 			Entry("url with whitespace inside", "@define-mixin m{}a{background:url(a\nb)}\nb{color:blue}"),
 			Entry("url holding an escaped paren", "@define-mixin m{}a{background:url(a\\29  b)}\nb{color:blue}"),
@@ -120,6 +139,15 @@ var _ = Describe("Build(parseCss)", func() {
 		// A bad token in a mixin from another file leaves the stylesheet that uses it valid, so only
 		// that mixin is refused, with a warning; returning the whole caller unchanged lost every other
 		// expansion, and esbuild never sees the mixin file to report it.
+		// A comment left open at the end of a mixin file, as when it is saved mid-edit, was copied into
+		// every stylesheet using the mixin, commenting out the rest of it.
+		It("refuses a mixin from another file that ends in an open comment", func() {
+			file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/unterminated_comment.css")
+			input := "a{@mixin m from url(\"/lib/mixins/unterminated_comment.css\");}\nb{color:blue}"
+
+			Expect(input).To(BeParsedTo(input, "/foo.css", testConfig, `Mixin "m" in "`+file+`" is malformed CSS`))
+		})
+
 		It("refuses a malformed mixin from another file, and still expands the rest", func() {
 			file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/malformed.css")
 
