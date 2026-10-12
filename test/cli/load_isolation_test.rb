@@ -72,3 +72,25 @@ describe 'Engine load isolation' do
     assert_includes cli_files_after('proscenium/cli/install'), 'manager.rb'
   end
 end
+
+# The model's files are required directly by the CLI, and by the engine through the autoload table
+# in contexts.rb. A file that defined Contexts before `proscenium` registered that table once left
+# its autoloads unset: the CLI tests passed, and Rails boot raised NameError.
+describe 'Contexts autoload table' do
+  CONTEXTS_LIB = File.expand_path('../../lib', __dir__)
+
+  # Value: protects=the engine reaching every Contexts file after a CLI-style direct require
+  # loaded one first; fails_when=proscenium.rb stops requiring contexts.rb eagerly, or a file in
+  # contexts/ is missing from its table; why_new=every other test loads one order only, the
+  # engine first (test_helper) or the CLI alone; seam=none; no_claim=says nothing of Rails boot
+  it 'resolves every model file, whichever of them is required before the engine' do
+    names = Dir[File.join(CONTEXTS_LIB, 'proscenium/contexts/*.rb')]
+            .map { File.basename(it, '.rb').split('_').map(&:capitalize).join }.sort
+    script = "require 'proscenium/contexts/map'; require 'proscenium'; " \
+             "puts #{names.inspect}.map { |n| Proscenium::Contexts.const_get(n).name }"
+    out, err, status = Subprocess.capture(RbConfig.ruby, '-I', CONTEXTS_LIB, '-e', script)
+
+    assert_predicate status, :success?, "#{out}#{err}"
+    assert_equal names.map { "Proscenium::Contexts::#{it}" }, out.split
+  end
+end
