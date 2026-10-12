@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'helper'
-require 'open3'
+require_relative '../support/subprocess'
 require 'rbconfig'
 
 # The CLI must never load the engine (C37): not `proscenium` itself, ActiveSupport, Rails, FFI or
@@ -20,8 +20,9 @@ describe 'CLI load isolation' do
       Proscenium::CLI.start(#{argv.inspect}, out: StringIO.new, err: StringIO.new)
       puts #{FORBIDDEN.inspect}.select { |name| Object.const_defined?(name) }
     RUBY
-    out, status = Open3.capture2e(RbConfig.ruby, '-I', ISOLATION_LIB, '-rstringio', '-e', script)
-    raise "subprocess failed:\n#{out}" unless status.success?
+    out, err, status = Subprocess.capture(RbConfig.ruby, '-I', ISOLATION_LIB, '-rstringio', '-e',
+                                          script)
+    raise "subprocess failed:\n#{out}#{err}" unless status.success?
 
     out.split
   end
@@ -56,7 +57,7 @@ describe 'Engine load isolation' do
   def cli_files_after(feature)
     script = "require #{feature.inspect}; " \
              'puts $LOADED_FEATURES.grep(%r{/lib/proscenium/cli/}).map { File.basename(it) }.sort'
-    out, err, status = Open3.capture3(RbConfig.ruby, '-I', ENGINE_LIB, '-e', script)
+    out, err, status = Subprocess.capture(RbConfig.ruby, '-I', ENGINE_LIB, '-e', script)
     raise "subprocess failed:\n#{out}#{err}" unless status.success?
 
     out.split

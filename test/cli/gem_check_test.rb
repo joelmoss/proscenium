@@ -3,7 +3,7 @@
 require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
-require 'open3'
+require_relative '../support/subprocess'
 require 'rbconfig'
 
 # `proscenium gem check`, against the Stage A fixture gems and small gems written per case.
@@ -305,11 +305,12 @@ describe Proscenium::CLI::GemCheck do
   it 'reads a package.json with non-ASCII text under the C locale' do
     dir = gem_dir(manifest: { 'description' => "Jos\u00e9's widget" })
     exe = File.expand_path('../../exe/proscenium', __dir__)
-    out, status = Open3.capture2e({ 'LANG' => 'C', 'LC_ALL' => 'C' }, RbConfig.ruby, '-w', '-I',
-                                  File.expand_path('../../lib', __dir__), exe, 'gem', 'check', dir)
+    out, err, status = Subprocess.capture(RbConfig.ruby, '-w', '-I',
+                                          File.expand_path('../../lib', __dir__), exe, 'gem',
+                                          'check', dir, env: { 'LANG' => 'C', 'LC_ALL' => 'C' })
 
-    assert_predicate status, :success?, out
-    refute_includes out, 'Encoding.default_external', 'the setting is not worth a warning'
+    assert_predicate status, :success?, out + err
+    refute_includes out + err, 'Encoding.default_external', 'the setting is not worth a warning'
   end
 
   # C29: a package.json read safely or not at all.

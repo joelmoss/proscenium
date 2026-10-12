@@ -2,7 +2,7 @@
 
 require 'test_helper'
 require 'json'
-require 'open3'
+require_relative '../support/subprocess'
 require 'tmpdir'
 require 'proscenium/contexts/projection'
 require_relative 'stage_a/bundle'
@@ -52,10 +52,10 @@ class Proscenium::BunLayoutTest < ActiveSupport::TestCase
   end
 
   def self.bun(dir, *args)
-    out, status = Open3.capture2e('bun', *args, chdir: dir)
-    raise "bun #{args.join(' ')} failed:\n#{out}" unless status.success?
+    out, err, status = Subprocess.capture('bun', *args, chdir: dir)
+    raise "bun #{args.join(' ')} failed:\n#{out}#{err}" unless status.success?
 
-    out
+    out + err
   end
 
   before { skip 'set STAGE_A=1 to run (needs Bun and the network)' unless ENV['STAGE_A'] }

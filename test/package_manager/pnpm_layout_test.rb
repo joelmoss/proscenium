@@ -2,7 +2,7 @@
 
 require 'test_helper'
 require 'json'
-require 'open3'
+require_relative '../support/subprocess'
 require 'tmpdir'
 require 'proscenium/contexts/projection'
 require_relative 'stage_a/bundle'
@@ -53,10 +53,10 @@ class Proscenium::PnpmLayoutTest < ActiveSupport::TestCase
   end
 
   def self.pnpm(app, *args)
-    out, status = Open3.capture2e('pnpm', *args, chdir: app)
-    raise "pnpm #{args.join(' ')} failed:\n#{out}" unless status.success?
+    out, err, status = Subprocess.capture('pnpm', *args, chdir: app)
+    raise "pnpm #{args.join(' ')} failed:\n#{out}#{err}" unless status.success?
 
-    out
+    out + err
   end
 
   before { skip 'set STAGE_A=1 to run (needs pnpm and the network)' unless ENV['STAGE_A'] }
