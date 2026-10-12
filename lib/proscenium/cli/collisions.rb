@@ -3,7 +3,7 @@
 require 'json'
 require 'yaml'
 require_relative '../app_package'
-require_relative '../context_map'
+require_relative '../contexts/map'
 
 module Proscenium
   module CLI
@@ -44,7 +44,7 @@ module Proscenium
       def context_link?(root, spec, gem)
         return false unless spec.to_s.start_with?('link:')
 
-        context = File.join(File.expand_path(root), ContextMap::CONTEXTS, gem)
+        context = File.join(File.expand_path(root), Contexts::Map::CONTEXTS, gem)
         File.expand_path(spec.to_s.delete_prefix('link:'), root) == context
       end
 
@@ -53,7 +53,7 @@ module Proscenium
       # Bun read `./packages/*` and `packages/*` alike.
       def workspace_packages(root, manager, app)
         excluded, included = workspace_patterns(root, manager, app)
-                             .grep(String).reject { ContextMap.registration?(it) }
+                             .grep(String).reject { Contexts::Map.registration?(it) }
                              .map { it.sub(%r{\A(!?)\./}, '\\1') }
                              .partition { it.start_with?('!') }
         files = included.flat_map { Dir.glob(File.join(it, 'package.json'), base: root) }.uniq
@@ -75,14 +75,14 @@ module Proscenium
           Array(workspaces.is_a?(Hash) ? workspaces['packages'] : workspaces)
         else
           path = File.join(root, 'pnpm-workspace.yaml')
-          File.exist?(path) ? Array(ContextMap.yaml_packages(File.read(path))) : []
+          File.exist?(path) ? Array(Contexts::Map.yaml_packages(File.read(path))) : []
         end
       rescue Psych::SyntaxError
         [] # the manager reports it
       end
 
       def read_json(path)
-        json = File.exist?(path) && ContextMap.read_json(path)
+        json = File.exist?(path) && Contexts::Map.read_json(path)
         json.is_a?(Hash) ? json : nil
       rescue JSON::ParserError
         nil

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'fileutils'
-require_relative '../context_map'
+require_relative '../contexts/map'
 
 module Proscenium
   module CLI
@@ -41,8 +41,8 @@ module Proscenium
       end
 
       # The engine probes these two to refuse builds during an install, so both sides share them.
-      def lock_path = File.join(@root, ContextMap::LOCK)
-      def marker_path = File.join(@root, ContextMap::INSTALLING)
+      def lock_path = File.join(@root, Contexts::Map::LOCK)
+      def marker_path = File.join(@root, Contexts::Map::INSTALLING)
       def holder_path = File.join(@dir, 'holder')
       def manager_path = File.join(@dir, 'manager')
 

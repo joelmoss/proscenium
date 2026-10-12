@@ -46,9 +46,9 @@ describe 'CLI load isolation' do
   end
 end
 
-# The other direction: the engine reaches the model through StaleContexts, and must load no more of
-# the CLI than its error catalog and the author rules the model applies. Every other file under
-# cli/ (the package manager, install, verify) is the CLI's own.
+# The other direction: the engine reaches the model through Contexts::Stale, and must load no more
+# of the CLI than its error catalog. Every other file under cli/ (the package manager, install,
+# verify) is the CLI's own.
 describe 'Engine load isolation' do
   ENGINE_LIB = File.expand_path('../../lib', __dir__)
 
@@ -62,8 +62,8 @@ describe 'Engine load isolation' do
     out.split
   end
 
-  it 'loads only the error catalog and the author rules from the CLI' do
-    assert_equal %w[error.rb rules.rb], cli_files_after('proscenium/stale_contexts')
+  it 'loads only the error catalog from the CLI' do
+    assert_equal %w[error.rb], cli_files_after('proscenium/contexts/stale')
   end
 
   # The control: a CLI command must be seen, or the check above proves nothing.

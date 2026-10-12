@@ -28,24 +28,24 @@ class Proscenium::ContextWiringTest < ActiveSupport::TestCase
     @root = File.realpath(Dir.mktmpdir('wiring'))
     write('pnpm-workspace.yaml', "packages:\n  - .proscenium/packages/*\n")
     manifest = JSON.parse(File.read(File.join(GEM_ROOT, 'package.json')))
-    context = Proscenium::DependencyContext.project(GEM, manifest)
-    write(".proscenium/packages/#{GEM}/package.json", Proscenium::DependencyContext.to_json(context))
+    context = Proscenium::Contexts::Projection.project(GEM, manifest)
+    write(".proscenium/packages/#{GEM}/package.json", Proscenium::Contexts::Projection.to_json(context))
     write(".proscenium/packages/#{GEM}/node_modules/ms/package.json", '{"main": "index.js"}')
     write(".proscenium/packages/#{GEM}/node_modules/ms/index.js",
           'export default () => "ms from the context"')
     write('node_modules/react/package.json', '{"main": "index.js"}')
     write('node_modules/react/index.js', 'export default { createElement() {} }')
 
-    stub(Proscenium::ContextMap, :project_root, @root)
+    stub(Proscenium::Contexts::Map, :project_root, @root)
     stub(Proscenium::BundledGems, :installed_specs,
          [Spec.new(GEM, { 'proscenium.dependencies' => 'true' }, GEM_ROOT, [])])
-    [Proscenium::ContextMap, Proscenium::StaleContexts, Proscenium::MappingGeneration].each(&:reset!)
+    [Proscenium::Contexts::Map, Proscenium::Contexts::Stale, Proscenium::Contexts::MappingGeneration].each(&:reset!)
   end
 
   after do
-    unstub(Proscenium::ContextMap, :project_root)
+    unstub(Proscenium::Contexts::Map, :project_root)
     unstub(Proscenium::BundledGems, :installed_specs)
-    [Proscenium::ContextMap, Proscenium::StaleContexts, Proscenium::MappingGeneration].each(&:reset!)
+    [Proscenium::Contexts::Map, Proscenium::Contexts::Stale, Proscenium::Contexts::MappingGeneration].each(&:reset!)
     FileUtils.rm_rf(@root)
   end
 

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Proscenium
-  module CLI
+  module Contexts
     # The author contract for a participating gem's package.json (#154): what `gem check` and
     # `install` refuse. Each rule yields a problem as [error code, format arguments]; the caller
     # decides whether a problem is fatal and how to word the escape.

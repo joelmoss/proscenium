@@ -504,7 +504,7 @@ describe Proscenium::CLI::Manager do
       manifests = { 'ui-gem' => { 'dependencies' => { 'left-pad' => 'github:evil/left-pad' } } }
 
       assert_equal ['ui-gem: left-pad (github:evil/left-pad)'],
-                   Proscenium::CLI::Rules.trusted_substitutions(:all, manifests)
+                   Proscenium::Contexts::Rules.trusted_substitutions(:all, manifests)
     ensure
       ENV.delete('pnpm_config_dangerously_allow_all_builds')
       ENV.delete('PNPM_CONFIG_DANGEROUSLY_ALLOW_ALL_BUILDS')

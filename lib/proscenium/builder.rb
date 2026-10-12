@@ -140,12 +140,12 @@ module Proscenium
     # finished, or the committed gem dependency contexts are stale. With
     # PROSCENIUM_STALE_CONTEXT=warn, for an incident, stale contexts are logged once instead.
     def self.refusal(root = Rails.root)
-      project = ContextMap.project_root
-      return ContextMap::INSTALLING_MESSAGE if ContextMap.installing?(project)
+      project = Contexts::Map.project_root
+      return Contexts::Map::INSTALLING_MESSAGE if Contexts::Map.installing?(project)
 
       outside = outside_rails_root(project, root) and return outside
 
-      stale = StaleContexts.message(project, generation) or return
+      stale = Contexts::Stale.message(project, generation) or return
       return stale unless ENV['PROSCENIUM_STALE_CONTEXT'] == 'warn'
 
       @warned ||= Set.new
@@ -158,7 +158,7 @@ module Proscenium
     # has no URL the engine serves, so such a layout is refused plainly, not left to fail
     # mid-page. Only compares paths unless they differ.
     def self.outside_rails_root(project, root = Rails.root)
-      return if within?(project, root) || !ContextMap.adopted?(project)
+      return if within?(project, root) || !Contexts::Map.adopted?(project)
 
       "Gem dependency contexts are under #{project}, outside the Rails app at #{root}, " \
         'which Proscenium cannot serve yet. Keep the Gemfile in the Rails root to use them.'
@@ -220,7 +220,7 @@ module Proscenium
         External: Proscenium.config.external,
         Precompile: Proscenium.config.precompile,
         Debug: Proscenium.config.debug,
-        **ContextMap.config(ContextMap.project_root, generation)
+        **Contexts::Map.config(Contexts::Map.project_root, generation)
       }.merge(@overrides)
 
       self.class.request_config_pointer(config_hash)

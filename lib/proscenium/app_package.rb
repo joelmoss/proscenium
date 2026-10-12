@@ -3,8 +3,8 @@
 require 'json'
 
 module Proscenium
-  # What the app's own package.json says that the context map needs (#154). Like ContextMap, which
-  # it reads JSON through, it loads nothing the `proscenium` CLI may not.
+  # What the app's own package.json says that the context map needs (#154). Like Contexts::Map,
+  # which it reads JSON through, it loads nothing the `proscenium` CLI may not.
   module AppPackage
     LOCAL_SPECS = %w[link: file: workspace: portal:].freeze
     # The fields an app's own dependencies are under. Peers too: pnpm installs the app's own peers
@@ -85,7 +85,7 @@ module Proscenium
     # The app's package.json as an object, or nil when it is missing or not one.
     def read(root)
       path = File.join(root, 'package.json')
-      package = File.exist?(path) && ContextMap.read_json(path)
+      package = File.exist?(path) && Contexts::Map.read_json(path)
       package if package.is_a?(Hash)
     rescue JSON::ParserError
       nil

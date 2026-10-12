@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require_relative '../context_map'
-require_relative '../stale_contexts'
+require_relative '../contexts/map'
+require_relative '../contexts/stale'
 require_relative 'manager'
 
 module Proscenium
@@ -41,7 +41,7 @@ module Proscenium
 
       def check_workspaces(lock)
         missing = @gems.reject do |gem|
-          path = "#{ContextMap::CONTEXTS}/#{gem}"
+          path = "#{Contexts::Map::CONTEXTS}/#{gem}"
           if @manager.name == 'pnpm'
             # An importer with no dependencies is written on one line: `  <path>: {}`.
             lock.match?(/^  #{Regexp.escape(path)}:(?: \{\})?$/)
@@ -56,9 +56,9 @@ module Proscenium
 
       # Each peer a context declares that the app also depends on must resolve, from the context
       # and from the app, to one real directory. The rule is the engine's too, so it lives with
-      # StaleContexts.
+      # Contexts::Stale.
       def check_peers
-        gem, package = StaleContexts.peer_split(@root, @gems)
+        gem, package = Contexts::Stale.peer_split(@root, @gems)
         raise Error.new('PSM-E-PEER-SPLIT', gem:, package:) if gem
       end
     end

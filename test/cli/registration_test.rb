@@ -143,7 +143,7 @@ describe Proscenium::CLI::Registration do
     ('a'..'z').each_cons(2) { |from, to| text << "#{to}: &#{to} [*#{from}, *#{from}]\n" }
     text << "? *z\n: 1\npackages:\n  - apps/*\n"
     thread = Thread.new do
-      [Proscenium::ContextMap.registered_in?('pnpm-workspace.yaml', text), P.splice(text)]
+      [Proscenium::Contexts::Map.registered_in?('pnpm-workspace.yaml', text), P.splice(text)]
     end
 
     assert thread.join(2), 'reading it did not finish in 2 seconds'
@@ -243,12 +243,12 @@ describe Proscenium::CLI::Registration do
                                 "a: &a 1\nb: *a\npackages:\n  - a\n# .proscenium/packages/*\n"],
       'package.json' => ["\uFEFF{\"description\": \".proscenium/packages/*\"}"]
     }.each do |file, texts|
-      texts.each { refute Proscenium::ContextMap.registered_in?(file, it), it }
+      texts.each { refute Proscenium::Contexts::Map.registered_in?(file, it), it }
     end
   end
 
   it 'counts the forms pnpm and Bun read as the pattern, and a file it cannot parse' do
-    map = Proscenium::ContextMap
+    map = Proscenium::Contexts::Map
 
     assert map.registered_in?('pnpm-workspace.yaml', "packages:\n  - ./.proscenium/packages/*\n")
     assert map.registered_in?('package.json', '{"workspaces": [".proscenium/packages/*/"]}')

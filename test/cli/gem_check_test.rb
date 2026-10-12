@@ -125,22 +125,22 @@ describe Proscenium::CLI::GemCheck do
   # An optional dependency is installed for the gem too, so React there is its own copy as well.
   it 'flags React declared as an optional dependency' do
     manifest = { 'optionalDependencies' => { 'react' => '^18' } }
-    problems = Proscenium::CLI::Rules.check('widget', manifest)
+    problems = Proscenium::Contexts::Rules.check('widget', manifest)
 
     assert_includes problems, ['PSM-E-REACT', { gem: 'widget', packages: 'react' }]
   end
 
   it 'flags React installed under an alias' do
     manifest = { 'dependencies' => { 'react18' => 'npm:react@18', 'dom' => 'npm:react-dom' } }
-    problems = Proscenium::CLI::Rules.check('widget', manifest)
+    problems = Proscenium::Contexts::Rules.check('widget', manifest)
 
     assert_includes problems, ['PSM-E-REACT', { gem: 'widget', packages: 'react and react-dom' }]
   end
 
   # Windows drops a trailing dot from a path, so `foo.` would write foo's context there.
   it 'refuses a gem name ending in a dot' do
-    refute Proscenium::CLI::Rules.valid_name?('foo.')
-    assert Proscenium::CLI::Rules.valid_name?('foo.bar')
+    refute Proscenium::Contexts::Rules.valid_name?('foo.')
+    assert Proscenium::Contexts::Rules.valid_name?('foo.bar')
   end
 
   # A manifest field of the wrong type is a named problem, never a crash: the engine reads every
@@ -192,7 +192,7 @@ describe Proscenium::CLI::GemCheck do
                     'optionalDependencies' => { 'canvas' => 'https://evil.example/c.tgz' } },
       'ui' => { 'dependencies' => { 'esbuild' => '^0.25', 'sharp' => 'npm:sharp@0.33' } }
     }
-    found = Proscenium::CLI::Rules.trusted_substitutions(%w[esbuild sharp canvas], manifests)
+    found = Proscenium::Contexts::Rules.trusted_substitutions(%w[esbuild sharp canvas], manifests)
 
     assert_equal ['ui-gem: esbuild (github:evil/esbuild)', 'ui-gem: sharp (npm:evil@1)',
                   'ui-gem: canvas (https://evil.example/c.tgz)'], found

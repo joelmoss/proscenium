@@ -4,7 +4,7 @@ require 'test_helper'
 require 'json'
 require 'open3'
 require 'tmpdir'
-require 'proscenium/dependency_context'
+require 'proscenium/contexts/projection'
 require_relative 'stage_a/bundle'
 
 # What Bun does with registered contexts, built through the engine (#154): the only test that
@@ -46,8 +46,8 @@ class Proscenium::BunLayoutTest < ActiveSupport::TestCase
     manifest = JSON.parse(File.read(File.join(roots.fetch(gem), 'package.json')))
     path = File.join(app, '.proscenium/packages', gem, 'package.json')
     FileUtils.mkdir_p(File.dirname(path))
-    File.write(path, Proscenium::DependencyContext.to_json(
-                       Proscenium::DependencyContext.project(gem, manifest)
+    File.write(path, Proscenium::Contexts::Projection.to_json(
+                       Proscenium::Contexts::Projection.project(gem, manifest)
                      ))
   end
 

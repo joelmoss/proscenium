@@ -27,10 +27,10 @@ describe Proscenium::CLI::Inspect do
   # A context edited by hand, or only reformatted, is `edited`; one whose gem's dependencies
   # changed is `stale`.
   it 'tells a hand edit from a gem that changed' do
-    dc = Proscenium::DependencyContext
+    dc = Proscenium::Contexts::Projection
     projected = ->(deps) { dc.to_json(dc.project('widget', 'dependencies' => deps)) }
     json = projected.call({ 'ms' => '^2' })
-    context = Proscenium::ContextPlan::Context.new(gem: 'widget', json:)
+    context = Proscenium::Contexts::Plan::Context.new(gem: 'widget', json:)
     inspect = Proscenium::CLI::Inspect.new('/app', nil)
     Dir.mktmpdir do |dir|
       path = File.join(dir, 'package.json')

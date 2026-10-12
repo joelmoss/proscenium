@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
-require_relative '../context_map'
+require_relative '../contexts/map'
 require_relative 'bun_linker'
 require_relative 'brackets'
 require_relative 'gitignore'
@@ -15,7 +15,7 @@ module Proscenium
     # splice, so the file's other settings, order and comments survive; each is computed without
     # writing, so `install` can print it as a diff first.
     module Registration
-      PATTERN = ContextMap::REGISTRATION
+      PATTERN = Contexts::Map::REGISTRATION
 
       module_function
 
@@ -47,7 +47,7 @@ module Proscenium
       # Whether the app has adopted RubyGem NPM dependencies: its committed registration names the
       # contexts.
       def registered?(root, manager)
-        ContextMap.registers?(root, manager == 'bun' ? 'package.json' : 'pnpm-workspace.yaml')
+        Contexts::Map.registers?(root, manager == 'bun' ? 'package.json' : 'pnpm-workspace.yaml')
       end
 
       def refused(file) = Error.new('PSM-E-REGISTRATION', file:)
@@ -56,11 +56,11 @@ module Proscenium
       # or adds the key. Refuses rather than guess at JSON it cannot splice. A byte order mark is
       # kept.
       def splice_package_json(text)
-        return text if ContextMap.registered_in?('package.json', text, strict: true)
+        return text if Contexts::Map.registered_in?('package.json', text, strict: true)
 
         bom = text.start_with?("\uFEFF") ? "\uFEFF" : ''
         spliced = splice_json(text.delete_prefix(bom))
-        if ContextMap.excludes?(ContextMap.json_workspaces(spliced))
+        if Contexts::Map.excludes?(Contexts::Map.json_workspaces(spliced))
           raise Error.new('PSM-E-REGISTRATION-EXCLUDED', file: 'package.json')
         end
 

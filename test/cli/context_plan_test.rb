@@ -4,12 +4,12 @@ require_relative 'helper'
 require 'tmpdir'
 require 'fileutils'
 require 'json'
-require 'proscenium/context_plan'
+require 'proscenium/contexts/plan'
 
 # One gem referencing another's context (#154, C44, C26): kept, as `workspace:*`, only when the
 # gemspec depends on the other gem and it participates, so Bundler has locked a compatible
 # version. Anything else is a participation error naming both gems, with the consumer's escape.
-describe Proscenium::ContextPlan do
+describe Proscenium::Contexts::Plan do
   Dep = Struct.new(:name)
   ContextSpec = Struct.new(:name, :metadata, :full_gem_path, :runtime_dependencies)
 
@@ -24,7 +24,7 @@ describe Proscenium::ContextPlan do
                     depends_on.map { Dep.new(it) })
   end
 
-  def contexts(*specs) = Proscenium::ContextPlan.new(@dir, specs.to_h { [it.name, it] })
+  def contexts(*specs) = Proscenium::Contexts::Plan.new(@dir, specs.to_h { [it.name, it] })
 
   def context(contexts, gem) = JSON.parse(contexts.contexts.fetch(gem).json)
 

@@ -343,7 +343,7 @@ if the migrated apps keep shipping stale contexts.
 
 ### A build that starts just before an install can read a half-written tree
 
-**What:** `ContextMap.installing?` holds its shared lock on `.proscenium/lock` only for the probe,
+**What:** `Contexts::Map.installing?` holds its shared lock on `.proscenium/lock` only for the probe,
 so a build or resolve that passes the probe an instant before `proscenium install` takes the lock
 runs while the install rewrites contexts and `node_modules`.
 

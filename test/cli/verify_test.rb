@@ -139,7 +139,7 @@ describe Proscenium::CLI::Verify do
       verify('bun').check_peers
     end
 
-    # StaleContexts and `install --frozen` name a broken context or app manifest; the peer check
+    # Contexts::Stale and `install --frozen` name a broken context or app manifest; the peer check
     # has nothing to compare there, and must not raise.
     it 'skips a context or app manifest it cannot read' do
       context = '.proscenium/packages/widget/package.json'

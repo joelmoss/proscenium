@@ -26,12 +26,12 @@ class Proscenium::ResolverTest < ActiveSupport::TestCase
     it 'forgets a cached resolution when the mapping generation moves' do
       path = Rails.root.join('app/views/generation.js').to_s
       subject.resolved[path] = %w[stale stale stale].freeze
-      generation = Proscenium::MappingGeneration.method(:refresh)
-      Proscenium::MappingGeneration.define_singleton_method(:refresh) { |*| [1, true] }
+      generation = Proscenium::Contexts::MappingGeneration.method(:refresh)
+      Proscenium::Contexts::MappingGeneration.define_singleton_method(:refresh) { |*| [1, true] }
 
       assert_equal '/app/views/generation.js', subject.resolve(path)
     ensure
-      Proscenium::MappingGeneration.define_singleton_method(:refresh, generation)
+      Proscenium::Contexts::MappingGeneration.define_singleton_method(:refresh, generation)
       subject.reset
     end
 

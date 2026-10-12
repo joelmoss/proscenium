@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require_relative '../context_map'
+require_relative '../contexts/map'
 require_relative '../yaml_tree'
 
 module Proscenium
@@ -47,7 +47,7 @@ module Proscenium
       def setting?(path, key)
         return false unless File.exist?(path)
 
-        text = ContextMap.utf8(File.read(path)).delete_prefix(ContextMap::BOM)
+        text = Contexts::Map.utf8(File.read(path)).delete_prefix(Contexts::Map::BOM)
         value, anchors = YamlTree.value(text, key)
         true?(YamlTree.node(value, anchors))
       rescue Psych::SyntaxError
@@ -58,7 +58,7 @@ module Proscenium
         path = File.join(root, 'pnpm-workspace.yaml')
         return [] unless File.exist?(path)
 
-        text = ContextMap.utf8(File.read(path)).delete_prefix(ContextMap::BOM)
+        text = Contexts::Map.utf8(File.read(path)).delete_prefix(Contexts::Map::BOM)
         allowed, anchors = YamlTree.value(text, 'allowBuilds')
         listed, = YamlTree.value(text, 'onlyBuiltDependencies')
         node = ->(given) { YamlTree.node(given, anchors) }

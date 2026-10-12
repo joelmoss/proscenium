@@ -4,7 +4,7 @@ require 'test_helper'
 require 'json'
 require 'open3'
 require 'tmpdir'
-require 'proscenium/dependency_context'
+require 'proscenium/contexts/projection'
 require_relative 'stage_a/bundle'
 
 # What the engine builds from a real pnpm install of a gem with ui-gem's manifest shape (#154):
@@ -47,8 +47,8 @@ class Proscenium::PnpmLayoutTest < ActiveSupport::TestCase
     manifest = JSON.parse(File.read(File.join(root, 'package.json')))
     dir = File.join(app, '.proscenium/packages', GEM)
     FileUtils.mkdir_p(dir)
-    context = Proscenium::DependencyContext.project(GEM, manifest)
-    File.write(File.join(dir, 'package.json'), Proscenium::DependencyContext.to_json(context))
+    context = Proscenium::Contexts::Projection.project(GEM, manifest)
+    File.write(File.join(dir, 'package.json'), Proscenium::Contexts::Projection.to_json(context))
     dir
   end
 
