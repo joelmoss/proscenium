@@ -6,7 +6,7 @@ require_relative '../bundled_gems'
 require_relative 'map'
 require_relative 'projection'
 require_relative 'plan'
-require_relative '../cli/error'
+require_relative 'messages'
 
 module Proscenium
   module Contexts
@@ -14,8 +14,8 @@ module Proscenium
     # (#154). A stale context resolves a gem's imports against the wrong dependency graph, so the
     # engine refuses to build until `proscenium install` brings them up to date. Built from
     # committed files and Bundler only. The engine and the CLI both load it, so it loads nothing
-    # the CLI may not, and of cli/ only the error catalog and the author rules (both directions
-    # are pinned by test/cli/load_isolation_test.rb).
+    # the CLI may not, and nothing of cli/ (both directions are pinned by
+    # test/cli/load_isolation_test.rb).
     module Stale
       COMMAND = 'Run `bundle exec proscenium install` and commit .proscenium/packages.'
       # Why a committed context is not the one install would write, by its `drift`. The engine,
@@ -50,7 +50,7 @@ module Proscenium
         participating = BundledGems.participating(specs, overrides: BundledGems.overrides(root))
         contexts = Plan.new(root, participating)
         committed = Plan.committed(root)
-        found = contexts.problems.map { |code, args| CLI::Error.new(code, **args).message }
+        found = contexts.problems.map { |code, args| Messages.message(code, **args) }
         contexts.contexts.each_value do |context|
           problem = compare(context, committed[context.gem])
           found << "#{context.gem}: #{problem}" if problem
@@ -81,7 +81,7 @@ module Proscenium
       # each generation.
       def split_peers(root, gems)
         gem, package = peer_split(root, gems)
-        gem ? [CLI::Error.new('PSM-E-PEER-SPLIT', gem:, package:).message] : []
+        gem ? [Messages.message('PSM-E-PEER-SPLIT', gem:, package:)] : []
       end
 
       # The first `[gem, package]` where a peer a context declares, that the app also depends on,

@@ -34,7 +34,8 @@ The project is a hybrid Ruby gem + Go shared library:
 - `internal/plugin/` - Custom esbuild plugins (CSS modules, SVG, i18n, RJS, etc.)
 - `exe/proscenium` (and `exe/psm`, an alias that loads it) and `lib/proscenium/cli/` - The `proscenium` CLI for gem dependency contexts
   (#154): `install`, `install --frozen`, `inspect` (also `doctor`) and `gem check`. Every error
-  is a code in `cli/error.rb`'s catalog, pinned by a golden in `test/cli/golden/`
+  is a code with its text in `contexts/messages.rb` and its exit status in `cli/error.rb`, pinned
+  by a golden in `test/cli/golden/`
   (`GOLDEN=update bin/test test/cli/errors_test.rb` rewrites them); `cli/reporter.rb` lays out
   and colours human output, and `--json` keeps a stable event shape. The supported pnpm and Bun
   lines are `cli/capabilities.json`
