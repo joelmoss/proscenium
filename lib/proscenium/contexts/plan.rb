@@ -11,7 +11,7 @@ module Proscenium
     # The contexts the bundle calls for (#154): one per participating, installed gem, projected from
     # its package.json after the author contract and the gem-to-gem rules. Computes; never writes.
     # Shared by the engine (Stale) and the CLI (install, inspect), so it loads nothing of the
-    # CLI but its author rules; problems are `[code, args]` pairs, rendered by whoever reports them.
+    # CLI; problems are `[code, args]` pairs, rendered by whoever reports them.
     class Plan
       ESCAPE = "Or, to install %<gem>s's NPM dependencies yourself, opt it out with " \
                '`"proscenium": {"gemOverrides": {"%<gem>s": {"participate": false}}}` in ' \
