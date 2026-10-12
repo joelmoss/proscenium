@@ -1,11 +1,15 @@
 package plugin
 
 import (
+	"encoding/json"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
+	"sync"
+	"time"
 )
 
 // The directories, in order, that a bare import from a gem's file is resolved from: the one lookup
@@ -19,6 +23,10 @@ import (
 //     and `imports` fields apply; then from the app root, for a peer the package leaves to the app.
 //     esbuild walks up from there unbounded, as Node would, so a node_modules above the gem root
 //     can answer first for a package that neither the gem nor its packages have.
+//   - A package the gem lists in its package.json `peerDependencies` resolves from the app root
+//     first, from any file under the gem root, then as below. A peer is the app's to provide, and
+//     a gem developed locally often has its own copy installed (pnpm installs peers by default):
+//     taking that copy would put two Reacts on the page.
 //   - Any other file of a gem (its own source) resolves from the nearest directory, from the
 //     importer's up to the gem root, whose node_modules holds the package, but never above the gem
 //     root: a node_modules above it (a home directory, a Ruby install) is not the gem's. With none,
@@ -51,20 +59,76 @@ func bareLookupDirs(importer string, specifier string, cfg *types.ConfigT) (dirs
 	}
 
 	gemRoot := strings.TrimSuffix(gem.Root, "/")
+	dirs = gemLookupDirs(importer, gemRoot, pkg, cfg.RootPath)
+	if dirs[0] != cfg.RootPath && isGemPeer(gemRoot, pkg) {
+		dirs = append([]string{cfg.RootPath}, slices.DeleteFunc(dirs, func(d string) bool {
+			return d == cfg.RootPath
+		})...)
+	}
+
+	return dirs, ""
+}
+
+// The lookup directories for a package that is not a peer of an unmapped gem (bareLookupDirs).
+func gemLookupDirs(importer string, gemRoot string, pkg string, appRoot string) []string {
 	if strings.Contains(strings.TrimPrefix(importer, gemRoot), "/node_modules/") {
-		return []string{fsDir(importer), cfg.RootPath}, ""
+		return []string{fsDir(importer), appRoot}
 	}
 
 	for d := fsDir(importer); ; d = fsDir(d) {
 		if hasPackage(utils.JoinFsPath(d, "node_modules", pkg)) {
-			return []string{d}, ""
+			return []string{d}
 		}
 		if d == gemRoot || d == fsDir(d) {
 			break
 		}
 	}
 
-	return []string{cfg.RootPath}, ""
+	return []string{appRoot}
+}
+
+// A gem's `peerDependencies`, by the path of its package.json. An entry is kept until the file's
+// modification time or size changes, so a long-running server sees an edit.
+var gemPeers sync.Map
+
+type gemPeersEntry struct {
+	modTime time.Time
+	size    int64
+	peers   map[string]any
+}
+
+// Whether the package.json at `gemRoot` lists `pkg` in its `peerDependencies`. A gem with no
+// package.json, or one that is not valid JSON, has no peers.
+func isGemPeer(gemRoot string, pkg string) bool {
+	path := filepath.FromSlash(utils.JoinFsPath(gemRoot, "package.json"))
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+
+	if cached, ok := gemPeers.Load(path); ok {
+		entry := cached.(gemPeersEntry)
+		if entry.modTime.Equal(info.ModTime()) && entry.size == info.Size() {
+			_, peer := entry.peers[pkg]
+
+			return peer
+		}
+	}
+
+	var manifest struct {
+		PeerDependencies map[string]any `json:"peerDependencies"`
+	}
+	data, err := os.ReadFile(path)
+	if err == nil {
+		err = json.Unmarshal(data, &manifest)
+	}
+	if err != nil {
+		manifest.PeerDependencies = nil
+	}
+	gemPeers.Store(path, gemPeersEntry{modTime: info.ModTime(), size: info.Size(), peers: manifest.PeerDependencies})
+	_, peer := manifest.PeerDependencies[pkg]
+
+	return peer
 }
 
 // Whether node_modules holds `base`: a package directory, or a file module (`node_modules/tiny.js`

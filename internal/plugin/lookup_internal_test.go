@@ -29,7 +29,13 @@ func TestBareLookupDirs(t *testing.T) {
 		gem+"/lib/deep/node_modules/nested", // a package nearer the importer
 		gem+"/lib/deep",
 		gem+"/node_modules/ms/lib", // a package the gem ships, whose files resolve beside themselves
+		gem+"/node_modules/react",  // the gem's own copy of a peer, as pnpm installs one
 	)
+	// The gem leaves React to the app.
+	if err := os.WriteFile(filepath.FromSlash(gem+"/package.json"),
+		[]byte(`{"name":"widget","peerDependencies":{"react":"^18"}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
 	// The importers that IsAppPackageFile evaluates must exist: a path it cannot evaluate counts as
 	// an app package anyway, so a missing file would pass that row for the wrong reason.
 	for _, f := range []string{app + "/node_modules/pkg/lib/x.js", gem + "/lib/deep/x.js", gem + "/x.js",
@@ -63,7 +69,9 @@ func TestBareLookupDirs(t *testing.T) {
 		{"a file module in node_modules counts", gem + "/lib/deep/x.js", "tiny", []string{gem}, "", cfg},
 		{"a scoped name is looked up whole", gem + "/lib/deep/x.js", "@scope/missing/x", []string{app}, "", cfg},
 		{"a package only above the gem root is not the gem's", gem + "/lib/deep/x.js", "stray", []string{app}, "", cfg},
-		{"a package the gem does not have resolves from the app", gem + "/x.js", "react", []string{app}, "", cfg},
+		{"a package the gem does not have resolves from the app", gem + "/x.js", "pkg", []string{app}, "", cfg},
+		{"a peer resolves from the app first, then from the gem's own copy", gem + "/lib/deep/x.js", "react/jsx-runtime", []string{app, gem}, "", cfg},
+		{"a peer imported by a package the gem ships resolves from the app first", gem + "/node_modules/ms/lib/x.js", "react", []string{app, gem + "/node_modules/ms/lib"}, "", cfg},
 		{"a file of a package the gem ships resolves beside itself, then from the app", gem + "/node_modules/ms/lib/x.js", "dep", []string{gem + "/node_modules/ms/lib", app}, "", cfg},
 		{"a relative specifier is not a bare import", gem + "/lib/deep/x.js", "./nested", nil, "", cfg},
 		{"a # subpath import belongs to the importer's package", gem + "/lib/deep/x.js", "#internal", nil, "", cfg},
@@ -80,5 +88,30 @@ func TestBareLookupDirs(t *testing.T) {
 					tt.importer, tt.specifier, dirs, mappedGem, tt.dirs, tt.mappedGem)
 			}
 		})
+	}
+}
+
+// A gem's peers are re-read when its package.json changes, so a long-running server sees the edit.
+func TestIsGemPeerRereadsAnEditedPackageJson(t *testing.T) {
+	gem := filepath.ToSlash(t.TempDir())
+	write := func(json string) {
+		if err := os.WriteFile(filepath.FromSlash(gem+"/package.json"), []byte(json), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	write(`{"peerDependencies":{"react":"^18"}}`)
+	if !isGemPeer(gem, "react") {
+		t.Fatal("react is a peer")
+	}
+
+	write(`{"dependencies":{"react":"^18"}}`)
+	if isGemPeer(gem, "react") {
+		t.Error("react is no longer a peer once package.json drops it")
+	}
+
+	write(`not json`)
+	if isGemPeer(gem, "react") {
+		t.Error("a package.json that is not valid JSON lists no peers")
 	}
 }

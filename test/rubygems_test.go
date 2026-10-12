@@ -502,6 +502,30 @@ var _ = Describe("gem stylesheet imports", func() {
 
 	// A file another package's `exports` leaves out comes from the nearest node_modules above the
 	// shipped package's file, not from a node_modules inside the importer's own directory.
+	// gem2 lists React in its peerDependencies, and has a copy of its own in its node_modules, as
+	// pnpm installs a peer for a gem developed locally. A peer is the app's to provide, so its
+	// own files and the packages it ships both get the app's React (18.3.1): two copies on one
+	// page break hooks.
+	Describe("a peer the gem has its own copy of", func() {
+		for _, entry := range []string{
+			"node_modules/@rubygems/gem2/peer_react.js",
+			"node_modules/@rubygems/gem2/node_modules/peerk/react.js",
+		} {
+			It("bundles the app's copy into "+entry, func() {
+				_, code, _ := b.BuildToString(entry, testConfig)
+
+				Expect(code).To(ContainSubstring("18.3.1"))
+				Expect(code).NotTo(ContainSubstring("0.0.0-gem2"))
+			})
+
+			It("imports the app's copy from "+entry+" when unbundled", func() {
+				_, code, _ := b.BuildToString(entry, configWithMarkers([]any{Unbundle}))
+
+				Expect(code).To(ContainCode(`import { version } from "/node_modules/react/index.js";`))
+			})
+		}
+	})
+
 	EntryPoint("node_modules/@rubygems/gem2/node_modules/peerk/styles.css", func() {
 		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/expk/hidden.css";`, Unbundle)
 	})

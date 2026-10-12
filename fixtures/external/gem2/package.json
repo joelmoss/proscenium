@@ -3,5 +3,8 @@
   "version": "1.0.0",
   "dependencies": {
     "string-length": "^6.0.0"
+  },
+  "peerDependencies": {
+    "react": "^18.3.1"
   }
 }
