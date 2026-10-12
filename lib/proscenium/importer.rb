@@ -133,8 +133,11 @@ module Proscenium
         end
       end
 
-      # Yields each imported stylesheet and removes it from the imports.
-      def each_stylesheet
+      # Yields each imported stylesheet, with its options. `delete: true` also removes each one from
+      # the imports, so it is written only once.
+      #
+      # @api public: apps call it to write their own tags (README, "Extending Proscenium").
+      def each_stylesheet(delete: false)
         return if imported.blank?
 
         blk = proc do |key, options|
@@ -144,11 +147,14 @@ module Proscenium
           end
         end
 
-        imported.delete_if(&blk)
+        delete ? imported.delete_if(&blk) : imported.each(&blk)
       end
 
-      # Yields each imported javascript and removes it from the imports.
-      def each_javascript
+      # Yields each imported script, with its options. `delete: true` also removes each one from the
+      # imports, so it is written only once.
+      #
+      # @api public: apps call it to write their own tags (README, "Extending Proscenium").
+      def each_javascript(delete: false)
         return if imported.blank?
 
         blk = proc do |key, options|
@@ -157,7 +163,7 @@ module Proscenium
             true
           end
         end
-        imported.delete_if(&blk)
+        delete ? imported.delete_if(&blk) : imported.each(&blk)
       end
 
       def css_imported?

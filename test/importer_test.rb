@@ -129,6 +129,37 @@ class Proscenium::ImporterTest < ActiveSupport::TestCase
     end
   end
 
+  # Public: apps call these to write their own tags.
+  describe '.each_stylesheet and .each_javascript' do
+    before do
+      subject.import '/app/views/a.css'
+      subject.import '/app/views/a.js', type: :module
+    end
+
+    it 'yields each stylesheet and, with delete: true, removes it from the imports' do
+      yielded = []
+      subject.each_stylesheet(delete: true) { |path, options| yielded << [path, options] }
+
+      assert_equal [['/app/views/a.css', {}]], yielded
+      assert_equal ['/app/views/a.js'], subject.imported.keys
+    end
+
+    it 'yields each script and, with delete: true, removes it from the imports' do
+      yielded = []
+      subject.each_javascript(delete: true) { |path, options| yielded << [path, options] }
+
+      assert_equal [['/app/views/a.js', { type: :module }]], yielded
+      assert_equal ['/app/views/a.css'], subject.imported.keys
+    end
+
+    it 'keeps the imports by default' do
+      subject.each_stylesheet { |_path, _options| nil }
+      subject.each_javascript { |_path, _options| nil }
+
+      assert_equal ['/app/views/a.css', '/app/views/a.js'], subject.imported.keys
+    end
+  end
+
   describe '.sideload' do
     context 'js and css' do
       it 'sideloads' do
