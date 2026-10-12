@@ -65,8 +65,19 @@ module Proscenium
       end
     end
 
-    private
-
+    # Transforms one class `name` to its CSS module name against the CSS module at `path`, whatever
+    # its prefix, and side loads that module. `original_name` is the name as the caller wrote it,
+    # for the error raised when there is no path.
+    #
+    #   transformer.class_name!(:title, 'cssm:title') # => "title_<digest>"
+    #
+    # @param name [String, Symbol]
+    # @param original_name [String]
+    # @param path [Pathname, String] the CSS module; by default, the transformer's own.
+    # @raise [Proscenium::CssModule::TransformError] when there is no path.
+    # @return [String] the transformed CSS module name.
+    #
+    # @api public: apps call it directly (README, "Extending Proscenium").
     def class_name!(name, original_name, path: @source_path)
       unless path
         raise Proscenium::CssModule::TransformError.new(original_name, 'CSS module path not given')
@@ -81,6 +92,8 @@ module Proscenium
         "#{transformed_name}_#{digest}"
       end
     end
+
+    private
 
     # Returns `[transformed_name, side_load_path]` for a single class-name reference.
     # `side_load_path` is the exact string that `class_name!` passed to `Importer.import`, or
