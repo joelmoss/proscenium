@@ -5,7 +5,7 @@ import (
 	"joelmoss/proscenium/internal/utils"
 	"os"
 
-	"github.com/riking/cssparse/tokenizer"
+	"github.com/joelmoss/esbuild-internal/css_lexer"
 )
 
 type cssMixins map[string]string
@@ -195,17 +195,17 @@ func (p *cssParser) readMixinDefinitions(filePath string) bool {
 
 	// Iterate through all the tokens in the file, and find any @define-mixin declarations at the root
 	// nesting. Definition blocks are not parsed here.
-	tokens.forEachToken(func(token *tokenizer.Token) bool {
-		if token.Type == tokenizer.TokenAtKeyword && token.Value == "define-mixin" {
+	tokens.forEachToken(func(token cssToken) bool {
+		if token.Type == css_lexer.TAtKeyword && token.Value == "define-mixin" {
 			tokens.malformed = false
 			key, def := tokens.parseMixinDefinition()
 			if key == "" {
 				return true
 			}
 
-			// A bad token in the definition: the tokenizer cannot write it back as written, so the
-			// mixin is refused with a warning rather than expanded lossily, or made to return the
-			// whole valid stylesheet that uses it unchanged.
+			// A bad token in the definition: expanded, it would break the valid stylesheet that uses
+			// it, and esbuild never sees this file to report it. So the mixin is refused with a
+			// warning, rather than expanded, or made to return the whole stylesheet unchanged.
 			// The last definition of a name wins, malformed or not.
 			k := filePath + "#" + key
 			if tokens.malformed {

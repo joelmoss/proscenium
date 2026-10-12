@@ -6,8 +6,8 @@ import "strings"
 // regardless of layout, but copies quoted strings, comments and escapes byte for byte: whitespace
 // inside `"x  y"` is part of the value, and collapsing it let a parser that corrupted a string's
 // contents pass. An escape keeps the one whitespace that ends a hex escape, so `.a\2E  b` (class
-// `a.`, then a descendant `b`) is not read as `.a\2E b` (class `a.b`). Only double quotes open a
-// string: the parser writes every string with them. CSS only: in JavaScript a regex or template
+// `a.`, then a descendant `b`) is not read as `.a\2E b` (class `a.b`). Single and double quotes
+// both open a string: the parser copies strings as written. CSS only: in JavaScript a regex or template
 // literal would throw the string tracking off, which is why ContainCode keeps its plain collapse.
 func normalizeCss(css string) string {
 	var b strings.Builder
@@ -37,7 +37,7 @@ func normalizeCss(css string) string {
 				i = end - 1
 				continue
 			}
-		case c == '"':
+		case c == '"' || c == '\'':
 			for end < len(css) && css[end] != c {
 				if css[end] == '\\' {
 					end++

@@ -66,8 +66,6 @@ github.com/peterbourgon/mergemap v0.0.1 h1:5/brtSACv34REV0xoYjPQ8JXZnx3nurGt6WIn
 github.com/peterbourgon/mergemap v0.0.1/go.mod h1:jQyRpOpE/KbvPc0VKXjAqctYglwUO5W6zAcGcFfbvlo=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
-github.com/riking/cssparse v0.0.0-20180325025645-c37ded0aac89 h1:hMsoSMebpfpaDW7+B7gsxNnMBNChjekeqmK8wkzAlc0=
-github.com/riking/cssparse v0.0.0-20180325025645-c37ded0aac89/go.mod h1:yc5MYwuNUGggTQ8++IDAbOYq/9PXxsg73+EHYgoG/4w=
 github.com/rogpeppe/go-internal v1.14.1 h1:UQB4HGPB6osV0SQTLymcB4TgvyWu6ZyliaW0tI/otEQ=
 github.com/rogpeppe/go-internal v1.14.1/go.mod h1:MaRKkUm5W0goXpeCfT7UZI6fk/L7L7so1lCWt35ZSgc=
 github.com/sergi/go-diff v1.4.0 h1:n/SP9D5ad1fORl+llWyN+D6qoUETXNZARKjyY2/KVCw=
