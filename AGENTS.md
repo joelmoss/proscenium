@@ -269,8 +269,6 @@ GitHub release is the changelog (the gemspec's `changelog_uri`), written by hand
   `git branch -m` / `git switch -c` (they write `.git/config`) and Bun unix sockets need the sandbox
   off. Sandboxed and unsandboxed shells see different `TMPDIR`s, so a file one writes there is
   invisible to the other.
-- `fsmonitor_ipc__send_query` errors on git calls are noise (`core.fsmonitor=true` plus the
-  sandbox blocking its socket); use `git -c core.fsmonitor=false`.
 - Always pass `rg` a path, or it reads stdin and hangs.
 - The repository is public. Never name the private consumer apps or their UI gem in docs, commits or
   release notes: docs call them `app-a`, `app-b`, `app-c` and `ui-gem`.
