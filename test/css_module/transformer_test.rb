@@ -3,6 +3,25 @@
 require 'test_helper'
 
 class Proscenium::CssModule::TransformerTest < ActiveSupport::TestCase
+  # Public: apps call it directly, to transform a name they have already picked out.
+  describe '#class_name!' do
+    let(:transformer) { Proscenium::CssModule::Transformer.new('/lib/css_modules/basic') }
+
+    it 'transforms a name whatever its prefix, and side loads its CSS module' do
+      assert_match(/^title_#{CSS_MODULE_DIGEST}$/o, transformer.class_name!(:title, 'cssm:title'))
+      assert_match(/^_title_#{CSS_MODULE_DIGEST}$/o, transformer.class_name!('_title', '_title'))
+      assert_equal(['/lib/css_modules/basic.module.css'], Proscenium::Importer.imported.keys)
+    end
+
+    it 'raises naming the original name when there is no path' do
+      error = assert_raises(Proscenium::CssModule::TransformError) do
+        Proscenium::CssModule::Transformer.new(nil).class_name!('title', 'cssm:title')
+      end
+
+      assert_includes error.message, '`cssm:title`'
+    end
+  end
+
   describe '#class_names' do
     it 'transforms class names beginning with @' do
       names = Proscenium::CssModule::Transformer.class_names('/lib/css_modules/basic', :@title)

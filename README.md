@@ -978,6 +978,7 @@ only with a note in the release.
 | `Proscenium::CssModule` | Included into a component, against its `css_module_path`: `css_module` transforms every name, `class_names` only `@`-prefixed ones and paths (a name with a `/`, such as `/lib/users@name`), and the private `cssm` is the component's `Transformer`. |
 | `Proscenium::CssModule::Path` | Extended by a component class: `css_module_path` is the `.module.css` beside its source file, else the nearest ancestor's. |
 | `Proscenium::CssModule::Transformer#class_names(*names, require_prefix: true)` | Transforms names; given a block, yields each transformed name and the path of the CSS module it side loads, if any. |
+| `Proscenium::CssModule::Transformer#class_name!(name, original_name, path: source_path)` | Transforms one name, whatever its prefix, against the CSS module at `path`, and side loads that module. Raises `TransformError`, naming `original_name`, when there is no path. |
 | `Proscenium::SourcePath` | Included into a class: `source_path` is the file the class is defined in. |
 | `Proscenium::Resolver.resolve(path)` | Where an asset is served, for an absolute file or URL path, or a bare specifier such as an NPM package (a `./` or `../` path raises `ArgumentError`): its URL, or, when a loaded manifest has it, the entry's outputs as an Array, its own first. `as_array: true` returns `[manifest outputs, URL, file]`. |
 | `Proscenium::Utils.merge_bang_attributes!(names, attributes, allowed)` | Turns an allowed `:name!` argument into `name: true`, unless `name` was given as a keyword. |
