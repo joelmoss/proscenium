@@ -154,7 +154,7 @@ golangci-lint run
 - `internal/plugin/` - esbuild plugins: css, svg, i18n, rjs, http, dirname, replacements, bundler, bundless
 - `internal/resolver/` - Path resolution
 - `internal/types/` - Shared types and config struct
-- `internal/css/` - CSS parser, tokenizer, mixins
+- `internal/css/` - CSS mixin expansion over esbuild's `css_lexer`: parser, tokenizer, mixins
 - `internal/replacements/` - Build-time replacements
 - `internal/utils/`, `internal/debug/` - Utilities
 

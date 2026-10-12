@@ -744,6 +744,8 @@ p {
 
 A mixin must be defined at the root of a file. A `@define-mixin` inside a rule or an at-rule block such as `@media`, or inside another mixin, does not define anything: it is passed through as written, with a warning.
 
+A mixin from another file whose definition is malformed is refused: its `@mixin` is left as written, with a "malformed CSS" warning, and the stylesheet's other mixins still expand. A definition is malformed when it holds a bad token, such as a string broken by a newline, or when the file ends before closing it, inside an open comment, `url(` or escape (as when it is saved mid-edit). Malformed CSS in the stylesheet itself is returned as written, for esbuild to report.
+
 One stylesheet may expand at most 100,000 mixins, inserting at most 4 MiB (4,194,304 bytes) of mixin definitions, with mixins nested at most 100 deep, so a chain of mixins that each include another more than once cannot grow without bound. Past any limit, each remaining `@mixin` is left as written, with one warning.
 
 Each stylesheet reports at most 100 warnings, plus one saying how many more were not reported and, past a limit, the mixin limit warning. A precompile sends at most 100 errors and 100 warnings in all, then one more message for each saying how many more there were, so in a build that noisy the limit warning can be one of those counted.
