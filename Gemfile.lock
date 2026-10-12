@@ -45,11 +45,6 @@ PATH
     gem4 (0.1.0)
       rails (>= 7.0.4)
 
-PATH
-  remote: fixtures/external/gem_npm_ext
-  specs:
-    gem_npm_ext (1.0.0)
-
 GEM
   remote: https://rubygems.org/
   specs:
@@ -366,7 +361,6 @@ DEPENDENCIES
   gem5!
   gem_file!
   gem_npm!
-  gem_npm_ext!
   maxitest
   minitest-difftastic
   minitest-focus

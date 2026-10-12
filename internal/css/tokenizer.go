@@ -1,10 +1,6 @@
 package css
 
 import (
-	"errors"
-	"fmt"
-	"joelmoss/proscenium/internal/utils"
-	"log"
 	"strings"
 
 	"github.com/riking/cssparse/tokenizer"
@@ -44,20 +40,15 @@ type cssTokenizer struct {
 	openMixins int
 }
 
-func newCssTokenizer(input interface{}, filePath string) (*cssTokenizer, error) {
-	inputString, ok := utils.ToString(input)
-	if !ok {
-		return nil, errors.New("newCssTokenizer: input is not a string")
-	}
-
+func newCssTokenizer(input string, filePath string) *cssTokenizer {
 	tk := cssTokenizers{
-		tokenizer: newTokenizer(inputString),
+		tokenizer: newTokenizer(input),
 		filePath:  filePath,
 	}
 
 	return &cssTokenizer{
 		tokenizers: []*cssTokenizers{&tk},
-	}, nil
+	}
 }
 
 // CSS input preprocessing turns CRLF, CR and form feed into LF. The tokenizer does the first two
@@ -142,8 +133,6 @@ func (x *cssTokenizer) next() *tokenizer.Token {
 		}
 	}
 
-	x.logToken()
-
 	return &token
 }
 
@@ -192,12 +181,9 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 	}
 
 	var mixinIdent string
-	var original strings.Builder
 
 	// Iterate over all tokens until the next open brace to find the mixin name.
 	x.forEachToken(func(token *tokenizer.Token) bool {
-		original.WriteString(render(token))
-
 		switch token.Type {
 		case tokenizer.TokenOpenBrace:
 			return false
@@ -291,31 +277,4 @@ func (x *cssTokenizer) forEachToken(iterFn func(token *tokenizer.Token) bool) {
 
 		x.next()
 	}
-}
-
-func (x *cssTokenizer) logOutput(output string) {
-	if !debug {
-		return
-	}
-
-	indent := strings.Repeat("..", x.nesting)
-	if indent != "" {
-		indent += " "
-	}
-
-	log.Printf(" %s> %#v", indent, fmt.Sprint(output))
-}
-
-func (x *cssTokenizer) logToken() {
-	if !debug {
-		return
-	}
-
-	indent := strings.Repeat("..", x.nesting)
-	if indent != "" {
-		indent += " "
-	}
-
-	token := x.currentToken()
-	log.Printf(" %s  [%s] %#v (p:%v)", indent, token.Type.String(), token.Value, len(x.tokenizers)-1)
 }

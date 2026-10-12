@@ -32,7 +32,6 @@ func (e Environment) String() string {
 }
 
 // - RootPath - The working directory, usually Rails root.
-// - GemPath - Proscenium gem root.
 // - OutputDir - Output directory where assets are built or pre-compiled to, relative to the Rails root.
 // - Environment - The environment (1 = development, 2 = test, 3 = production)
 // - EnvVars - Map of environment variables.
@@ -49,7 +48,6 @@ func (e Environment) String() string {
 type ConfigT struct {
 	RootPath      string
 	OutputDir     string
-	GemPath       string
 	EnvVars       map[string]string
 	RubyGems      map[string]string
 	Aliases       map[string]string
@@ -74,8 +72,7 @@ type ConfigT struct {
 	Write *bool
 
 	// For testing
-	InternalTesting      bool
-	UseDevCSSModuleNames bool
+	InternalTesting bool
 
 	// Gem dependency contexts (#154): a participating gem's name to the absolute path of its
 	// context, `.proscenium/packages/<gem>`. A bare import from a mapped gem resolves from the

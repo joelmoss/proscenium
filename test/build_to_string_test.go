@@ -17,13 +17,6 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-// Describe("nested", func() {
-// 	AssertCode("relative", `console.log("pkg/nest/one.js");`)
-// 	AssertCode("same package", `console.log("pkg/nest/two.js");`)
-// 	AssertCode("different package", `console.log("pkg/three.js");`)
-// 	AssertCode("app", `console.log("/lib/foo.js");`)
-// })
-
 // The first error of a failed build, decoded from the JSON the builder returns.
 func firstBuildError(result string) (pluginName string, text string) {
 	var e struct{ PluginName, Text string }
@@ -319,6 +312,17 @@ var _ = Describe("BuildToString", func() {
 
 				AssertCode(`console.log("/lib/foo4.js");`)
 				AssertCode(`import foo from "/lib/foo4.js";`, Unbundle)
+			})
+
+			// esbuild answers an external module with no namespace, as it does a module a
+			// `browser` field disables; the alias must still reach it.
+			Describe("bare to an external package", func() {
+				BeforeEach(func() {
+					testConfig.Aliases = map[string]string{"bare": "external-target"}
+					testConfig.External = []string{"external-target"}
+				})
+
+				AssertCode(`import foo from "external-target";`)
 			})
 		})
 

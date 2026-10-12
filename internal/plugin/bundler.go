@@ -5,7 +5,6 @@ import (
 	"joelmoss/proscenium/internal/replacements"
 	"joelmoss/proscenium/internal/types"
 	"joelmoss/proscenium/internal/utils"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -49,6 +48,16 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 					debug.Debug(cfg.Debug, "resolveWithEsbuild:failure", originalPath, args, onResolveResult, r.Errors)
 
 					return false
+				}
+
+				// A module the importing package's `browser` field disables comes back with no
+				// namespace. Leave it to esbuild, which resolves it again from the importer and
+				// replaces it with an empty module; returned as is, the bare name is not a file path.
+				// An external module has no namespace either, and keeps its path.
+				if r.Namespace == "" && !r.External {
+					onResolveResult.Path = ""
+
+					return true
 				}
 
 				if r.SideEffects {
@@ -122,7 +131,7 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 				} else {
 					// == Unqualified path! - use esbuild to resolve.
 
-					resolveArgs := cloneResolveArgs(args)
+					resolveArgs := args
 					resolveArgs.ResolveDir = gemPath
 
 					suffix := utils.RemoveRubygemPrefix(result.Path, gemName)
@@ -298,8 +307,9 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 								result.Path = ""
 							}
 						} else {
-							resolveArgs := cloneResolveArgs(args)
+							resolveArgs := args
 							mappedGem := ""
+							var lookupDirs []string
 
 							if utils.IsBareModule(result.Path) {
 								// replace some npm modules with browser native APIs
@@ -309,41 +319,25 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 									goto FINISH
 								}
 
-								// If importer is a RubyGem...
-								//
-								// ...and that gem is NOT installed to node_modules, then change ResolveDir to the app
-								// root. This ensures that bare imports are resolved relative to the app root, and not
-								// the gem root, which allows us to use the app's package.json.
-								//
-								// ...OR that gem IS installed to node_modules, then change ResolveDir to the gem's
-								// node_modules directory. This ensures that bare imports are resolved relative to the
-								// gem's node_modules directory, and not the app's node_modules directory.
-								//
-								// A package the app installed inside the gem's root is neither: it keeps the
-								// ResolveDir beside it (see utils.IsAppPackageFile).
-								gemRef, foundGem := utils.GemFromFsPath(args.Importer, cfg)
-								if gem, contextDir, ok := utils.GemContext(args.Importer, cfg); ok {
-									// Dependency contexts: the gem's context is the only lookup base.
-									resolveArgs.ResolveDir = contextDir
-									mappedGem = gem
-								} else if foundGem && !utils.IsAppPackageFile(args.Importer, cfg) {
-									nodeModulePath := utils.JoinFsPath(root, "node_modules", "@rubygems", gemRef.Name)
-									_, err := os.Stat(nodeModulePath)
-									if err == nil {
-										realPath, err := filepath.EvalSymlinks(nodeModulePath)
-										if err != nil {
-											return result, err
-										}
+								// A gem's file resolves bare imports from its context, its own node_modules or
+								// the app (bareLookupDirs); any other file keeps esbuild's ResolveDir.
+								lookupDirs, mappedGem = bareLookupDirs(args.Importer, result.Path, cfg)
+							}
 
-										resolveArgs.ResolveDir = filepath.ToSlash(realPath)
-									} else {
-										resolveArgs.ResolveDir = root
+							// Unqualified path! - use esbuild to resolve, from each lookup directory in turn.
+							ok := false
+							if lookupDirs == nil {
+								ok = resolveWithEsbuild(resolveArgs, &result)
+							} else {
+								original := result.Path
+								for _, dir := range lookupDirs {
+									resolveArgs.ResolveDir = dir
+									result.Path, result.External = original, false
+									if ok = resolveWithEsbuild(resolveArgs, &result); ok || result.Errors != nil {
+										break
 									}
 								}
 							}
-
-							// Unqualified path! - use esbuild to resolve.
-							ok := resolveWithEsbuild(resolveArgs, &result)
 							if !ok {
 								if mappedGem != "" && result.Errors == nil {
 									return result, utils.ContextMiss(mappedGem, result.Path)
@@ -404,22 +398,10 @@ func Bundler(cfg *types.ConfigT) esbuild.Plugin {
 
 // The first of the two doors esbuild's own path forms come through: Importer and ResolveDir are
 // whatever the platform produced. Everything below the boundary is slash-form, so they are
-// converted once, here, rather than at each site that reads them. args is a value, so assigning
-// back covers cloneResolveArgs too.
+// converted once, here, rather than at each site that reads them. args is a value, so a
+// copy taken after this carries the conversion.
 func toSlashArgs(args esbuild.OnResolveArgs) (importer string, resolveDir string) {
 	return filepath.ToSlash(args.Importer), filepath.ToSlash(args.ResolveDir)
-}
-
-func cloneResolveArgs(args esbuild.OnResolveArgs) esbuild.OnResolveArgs {
-	return esbuild.OnResolveArgs{
-		Path:       args.Path,
-		Importer:   args.Importer,
-		Namespace:  args.Namespace,
-		ResolveDir: args.ResolveDir,
-		Kind:       args.Kind,
-		PluginData: args.PluginData,
-		With:       args.With,
-	}
 }
 
 // Strips the "unbundle:" prefix from the `result.Path`, and returns true if the prefix was found.

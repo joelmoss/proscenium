@@ -52,7 +52,7 @@ func get(name string) ([]byte, bool) {
 // Built into a local table and published only once complete: a panic part-way through would
 // otherwise leave Once done, buildErr nil and a partial table published, and every later call
 // would report success against it. The callers recover panics now, so this one has to as well.
-func Build() (n int, err error) {
+func Build() error {
 	buildOnce.Do(func() {
 		built := map[string][]byte{}
 
@@ -87,7 +87,7 @@ func Build() (n int, err error) {
 		}
 	})
 
-	return len(npmReplacements), buildErr
+	return buildErr
 }
 
 func walkEmbedFS(dir string, fn func(path string) error) error {

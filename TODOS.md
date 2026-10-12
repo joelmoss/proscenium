@@ -30,27 +30,6 @@ sees is Proscenium's own `*PanicError`, which `errors.As` recognises with no for
 **Priority:** P4
 **Depends on:** None
 
-### Resolve a gem's bare-with-extension imports against the gem when unbundling
-
-**What:** `bundless.go`'s catch-all turns a bare specifier that already has an extension
-(`open-props/shadows.css`, `pkg/index.js`) straight into `/node_modules/<specifier>` without
-resolving it, so an import from a gem file of a package installed only in that gem's own
-`node_modules` points at the app's `node_modules` instead: missing, or a different version, and
-the build reports success either way. The extensionless form (`open-props/shadows`) goes through
-esbuild and resolves from the gem correctly since the gem-stylesheet fix.
-
-**Why:** Found by the /review outside pass on the recover work, 2026-09-20, as the one gap left in
-gem CSS resolution. Pre-existing and shared with gem JavaScript; a resolution-policy change, not
-a bug fix, so it was not folded into that branch.
-
-**Context:** The shortcut is the `isBare != "" && hasExt` branch before the resolve ladder. Route
-it through `resolveWithEsbuild` when the importer is in the rubygems namespace, and pin it with a
-`@import 'open-props/shadows.css'` case beside the existing "gem stylesheet imports" spec.
-
-**Effort:** S
-**Priority:** P4
-**Depends on:** None
-
 ### Key the Bun daemon's build cache on the whole module graph
 
 **What:** `lib/proscenium/runtime/server.rb`'s `cached(path, sourcemap)` keys an entry on
@@ -397,6 +376,38 @@ app-local package's), or drop the exemption for a package a gem shares.
 **Effort:** S (human) / S (CC)
 **Priority:** P3
 
+### Resolve an unbundled `#` subpath import with an extension through esbuild
+
+**What:** When unbundling, an app file's `import "#lib/x.js"` takes the bare-with-extension
+shortcut in bundless and becomes `/node_modules/#lib/x.js`, which nothing serves. A `#` specifier
+belongs to the importer's own package.json `imports` field, so it should skip the shortcut and go
+through esbuild, as the extensionless form already does.
+
+**Why:** Found by the review of the F3-12 lookup change, which already keeps `#` out of the gem
+lookup; the app-file shortcut predates it. Nothing in the suite uses an `imports` field, so the
+fix needs a fixture as well as the one-condition change.
+
+**Context:** The shortcut is the `isBare != "" && hasExt` branch of bundless's OnResolve.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P3
+
+### Serve a module a package's `browser` map disables when unbundling
+
+**What:** A package whose package.json has `"browser": {"optional": false}` and imports
+`optional` keeps the raw `import "optional"` when unbundled, which the browser cannot resolve.
+Bundling now replaces it with an empty module, as esbuild does natively.
+
+**Why:** esbuild answers a disabled module with an empty namespace, and bundless externalises
+whatever path comes back. The F3-12 review found the bundling half; the
+`gem2/node_modules/peerk` fixture shows this half.
+
+**Context:** It needs a URL that serves an empty module, such as the `replacement` namespace's
+pattern. It predates F3-12.
+
+**Effort:** S (human) / S (CC)
+**Priority:** P3
+
 ### Take an exports-hidden file from beside an app package, not the app root
 
 **What:** When a dependency's `exports` leaves a file out (`trans/private.js`, or a CSS module or
@@ -539,6 +550,14 @@ Builds on `inspect`'s existing per-gem projection.
 **Depends on:** a real gem with a non-npm-valid name opting in
 
 ## Done
+
+### Resolve a gem's bare-with-extension imports against the gem when unbundling
+
+An unbundled import like `open-props/shadows.css` from a gem file used to become the app's
+`/node_modules/open-props/shadows.css` without being resolved. It now goes through the one lookup
+policy for bare imports from gem files (`plugin.bareLookupDirs`, F3-12 in docs/AUDIT.md), as the
+extensionless form did, and bundling uses the same policy. Pinned by the `imports_with_extension.css`
+spec in `test/rubygems_test.go`.
 
 ### Map gem paths to `@rubygems/` without a regex (#95)
 

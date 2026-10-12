@@ -247,23 +247,9 @@ var _ = Describe("utils gem references", func() {
 		})
 	})
 
-	// Both delegate to GemFromFsPath now. Asserted separately because the specs above would pass
-	// with the wrappers still doing their own loose prefix match.
+	// Delegates to GemFromFsPath. Asserted separately because the specs above would pass with the
+	// wrapper still doing its own loose prefix match.
 	Describe("the filesystem-space wrappers", func() {
-		It("PathIsRubyGem credits a prefix-sharing root correctly", func() {
-			name, root, found := utils.PathIsRubyGem("/gems/foo-ext/lib/a.js", cfg)
-
-			Expect(found).To(BeTrue())
-			Expect(name).To(Equal("foo-ext"))
-			Expect(root).To(Equal("/gems/foo-ext"))
-		})
-
-		It("PathIsRubyGem does not match across a directory-name boundary", func() {
-			_, _, found := utils.PathIsRubyGem("/gems/foobar/lib/a.js", cfg)
-
-			Expect(found).To(BeFalse())
-		})
-
 		It("RubyGemPathToUrlPath uses the nested root, not the one containing it", func() {
 			urlPath, found := utils.RubyGemPathToUrlPath("/gems/foo/vendor/nested/lib/a.js", cfg)
 

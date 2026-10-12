@@ -128,7 +128,7 @@ golangci-lint run
 - A white-box test that needs a package's unexported state lives beside it as a plain `testing`
   test (`internal/css/parser_internal_test.go`, for a parser path no CSS input can reach)
 - Custom Go test matchers: `ContainCode`, `BeParsedTo(expected, path, cfg, warnings...)` (in `test/support/`); pass `BeParsedTo` the spec's `testConfig`, and every warning the parse must produce
-- Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Bundle`, `Unbundle`, `Production` for options
+- Go test helpers: `EntryPoint()`, `AssertCode()` — use markers `Unbundle` and `Production` for options (bundling is the default)
 - Go tests build a fresh per-spec `testConfig` in BeforeEach (with `InternalTesting: true`), not the old shared `types.Config` global
 - JS tests use `bun:test` and live in `fixtures/dummy/test/js/`, loaded through the preload at `fixtures/dummy/test/proscenium.preload.js`
 - `bun test` runs the app's real modules through a Rails daemon, so it needs the Go library compiled first, same as the Ruby tests

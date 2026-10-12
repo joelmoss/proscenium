@@ -36,105 +36,7 @@ var _ = Describe("@rubygems scoped paths", func() {
 			testConfig.Bundle = true
 		})
 
-		Describe("installed via npm; internal", func() {
-			BeforeEach(func() {
-				addGem("gem_npm", "dummy/vendor")
-				addGem("gem2", "external")
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm/gem_dependency.js", func() {
-				Describe("bare import which is a dependency of the rubygem", func() {
-					AssertCode(`function stringLength(`)
-					AssertCode(`stringLength("foo");`)
-				})
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm/app_dependency.js", func() {
-				Describe("bare import which is a dependency of the app", func() {
-					AssertCode(`console.log("pkg/index.js");`)
-				})
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm/index.module.css", func() {
-				AssertCodeFromFunc(func() string {
-					abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
-					hsh := ast.CssLocalHash(abspath)
-
-					return `.myClass_` + hsh + `{color:pink}`
-				}, Production)
-
-				AssertCodeFromFunc(func() string {
-					abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
-					hsh := ast.CssLocalHash(abspath)
-
-					return `
-						.myClass_` + hsh + `_vendor-gem_npm-index-module {
-							color: pink;
-						}
-					`
-				})
-			})
-		})
-
-		Describe("installed via npm; external", func() {
-			BeforeEach(func() {
-				addGem("gem_npm_ext", "external")
-				addGem("gem2", "external")
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm_ext/gem_dependency.js", func() {
-				Describe("bare import which is a dependency of the rubygem", func() {
-					AssertCode(`function pThrottle(`)
-					AssertCode(`pThrottle("foo");`)
-					AssertCode(`import throttle from "/node_modules/@rubygems/gem_npm_ext/node_modules/p-throttle/index.js";`, Unbundle)
-				})
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm_ext/dynamic_gem_dependency.js", func() {
-				Describe("dynamic import of bare module, which has a dependency", func() {
-					AssertCode(`var throttle = import("../../../_asset_chunks/p-throttle-$62BRJHIB$.js");`)
-				})
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm_ext/app_dependency.js", func() {
-				Describe("bare import which is a dependency of the app", func() {
-					AssertCode(`console.log("pkg/index.js");`)
-					AssertCode(`import "/node_modules/pkg/index.js";`, Unbundle)
-				})
-			})
-
-			EntryPoint("node_modules/@rubygems/gem_npm_ext/index.module.css", func() {
-				AssertCodeFromFunc(func() string {
-					abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
-					hsh := ast.CssLocalHash(abspath)
-
-					return `.myClass_` + hsh + `{color:pink}`
-				}, Production)
-
-				AssertCodeFromFunc(func() string {
-					// Not through a path join: this is the namespaced virtual path esbuild
-					// records for a rubygems file, not a path on disk, and joining it applies
-					// rules that belong to a filesystem - which answered differently on Windows
-					// and made this expectation, not the build, the thing that was wrong.
-					hsh := ast.CssLocalHash("rubygems:@rubygems/gem_npm_ext/index.module.css")
-
-					return `.myClass_` + hsh + `_rubygems__rubygems-gem_npm_ext-index-module { color: pink; }`
-				}, Unbundle)
-
-				AssertCodeFromFunc(func() string {
-					abspath := utils.JoinFsPath(testConfig.RootPath, "../external/gem_npm_ext/index.module.css")
-					hsh := ast.CssLocalHash(abspath)
-
-					return `
-						.myClass_` + hsh + `_---external-gem_npm_ext-index-module {
-							color: pink;
-						}
-					`
-				})
-			})
-		})
-
-		Describe("not installed via npm; external", func() {
+		Describe("external", func() {
 			BeforeEach(func() {
 				addGem("gem2", "external")
 			})
@@ -540,12 +442,12 @@ var _ = Describe("gem stylesheet imports", func() {
 	})
 
 	EntryPoint("node_modules/@rubygems/gem2/app/views/imports.css", func() {
-		// Bundling resolves a bare import from a gem that is not linked into the app's node_modules
-		// against the app root (bundler.go, "If importer is a RubyGem..."), so an app without the
-		// package keeps the @import for the browser. Unbundling resolves from the gem's own
-		// node_modules, which is the path that used to panic.
+		// A gem's bare import resolves from the gem's own node_modules in both modes (bareLookupDirs).
+		// Bundling used to resolve it against the app root, so an app without the package kept the
+		// @import for the browser while unbundling found the gem's copy. Unbundling is the path that
+		// used to panic.
 		Describe("bare import which is a dependency of the gem", func() {
-			AssertCode(`@import "open-props/shadows";`)
+			AssertCode(`.gem2_shadow { content: "open-props/shadows"; }`)
 			AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/open-props/shadows.css";`, Unbundle)
 		})
 
@@ -560,6 +462,72 @@ var _ = Describe("gem stylesheet imports", func() {
 			AssertCode(`@import "does-not-exist";`)
 			AssertCode(`@import "does-not-exist";`, Unbundle)
 		})
+	})
+
+	// An import naming a file of the package goes through the same lookup: unbundling used to
+	// point it at the app's node_modules without resolving it, so it got the app's copy, or none.
+	EntryPoint("node_modules/@rubygems/gem2/app/views/imports_with_extension.css", func() {
+		AssertCode(`.gem2_shadow { content: "open-props/shadows"; }`)
+		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/open-props/shadows.css";`, Unbundle)
+	})
+
+	// A file the package's `exports` leaves out is still served from the gem's own node_modules
+	// when unbundling, as the app's shortcut serves the app's (fileUnderNodeModules).
+	EntryPoint("node_modules/@rubygems/gem2/app/views/imports_hidden.css", func() {
+		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/expk/hidden.css";`, Unbundle)
+	})
+
+	// A gem's JS importing a bare CSS module from a package the app provides: unbundling loads it
+	// through the css plugin, from the lookup's directory, rather than leaving the import raw.
+	EntryPoint("node_modules/@rubygems/gem2/asset_peer.js", func() {
+		AssertCode(`const u = "/node_modules/pnpm-link/three.module.css";`, Unbundle)
+	})
+
+	// The lookup's bound picks where resolution starts, never what it may return: the app's
+	// `link:` package lives outside both the gem and the app, and a gem that leaves it to the app
+	// still gets it.
+	EntryPoint("node_modules/@rubygems/gem2/link_dependency.js", func() {
+		AssertCode(`console.log("pnpm-link-ext/one.js");`)
+	})
+
+	// A package the gem ships resolves its own imports beside itself, then from the app: its
+	// `browser` map disables `optional`, and `pnpm-link-ext` is a peer only the app provides, so
+	// that import needs the second lookup directory.
+	EntryPoint("node_modules/@rubygems/gem2/package_peer.js", func() {
+		AssertCode(`console.log("pnpm-link-ext/one.js");`)
+	})
+	EntryPoint("node_modules/@rubygems/gem2/node_modules/peerk/index.js", func() {
+		AssertCode(`import "/node_modules/pnpm-link-ext/one.js";`, Unbundle)
+	})
+
+	// A file another package's `exports` leaves out comes from the nearest node_modules above the
+	// shipped package's file, not from a node_modules inside the importer's own directory.
+	// gem2 lists React in its peerDependencies, and has a copy of its own in its node_modules, as
+	// pnpm installs a peer for a gem developed locally. A peer is the app's to provide, so its
+	// own files and the packages it ships both get the app's React (18.3.1): two copies on one
+	// page break hooks.
+	Describe("a peer the gem has its own copy of", func() {
+		for _, entry := range []string{
+			"node_modules/@rubygems/gem2/peer_react.js",
+			"node_modules/@rubygems/gem2/node_modules/peerk/react.js",
+		} {
+			It("bundles the app's copy into "+entry, func() {
+				_, code, _ := b.BuildToString(entry, testConfig)
+
+				Expect(code).To(ContainSubstring("18.3.1"))
+				Expect(code).NotTo(ContainSubstring("0.0.0-gem2"))
+			})
+
+			It("imports the app's copy from "+entry+" when unbundled", func() {
+				_, code, _ := b.BuildToString(entry, configWithMarkers([]any{Unbundle}))
+
+				Expect(code).To(ContainCode(`import { version } from "/node_modules/react/index.js";`))
+			})
+		}
+	})
+
+	EntryPoint("node_modules/@rubygems/gem2/node_modules/peerk/styles.css", func() {
+		AssertCode(`@import "/node_modules/@rubygems/gem2/node_modules/expk/hidden.css";`, Unbundle)
 	})
 })
 

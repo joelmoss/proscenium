@@ -1,0 +1,3 @@
+@import 'open-props/shadows.css';
+
+.gem2_imports_with_extension { content: "@rubygems/gem2/app/views/imports_with_extension.css"; }

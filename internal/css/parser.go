@@ -149,7 +149,6 @@ func (p *cssParser) newWarning(search string, format string, args ...any) CssWar
 
 // Append the given input to the output.
 func (p *cssParser) append(input string) {
-	p.tokens.logOutput(input)
 	p.output.WriteString(input)
 }
 

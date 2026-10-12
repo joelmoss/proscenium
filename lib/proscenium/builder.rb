@@ -211,7 +211,6 @@ module Proscenium
       config_hash = {
         RootPath: (@root || Rails.root).to_s,
         OutputDir: "public#{Proscenium.config.output_dir}",
-        GemPath: gem_root,
         Environment: ENVIRONMENTS.fetch(Rails.env.to_sym, 2),
         EnvVars: env_vars,
         CodeSplitting: Proscenium.config.code_splitting,
@@ -335,10 +334,6 @@ module Proscenium
 
       ENV['NODE_ENV'] = ENV.fetch('RAILS_ENV', nil)
       ENV.slice(*Proscenium::DEFAULT_ENV_VARS, *names)
-    end
-
-    def gem_root
-      Pathname.new(__dir__).join('..', '..').to_s
     end
   end
 end

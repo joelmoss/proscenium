@@ -18,11 +18,9 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-type bundleType bool
 type unbundleType bool
 type asProduction bool
 
-const Bundle = bundleType(true)
 const Unbundle = unbundleType(true)
 const Production = asProduction(true)
 
@@ -57,7 +55,6 @@ func newTestConfig() *types.ConfigT {
 		Environment:     types.TestEnv,
 		RootPath:        utils.JoinFsPath(root, "..", "fixtures", "dummy"),
 		OutputDir:       "public/assets",
-		GemPath:         utils.JoinFsPath(root, ".."),
 	}
 }
 
@@ -95,15 +92,14 @@ var EntryPoint = func(entryPoint string, container func()) {
 	})
 }
 
-// Builds a copy of testConfig with the given markers (Bundle/Unbundle/Production) applied. Never
+// Builds a copy of testConfig with the given markers (Unbundle/Production) applied; bundling is
+// the default. Never
 // mutates testConfig itself - each spec gets its own independent *ConfigT.
 func configWithMarkers(args []any) *types.ConfigT {
 	cfg := *testConfig
 
 	for _, arg := range args {
 		switch t := reflect.TypeOf(arg); {
-		case t == reflect.TypeOf(Bundle):
-			cfg.Bundle = true
 		case t == reflect.TypeOf(Unbundle):
 			cfg.Bundle = false
 		case t == reflect.TypeOf(Production):
@@ -117,7 +113,7 @@ func configWithMarkers(args []any) *types.ConfigT {
 
 func isMarker(arg any) bool {
 	t := reflect.TypeOf(arg)
-	return t == reflect.TypeOf(Bundle) || t == reflect.TypeOf(Unbundle) || t == reflect.TypeOf(Production)
+	return t == reflect.TypeOf(Unbundle) || t == reflect.TypeOf(Production)
 }
 
 var AssertCode = func(expectedCode string, args ...any) {
@@ -142,7 +138,7 @@ var AssertCode = func(expectedCode string, args ...any) {
 
 	It("resolves", specArgs, func() {
 		if fileToAssertCode == "" {
-			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
+			panic("Call AssertCode() inside an EntryPoint() block, which names the file to build")
 		}
 
 		cfg := configWithMarkers(args)
@@ -169,7 +165,7 @@ var AssertCodeFromFunc = func(expectedCode func() string, args ...any) {
 
 	It("resolves", specArgs, func() {
 		if fileToAssertCode == "" {
-			panic("You must assign a file path to `assertCodeForFile` before calling `AssertCode()`")
+			panic("Call AssertCode() inside an EntryPoint() block, which names the file to build")
 		}
 
 		cfg := configWithMarkers(args)

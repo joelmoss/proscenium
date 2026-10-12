@@ -254,27 +254,6 @@ var _ = Describe("BuildToString(css)", func() {
 				Expect(code).To(ContainCode(".myClass_" + hsh + "_vendor-gem_file-index-module { color: pink; }"))
 			})
 		})
-
-		Context("css module; dev names", func() {
-			BeforeEach(func() {
-				testConfig.UseDevCSSModuleNames = true
-			})
-
-			It("builds npm install", func() {
-				addGem("gem_npm", "dummy/vendor")
-
-				_, code, _ := b.BuildToString("node_modules/@rubygems/gem_npm/index.module.css", testConfig)
-
-				abspath := utils.JoinFsPath(testConfig.RootPath, "vendor/gem_npm/index.module.css")
-				hsh := ast.CssLocalHash(abspath)
-
-				Expect(code).To(ContainCode(`
-					.myClass_` + hsh + `_vendor-gem_npm-index-module {
-						color: pink;
-					}
-				`))
-			})
-		})
 	})
 
 	Describe("importing css module from js", func() {

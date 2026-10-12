@@ -21,6 +21,21 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect("body{}").To(BeParsedTo("body{}", "/foo.css", testConfig))
 		})
 
+		// Stylesheets with no mixin are returned as written: re-rendering one through the tokenizer
+		// is what corrupted an identifier that starts with an escaped digit (Tailwind's `2xl:`
+		// variants), whose escape was written back as `\2xl`, a U+0002 control character.
+		DescribeTable("returns a stylesheet with no mixin unchanged",
+			func(input string) {
+				output, warnings, err := css.ParseCss(input, "/foo.css", testConfig)
+
+				Expect(err).NotTo(HaveOccurred())
+				Expect(warnings).To(BeEmpty())
+				Expect(output).To(Equal(input))
+			},
+			Entry("a class that starts with an escaped digit", ".\\32xl\\:text-lg{color:red}"),
+			Entry("whitespace and comments as written", "/* a */\n.a  >  .b {\n  color : red ;\n}\n"),
+		)
+
 		It("refuses a nil config", func() {
 			success, err := BeParsedTo("body{}", "/foo.css", nil).Match("body{}")
 
@@ -28,21 +43,23 @@ var _ = Describe("Build(parseCss)", func() {
 			Expect(err).To(MatchError(ContainSubstring("needs the spec's config")))
 		})
 
-		// The tokenizer turned CR and CRLF into LF but not a form feed, which CSS treats the same.
+		// The tokenizer turned CR and CRLF into LF but not a form feed, which CSS treats the same. The
+		// mixin definitions here and below keep the input on the tokenizer's path.
 		It("ends a hex escape at a form feed, as at any other whitespace", func() {
-			Expect(".a\\2E\fb{color:red;}").To(BeParsedTo(`.a\2E b{color:red;}`, "/foo.css", testConfig))
+			Expect("@define-mixin m{}.a\\2E\fb{color:red;}").To(BeParsedTo(`.a\2E b{color:red;}`, "/foo.css", testConfig))
 		})
 
 		// CRLF is folded first, so a CR then a form feed stays two newlines: the CR ends the escape
 		// and the form feed separates the descendant.
 		It("keeps a CR then a form feed as two newlines", func() {
-			Expect(".a\\2E\r\fb{color:red;}").To(BeParsedTo(`.a\2E  b{color:red;}`, "/foo.css", testConfig))
+			Expect("@define-mixin m{}.a\\2E\r\fb{color:red;}").To(BeParsedTo(`.a\2E  b{color:red;}`, "/foo.css", testConfig))
 		})
 
 		// A newline inside a string or url(), or after a backslash, is a bad token: only malformed CSS
 		// has one. The parser used to stop there and silently drop the rest of the stylesheet, and the
 		// tokenizer cannot write one back as written (it decodes escapes and drops quotes and the
-		// whitespace inside), so the input is returned unchanged for esbuild to report.
+		// whitespace inside), so the input is returned unchanged for esbuild to report. Each input
+		// defines a mixin, so it reaches the tokenizer rather than the pass-through for no mixin.
 		DescribeTable("returns malformed CSS unchanged",
 			func(input string) {
 				output, _, err := css.ParseCss(input, "/foo.css", testConfig)
@@ -50,12 +67,12 @@ var _ = Describe("Build(parseCss)", func() {
 				Expect(err).NotTo(HaveOccurred())
 				Expect(output).To(Equal(input))
 			},
-			Entry("string broken by a newline", "a{content:\"x\ny\";}\nb{color:blue}"),
-			Entry("string holding an escaped newline", "a{content:\"\\a x\n;}\nb{color:blue}"),
-			Entry("backslash before a newline", "a{color:red\\\n;}\nb{color:blue}"),
-			Entry("url ending in a quote", "a{background:url(a\"b\")}\nb{color:blue}"),
-			Entry("url with whitespace inside", "a{background:url(a\nb)}\nb{color:blue}"),
-			Entry("url holding an escaped paren", "a{background:url(a\\29  b)}\nb{color:blue}"),
+			Entry("string broken by a newline", "@define-mixin m{}a{content:\"x\ny\";}\nb{color:blue}"),
+			Entry("string holding an escaped newline", "@define-mixin m{}a{content:\"\\a x\n;}\nb{color:blue}"),
+			Entry("backslash before a newline", "@define-mixin m{}a{color:red\\\n;}\nb{color:blue}"),
+			Entry("url ending in a quote", "@define-mixin m{}a{background:url(a\"b\")}\nb{color:blue}"),
+			Entry("url with whitespace inside", "@define-mixin m{}a{background:url(a\nb)}\nb{color:blue}"),
+			Entry("url holding an escaped paren", "@define-mixin m{}a{background:url(a\\29  b)}\nb{color:blue}"),
 			Entry("bad token inside a mixin declaration", "a{@mixin red from url(a\nb);}\nb{color:blue}"),
 			Entry("bad token after a mixin that resolves", "a{@mixin red from url(\"/lib/mixins/colors.css\");}\nb{content:\"x\ny\";}"),
 			Entry("bad token in a local mixin that is never used", "@define-mixin m { content: \"x\n; }\na{color:red}"),
@@ -235,9 +252,11 @@ var _ = Describe("Build(parseCss)", func() {
 		})
 
 		// The input is parsed as written. Dedenting it first turned this continued string into "xy",
-		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space.
+		// where the parser gives "x  y", and trimming dropped a trailing non-breaking space. The
+		// mixin definition keeps the input on the parser's path: a stylesheet without one is
+		// returned as written.
 		It("parses the input as written, without dedenting or trimming it", func() {
-			input := "a{content:\"x\\\n  y\";}"
+			input := "@define-mixin m{}a{content:\"x\\\n  y\";}"
 			Expect(input).To(BeParsedTo(`a{content:"x  y";}`, "/foo.css", testConfig))
 
 			success, err := BeParsedTo(`a{content:"xy";}`, "/foo.css", testConfig).Match(input)
@@ -505,7 +524,7 @@ var _ = Describe("Build(parseCss)", func() {
 
 						Describe("without extension", func() {
 							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`)
-							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`, Bundle)
+							AssertCode(`.mixin-gem_npm_wo_ext { content: "@rubygems/gem_npm/mixin.css"; font-size: 57px; }`, Unbundle)
 						})
 					})
 

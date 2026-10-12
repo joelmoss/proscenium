@@ -39,11 +39,6 @@ PATH
       rails (>= 7.0.4)
 
 PATH
-  remote: ../fixtures/external/gem_npm_ext
-  specs:
-    gem_npm_ext (1.0.0)
-
-PATH
   remote: ..
   specs:
     proscenium (0.26.1)
@@ -397,7 +392,6 @@ DEPENDENCIES
   gem5!
   gem_file!
   gem_npm!
-  gem_npm_ext!
   json (< 3)
   maxitest
   minitest-difftastic

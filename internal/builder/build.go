@@ -12,13 +12,9 @@ import (
 	esbuild "github.com/joelmoss/esbuild-internal/api"
 )
 
-// Build the given `path`.
-//
-// - path - The path to build relative to `root`.
-//
-//export build
+// Build `entryPoint`, relative to `cfg.RootPath`.
 func build(entryPoint string, cfg *types.ConfigT) esbuild.BuildResult {
-	_, err := replacements.Build()
+	err := replacements.Build()
 	if err != nil {
 		return esbuild.BuildResult{
 			Errors: []esbuild.Message{{
