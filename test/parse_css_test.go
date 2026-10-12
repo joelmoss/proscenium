@@ -139,14 +139,21 @@ var _ = Describe("Build(parseCss)", func() {
 		// A bad token in a mixin from another file leaves the stylesheet that uses it valid, so only
 		// that mixin is refused, with a warning; returning the whole caller unchanged lost every other
 		// expansion, and esbuild never sees the mixin file to report it.
-		// A comment left open at the end of a mixin file, as when it is saved mid-edit, was copied into
-		// every stylesheet using the mixin, commenting out the rest of it.
-		It("refuses a mixin from another file that ends in an open comment", func() {
-			file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/unterminated_comment.css")
-			input := "a{@mixin m from url(\"/lib/mixins/unterminated_comment.css\");}\nb{color:blue}"
+		// A mixin file that ends before its definition does, as when it is saved mid-edit, ends inside
+		// whatever it was writing. Copied as written, that went on into every stylesheet using the
+		// mixin: an open comment commented out the rest of it, an open url() swallowed it, and a
+		// trailing backslash escaped the semicolon after the body. The definition is refused instead.
+		DescribeTable("refuses a mixin from another file whose definition the file never closes",
+			func(fixture string) {
+				file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/"+fixture)
+				input := "a{@mixin m from url(\"/lib/mixins/" + fixture + "\");color:blue}\nb{color:green}"
 
-			Expect(input).To(BeParsedTo(input, "/foo.css", testConfig, `Mixin "m" in "`+file+`" is malformed CSS`))
-		})
+				Expect(input).To(BeParsedTo(input, "/foo.css", testConfig, `Mixin "m" in "`+file+`" is malformed CSS`))
+			},
+			Entry("ending in an open comment", "unterminated_comment.css"),
+			Entry("ending in an open url()", "unterminated_url.css"),
+			Entry("ending in a backslash", "unterminated_escape.css"),
+		)
 
 		It("refuses a malformed mixin from another file, and still expands the rest", func() {
 			file := utils.JoinFsPath(testConfig.RootPath, "lib/mixins/malformed.css")
@@ -1063,15 +1070,17 @@ var _ = Describe("Build(parseCss)", func() {
 					Expect(warnings).To(BeEmpty())
 				})
 
-				It("includes what it captured of an unclosed definition in a mixin file", func() {
-					code, warnings := parseWithDeadline(
-						"header {\n\t@mixin red from url('/lib/mixins/unterminated.css');\n}", "/foo.css")
+				// What it captured used to be expanded, which is safe only while the file ends
+				// between tokens; see "refuses a mixin from another file whose definition the file
+				// never closes".
+				It("refuses an unclosed definition in a mixin file", func() {
+					input := "header {\n\t@mixin red from url('/lib/mixins/unterminated.css');\n}"
+					code, warnings := parseWithDeadline(input, "/foo.css")
 
-					// The blank line is the newline that followed the `@mixin` declaration. It used
-					// to be swallowed by the eager token skip in `handleNextToken`, and this
-					// assertion pinned that; removing the skip restores it to the output.
-					Expect(code).To(Equal("header {\n\t\n  color: red;\n\n}"))
-					Expect(warnings).To(BeEmpty())
+					Expect(code).To(Equal(input))
+					Expect(warnings).To(HaveLen(1))
+					Expect(warnings[0].Text).To(Equal(`Mixin "red" in "` +
+						utils.JoinFsPath(testConfig.RootPath, "lib/mixins/unterminated.css") + `" is malformed CSS`))
 				})
 			})
 		})

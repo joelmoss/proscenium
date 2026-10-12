@@ -198,17 +198,19 @@ func (p *cssParser) readMixinDefinitions(filePath string) bool {
 	tokens.forEachToken(func(token cssToken) bool {
 		if token.Type == css_lexer.TAtKeyword && token.Value == "define-mixin" {
 			tokens.malformed = false
-			key, def := tokens.parseMixinDefinition()
+			key, def, closed := tokens.parseMixinDefinition()
 			if key == "" {
 				return true
 			}
 
-			// A bad token in the definition: expanded, it would break the valid stylesheet that uses
-			// it, and esbuild never sees this file to report it. So the mixin is refused with a
-			// warning, rather than expanded, or made to return the whole stylesheet unchanged.
-			// The last definition of a name wins, malformed or not.
+			// A bad token in the definition, or a definition the file ends before closing: expanded,
+			// it would break the valid stylesheet that uses it, and esbuild never sees this file to
+			// report it. A file that ends inside a definition ends inside whatever it was writing - a
+			// comment, a url(), an escape - which, copied as written, runs on into that stylesheet.
+			// So the mixin is refused with a warning, rather than expanded, or made to return the
+			// whole stylesheet unchanged. The last definition of a name wins, malformed or not.
 			k := filePath + "#" + key
-			if tokens.malformed {
+			if tokens.malformed || !closed {
 				p.malformedMixins[k] = true
 				delete(p.mixins, k)
 

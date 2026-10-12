@@ -226,11 +226,12 @@ func (x *cssTokenizer) isExpanding(mixinKey string) bool {
 	return false
 }
 
-// Fetch the mixin definition at the current token, and return its name and definition.
-func (x *cssTokenizer) parseMixinDefinition() (string, string) {
+// Fetch the mixin definition at the current token, and return its name and definition, and whether
+// its block was closed before the end of the stream.
+func (x *cssTokenizer) parseMixinDefinition() (string, string, bool) {
 	if x.nesting > 0 {
 		// @define-mixin must be declared at the root level. Pass it through as is.
-		return "", ""
+		return "", "", false
 	}
 
 	var mixinIdent string
@@ -252,10 +253,12 @@ func (x *cssTokenizer) parseMixinDefinition() (string, string) {
 
 	if mixinIdent == "" {
 		// No ident found. Ignore it!
-		return "", ""
+		return "", "", false
 	}
 
-	return mixinIdent, terminateBody(x.captureBlock(0))
+	body, last, end, closed := x.captureBlock(0)
+
+	return mixinIdent, terminateBody(body, last, end), closed
 }
 
 // A block's last declaration may go without a semicolon, but an inserted mixin body is followed by
@@ -280,11 +283,12 @@ const noToken = css_lexer.TEndOfFile
 
 // Capture all output between the nest opening brace, until the closing brace at the given level,
 // with the type of its last token other than whitespace, comments, `<!--` and `-->`, none of which
-// is a statement, and where in the output that token ends.
-func (x *cssTokenizer) captureBlock(level int) (string, css_lexer.T, int) {
+// is a statement, where in the output that token ends, and whether the closing brace was reached.
+func (x *cssTokenizer) captureBlock(level int) (string, css_lexer.T, int, bool) {
 	var content strings.Builder
 	last := noToken
 	end := 0
+	closed := false
 
 	x.forEachToken(func(token cssToken) bool {
 		if token.Type == css_lexer.TOpenBrace && x.nesting == level {
@@ -293,6 +297,7 @@ func (x *cssTokenizer) captureBlock(level int) (string, css_lexer.T, int) {
 		}
 
 		if token.Type == css_lexer.TCloseBrace && x.nesting == level {
+			closed = true
 			return false
 		}
 
@@ -308,7 +313,7 @@ func (x *cssTokenizer) captureBlock(level int) (string, css_lexer.T, int) {
 		return true
 	})
 
-	return content.String(), last, end
+	return content.String(), last, end, closed
 }
 
 // Iterate over all tokens, passing the given iterator function `iterFn` for each iteration.

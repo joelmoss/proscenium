@@ -207,7 +207,7 @@ func (p *cssParser) handleNextToken() (string, bool) {
 				return token.raw, true
 			}
 
-			key, def := p.tokens.parseMixinDefinition()
+			key, def, _ := p.tokens.parseMixinDefinition()
 			if key == "" {
 				return token.raw, true
 			}
