@@ -79,10 +79,17 @@ describe Proscenium::CLI::Error do
   end
 
   it 'has an example for every code' do
-    assert_equal Proscenium::CLI::Error::CATALOG.keys.sort, EXAMPLES.keys.sort
+    assert_equal Proscenium::CLI::Error::STATUS.keys.sort, EXAMPLES.keys.sort
   end
 
-  Proscenium::CLI::Error::CATALOG.each_key do |code|
+  # The text is the model's and the exit status the CLI's: a code in one table only would raise
+  # KeyError when it is reported.
+  it 'has text and an exit status for every code' do
+    assert_equal Proscenium::CLI::Error::STATUS.keys.sort,
+                 Proscenium::Contexts::Messages::TEXT.keys.sort
+  end
+
+  Proscenium::CLI::Error::STATUS.each_key do |code|
     it "renders #{code}" do
       error = Proscenium::CLI::Error.new(code, **EXAMPLES.fetch(code))
 
@@ -92,7 +99,7 @@ describe Proscenium::CLI::Error do
   end
 
   it 'maps every error to a failing exit status, and every warning to success' do
-    Proscenium::CLI::Error::CATALOG.each do |code, (status, *)|
+    Proscenium::CLI::Error::STATUS.each do |code, status|
       expected = code.start_with?('PSM-W-') ? 0..0 : 1..8
 
       assert_includes expected, Proscenium::CLI::Error::EXIT.fetch(status), code

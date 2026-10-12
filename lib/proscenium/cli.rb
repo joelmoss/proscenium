@@ -16,8 +16,8 @@ module Proscenium
   # Load isolation is a contract in both directions, tested in test/cli/load_isolation_test.rb.
   # Nothing under lib/proscenium/cli/ may require `proscenium` itself, ActiveSupport, Rails, FFI or
   # the engine library: only the plain-Ruby model the engine shares with it (bundled_gems and
-  # contexts/) and these files. And that model loads no more of cli/ than error.rb (its message
-  # catalog), so a change to the package manager, install or verify cannot break the engine.
+  # contexts/) and these files. And that model loads nothing of cli/, so a change to the package
+  # manager, install or verify cannot break the engine.
   module CLI
     USAGE = <<~TEXT
       Usage: bundle exec proscenium <command> [options]

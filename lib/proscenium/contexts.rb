@@ -7,6 +7,7 @@ module Proscenium
   module Contexts
     autoload :Map, "#{__dir__}/contexts/map"
     autoload :MappingGeneration, "#{__dir__}/contexts/mapping_generation"
+    autoload :Messages, "#{__dir__}/contexts/messages"
     autoload :Plan, "#{__dir__}/contexts/plan"
     autoload :Projection, "#{__dir__}/contexts/projection"
     autoload :Rules, "#{__dir__}/contexts/rules"
