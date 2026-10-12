@@ -313,6 +313,17 @@ var _ = Describe("BuildToString", func() {
 				AssertCode(`console.log("/lib/foo4.js");`)
 				AssertCode(`import foo from "/lib/foo4.js";`, Unbundle)
 			})
+
+			// esbuild answers an external module with no namespace, as it does a module a
+			// `browser` field disables; the alias must still reach it.
+			Describe("bare to an external package", func() {
+				BeforeEach(func() {
+					testConfig.Aliases = map[string]string{"bare": "external-target"}
+					testConfig.External = []string{"external-target"}
+				})
+
+				AssertCode(`import foo from "external-target";`)
+			})
 		})
 
 		// EntryPoint("lib/aliases/packages.js", func() {
