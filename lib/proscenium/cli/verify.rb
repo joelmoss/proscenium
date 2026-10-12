@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require 'json'
 require_relative '../context_map'
 require_relative '../stale_contexts'
 require_relative 'manager'
