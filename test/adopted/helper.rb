@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
 require_relative '../cli/helper'
+require_relative '../support/subprocess'
 require 'json'
-require 'open3'
 require 'tmpdir'
 require 'rbconfig'
 require_relative '../package_manager/stage_a/bundle'
@@ -50,47 +50,10 @@ module Adopted
     out + err
   end
 
-  # A command's stdout, stderr and status, or a failure naming it once it has run for TIMEOUT
-  # seconds: a hang on one host fails its test rather than the whole CI job. Output goes to
-  # files, not pipes: `bun test` and its Rails daemon write a lot, and on Windows a pipe nobody
-  # drains in time fills and blocks them for good. The process is polled, so nothing waits on
-  # it, and on timeout its whole tree is killed and the failure carries what it had printed.
-  TIMEOUT = 180
-
+  # A command's stdout, stderr and status, run in the fixture app outside this suite's bundle,
+  # with Subprocess's deadline.
   def capture(*command)
-    dir = Dir.mktmpdir('adopted')
-    begin
-      out, err = %w[out err].map { File.join(dir, it) }
-      pid = Bundler.with_unbundled_env do
-        Process.spawn(env, *command, chdir: ROOT, in: File::NULL, out:, err:,
-                                     **(Gem.win_platform? ? {} : { pgroup: true }))
-      end
-      deadline = Time.now + TIMEOUT
-      nil
-      sleep 0.1 until (status = Process.wait2(pid, Process::WNOHANG)&.last) || Time.now > deadline
-      unless status
-        kill_tree(pid)
-        raise "#{command.first(3).join(' ')} did not finish in #{TIMEOUT}s. It printed:\n" \
-              "#{File.read(out)}#{File.read(err)}"
-      end
-
-      [File.read(out), File.read(err), status]
-    ensure
-      # rm_rf ignores a file still open: `bun test`'s Rails daemon outlives it for a moment,
-      # holding the output files, and Windows will not delete an open file.
-      FileUtils.rm_rf(dir)
-    end
-  end
-
-  def kill_tree(pid)
-    if Gem.win_platform?
-      system('taskkill', '/T', '/F', '/PID', pid.to_s, out: File::NULL, err: File::NULL)
-    else
-      Process.kill(:KILL, -pid)
-    end
-    Process.wait(pid)
-  rescue Errno::ESRCH, Errno::ECHILD
-    nil
+    Bundler.with_unbundled_env { Subprocess.capture(*command, env:, chdir: ROOT) }
   end
 
   # Boots the app, evaluates `code` and returns its value, round-tripped through JSON, with the

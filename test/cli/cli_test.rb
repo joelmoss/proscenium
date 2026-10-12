@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'helper'
-require 'open3'
+require_relative '../support/subprocess'
 require 'rbconfig'
 
 describe Proscenium::CLI do
@@ -30,10 +30,10 @@ describe Proscenium::CLI do
 
   it 'answers to psm, as the same command' do
     lib = File.expand_path('../../lib', __dir__)
-    out, status = Open3.capture2e(RbConfig.ruby, '-I', lib,
-                                  File.expand_path('../../exe/psm', __dir__), '--help')
+    out, err, status = Subprocess.capture(RbConfig.ruby, '-I', lib,
+                                          File.expand_path('../../exe/psm', __dir__), '--help')
 
-    assert_predicate status, :success?, out
+    assert_predicate status, :success?, err
     assert_includes out, 'bundle exec psm <command>'
   end
 
