@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file_path=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // .filePath // empty') && [[ \"$file_path\" == */proscenium/ext/* ]] && echo 'BLOCK: Compiled binaries in ext/ should not be edited. Use rake compile:local.' && exit 1 || true"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); case \"$f\" in */proscenium/ext/*) echo 'BLOCK: Compiled binaries in ext/ should not be edited. Use rake compile:local.' >&2; exit 2;; esac"
           }
         ]
       }
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "file_path=$(echo \"$TOOL_INPUT\" | jq -r '.file_path // .filePath // empty') && [[ \"$file_path\" == *.rb ]] && bundle exec rubocop -A --fail-level E \"$file_path\" || true"
+            "command": "f=$(jq -r '.tool_input.file_path // empty'); [[ \"$f\" == *.rb ]] && bundle exec rubocop -A --fail-level E \"$f\" || true"
           }
         ]
       }
