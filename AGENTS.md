@@ -58,6 +58,7 @@ The project is a hybrid Ruby gem + Go shared library:
 ## Code Style
 
 - All Ruby files must be styled as per RuboCop.
+- Review rules no linter checks (renames reaching the whole repo, public API that consumers call): `CODING_STANDARDS.md`.
 
 ## Development Commands
 
@@ -80,7 +81,13 @@ bin/test test/builder_test.rb:12 # line number of the test method definition
 
 ### Run Go tests
 ```bash
-go test ./test ./internal/...
+go test ./test -ginkgo.silence-skips # add -ginkgo.focus "<regexp>" for one spec
+go test ./internal/... # plain `testing` packages: a -ginkgo flag fails them
+```
+
+### Run the package-manager tier (real pnpm and Bun; CI's `package-manager` job)
+```bash
+bundle exec rake test:package_manager # needs pnpm and Bun; proxy_rule_test skips without nginx
 ```
 
 ### Run the JavaScript tests (`bun test`, via the Proscenium harness)
@@ -138,6 +145,7 @@ jactionlint # the workflows, against .github/jactionlint.yaml
 - A dummy Rails app for integration testing is at `fixtures/dummy/`
 - `fixtures/adopted/` is a second Rails app, one that has adopted gem dependency contexts (#154): its own Gemfile, pnpm 11 lock and committed `.proscenium/packages/`. `test/adopted/` drives it as a subprocess, because the engine reads contexts at `Bundler.root`; it runs with `STAGE_A=1`. After changing its Gemfile, keep every gem at the version the repo's Gemfile.lock has, so CI installs it with `--local`
 - `test/package_manager/` holds the suites that drive real pnpm and Bun, with the fixture gems they install in `stage_a/`. They skip unless `STAGE_A=1`, which CI's `package-manager` job and the canary set; both run every `*_test.rb` in the directory, so a new one needs no workflow edit
+- `test/first_run_test.rb` skips unless `FIRST_RUN=1` (CI's `first-run` job): it generates a Rails app from the network
 - Dummy app uses pnpm as its package manager
 - Multi-Rails version testing uses Appraisals: `gemfiles/rails_7.2.gemfile`, `gemfiles/rails_8.gemfile` (Rails 8.0) and `gemfiles/rails_8.1.gemfile`
 
@@ -147,6 +155,11 @@ jactionlint # the workflows, against .github/jactionlint.yaml
   The Windows jobs check out with `core.symlinks`, `core.longpaths` and `core.autocrlf false`; see
   the comment in go-test for why each one matters
 - CI sets `GOWORK=off` and `RAILS_ENV=test`
+- PR review is Codex, which reviews when a PR comment says `@codex review`. Greptile is not used
+  here, so skip any step that waits for it
+- `master` has no branch protection or rulesets, so renaming a CI job breaks no required check.
+  PRs merge without a merge commit and GitHub deletes the remote branch; delete the local one
+  with `git branch -D`
 - CI compiles Go with: `go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go`
   (`proscenium.dll` on Windows, which `rake compile:local` also produces there)
 - Rubocop runs with `-P --fail-level C`
@@ -269,9 +282,11 @@ GitHub release is the changelog (the gemspec's `changelog_uri`), written by hand
 - The shell is zsh: quote globs (`--include='*.go'`), because one that matches nothing aborts the
   whole command, and never `echo ===`, which zsh expands as a command name.
 - Under the sandbox, Go needs `GOCACHE=$TMPDIR/gocache GOWORK=off`. The full `bin/test` suite,
-  `git branch -m` / `git switch -c` (they write `.git/config`) and Bun unix sockets need the sandbox
-  off. Sandboxed and unsandboxed shells see different `TMPDIR`s, so a file one writes there is
-  invisible to the other.
+  `git branch -m` / `git switch -c` (they write `.git/config`), `git fetch` / `git push` (SSH) and
+  Bun unix sockets need the sandbox off.
+- Write logs and temp files you read back to the session scratchpad path, not `$TMPDIR` (a Go
+  build cache there is fine): sandboxed and unsandboxed shells see different `TMPDIR`s, so a log
+  one writes there is empty to the other.
 - Always pass `rg` a path, or it reads stdin and hangs.
 - The repository is public. Never name the private consumer apps or their UI gem in docs, commits or
   release notes: docs call them `app-a`, `app-b`, `app-c` and `ui-gem`.

@@ -1039,7 +1039,8 @@ bin/test
 To run the Go tests:
 
 ```bash
-go test ./test ./internal/...
+go test ./test -ginkgo.silence-skips
+go test ./internal/...
 ```
 
 To run the JavaScript tests, which need the Go library compiled first:

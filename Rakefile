@@ -109,6 +109,13 @@ task 'compile:local' => 'clobber:ext' do
      "#{ext_dir}/#{library_name.call(Gem.win_platform? ? 'windows' : '')}", 'main.go'
 end
 
+desc 'Run the suites that drive real pnpm and Bun, as CI\'s package-manager job does'
+# The paths are the package-manager job's in .github/workflows/main.yml; change both together.
+task 'test:package_manager' do
+  sh({ 'STAGE_A' => '1' }, Gem.ruby, 'bin/test', 'test/package_manager/', 'test/adopted/',
+     'test/proxy_rule_test.rb')
+end
+
 # The Go OS this machine builds natively. Everything built natively (see NATIVE_GOOS) needs a C
 # toolchain for its own OS, so a Mac cannot build the Windows gem, nor Windows the darwin ones.
 host_goos = if Gem.win_platform? then 'windows'
