@@ -1,0 +1,47 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+# Runs every test suite, one after another, and prints one line per suite. Each suite's full
+# output goes to tmp/test-all/<suite>.log, and a failing suite also prints its last lines.
+#
+# The Ruby suite runs with STAGE_A=1, so it includes the package-manager tier: pnpm and Bun must
+# be on PATH. Set FIRST_RUN=1 as well to run test/first_run_test.rb. In an agent shell, run this
+# with the sandbox off: the full Ruby suite and Bun's unix sockets need it.
+#
+# Usage: bin/test-all
+
+require 'fileutils'
+
+ROOT = File.expand_path('..', __dir__)
+LOGS = File.join(ROOT, 'tmp', 'test-all')
+
+# name => [env, command, directory, the output line that summarises the suite]
+SUITES = {
+  'compile' => [{}, %w[bundle exec rake compile:local], ROOT, nil],
+  'go-test' => [{}, %w[go test ./test -ginkgo.silence-skips], ROOT, /^(ok|FAIL)\s/],
+  'go-internal' => [{}, %w[go test ./internal/...], ROOT, /^FAIL\s/],
+  'ruby' => [{ 'STAGE_A' => '1' }, [Gem.ruby, 'bin/test'], ROOT, /\d+ runs, /],
+  'bun' => [{}, %w[bun test test/js/], File.join(ROOT, 'fixtures/dummy'), /^Ran \d+ tests/]
+}.freeze
+
+FileUtils.mkdir_p LOGS
+
+failed = SUITES.filter_map do |name, (env, command, dir, summary)|
+  log = File.join(LOGS, "#{name}.log")
+  started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  passed = system(env, *command, chdir: dir, out: log, err: %i[child out])
+  seconds = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+  output = File.readlines(log, chomp: true)
+
+  line = (summary && output.grep(summary).last) || log.delete_prefix("#{ROOT}/")
+  puts format('%-12<name>s %-4<status>s %4<seconds>ds  %<line>s',
+              name:, status: passed ? 'ok' : 'FAIL', seconds:, line:)
+  next if passed
+
+  puts(output.last(20).map { "  | #{it}" })
+  # Every suite after this one loads the library it builds, so their failures would be noise.
+  abort 'Stopped: the suites after compile need the library it builds.' if name == 'compile'
+  name
+end
+
+exit 1 if failed.any?

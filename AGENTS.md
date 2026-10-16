@@ -85,6 +85,11 @@ go test ./test -ginkgo.silence-skips # add -ginkgo.focus "<regexp>" for one spec
 go test ./internal/... # plain `testing` packages: a -ginkgo flag fails them
 ```
 
+### Run every test suite (compile, Go, Ruby with `STAGE_A=1`, Bun; one line each)
+```bash
+bin/test-all # full output in tmp/test-all/<suite>.log
+```
+
 ### Run the package-manager tier (real pnpm and Bun; CI's `package-manager` job)
 ```bash
 bundle exec rake test:package_manager # needs pnpm and Bun; proxy_rule_test skips without nginx
@@ -196,8 +201,9 @@ exist yet needs a build job as well.
 The Linux gems name their libc deliberately. A bare `x86_64-linux` matches glibc and musl alike, so
 Alpine used to install a glibc library it could not load. `-gnu` is never selected on musl, so a
 musl host now matches no platform gem, gets the platform-less gem, and sees
-`Proscenium::Builder::UnsupportedPlatform` naming its platform. That gem carries no compiled
-library at all: the gemspec ships `lib/proscenium/ext/**` only when `PROSCENIUM_PACKAGE_EXT` is
+`Proscenium::Builder::UnsupportedPlatform` naming its platform at its first builder call, not at
+boot: `Builder::Request` raises it and is autoloaded (pinned by test/packaging_test.rb). That gem
+carries no compiled library at all: the gemspec ships `lib/proscenium/ext/**` only when `PROSCENIUM_PACKAGE_EXT` is
 set, which the platform build tasks set for the `gem build` subprocess alone.
 
 **There are no musl gems, and this is not an oversight.** Go's `-buildmode=c-shared` libraries
