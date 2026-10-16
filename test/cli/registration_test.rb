@@ -374,6 +374,22 @@ describe Proscenium::CLI::Registration do
       end
     end
 
+    # A rule anchored to the root (a leading slash, or one in the middle) matches only from there,
+    # so it cannot reach a gem's directory under .proscenium/packages/, whatever it names.
+    it 'leaves the lines where they are before a later rule anchored to the root' do
+      %w[/.dev-docs /ui-gem /config/*.pem].each do |rule|
+        Dir.mktmpdir('ignore') do |dir|
+          system('git', 'init', '-q', dir, exception: true)
+          text = "#{G.splice('')}#{rule}\n"
+          File.write(File.join(dir, '.gitignore'), text)
+
+          refute system('git', '-C', dir, 'check-ignore', '-q', '--no-index',
+                        '.proscenium/packages/ui-gem/package.json'), rule
+          assert_equal text, G.splice(text), rule
+        end
+      end
+    end
+
     # Git does not look inside an ignored directory, so an earlier rule ignoring .proscenium/
     # itself, or everything under it, would hide every context unless each level is re-included.
     it 'keeps the contexts committable under a rule that ignores .proscenium/' do

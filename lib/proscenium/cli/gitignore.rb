@@ -38,8 +38,13 @@ module Proscenium
       # Whether an ignore rule could match a path the contexts are committed under. Generous: `*`
       # crosses `/` here, so at worst the lines are added once more than needed.
       def hides_contexts?(line)
-        pattern = line.strip.delete_prefix('/').chomp('/')
+        rule = line.strip.chomp('/')
+        pattern = rule.delete_prefix('/')
         return false if pattern.empty? || pattern.start_with?('#', '!')
+
+        # Git anchors a rule with a slash at its start or in its middle to the root, so only one
+        # without (`**/` aside) can match a directory's name at any depth.
+        anywhere = !rule.delete_prefix('**/').include?('/')
 
         # Git's `**/` also matches no directory at all. Ruby's does too with FNM_PATHNAME, inside a
         # pattern, but not at its start, so that prefix is also dropped; without FNM_PATHNAME, a
@@ -55,7 +60,7 @@ module Proscenium
         [pattern, wide].flat_map { [it, it.delete_prefix('**/')] }.uniq.any? do |glob|
           paths.any? do |path|
             FLAGS.any? { File.fnmatch?(glob, path, it) } ||
-              File.fnmatch?(glob, File.basename(path), File::FNM_DOTMATCH)
+              (anywhere && File.fnmatch?(glob, File.basename(path), File::FNM_DOTMATCH))
           end
         end
       end
