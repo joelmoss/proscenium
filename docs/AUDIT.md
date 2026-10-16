@@ -22,7 +22,8 @@ in any of them was implemented as part of the audit itself.
 - The 2026-10-01 **Prior-finding status reconciliation** is the current status of every
   2026-09-08 finding. Where it disagrees with a 2026-09-08 per-lane section (stale line numbers,
   narrowed or withdrawn halves), it wins.
-- **Progress**, directly below, is the record of what has landed, across all three audits.
+- **Open items**, directly below, is every finding still open across all three audits. Update it
+  when a Progress row changes. **Progress**, below it, is the record of what has landed.
 - The 2026-10-10 audit is the newest; its **Decisions** were the owner's, and where its findings
   touch an older one (F3-14's `PathIsRubyGem`, closed with #102), its evidence of a changed cost
   is stated.
@@ -33,6 +34,22 @@ F2-REG-1 and BL-2 are fixes rather than a deletion. **Q-2:** a `public` director
 Rails.root is not supported, so F2-BOOT-1 ships as its minimal version and that layout fails the
 precompile in `OutputDirUnderRoot`. See the 2026-10-01 **Open questions for the user**. F2-BOOT-1
 was later closed as not planned (#92, 2026-10-03); see Progress.
+
+## Open items
+
+Every finding not Done, Obsolete, Intentional, Rejected or Closed as not planned, checked against
+the code on 2026-10-17. None is a known defect a user hits; the backlog proper is `TODOS.md`.
+
+| ID | What is open | Where, at HEAD |
+|---|---|---|
+| F3-16 | Duplication and splits, folded in when each file is next touched | see F3-16 below |
+| BL-1 | Compiled CSS embedded as ``String.raw`%s` ``; closes with F3-16's `utils.JsString` | `internal/plugin/css.go:102` |
+| BL-7 | Image/font handler `FIXME: still needed?`: settle with one spec before deleting | `internal/plugin/bundler.go:185` |
+| BL-5 | An `ensure_loaded` value other than `:log`/`:raise` silently disables the check | `lib/proscenium/ensure_loaded.rb:18-24` |
+| BL-6 | `AssertCode` discards `BuildToString`'s `success` | `test/proscenium_suite_test.go:150` |
+| P2 nil index | Unguarded `FindAllStringSubmatch(...)[0]`; `utils.Recover` turns the panic into a failed build | `internal/builder/build_to_string.go:119` |
+| BL-3 | `resolved[path] \|\|=` race outside the daemon's lock; unreproduced | `lib/proscenium/runtime/server.rb:258` |
+| BL-4 | Stale `result.Errors` after a failed `EvalSymlinks`; unverified, very unlikely | `internal/plugin/bundless.go:107-119` |
 
 ## Progress
 
@@ -62,7 +79,9 @@ was later closed as not planned (#92, 2026-10-03); see Progress.
 | F-REACT-1, F-REACT-2, F-VIEW-2, RB-REACTMGR | **Obsolete** — the React integration left Proscenium in #142 (closing #87 and #103). `ReactComponentable` and `lib/proscenium/react-manager/` are deleted; the Ruby side moved into ui-gem's `UiGem::Phlex::ReactComponent`, its only consumer, which already shipped its own manager. proscenium-phlex (joelmoss/proscenium-phlex#3) and proscenium-view_component (joelmoss/proscenium-view_component#2) removed their React components, both merged with #142. Releasing any of the three needs ui-gem's change in the apps first: an app on an older ui-gem fails to boot with `NameError` once proscenium-phlex no longer has `Proscenium::Phlex::React`. F-VIEW-2's value-vs-presence trap for `lazy` does not survive the move: ui-gem renders through Phlex, which drops a falsy attribute. The SVG-from-JSX component no longer imports React either; it is the SVG's own JSX. |
 | F2-BOOT-1 and H-3 (#92), F2-CI-1 (#93), F-TEST-1 (#97), F-GOBUILD-1 (#101), F-GOUTILS-1 steps 2 and 3 with H-5 (#102), F-CONTRACT-2 (#104), F-DAEMON-2, F-SIDELOAD-2, F-BUNJS-1, F-TOOL-1, F-GEN-1 and F-GOPLUGIN-2 (#105) | **Closed as not planned** — 2026-10-03, after a review of every open audit issue for real-world impact. None changes what a Proscenium user sees: each needs an undocumented override, a new platform, a developer's own unusual import or a typo inside Proscenium, or is a test-harness or dead-code cleanup. F-TEST-1 was mostly done already: `test_helper.rb` resets `env_vars` and the Manifest, and the remaining `precompile` and `bundle` writes are harmless. F-GOBUILD-1 found no drift: both builds use the same option keys, apart from the deliberate `AbsPaths`, and the same plugins. F2-CI-1's two wrong comments (`release.yml`, AGENTS.md) were corrected instead of adding the check. Do not restart any of these from the write-ups below. **F-IMPORTER-1/2 (#99) was kept open:** a probe on 2026-10-03 sideloaded one template twice and got 4 `sideload.proscenium` events for 2 imported keys, so every repeat render of a sideloaded partial or component re-resolved and logged again. |
 | F-IMPORTER-1/2 | **Done** — #99, `2e1e0357`. `Importer.import` resolves first and keys on the resolved path, so the duplicate check and the stored key agree and a repeat sideload no longer fires `sideload.proscenium`. One private `store` replaces the four copies of the store arms. A repeat import merges its options into the existing entry, later ones winning key by key, and notifies once; proscenium-ui's Select relies on that when it sideloads itself `lazy: true` over an eager sideload of the same file. **The audit's option semantics were not taken:** field 6(d) proposed first-write-wins, which would have broken that `lazy: true` override. The CSS-module branch computes the digest when the stored entry has none (a stylesheet first imported as a plain file), and the unread `:abs_path` field is dropped from entries; `:digest` stays, since the memo lookup reads it back. **F-IMPORTER-2's landmine does not arm:** `_sideload`'s first-match loop is unchanged, and a repeat import of the non-CSS branch now returns the same truthy array as the first rather than nil, so `find` still stops at the first existing file. Tests in `test/importer_test.rb`: a repeat JS sideload with `.tsx`, `.ts` and `.js` all present, a repeat CSS-module sideload, a pre-compiled CSS module keyed by its manifest path, the merge, and the digest of a stylesheet first imported as a plain file. |
-| F2-*, H-*, BL-* (2026-10-01) | Open. Ranked in the 2026-10-01 **Final priorities and dependencies**. |
+| F-GOBUNDLE-2, F-CSSMOD-2 | **Rejected as standalone** — 2026-09-08 pass 4, rulings 3 and 4: no live defect. F-CSSMOD-2 lands only alongside other work in `css_module/path.rb`. |
+| F-CSSMOD-1, H-6 | **Done** — `06c30cf6`: `Transformer#class_names` flattens and drops nil names, and the dead `autoload :Rewriter` went with it; `ed72140b` rejects an empty Hash name. |
+| F2-*, H-*, BL-* (2026-10-01) | Each is in a row above, or still open under **Open items**. |
 | F3-2, F3-3, F3-4, F3-5, F3-9, F3-11, F3-13, F3-15 | **Done** — PR #176. |
 | F3-6 | **Done**. Step 1, PR #176: `ContextPlan` and the peer-split rule are model-side, and the reverse load test pins what the engine loads of `cli/`. Step 2: the model is one namespace, `Proscenium::Contexts` under `lib/proscenium/contexts/`, named by the vocabulary table: `Map` (was `ContextMap`), `Plan` (`ContextPlan`), `Stale` (`StaleContexts`), `Projection` (`DependencyContext`), `MappingGeneration`, and `Rules`, moved out of `cli/`, so the engine loaded only `cli/error.rb` until F3-8, and now nothing under `cli/`. `lib/proscenium.rb` requires `contexts.rb`, the namespace's autoloads, rather than autoloading it: the CLI requires the model's files directly, and one that defined `Contexts` first left the autoloads unregistered. |
 | F3-14 | **Ruby half done** — PR #176. |
@@ -73,7 +92,7 @@ was later closed as not planned (#92, 2026-10-03); see Progress.
 | F3-8 | **Done**: the catalog's text is the model's, `Contexts::Messages::TEXT` (code => message and fix templates), and its exit statuses the CLI's, `CLI::Error::STATUS`. The model renders a `[code, args]` pair with `Messages.message`, so the engine loads nothing under `cli/`, which the load isolation test pins, and a test pins that both tables name the same codes. The text moved unchanged: every golden is byte for byte the same. `Messages` is a class, as `CLI::Error` was, since `Metrics/ClassLength` is off here and `Metrics/ModuleLength` is not. |
 | F3-10 | **Done**: `test/support/subprocess.rb` is the one way a test runs a command, with the fixture app's hardened runner as its body: a deadline (180s by default), output to files rather than pipes, and the whole process tree killed on timeout, the failure carrying what it printed. The five runners without one (`cli_test`, `gem_check_test`, `load_isolation_test`, `pnpm_layout_test`, `bun_layout_test`) and `test/adopted/helper.rb` use it, and `test/cli/subprocess_test.rb` pins the deadline. |
 | F3-16 | Open: folded in when each file is next touched, as the finding says. |
-| Everything else | Open. |
+| Everything else | See **Open items**. |
 
 The order now lives in the 2026-10-01 **Final priorities and dependencies**, which interleaves
 the open 2026-09-08 findings with the new ones. The short version: **F2-MW-1**, which went
