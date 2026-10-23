@@ -105,6 +105,7 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       - id: split
         run: |
@@ -147,6 +148,7 @@ jobs:
           go-version-file: ./go.mod
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       - run: bundle exec rake "build:${{ matrix.platform }}"
       - uses: actions/upload-artifact@v4
@@ -178,6 +180,8 @@ jobs:
       # builds with -mod=vendor, overriding GOFLAGS, so every build failed with "inconsistent
       # vendoring". The gems go outside the checkout instead, uncached.
       - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.4'
       - name: Install gems outside the checkout
         run: |
           bundle config set --local path "$RUNNER_TEMP/bundle"
@@ -225,6 +229,7 @@ jobs:
           go-version-file: ./go.mod
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       - run: bundle exec rake "build:${{ matrix.platform }}"
       - name: The gem must carry the DLL
@@ -263,6 +268,7 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       - run: |
           mkdir -p pkg
@@ -417,6 +423,7 @@ jobs:
           merge-multiple: true
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       # Pinned to a commit, not a tag. This is the only job that can publish a gem, and a tag can
       # be repointed by whoever owns the action. Everything else in these workflows stays on a
