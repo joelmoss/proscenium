@@ -116,6 +116,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
 
       - if: runner.os != 'Windows'
@@ -212,7 +213,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
-          ruby-version: ${{ matrix.ruby }}
+          ruby-version: ${{ matrix.ruby == 'default' && '3.4' || matrix.ruby }}
           bundler-cache: true
 
       # The versions come from the CLI's capability table, the one source of truth for what
@@ -361,6 +362,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
 
       - name: Bun version from the capability table
@@ -410,6 +412,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
 
       # Pinned, so a Bun release cannot change what this job tests. The harness leans on measured
@@ -439,6 +442,7 @@ jobs:
           persist-credentials: false
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
       - run: bundle exec rubocop -P --fail-level C
 
