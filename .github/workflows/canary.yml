@@ -50,6 +50,7 @@ jobs:
 
       - uses: ruby/setup-ruby@v1
         with:
+          ruby-version: '3.4'
           bundler-cache: true
 
       # The newest patch of this pnpm line and of Bun's one supported line, from the registry.
