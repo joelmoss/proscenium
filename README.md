@@ -80,7 +80,7 @@ gem 'proscenium'
 ```
 
 Please note that Proscenium is designed solely for use with Rails. It needs Ruby 3.4 or newer, and
-Rails 7.2 to 8.x.
+Rails 8.0 to 8.x.
 
 Now if you start your Rails app, you can open any front end code (JS, CSS, etc.). For example, a file at `app/assets/stylesheets/application.css` can be accessed at `https://localhost:3000/app/assets/stylesheets/application.css`, which will be transformed, bundled, and minified [in production] in real time.
 

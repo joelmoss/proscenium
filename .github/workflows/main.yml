@@ -74,18 +74,14 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        rails: [rails_7.2, rails_8, rails_8.1]
+        rails: [rails_8, rails_8.1]
         # Rails-version differences are OS-independent; OS differences are the Go shared library
         # and FFI, which go-test and bun-test already cover on macOS. One macOS Rails job is
         # enough, and it keeps the run under the macOS runner concurrency cap. One Windows cell
         # for the same reason, and because Windows runners are the slowest of the three.
         exclude:
           - os: macos-latest
-            rails: rails_7.2
-          - os: macos-latest
             rails: rails_8
-          - os: windows-latest
-            rails: rails_7.2
           - os: windows-latest
             rails: rails_8
     runs-on: ${{ matrix.os }}

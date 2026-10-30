@@ -61,5 +61,5 @@ Gem::Specification.new do |spec|
   spec.executables = %w[proscenium psm]
 
   spec.add_dependency 'ffi', '~> 1.17.0'
-  spec.add_dependency 'rails', ['>= 7.2.0', '< 9.0']
+  spec.add_dependency 'rails', ['>= 8.0.0', '< 9.0']
 end
