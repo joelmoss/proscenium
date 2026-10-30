@@ -21,12 +21,86 @@ struct CompileResult {
 import "C"
 
 import (
+	"runtime"
+	"sync"
+	"time"
 	"unsafe"
 
 	"joelmoss/proscenium/internal/builder"
 	"joelmoss/proscenium/internal/resolver"
 	"joelmoss/proscenium/internal/types"
 )
+
+// How long the library must go unused before it gives back its idle threads. Long enough that a
+// page's burst of asset requests reuses the threads the first one started.
+const threadReleaseDelay = 5 * time.Second
+
+var (
+	callsMu      sync.Mutex
+	callsRunning int
+	releaseTimer *time.Timer
+)
+
+func callStarted() {
+	callsMu.Lock()
+	defer callsMu.Unlock()
+
+	callsRunning++
+}
+
+func callFinished() {
+	callsMu.Lock()
+	defer callsMu.Unlock()
+
+	callsRunning--
+	if callsRunning > 0 {
+		return
+	}
+
+	if releaseTimer == nil {
+		releaseTimer = time.AfterFunc(threadReleaseDelay, releaseIdleThreads)
+	} else {
+		releaseTimer.Reset(threadReleaseDelay)
+	}
+}
+
+// Go never ends a thread it has started, so each process that has used this library keeps about
+// GOMAXPROCS idle threads for life, which on a large box exhausts a container's task limit across
+// Puma's workers (#182). The one way to end a thread is documented on runtime.LockOSThread: a
+// goroutine that exits while locked takes its thread with it. A parked locked goroutine holds its
+// thread, so one for each thread the runtime has claims them all, then all exit together.
+//
+// Holds callsMu throughout, so a call arriving now waits the few milliseconds this takes rather
+// than running alongside it.
+//
+// shortcut: Go's forced collection every two minutes brings back a few threads with no call to
+// release them (measured +7 at GOMAXPROCS 48, then stable), re-arm the timer if that ever matters.
+func releaseIdleThreads() {
+	callsMu.Lock()
+	defer callsMu.Unlock()
+
+	if callsRunning > 0 {
+		return
+	}
+
+	threads, _ := runtime.ThreadCreateProfile(nil)
+
+	var claimed, exited sync.WaitGroup
+	release := make(chan struct{})
+
+	for range threads {
+		claimed.Add(1)
+		exited.Go(func() {
+			runtime.LockOSThread()
+			claimed.Done()
+			<-release
+		})
+	}
+
+	claimed.Wait()
+	close(release)
+	exited.Wait()
+}
 
 // Parses the given config JSON into a fresh, independent *types.ConfigT - no caching, no shared
 // state. Each call gets its own copy, so concurrent build_to_string/resolve/compile calls (Ruby
@@ -67,6 +141,9 @@ func free_cstr(ptr *C.char) {
 //
 //export build_to_string
 func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
+	callStarted()
+	defer callFinished()
+
 	cfg, err := parseConfig(configJson)
 	if err != nil {
 		// Ruby parses the response as an esbuild message, so the config error has to be one too.
@@ -89,6 +166,9 @@ func build_to_string(filePath *C.char, configJson *C.char) C.struct_Result {
 //
 //export resolve
 func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
+	callStarted()
+	defer callFinished()
+
 	cfg, err := parseConfig(configJson)
 	if err != nil {
 		return C.struct_ResolveResult{C.int(0), C.CString(err.Error()), C.CString("")}
@@ -108,6 +188,9 @@ func resolve(filePath *C.char, configJson *C.char) C.struct_ResolveResult {
 //
 //export compile
 func compile(configJson *C.char) C.struct_CompileResult {
+	callStarted()
+	defer callFinished()
+
 	cfg, err := parseConfig(configJson)
 	if err != nil {
 		// Ruby parses the response as esbuild's messages, so the config error has to be one too.
