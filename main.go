@@ -31,9 +31,9 @@ import (
 	"joelmoss/proscenium/internal/types"
 )
 
-// How long the library must go unused before it gives back its idle threads. Long enough that a
-// page's burst of asset requests reuses the threads the first one started.
-const threadReleaseDelay = 5 * time.Second
+// How long the library must go unused before it gives back its idle threads. Starting them again
+// slows the next build, so this is long enough that steady traffic keeps them.
+const threadReleaseDelay = 30 * time.Second
 
 var (
 	callsMu      sync.Mutex

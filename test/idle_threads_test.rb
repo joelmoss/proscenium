@@ -33,7 +33,7 @@ class Proscenium::IdleThreadsTest < ActiveSupport::TestCase
     5.times { build.call }
     busy = peak = idle = threads.call
 
-    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 15
+    deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 45
     while idle >= busy - 4 && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
       idle = threads.call
       peak = [peak, idle].max
