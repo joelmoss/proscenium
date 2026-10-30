@@ -10,7 +10,7 @@ Proscenium is a Rails engine that provides real-time frontend asset bundling and
 
 - Ruby >= 3.4.0 (project uses 3.4.12)
 - Go 1.27.3+ (go.mod's go line, which the Rakefile's `-go` for xgo must match)
-- Rails 7.2 to 8.x
+- Rails 8.0 to 8.x
 
 ## Architecture
 
@@ -152,7 +152,7 @@ jactionlint # the workflows, against .github/jactionlint.yaml
 - `test/package_manager/` holds the suites that drive real pnpm and Bun, with the fixture gems they install in `stage_a/`. They skip unless `STAGE_A=1`, which CI's `package-manager` job and the canary set; both run every `*_test.rb` in the directory, so a new one needs no workflow edit
 - `test/first_run_test.rb` skips unless `FIRST_RUN=1` (CI's `first-run` job): it generates a Rails app from the network
 - Dummy app uses pnpm as its package manager
-- Multi-Rails version testing uses Appraisals: `gemfiles/rails_7.2.gemfile`, `gemfiles/rails_8.gemfile` (Rails 8.0) and `gemfiles/rails_8.1.gemfile`
+- Multi-Rails version testing uses Appraisals: `gemfiles/rails_8.gemfile` (Rails 8.0) and `gemfiles/rails_8.1.gemfile`
 
 ## CI
 
