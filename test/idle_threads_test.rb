@@ -31,15 +31,16 @@ class Proscenium::IdleThreadsTest < ActiveSupport::TestCase
     end
 
     5.times { build.call }
-    busy = threads.call
+    busy = peak = idle = threads.call
 
     deadline = Process.clock_gettime(Process::CLOCK_MONOTONIC) + 15
-    sleep 0.25 while threads.call >= busy - 4 &&
-                     Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
-    idle = threads.call
+    while idle >= busy - 4 && Process.clock_gettime(Process::CLOCK_MONOTONIC) < deadline
+      idle = threads.call
+      peak = [peak, idle].max
+    end
 
     build.call
-    print "#{busy} #{idle}"
+    print "#{busy} #{peak} #{idle}"
   RUBY
 
   it 'ends idle Go threads, and still builds afterwards' do
@@ -50,8 +51,11 @@ class Proscenium::IdleThreadsTest < ActiveSupport::TestCase
 
     assert_predicate status, :success?, err
 
-    busy, idle = out.split.map(&:to_i)
+    busy, peak, idle = out.split.map(&:to_i)
 
     assert_operator idle, :<=, busy - 5, "#{busy} threads while busy, #{idle} once idle"
+    # A thread Go cannot start is fatal, so ending threads must not first need more of them: at a
+    # container's task limit, that killed the worker.
+    assert_operator peak, :<=, busy + 1, "#{busy} threads while busy, #{peak} while ending them"
   end
 end

@@ -67,8 +67,12 @@ func callFinished() {
 // Go never ends a thread it has started, so each process that has used this library keeps about
 // GOMAXPROCS idle threads for life, which on a large box exhausts a container's task limit across
 // Puma's workers (#182). The one way to end a thread is documented on runtime.LockOSThread: a
-// goroutine that exits while locked takes its thread with it. A parked locked goroutine holds its
-// thread, so one for each thread the runtime has claims them all, then all exit together.
+// goroutine that exits while locked takes its thread with it.
+//
+// One at a time, each finishing before the next starts, because the goroutine runs on the thread
+// this one was on and the idle thread picked up to carry on takes over. Locking them all at once
+// made Go start threads to hold the rest, and a thread Go cannot start is fatal: at the task limit
+// this killed the worker it was there to protect.
 //
 // Holds callsMu throughout, so a call arriving now waits the few milliseconds this takes rather
 // than running alongside it.
@@ -85,21 +89,17 @@ func releaseIdleThreads() {
 
 	threads, _ := runtime.ThreadCreateProfile(nil)
 
-	var claimed, exited sync.WaitGroup
-	release := make(chan struct{})
-
 	for range threads {
-		claimed.Add(1)
-		exited.Go(func() {
-			runtime.LockOSThread()
-			claimed.Done()
-			<-release
-		})
-	}
+		exited := make(chan struct{})
 
-	claimed.Wait()
-	close(release)
-	exited.Wait()
+		go func() {
+			defer close(exited)
+
+			runtime.LockOSThread()
+		}()
+
+		<-exited
+	}
 }
 
 // Parses the given config JSON into a fresh, independent *types.ConfigT - no caching, no shared
