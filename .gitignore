@@ -40,3 +40,4 @@ meta.json
 /.vscode/settings.json
 .gbrain-source
 /.gstack/qa-reports/
+.claude/settings.local.json
