@@ -151,7 +151,7 @@ jobs:
           ruby-version: '3.4'
           bundler-cache: true
       - run: bundle exec rake "build:${{ matrix.platform }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-${{ matrix.platform }}
           path: pkg/*.gem
@@ -197,7 +197,7 @@ jobs:
       # Emulation for any target whose architecture is not this runner's. Cheap when unused.
       - uses: docker/setup-qemu-action@v3
       - run: bundle exec rake "build:${{ matrix.platform }}"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-${{ matrix.platform }}
           path: pkg/*.gem
@@ -241,7 +241,7 @@ jobs:
             grep '^lib/proscenium/ext/' /tmp/contents.txt
             exit 1
           }
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-${{ matrix.platform }}
           path: pkg/*.gem
@@ -284,7 +284,7 @@ jobs:
             exit 1
           fi
           echo "ok: no lib/proscenium/ext/ entries"
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: gem-plain
           path: pkg/*.gem
@@ -325,7 +325,7 @@ jobs:
       # directory it reports success and produces an index listing nothing, and `gem install`
       # then says "Could not find a valid gem" - which reads like a resolution bug rather than a
       # layout mistake.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: index/gems
           merge-multiple: true
@@ -376,7 +376,7 @@ jobs:
         with:
           persist-credentials: false
       # See `verify` for why the gems land in index/gems/.
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: index/gems
           merge-multiple: true
@@ -417,7 +417,7 @@ jobs:
           # everything that runs in between - xgo, docker, bundler, the gems' own build - could
           # read it. Nothing here needs to talk to git after the clone.
           persist-credentials: false
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: pkg
           merge-multiple: true
