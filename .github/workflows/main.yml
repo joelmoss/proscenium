@@ -466,7 +466,7 @@ jobs:
       # this version does not fails here rather than silently linting nothing.
       - uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.13.2
+          version: v2.15.0
 
   # Lints these workflows with the rules and ignores in .github/jactionlint.yaml. Pinned like
   # golangci-lint: a jactionlint release can add a rule, and a branch nobody touched should not go

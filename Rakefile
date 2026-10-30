@@ -193,9 +193,9 @@ PLATFORMS.each do |ruby_platform, go_platform|
       # -go pins the image's Go. Without it xgo pulls ghcr.io/techknowlogick/xgo:latest, which
       # moves with every Go release, so the Linux gems could build with a different Go than the
       # native ones, which setup-go takes from go.mod. Bump it with go.mod's go line. xgo appends
-      # the value to the image name as is, and the image tags are `go-<version>`: a bare 1.27.1
+      # the value to the image name as is, and the image tags are `go-<version>`: a bare 1.27.3
       # names an image that does not exist.
-      sh %(xgo -go go-1.27.1 -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared ) +
+      sh %(xgo -go go-1.27.3 -env=GOWORK=off,GOFLAGS=#{goflags} -buildmode=c-shared ) +
          %(-out=proscenium -dest="#{ext_dir}" -targets="#{go_platform}" .)
 
       ext_path.glob("proscenium-#{goos}-*").each do |built|
