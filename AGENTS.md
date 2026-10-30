@@ -168,6 +168,9 @@ jactionlint # the workflows, against .github/jactionlint.yaml
 - CI compiles Go with: `go build -mod=readonly -buildmode=c-shared -o lib/proscenium/ext/proscenium main.go`
   (`proscenium.dll` on Windows, which `rake compile:local` also produces there)
 - Rubocop runs with `-P --fail-level C`
+- `.github/workflows/audit.yml` runs bundler-audit over `Gemfile.lock`, `gemfiles/*.lock` and
+  `fixtures/adopted/Gemfile.lock`, and govulncheck over `./internal/...`, daily. A red run means an
+  advisory, not a broken branch
 - jactionlint lints the workflows on its default profile, pinned by `go install ...@v<version>` in
   main.yml. `unpinned-uses` is off, and each ignore in `.github/jactionlint.yaml` carries its reason
 

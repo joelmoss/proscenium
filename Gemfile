@@ -11,6 +11,7 @@ gem 'debug'
 group :development do
   gem 'appraisal'
   gem 'benchmark-ips'
+  gem 'bundler-audit', require: false
   gem 'rubocop-minitest', require: false
   gem 'rubocop-packaging', require: false
   gem 'rubocop-performance', require: false
