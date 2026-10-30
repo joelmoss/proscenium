@@ -69,10 +69,9 @@ func callFinished() {
 // Puma's workers (#182). The one way to end a thread is documented on runtime.LockOSThread: a
 // goroutine that exits while locked takes its thread with it.
 //
-// One at a time, each finishing before the next starts, because the goroutine runs on the thread
-// this one was on and the idle thread picked up to carry on takes over. Locking them all at once
-// made Go start threads to hold the rest, and a thread Go cannot start is fatal: at the task limit
-// this killed the worker it was there to protect.
+// One at a time, each finishing before the next starts: each ends one thread, and an idle one
+// picks up the work. Locking them all at once made Go start threads to hold the rest, and a thread
+// Go cannot start is fatal: at the task limit this killed the worker it was there to protect.
 //
 // Holds callsMu throughout, so a call arriving now waits the few milliseconds this takes rather
 // than running alongside it.
