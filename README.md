@@ -1014,6 +1014,8 @@ This matters if you run Puma in cluster mode with `preload_app!` (the app, inclu
 
 **Do not call any `Proscenium::Builder` method (directly, or indirectly via the resolver/side-loading) from a Rails initializer or any other code that runs during application boot**, if you use `preload_app!` with `workers`. Doing so initializes the Go runtime in the master process before the fork, and every worker will inherit a broken one. There is no fix available from Go's side - this is a fundamental fork() limitation, not a bug Proscenium can work around. Asset builds and resolves triggered by actual HTTP requests (the normal case) are unaffected, since those always happen after the fork, independently in each worker.
 
+Each worker that has called the builder starts up to about `GOMAXPROCS` threads for it. Proscenium ends the idle ones 5 seconds after the worker's last builder call, so they count against a container's task limit only while it is building.
+
 ## Thanks
 
 HUGE thanks 🙏 go to [Evan Wallace](https://github.com/evanw) and his amazing [esbuild](https://esbuild.github.io/) project. Proscenium would not be possible without it, and it is esbuild that makes this so fast and efficient.
