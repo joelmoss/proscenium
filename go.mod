@@ -1,6 +1,6 @@
 module joelmoss/proscenium
 
-go 1.27.3
+go 1.27.1
 
 // To update esbuild-internal, take the newest tag from
 // https://github.com/joelmoss/esbuild-internal/tags - `v<upstream esbuild version>` for a plain

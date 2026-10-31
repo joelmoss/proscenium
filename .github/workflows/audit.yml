@@ -1,4 +1,5 @@
 name: audit
+# Temporary: proves govulncheck fails on Go 1.27.1. Never merge.
 
 # Advisories arrive without a commit here, so nothing on a push would notice one. Dependabot's
 # alerts only ever came from Gemfile.lock and go.mod, which left the Appraisal locks and the Go
