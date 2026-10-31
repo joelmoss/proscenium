@@ -143,13 +143,19 @@ jobs:
           # everything that runs in between - xgo, docker, bundler, the gems' own build - could
           # read it. Nothing here needs to talk to git after the clone.
           persist-credentials: false
+      # No caches in a job that builds or publishes a gem. This workflow runs on tags, and a
+      # poisoned cache entry would end up in what gets published. BUNDLE_FROZEN keeps what
+      # bundler-cache gave these jobs: an install that refuses to differ from Gemfile.lock.
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
+          cache: false
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
-          bundler-cache: true
+      - run: bundle install --jobs 4
+        env:
+          BUNDLE_FROZEN: 'true'
       - run: bundle exec rake "build:${{ matrix.platform }}"
       - uses: actions/upload-artifact@v7
         with:
@@ -176,6 +182,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
+          cache: false
       # Not bundler-cache, which installs into vendor/bundle. xgo sees any vendor/ directory and
       # builds with -mod=vendor, overriding GOFLAGS, so every build failed with "inconsistent
       # vendoring". The gems go outside the checkout instead, uncached.
@@ -227,10 +234,13 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           go-version-file: ./go.mod
+          cache: false
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
-          bundler-cache: true
+      - run: bundle install --jobs 4
+        env:
+          BUNDLE_FROZEN: 'true'
       - run: bundle exec rake "build:${{ matrix.platform }}"
       - name: The gem must carry the DLL
         shell: bash
@@ -269,7 +279,6 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
-          bundler-cache: true
       - run: |
           mkdir -p pkg
           gem build proscenium.gemspec -o "pkg/proscenium-${{ needs.platforms.outputs.version }}.gem"
@@ -424,7 +433,9 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.4'
-          bundler-cache: true
+      - run: bundle install --jobs 4
+        env:
+          BUNDLE_FROZEN: 'true'
       # Pinned to a commit, not a tag. This is the only job that can publish a gem, and a tag can
       # be repointed by whoever owns the action. Everything else in these workflows stays on a
       # version tag, where a compromise would be annoying rather than catastrophic.
