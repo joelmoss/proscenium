@@ -7,7 +7,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/k0kubun/pp"
+	"github.com/k0kubun/pp/v3"
 )
 
 // Debug prints args if cfgDebug is true, ie. the caller's config has Debug enabled.
