@@ -481,5 +481,5 @@ jobs:
         with:
           go-version-file: ./go.mod
 
-      - run: go install github.com/jdx/jactionlint/v2/cmd/jactionlint@v2.1.0
+      - run: go install github.com/jdx/jactionlint/v2/cmd/jactionlint@v2.4.0
       - run: jactionlint
