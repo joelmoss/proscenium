@@ -598,8 +598,7 @@ so unbundled gem stylesheets can now `@import` their own `node_modules` and thei
 CSS-module build returns its structured errors, so the location is the CSS line rather than the JS
 importer; and `Builder#compile` raises `CompileError` with esbuild's messages instead of
 returning `false` and discarding them. `BuildError` prints notes, so a stack reaches the error
-page. Plan and review record:
-`~/.gstack/projects/joelmoss-proscenium/joelmoss-master-recover-panics-plan-20260920.md`.
+page. (Planned and reviewed 2026-09-20.)
 
 ### Full concurrency audit of esbuild-internal
 
