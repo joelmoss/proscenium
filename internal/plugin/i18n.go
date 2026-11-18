@@ -110,7 +110,7 @@ func i18nCacheFor(root string) *i18nCache {
 // locale files changing while two cold builds for one root are mid-load, which a deployed app,
 // whose files do not move during a build, does not do.
 //
-// gstack-shortcut(dec-760a3bbc): no direct test - this is unexported and test/ is a separate
+// Shortcut: no direct test - this is unexported and test/ is a separate
 // package. Upgrade when internal/ gets a test package (docs/AUDIT.md pattern P7 needs one
 // anyway), or when this is reported wrong.
 func storeI18nCache(root string, prev, fresh *i18nCache) {
@@ -233,7 +233,7 @@ func I18n(cfg *types.ConfigT) esbuild.Plugin {
 						// the loop below merges it either way, and change detection only stats
 						// files it recorded, so later edits to it never invalidated the snapshot.
 						//
-						// gstack-shortcut(dec-760a3bbc): unexercised by any test - the branch
+						// Shortcut: unexercised by any test - the branch
 						// needs a file to vanish between the directory listing and this stat,
 						// which a spec cannot schedule without a seam. Upgrade when this loop is
 						// extracted for other reasons.
